@@ -1,0 +1,153 @@
+[
+  {
+    "id": 1,
+    "name": "First Steps",
+    "difficulty": "easy",
+    "description": "Learn to move forward",
+    "environment": {
+      "start": { "position": { "x": 0, "y": -2 }, "rotation": 0 },
+      "checkpoints": [{ "position": { "x": 0, "y": 2 }, "radius": 0.6 }],
+      "obstacles": [
+        { "type": "rectangle", "position": { "x": -1.5, "y": 0 }, "width": 0.2, "height": 6.2 },
+        { "type": "rectangle", "position": { "x": 1.5, "y": 0 }, "width": 0.2, "height": 6.2 },
+        { "type": "rectangle", "position": { "x": 0, "y": -3 }, "width": 3.2, "height": 0.2 },
+        { "type": "rectangle", "position": { "x": 0, "y": 3 }, "width": 3.2, "height": 0.2 }
+      ]
+    },
+    "constraints": { "allowedBlocks": ["motor_move_timed"] },
+    "stars": [
+      { "type": "time", "value": 10000, "label": "Under 10 seconds" },
+      { "type": "maxBlocks", "value": 2, "label": "2 blocks or less (incl. Start)" },
+      { "type": "noHits", "label": "Clean run (no hits!)" },
+      { "type": "oneShot", "label": "Perfect first try!" }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Making a Turn",
+    "difficulty": "easy",
+    "description": "Navigate a corner",
+    "environment": {
+      "start": { "position": { "x": -2, "y": -2 }, "rotation": 0 },
+      "checkpoints": [{ "position": { "x": 2, "y": 2 }, "radius": 0.6 }],
+      "obstacles": [
+        { "type": "rectangle", "position": { "x": 0, "y": 3 }, "width": 6.2, "height": 0.2 },
+        { "type": "rectangle", "position": { "x": 0, "y": -3 }, "width": 6.2, "height": 0.2 },
+        { "type": "rectangle", "position": { "x": -3, "y": 0 }, "width": 0.2, "height": 6.2 },
+        { "type": "rectangle", "position": { "x": 3, "y": 0 }, "width": 0.2, "height": 6.2 },
+        { "type": "rectangle", "position": { "x": -1, "y": 1 }, "width": 4, "height": 0.2 }
+      ]
+    },
+    "constraints": { "allowedBlocks": ["motor_move_timed", "motor_turn_timed"] },
+    "stars": [
+      { "type": "time", "value": 15000, "label": "Under 15 seconds" },
+      { "type": "maxBlocks", "value": 4, "label": "4 blocks or less (incl. Start)" },
+      { "type": "noHits", "label": "Clean run!" },
+      { "type": "oneShot", "label": "Perfect first try!" }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "The Square Dance",
+    "difficulty": "medium",
+    "description": "Use loops to trace a square",
+    "environment": {
+      "start": { "position": { "x": -2, "y": -2 }, "rotation": 0 },
+      "checkpoints": [
+        { "position": { "x": -2, "y": 2 }, "radius": 0.6 },
+        { "position": { "x": 2, "y": 2 }, "radius": 0.6 },
+        { "position": { "x": 2, "y": -2 }, "radius": 0.6 }
+      ],
+      "obstacles": [
+        { "type": "rectangle", "position": { "x": 0, "y": 0 }, "width": 2, "height": 2 }
+      ]
+    },
+    "constraints": {},
+    "stars": [
+      { "type": "time", "value": 25000, "label": "Under 25 seconds" },
+      { "type": "requireBlocks", "value": ["controls_repeat_ext"], "label": "Use a 'Repeat' block" },
+      { "type": "maxBlocks", "value": 4, "label": "4 blocks or less (incl. Start)" },
+      { "type": "noHits", "label": "Clean run!" }
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Shuttle Run",
+    "difficulty": "medium",
+    "description": "Go and return to start",
+    "environment": {
+      "start": { "position": { "x": 0, "y": -4 }, "rotation": 0 },
+      "checkpoints": [
+        { "position": { "x": 0, "y": 4 }, "radius": 0.6 },
+        { "position": { "x": 0, "y": -4 }, "radius": 0.6 }
+      ],
+      "obstacles": [
+        { "type": "rectangle", "position": { "x": -1.5, "y": 0 }, "width": 0.2, "height": 10.2 },
+        { "type": "rectangle", "position": { "x": 1.5, "y": 0 }, "width": 0.2, "height": 10.2 },
+        { "type": "rectangle", "position": { "x": 0, "y": -5 }, "width": 3.2, "height": 0.2 },
+        { "type": "rectangle", "position": { "x": 0, "y": 5 }, "width": 3.2, "height": 0.2 }
+      ]
+    },
+    "constraints": {},
+    "stars": [
+      { "type": "time", "value": 22000, "label": "Under 22 seconds" },
+      { "type": "maxBlocks", "value": 8, "label": "8 blocks or less (incl. Start)" },
+      { "type": "noHits", "label": "Clean run!" },
+      { "type": "oneShot", "label": "Perfect first try!" }
+    ]
+  },
+  {
+    "id": 5,
+    "name": "Don't Hit The Wall!",
+    "difficulty": "hard",
+    "description": "Use sensors to avoid obstacles",
+    "environment": {
+      "start": { "position": { "x": 0, "y": -4 }, "rotation": 0 },
+      "checkpoints": [
+        { "type": "rectangle", "position": { "x": 0, "y": 1.7 }, "width": 4.2, "height": 0.2 }
+      ],
+      "obstacles": [
+        { "type": "rectangle", "position": { "x": 0, "y": 0 }, "width": 4.2, "height": 0.3, "isWall": true },
+        { "type": "rectangle", "position": { "x": -2, "y": -1 }, "width": 0.2, "height": 6.2 },
+        { "type": "rectangle", "position": { "x": 2, "y": -1 }, "width": 0.2, "height": 6.2 }
+      ],
+      "randomizeObstacles": {
+        "tags": ["isWall"], "offsetY": { "min": 2, "max": 4 }
+      }
+    },
+    "constraints": {},
+    "stars": [
+      { "type": "proximity", "value": 0.2, "label": "Stop within 0.2m of the wall" },
+      { "type": "requireBlocks", "value": ["controls_if", "sensor_get_distance"], "label": "Use sensors and logic" },
+      { "type": "noHits", "label": "CRITICAL: Do not hit the wall!" },
+      { "type": "oneShot", "label": "Perfect first try!" }
+    ]
+  },
+  {
+    "id": 6,
+    "name": "The Maze",
+    "difficulty": "hard",
+    "description": "Navigate a complex maze",
+    "environment": {
+      "start": { "position": { "x": -3, "y": -3 }, "rotation": 0 },
+      "checkpoints": [{ "position": { "x": 3, "y": 3 }, "radius": 0.6 }],
+      "obstacles": [
+        { "type": "rectangle", "position": { "x": 0, "y": 4 }, "width": 8.2, "height": 0.2 },
+        { "type": "rectangle", "position": { "x": 0, "y": -4 }, "width": 8.2, "height": 0.2 },
+        { "type": "rectangle", "position": { "x": -4, "y": 0 }, "width": 0.2, "height": 8.2 },
+        { "type": "rectangle", "position": { "x": 4, "y": 0 }, "width": 0.2, "height": 8.2 },
+        { "type": "rectangle", "position": { "x": 0, "y": -2 }, "width": 6, "height": 0.2 },
+        { "type": "rectangle", "position": { "x": 0, "y": 2 }, "width": 6, "height": 0.2 },
+        { "type": "rectangle", "position": { "x": -2, "y": 0 }, "width": 0.2, "height": 2 },
+        { "type": "rectangle", "position": { "x": 2, "y": 0 }, "width": 0.2, "height": 2 }
+      ]
+    },
+    "constraints": {},
+    "stars": [
+      { "type": "time", "value": 45000, "label": "Under 45 seconds" },
+      { "type": "maxBlocks", "value": 16, "label": "16 blocks or less (incl. Start)" },
+      { "type": "noHits", "label": "Clean run!" },
+      { "type": "oneShot", "label": "Perfect first try!" }
+    ]
+  }
+]

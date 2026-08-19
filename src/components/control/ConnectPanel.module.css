@@ -1,0 +1,131 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(27, 24, 64, 0.32);
+  backdrop-filter: blur(2px);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  animation: fade 0.14s ease;
+}
+
+.panel {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  animation: rise 0.16s ease;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 6px;
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink-900);
+}
+
+.close {
+  border: none;
+  background: transparent;
+  color: var(--ink-400);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--r-sm);
+}
+.close:hover {
+  background: var(--line-soft);
+  color: var(--ink-700);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 20px 22px;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: var(--r-full);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: transform 0.12s ease, filter 0.12s ease, opacity 0.12s ease;
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.btn:not(:disabled):hover {
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+}
+
+.bleBtn {
+  background: var(--indigo-600);
+  color: #fff;
+}
+.serialBtn {
+  background: var(--surface);
+  color: var(--indigo-700);
+  border-color: var(--indigo-200);
+}
+.disconnectBtn {
+  background: var(--red-bg);
+  color: var(--red);
+  border-color: rgba(229, 72, 77, 0.25);
+}
+
+.connectedNote {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--ink-700);
+  padding: 6px 2px;
+}
+.okDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.unsupported {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-600);
+  background: var(--amber-bg);
+  border: 1px solid rgba(224, 134, 0, 0.25);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}

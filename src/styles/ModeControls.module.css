@@ -1,0 +1,213 @@
+.wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+}
+
+.connectHint {
+  position: fixed;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-700);
+  background: var(--amber-bg);
+  border: 1px solid rgba(224, 134, 0, 0.25);
+  padding: 7px 16px;
+  border-radius: var(--r-full);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Generic control button */
+.ctrlBtn {
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-700);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  user-select: none;
+  touch-action: none;
+  transition: transform 0.08s ease, background 0.12s ease, color 0.12s ease,
+    border-color 0.12s ease;
+}
+.ctrlBtn:hover {
+  border-color: var(--indigo-300);
+  color: var(--indigo-600);
+}
+.ctrlActive {
+  background: var(--indigo-600) !important;
+  color: #fff !important;
+  border-color: var(--indigo-600) !important;
+  transform: scale(0.96);
+}
+
+/* ---- D-pad (Base) ---- */
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 76px);
+  grid-template-rows: repeat(3, 76px);
+  gap: 10px;
+}
+.dUp { grid-column: 2; grid-row: 1; }
+.dLeft { grid-column: 1; grid-row: 2; }
+.dRight { grid-column: 3; grid-row: 2; }
+.dDown { grid-column: 2; grid-row: 3; }
+.dCenter {
+  grid-column: 2;
+  grid-row: 2;
+  display: grid;
+  place-items: center;
+  color: var(--ink-300);
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.armRow {
+  display: flex;
+  gap: 16px;
+}
+.armBtn {
+  min-width: 120px;
+  padding: 16px 22px;
+  font-size: 16px;
+  font-weight: 700;
+  gap: 8px;
+}
+
+/* ---- Port sliders ---- */
+.portGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px 26px;
+  width: min(760px, 92vw);
+}
+@media (max-width: 640px) {
+  .portGrid { grid-template-columns: repeat(2, 1fr); }
+}
+.portItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 14px 12px;
+  box-shadow: var(--shadow-xs);
+}
+.portLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-700);
+}
+.portValue {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--indigo-600);
+  font-variant-numeric: tabular-nums;
+}
+.portSlider {
+  width: 100%;
+  accent-color: var(--indigo-600);
+}
+
+/* ---- Tank ---- */
+.tankStage {
+  display: flex;
+  align-items: flex-end;
+  gap: 40px;
+}
+.throttle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.throttleSlider {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 40px;
+  height: 240px;
+  accent-color: var(--indigo-600);
+}
+.throttleLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-700);
+}
+.turretCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.turretBtn {
+  width: 84px;
+  height: 60px;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 6px;
+}
+
+/* ---- Joystick ---- */
+.joyStage {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.joyBase {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 45%, var(--surface), var(--surface-2));
+  border: 2px solid var(--line);
+  box-shadow: inset 0 4px 14px rgba(27, 24, 64, 0.08), var(--shadow-md);
+  touch-action: none;
+}
+.joyKnob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 92px;
+  height: 92px;
+  margin: -46px 0 0 -46px;
+  border-radius: 50%;
+  background: var(--indigo-600);
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+  cursor: grab;
+}
+.joyActions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.joyAction {
+  min-width: 130px;
+  padding: 18px 24px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.readout {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-500);
+  font-variant-numeric: tabular-nums;
+}
+
+.sectionTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-700);
+}

@@ -1,0 +1,32 @@
+{
+  "name": "robotku-web-control",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@blockly/continuous-toolbox": "^7.0.3",
+    "@blockly/field-colour": "^6.0.5",
+    "@blockly/field-colour-hsv-sliders": "^6.0.5",
+    "@blockly/field-slider": "^8.0.3",
+    "blockly": "^12.3.1",
+    "localforage": "^1.10.0",
+    "next": "^15.5.4",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.1.1",
+    "@types/react-dom": "^19.1.1",
+    "@types/three": "^0.180.0",
+    "@types/w3c-web-serial": "^1.0.7",
+    "@types/web-bluetooth": "^0.0.20",
+    "typescript": "~5.9.3"
+  }
+}

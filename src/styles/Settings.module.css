@@ -1,0 +1,261 @@
+.page {
+  flex: 1;
+  width: min(860px, 94vw);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  padding-bottom: 12px;
+}
+
+.tabs {
+  display: inline-flex;
+  align-self: center;
+  gap: 4px;
+  padding: 5px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-full);
+  box-shadow: var(--shadow-xs);
+}
+.tab {
+  padding: 9px 26px;
+  border-radius: var(--r-full);
+  border: none;
+  background: transparent;
+  color: var(--ink-600);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+.tabActive {
+  background: var(--indigo-600);
+  color: #fff;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-xs);
+  padding: 20px 22px;
+}
+.cardTitle {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink-900);
+}
+.cardSub {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--ink-500);
+}
+
+.mapRow {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line-soft);
+}
+.mapRow:first-of-type {
+  border-top: none;
+}
+.mapLabel {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-700);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-600);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.chip:hover {
+  border-color: var(--indigo-300);
+}
+.chipOn {
+  background: var(--indigo-600);
+  border-color: var(--indigo-600);
+  color: #fff;
+}
+
+/* Speed & direction table */
+.speedTable {
+  display: flex;
+  flex-direction: column;
+}
+.speedRow {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line-soft);
+}
+.speedRow:first-child {
+  border-top: none;
+}
+.segGroup {
+  display: inline-flex;
+  gap: 4px;
+  background: var(--bg);
+  padding: 4px;
+  border-radius: var(--r-full);
+}
+.seg {
+  padding: 6px 16px;
+  border-radius: var(--r-full);
+  border: none;
+  background: transparent;
+  color: var(--ink-600);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.segOn {
+  background: var(--surface);
+  color: var(--indigo-700);
+  box-shadow: var(--shadow-xs);
+}
+.invertBtn {
+  padding: 7px 16px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-600);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.invertOn {
+  background: var(--amber-bg);
+  border-color: rgba(224, 134, 0, 0.3);
+  color: var(--amber);
+}
+
+/* Keybind table */
+.kbTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.kbTable td {
+  padding: 8px 6px;
+  border-top: 1px solid var(--line-soft);
+  color: var(--ink-700);
+}
+.kbTable tr:first-child td {
+  border-top: none;
+}
+.kbKeys {
+  text-align: right;
+}
+.kbd {
+  display: inline-block;
+  min-width: 22px;
+  padding: 2px 8px;
+  margin-left: 6px;
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--ink-800);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 4px 2px 8px;
+}
+.footMeta {
+  font-size: 13px;
+  color: var(--ink-400);
+}
+.footMeta a {
+  color: var(--indigo-600);
+  font-weight: 600;
+}
+.resetBtn {
+  padding: 10px 22px;
+  border-radius: var(--r-full);
+  border: 1px solid rgba(229, 72, 77, 0.3);
+  background: var(--red-bg);
+  color: var(--red);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+.resetBtn:hover {
+  background: var(--red);
+  color: #fff;
+}
+
+/* Guide */
+.guideStep {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+.guideNum {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-full);
+  background: var(--indigo-600);
+  color: #fff;
+  font-weight: 800;
+}
+.guideBody h3 {
+  margin: 4px 0 6px;
+  font-size: 16px;
+  color: var(--ink-900);
+}
+.guideBody p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-600);
+}
+.pinRow {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.pin {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: var(--r-full);
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--line);
+}
+.pinDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}

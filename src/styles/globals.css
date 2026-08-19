@@ -1,0 +1,91 @@
+/* src/styles/globals.css
+ *
+ * The ONLY global stylesheet (imported once in pages/_app.tsx, as Next requires).
+ * Pulls in the Robotku Design System tokens, then a light base reset. Everything
+ * else is authored as CSS Modules (*.module.css) — mirroring the Stick'em stack.
+ */
+
+@import '../theme/tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font);
+  color: var(--ink-900);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#__next {
+  min-height: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+/* Toast notifications (injected by src/ui/toast.ts). Raised above the dock. */
+.rk-toast-container {
+  position: fixed;
+  bottom: 86px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none;
+}
+.rk-toast {
+  pointer-events: auto;
+  font-family: var(--font);
+  font-weight: 600;
+  font-size: 13px;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: var(--r-full);
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  max-width: 90vw;
+}
+.rk-toast--in {
+  opacity: 1;
+  transform: translateY(0);
+}
+.rk-toast--info {
+  background: var(--ink-800);
+}
+.rk-toast--success {
+  background: var(--green);
+}
+.rk-toast--error {
+  background: var(--red);
+}
+.rk-toast--warn {
+  background: var(--amber);
+}
