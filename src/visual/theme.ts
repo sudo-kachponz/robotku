@@ -30,6 +30,12 @@ const DS = {
   green: '#16A34A',
   amber: '#E08600',
   purple: '#8B5CF6',
+  orange: '#F97316',
+  cyan: '#06B6D4',
+  teal: '#0D9488',
+  brown: '#A16207',
+  inkSlate: '#565386',
+  gold: '#CA8A04',
 };
 
 // --- FONT: Plus Jakarta Sans, weight 600, size 14 ---
@@ -57,19 +63,26 @@ const lightComponentStyles: Blockly.Theme.ComponentStyle = {
   cursorColour: DS.indigo700,
 };
 
-// --- Category -> on-brand block colour mapping (8 categories) ---
+// --- Category -> on-brand block colour mapping (Robotku 12-category map from a.md) ---
+// Keys are Blockly *style prefixes*; the loop below expands each into
+// `${key}_blocks` (block style) and `${key}_category` (sidebar style). The
+// built-in loop/logic/math/variable/procedure/text styles are named to match
+// Blockly's own block styles so the reskin covers the standard blocks too.
 const categoryColors: Record<string, string> = {
-  events: DS.amber,
-  motors: DS.indigo600,
-  motion: DS.blue,
-  looks: DS.purple,
-  audio: DS.pink500,
-  control: DS.indigo700,
-  operators: DS.green,
-  sensors: DS.blue,
-  variables: DS.amber,
-  text: DS.blue,
-  functions: DS.pink500,
+  motors: DS.green,      // Movement
+  events: DS.amber,      // Timing (Wait / hat)
+  looks: DS.blue,        // Display (LED Matrix + LCD)
+  audio: DS.orange,      // Audio
+  sensors: DS.purple,    // Sensors & Data
+  control: DS.cyan,      // Program Flow (custom control blocks)
+  loop: DS.cyan,         // Program Flow (built-in loop blocks)
+  logic: DS.teal,        // Logic
+  math: DS.indigo600,    // Math
+  variable: DS.brown,    // Variables
+  procedure: DS.inkSlate,// Functions
+  text: DS.blue,         // text fields used across Display/Audio
+  templates: DS.gold,    // Templates
+  ai: DS.pink500,        // AI (stub)
 };
 
 const blockStyles: { [key: string]: Blockly.Theme.BlockStyle } = {};
@@ -85,7 +98,14 @@ for (const key in categoryColors) {
   };
   categoryStyles[`${key}_category`] = { colour: primary };
 }
-blockStyles.events_blocks.hat = 'cap';
+// Dedicated hat style for the "Start Program" block only, so the amber Timing
+// (events_blocks) statements don't all inherit a hat cap.
+blockStyles.hat_blocks = {
+  colourPrimary: DS.amber,
+  colourSecondary: adjust(DS.amber, 0.15),
+  colourTertiary: adjust(DS.amber, -0.15),
+  hat: 'cap',
+};
 
 const RobotkuLightTheme = new Blockly.Theme(
   'robotku-light-theme',

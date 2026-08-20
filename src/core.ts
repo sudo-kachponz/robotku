@@ -13,8 +13,12 @@ import './categories/control';
 import './categories/operators';
 import './categories/events';
 
+// Force the standard Blockly blocks onto the Robotku theme styles (a.md map):
+// Program Flow = control_blocks (cyan), Logic = logic_blocks (teal),
+// Math = math_blocks (indigo), Variables = variable_blocks (brown),
+// Text stays on text_blocks.
 const styleMap: { [key: string]: string } = {
-  // Control
+  // Program Flow
   controls_if: 'control_blocks',
   controls_ifelse: 'control_blocks',
   controls_repeat_ext: 'control_blocks',
@@ -22,35 +26,37 @@ const styleMap: { [key: string]: string } = {
   controls_for: 'control_blocks',
   controls_forEach: 'control_blocks',
   controls_flow_statements: 'control_blocks',
-  
-  // Logic & Math
-  logic_compare: 'operators_blocks',
-  logic_operation: 'operators_blocks',
-  logic_negate: 'operators_blocks',
-  logic_boolean: 'operators_blocks',
-  logic_null: 'operators_blocks',
-  logic_ternary: 'operators_blocks',
-  math_number: 'operators_blocks',
-  math_arithmetic: 'operators_blocks',
-  math_single: 'operators_blocks',
-  math_trig: 'operators_blocks',
-  math_constant: 'operators_blocks',
-  math_number_property: 'operators_blocks',
-  math_round: 'operators_blocks',
-  math_on_list: 'operators_blocks',
-  math_modulo: 'operators_blocks',
-  math_constrain: 'operators_blocks',
-  math_random_int: 'operators_blocks',
-  math_random_float: 'operators_blocks',
-  
-  // Text
+
+  // Logic
+  logic_compare: 'logic_blocks',
+  logic_operation: 'logic_blocks',
+  logic_negate: 'logic_blocks',
+  logic_boolean: 'logic_blocks',
+  logic_null: 'logic_blocks',
+  logic_ternary: 'logic_blocks',
+
+  // Math
+  math_number: 'math_blocks',
+  math_arithmetic: 'math_blocks',
+  math_single: 'math_blocks',
+  math_trig: 'math_blocks',
+  math_constant: 'math_blocks',
+  math_number_property: 'math_blocks',
+  math_round: 'math_blocks',
+  math_on_list: 'math_blocks',
+  math_modulo: 'math_blocks',
+  math_constrain: 'math_blocks',
+  math_random_int: 'math_blocks',
+  math_random_float: 'math_blocks',
+
+  // Text & lists
   text: 'text_blocks',
   text_join: 'text_blocks',
-  text_append: 'variables_blocks',
-  text_length: 'operators_blocks',
-  text_charAt: 'operators_blocks',
-  lists_create_with: 'operators_blocks',
-  lists_length: 'operators_blocks',
+  text_append: 'variable_blocks',
+  text_length: 'math_blocks',
+  text_charAt: 'text_blocks',
+  lists_create_with: 'math_blocks',
+  lists_length: 'math_blocks',
 };
 
 let isInitialized = false;

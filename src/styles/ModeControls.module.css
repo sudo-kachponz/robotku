@@ -15,37 +15,34 @@
   z-index: 30;
   font-size: 13px;
   font-weight: 600;
-  color: var(--ink-700);
-  background: var(--amber-bg);
-  border: 1px solid rgba(224, 134, 0, 0.25);
+  color: var(--rk-on);
+  background: var(--rk-surface-3);
+  border: none;
   padding: 7px 16px;
-  border-radius: var(--r-full);
-  box-shadow: var(--shadow-xs);
+  border-radius: var(--rk-r-pill);
+  box-shadow: var(--rk-shadow);
 }
 
 /* Generic control button */
 .ctrlBtn {
   display: grid;
   place-items: center;
-  border-radius: var(--r-lg);
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink-700);
+  border-radius: var(--rk-r-lg);
+  border: none;
+  background: var(--rk-surface-3);
+  color: var(--rk-on);
   cursor: pointer;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--rk-shadow);
   user-select: none;
   touch-action: none;
-  transition: transform 0.08s ease, background 0.12s ease, color 0.12s ease,
-    border-color 0.12s ease;
+  transition: transform 0.08s ease, background 0.12s ease;
 }
 .ctrlBtn:hover {
-  border-color: var(--indigo-300);
-  color: var(--indigo-600);
+  background: var(--rk-surface-2);
 }
 .ctrlActive {
-  background: var(--indigo-600) !important;
-  color: #fff !important;
-  border-color: var(--indigo-600) !important;
+  background: var(--rk-surface-2) !important;
+  color: var(--rk-on) !important;
   transform: scale(0.96);
 }
 
@@ -65,7 +62,7 @@
   grid-row: 2;
   display: grid;
   place-items: center;
-  color: var(--ink-300);
+  color: var(--rk-on-muted);
   font-weight: 800;
   font-size: 12px;
 }
@@ -97,26 +94,26 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
+  background: var(--rk-surface-3);
+  border: none;
+  border-radius: var(--rk-r-lg);
   padding: 14px 12px;
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--rk-shadow);
 }
 .portLabel {
   font-size: 13px;
   font-weight: 700;
-  color: var(--ink-700);
+  color: var(--rk-on);
 }
 .portValue {
   font-size: 12px;
   font-weight: 600;
-  color: var(--indigo-600);
+  color: var(--rk-accent);
   font-variant-numeric: tabular-nums;
 }
 .portSlider {
   width: 100%;
-  accent-color: var(--indigo-600);
+  accent-color: var(--rk-accent);
 }
 
 /* ---- Tank ---- */
@@ -136,12 +133,12 @@
   direction: rtl;
   width: 40px;
   height: 240px;
-  accent-color: var(--indigo-600);
+  accent-color: var(--rk-accent);
 }
 .throttleLabel {
   font-size: 13px;
   font-weight: 700;
-  color: var(--ink-700);
+  color: var(--rk-on);
 }
 .turretCol {
   display: flex;
@@ -170,9 +167,9 @@
   width: 240px;
   height: 240px;
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 45%, var(--surface), var(--surface-2));
-  border: 2px solid var(--line);
-  box-shadow: inset 0 4px 14px rgba(27, 24, 64, 0.08), var(--shadow-md);
+  background: var(--rk-surface-3);
+  border: none;
+  box-shadow: inset 0 4px 14px rgba(20, 16, 60, 0.4), var(--rk-shadow);
   touch-action: none;
 }
 .joyKnob {
@@ -183,8 +180,8 @@
   height: 92px;
   margin: -46px 0 0 -46px;
   border-radius: 50%;
-  background: var(--indigo-600);
-  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+  background: var(--rk-input);
+  box-shadow: var(--rk-shadow);
   cursor: grab;
 }
 .joyActions {
@@ -202,12 +199,12 @@
 .readout {
   font-size: 13px;
   font-weight: 600;
-  color: var(--ink-500);
+  color: var(--rk-on-muted);
   font-variant-numeric: tabular-nums;
 }
 
 .sectionTitle {
   font-size: 15px;
   font-weight: 700;
-  color: var(--ink-700);
+  color: var(--rk-on);
 }

@@ -14,43 +14,43 @@
   align-self: center;
   gap: 4px;
   padding: 5px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-full);
-  box-shadow: var(--shadow-xs);
+  background: rgba(0, 0, 0, 0.15);
+  border: none;
+  border-radius: var(--rk-r-pill);
 }
 .tab {
   padding: 9px 26px;
-  border-radius: var(--r-full);
+  border-radius: var(--rk-r-pill);
   border: none;
   background: transparent;
-  color: var(--ink-600);
+  color: var(--rk-on-muted);
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
 }
 .tabActive {
-  background: var(--indigo-600);
-  color: #fff;
+  background: var(--rk-surface-1);
+  color: var(--rk-on);
+  box-shadow: var(--rk-shadow);
 }
 
 .card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-xl);
-  box-shadow: var(--shadow-xs);
+  background: var(--rk-surface-3);
+  border: none;
+  border-radius: var(--rk-r-xl);
+  box-shadow: var(--rk-shadow);
   padding: 20px 22px;
 }
 .cardTitle {
   margin: 0 0 4px;
   font-size: 16px;
   font-weight: 800;
-  color: var(--ink-900);
+  color: var(--rk-on);
 }
 .cardSub {
   margin: 0 0 16px;
   font-size: 13px;
-  color: var(--ink-500);
+  color: var(--rk-on-muted);
 }
 
 .mapRow {
@@ -59,7 +59,7 @@
   align-items: center;
   gap: 12px;
   padding: 10px 0;
-  border-top: 1px solid var(--line-soft);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 .mapRow:first-of-type {
   border-top: none;
@@ -67,19 +67,22 @@
 .mapLabel {
   font-size: 14px;
   font-weight: 700;
-  color: var(--ink-700);
+  color: var(--rk-on);
 }
 .chips {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  background: var(--rk-input);
+  padding: 8px 12px;
+  border-radius: var(--rk-r-lg);
 }
 .chip {
   width: 38px;
   height: 38px;
-  border-radius: var(--r-md);
-  border: 1px solid var(--line);
-  background: var(--surface);
+  border-radius: var(--rk-r-md);
+  border: none;
+  background: rgba(0, 0, 0, 0.05);
   color: var(--ink-600);
   font-weight: 700;
   font-size: 14px;
@@ -87,12 +90,11 @@
   transition: all 0.12s ease;
 }
 .chip:hover {
-  border-color: var(--indigo-300);
+  background: rgba(0, 0, 0, 0.1);
 }
 .chipOn {
-  background: var(--indigo-600);
-  border-color: var(--indigo-600);
-  color: #fff;
+  background: var(--rk-chip);
+  color: var(--rk-surface-1);
 }
 
 /* Speed & direction table */
@@ -106,7 +108,7 @@
   align-items: center;
   gap: 12px;
   padding: 10px 0;
-  border-top: 1px solid var(--line-soft);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 .speedRow:first-child {
   border-top: none;
@@ -114,39 +116,38 @@
 .segGroup {
   display: inline-flex;
   gap: 4px;
-  background: var(--bg);
+  background: rgba(0, 0, 0, 0.15);
   padding: 4px;
-  border-radius: var(--r-full);
+  border-radius: var(--rk-r-pill);
 }
 .seg {
   padding: 6px 16px;
-  border-radius: var(--r-full);
+  border-radius: var(--rk-r-pill);
   border: none;
   background: transparent;
-  color: var(--ink-600);
+  color: var(--rk-on-muted);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
 }
 .segOn {
-  background: var(--surface);
-  color: var(--indigo-700);
-  box-shadow: var(--shadow-xs);
+  background: var(--rk-surface-1);
+  color: var(--rk-on);
+  box-shadow: var(--rk-shadow);
 }
 .invertBtn {
   padding: 7px 16px;
-  border-radius: var(--r-full);
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink-600);
+  border-radius: var(--rk-r-pill);
+  border: none;
+  background: var(--rk-surface-2);
+  color: var(--rk-on);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
 }
 .invertOn {
-  background: var(--amber-bg);
-  border-color: rgba(224, 134, 0, 0.3);
-  color: var(--amber);
+  background: var(--rk-accent);
+  color: var(--rk-on);
 }
 
 /* Keybind table */
@@ -157,8 +158,8 @@
 }
 .kbTable td {
   padding: 8px 6px;
-  border-top: 1px solid var(--line-soft);
-  color: var(--ink-700);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--rk-on);
 }
 .kbTable tr:first-child td {
   border-top: none;
@@ -171,12 +172,12 @@
   min-width: 22px;
   padding: 2px 8px;
   margin-left: 6px;
-  border-radius: var(--r-sm);
-  background: var(--bg);
-  border: 1px solid var(--line);
+  border-radius: var(--rk-r-sm);
+  background: var(--rk-surface-1);
+  border: none;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 12px;
-  color: var(--ink-800);
+  color: var(--rk-on);
 }
 
 .footer {
@@ -189,25 +190,25 @@
 }
 .footMeta {
   font-size: 13px;
-  color: var(--ink-400);
+  color: var(--rk-on-muted);
 }
 .footMeta a {
-  color: var(--indigo-600);
+  color: var(--rk-info);
   font-weight: 600;
 }
 .resetBtn {
   padding: 10px 22px;
-  border-radius: var(--r-full);
-  border: 1px solid rgba(229, 72, 77, 0.3);
-  background: var(--red-bg);
-  color: var(--red);
+  border-radius: var(--rk-r-pill);
+  border: none;
+  background: var(--rk-danger);
+  color: var(--rk-on);
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
+  transition: filter 0.12s ease;
 }
 .resetBtn:hover {
-  background: var(--red);
-  color: #fff;
+  filter: brightness(1.1);
 }
 
 /* Guide */
@@ -222,21 +223,21 @@
   place-items: center;
   width: 40px;
   height: 40px;
-  border-radius: var(--r-full);
-  background: var(--indigo-600);
-  color: #fff;
+  border-radius: var(--rk-r-pill);
+  background: var(--rk-surface-1);
+  color: var(--rk-on);
   font-weight: 800;
 }
 .guideBody h3 {
   margin: 4px 0 6px;
   font-size: 16px;
-  color: var(--ink-900);
+  color: var(--rk-on);
 }
 .guideBody p {
   margin: 0;
   font-size: 14px;
   line-height: 1.6;
-  color: var(--ink-600);
+  color: var(--rk-on-muted);
 }
 .pinRow {
   display: flex;
@@ -249,10 +250,11 @@
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
-  border-radius: var(--r-full);
+  border-radius: var(--rk-r-pill);
   font-size: 13px;
   font-weight: 600;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--rk-on);
 }
 .pinDot {
   width: 12px;

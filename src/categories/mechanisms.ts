@@ -1,10 +1,11 @@
 // src/categories/mechanisms.ts
 
 import * as Blockly from 'blockly/core';
+import { defineOnce } from './_defineOnce';
 import { javascriptGenerator } from 'blockly/javascript';
 import { astroidV2 } from '../robotProfiles';
 
-Blockly.defineBlocksWithJsonArray([
+defineOnce([
   {
     "type": "mechanism_set_head",
     "message0": "Set head position to Pitch: %1 Yaw: %2",
@@ -60,6 +61,7 @@ export const mechanismsCategory = {
   kind: 'category',
   name: 'Parts',
   categorystyle: 'motion_category',
+  cssconfig: { icon: 'icon-mechanisms' },
   contents: [
     { kind: 'block', type: 'mechanism_set_head' },
     { kind: 'block', type: 'mechanism_set_gripper' },

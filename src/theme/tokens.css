@@ -82,6 +82,34 @@
   /* Focus ring */
   --ring: 0 0 0 4px rgba(79, 70, 229, .14);
 
+  /* Robotku Play — Immersive Tokens */
+  --rk-bg-top: #2B2680;
+  --rk-bg-bottom: #4338CA;
+  --rk-bg-gradient: radial-gradient(120% 120% at 50% 0%, #4338CA 0%, #352DA0 45%, #2B2680 100%);
+  --rk-header: #241F5E;
+
+  --rk-surface-1: #4F46E5;
+  --rk-surface-2: #5B54EA;
+  --rk-surface-3: #352DA0;
+  --rk-surface-alt: #6366E8;
+
+  --rk-input: #FFFFFF;
+  --rk-chip: #E0E3FF;
+  --rk-canvas: #F3F4FB;
+
+  --rk-on: #FFFFFF;
+  --rk-on-muted: rgba(255,255,255,.72);
+
+  --rk-accent: #EC2D8F;
+  --rk-success: #16A34A;
+  --rk-danger: #E5484D;
+  --rk-info: #3B82F6;
+
+  --rk-r-lg: 20px;
+  --rk-r-xl: 28px;
+  --rk-r-pill: 999px;
+  --rk-shadow: 0 12px 30px rgba(20,16,60,.35);
+
   /* Type */
   --font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 }

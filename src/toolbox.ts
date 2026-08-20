@@ -1,29 +1,40 @@
 // src/toolbox.ts
+//
+// Robotku Block Coding toolbox — the 12-category structure from a.md
+// (Movement, Timing, Display, Audio, Sensors & Data, Program Flow, Logic, Math,
+// then the "Advanced" group: Variables, Functions, Templates, AI).
 import * as Blockly from 'blockly/core';
 
-// Import the final, refactored categories
-import { motorsCategory } from './categories/motors';
-import { mechanismsCategory } from './categories/mechanisms';
-import { looksCategory } from './categories/looks';
-import { audioCategory } from './categories/audio';
-import { sensorsCategory } from './categories/sensors';
-
-// Import the standard logic categories
-import { controlCategory } from './categories/control';
-import { operatorsCategory } from './categories/operators';
+import { motorsCategory } from './categories/motors';       // Movement
+import { timingCategory } from './categories/events';        // Timing
+import { looksCategory } from './categories/looks';          // Display
+import { audioCategory } from './categories/audio';          // Audio
+import { sensorsCategory } from './categories/sensors';      // Sensors & Data
+import { controlCategory } from './categories/control';      // Program Flow
+import { logicCategory } from './categories/logic';          // Logic
+import { mathCategory } from './categories/math';            // Math
+import { variablesCategory } from './categories/variables';  // Variables
+import { functionsCategory } from './categories/functions';  // Functions
+import { templatesCategory } from './categories/templates';  // Templates
+import { aiCategory } from './categories/ai';                // AI
 
 export function getAstroidToolbox(): Blockly.utils.toolbox.ToolboxDefinition {
   return {
     kind: 'categoryToolbox',
     contents: [
       motorsCategory,
-      mechanismsCategory,
+      timingCategory,
       looksCategory,
       audioCategory,
-      { kind: 'sep' },
-      controlCategory,
-      operatorsCategory,
       sensorsCategory,
+      controlCategory,
+      logicCategory,
+      mathCategory,
+      { kind: 'sep' },
+      variablesCategory,
+      functionsCategory,
+      templatesCategory,
+      aiCategory,
     ],
   };
 }

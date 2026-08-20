@@ -28,7 +28,7 @@ interface FinishZone {
 export class Simulator {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
-  private renderer: THREE.WebGLRenderer;
+  private renderer?: THREE.WebGLRenderer;
   private controls: OrbitControls;
   private mixer?: THREE.AnimationMixer;
   private clock: THREE.Clock;
@@ -45,6 +45,13 @@ export class Simulator {
   private readonly headLerpFactor = 0.02;
   private collisionHelper?: THREE.Mesh;
   private turningHelper?: THREE.Mesh;
+  private raf = 0;
+  private contextLostReported = false;
+
+  /** True when the WebGL context could not be created (context-limit/unsupported). */
+  public initFailed = false;
+  /** Fired once when the renderer fails to init or the GL context is lost. */
+  public onContextLost?: () => void;
 
   public robotModel?: THREE.Group;
   public groundMaterial?: THREE.MeshStandardMaterial;
@@ -52,6 +59,8 @@ export class Simulator {
 
   // --- Lifecycle Methods ---
   constructor(container: HTMLElement) {
+    this.clock = new THREE.Clock();
+
     // --- Scene ---
     this.scene = new THREE.Scene();
     this.scene.fog = new THREE.Fog(0x1a2a4f, 10, 25);
@@ -61,21 +70,46 @@ export class Simulator {
     this.camera.position.set(0.8, 1, 1.5);
     this.camera.lookAt(0, 0, 0);
 
-    // --- Renderer ---
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setSize(container.clientWidth, container.clientHeight);
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 0.7;
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    container.appendChild(this.renderer.domElement);
+    // --- Renderer (defensive: a failed context must NOT throw repeatedly) ---
+    try {
+      this.renderer = new THREE.WebGLRenderer({ antialias: true });
+      this.renderer.setSize(container.clientWidth, container.clientHeight);
+      this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      this.renderer.toneMappingExposure = 0.7;
+      this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+      container.appendChild(this.renderer.domElement);
+
+      // Show the calm fallback ONCE if the browser drops the context later.
+      this.renderer.domElement.addEventListener('webglcontextlost', (ev) => {
+        ev.preventDefault();
+        this.reportContextLost();
+      }, false);
+    } catch (e) {
+      console.warn('3D sim disabled: WebGL context could not be created (limit reached or unsupported).');
+      this.initFailed = true;
+    }
+
+    // If the renderer never came up, stop here — no scene/asset/loop work.
+    // The caller inspects `initFailed` and renders a single calm message.
+    if (this.initFailed || !this.renderer) {
+      // Minimal stubs so later method calls stay null-safe.
+      this.controls = new OrbitControls(this.camera, container);
+      this.resizeObserver = new ResizeObserver(() => {});
+      return;
+    }
 
     // --- Skybox and Environment Lighting ---
     const hdrLoader = new HDRLoader();
-    hdrLoader.load('Cyberpunk.hdr', (texture) => {
-      texture.mapping = THREE.EquirectangularReflectionMapping;
-      this.scene.background = texture;
-      this.scene.environment = texture;
-    });
+    hdrLoader.load(
+      'Cyberpunk.hdr',
+      (texture) => {
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+        this.scene.background = texture;
+        this.scene.environment = texture;
+      },
+      undefined,
+      () => console.warn('3D sim: skybox (Cyberpunk.hdr) failed to load — continuing without it.'),
+    );
 
     // --- Lighting ---
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
@@ -85,7 +119,7 @@ export class Simulator {
     this.scene.add(directionalLight);
 
     // --- Controls ---
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls = new OrbitControls(this.camera, this.renderer ? this.renderer.domElement : container);
     this.controls.enableDamping = true;
     this.controls.target.set(0, 0.3, 0);
     
@@ -98,9 +132,11 @@ export class Simulator {
 
     // --- Ground ---
     const textureLoader = new THREE.TextureLoader();
-    const colorTexture = textureLoader.load('rubber_tiles_diff_2k.jpg');
-    const normalTexture = textureLoader.load('rubber_tiles_nor_gl_2k.jpg');
-    const roughnessTexture = textureLoader.load('rubber_tiles_rough_2k.jpg');
+    const onTexError = (file: string) => () =>
+      console.warn(`3D sim: texture '${file}' failed to load — continuing without it.`);
+    const colorTexture = textureLoader.load('rubber_tiles_diff_2k.jpg', undefined, undefined, onTexError('rubber_tiles_diff_2k.jpg'));
+    const normalTexture = textureLoader.load('rubber_tiles_nor_gl_2k.jpg', undefined, undefined, onTexError('rubber_tiles_nor_gl_2k.jpg'));
+    const roughnessTexture = textureLoader.load('rubber_tiles_rough_2k.jpg', undefined, undefined, onTexError('rubber_tiles_rough_2k.jpg'));
     
     for (const texture of [colorTexture, normalTexture, roughnessTexture]) {
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
@@ -118,9 +154,8 @@ export class Simulator {
     ground.rotation.x = -Math.PI / 2;
     this.scene.add(ground);
     this._preloadAssets();
-    
+
     // --- Event Listeners ---
-    this.clock = new THREE.Clock();
     this.resizeObserver = new ResizeObserver(entries => {
         for (const entry of entries) {
             const { width, height } = entry.contentRect;
@@ -132,6 +167,7 @@ export class Simulator {
   }
 
   public async loadRobotModel(url: string): Promise<void> {
+    if (this.initFailed || !this.renderer) return;
     const loader = new GLTFLoader();
     try {
       const gltf = await loader.loadAsync(url);
@@ -187,8 +223,46 @@ export class Simulator {
     }
   }
 
+  /** Show the fallback exactly once when the GL context is lost. */
+  private reportContextLost(): void {
+    if (this.contextLostReported) return;
+    this.contextLostReported = true;
+    console.warn('3D sim: WebGL context lost — disabling the simulator (Run still works).');
+    this.onContextLost?.();
+  }
+
   public dispose(): void {
-      this.resizeObserver.disconnect();
+    // 1. Stop the render loop first so nothing touches a disposed renderer.
+    if (this.raf) cancelAnimationFrame(this.raf);
+    this.raf = 0;
+
+    this.resizeObserver?.disconnect();
+    this.controls?.dispose?.();
+
+    // 2. Free every geometry / material / texture in the scene graph.
+    this.scene?.traverse((o: any) => {
+      o.geometry?.dispose?.();
+      const mats = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
+      for (const m of mats) {
+        for (const k in m) {
+          const v: any = m[k];
+          if (v?.isTexture) v.dispose();
+        }
+        m.dispose?.();
+      }
+    });
+
+    // 3. Drop the standalone icon textures we preloaded.
+    this.iconTextures.forEach((t) => t.dispose());
+    this.iconTextures.clear();
+
+    // 4. Release the WebGL context so re-mounts (StrictMode/HMR) don't leak.
+    if (this.renderer) {
+      this.renderer.dispose();
+      this.renderer.forceContextLoss?.();
+      this.renderer.domElement?.remove();
+      this.renderer = undefined;
+    }
   }
 
   // --- Public Methods (Robot Part Control) ---
@@ -280,7 +354,8 @@ export class Simulator {
     const textureLoader = new THREE.TextureLoader();
 
     if (objData.type === 'circle') {
-        const colorMap = textureLoader.load('rocks_ground_09_diff_2k.jpg');
+        const colorMap = textureLoader.load('rocks_ground_09_diff_2k.jpg', undefined, undefined,
+          () => console.warn("3D sim: texture 'rocks_ground_09_diff_2k.jpg' failed to load — continuing."));
         
         colorMap.colorSpace = THREE.SRGBColorSpace;
         colorMap.wrapS = colorMap.wrapT = THREE.RepeatWrapping;
@@ -299,7 +374,8 @@ export class Simulator {
         this.levelObjects.push({ mesh, type: 'circle', virtualPosition, radius });
 
     } else if (objData.type === 'rectangle') {
-        const colorMap = textureLoader.load('plastered_wall_05_diff_2k.jpg');
+        const colorMap = textureLoader.load('plastered_wall_05_diff_2k.jpg', undefined, undefined,
+          () => console.warn("3D sim: texture 'plastered_wall_05_diff_2k.jpg' failed to load — continuing."));
         
         colorMap.colorSpace = THREE.SRGBColorSpace;
         colorMap.wrapS = colorMap.wrapT = THREE.RepeatWrapping;
@@ -430,7 +506,9 @@ export class Simulator {
 
   // --- Animation Loop ---
   private animate = (): void => {
-    requestAnimationFrame(this.animate);
+    // Stop cleanly once disposed (renderer cleared) — avoids rendering a dead context.
+    if (!this.renderer) return;
+    this.raf = requestAnimationFrame(this.animate);
     const deltaTime = this.clock.getDelta();
     this.mixer?.update(deltaTime);
 
@@ -452,7 +530,7 @@ export class Simulator {
       this.controls.target.lerp(targetPosition, 0.1);
     }
     this.controls.update();
-    this.renderer.render(this.scene, this.camera);
+    this.renderer?.render(this.scene, this.camera);
   }
 
   // --- Internal Helpers & Event Handlers ---
@@ -482,13 +560,24 @@ export class Simulator {
     const textureLoader = new THREE.TextureLoader();
     const iconsToLoad = ['happy', 'sad', 'confused', 'mad'];
     iconsToLoad.forEach(name => {
-      const texture = textureLoader.load(`icons/${name}.png`);
+      const texture = textureLoader.load(
+        `icons/${name}.png`,
+        undefined,
+        undefined,
+        () => console.warn(`3D sim: icon 'icons/${name}.png' failed to load — skipping.`),
+      );
       texture.colorSpace = THREE.SRGBColorSpace;
       this.iconTextures.set(name, texture);
     });
 
     SOUND_MAPPING.forEach(sound => {
-      this.sounds.set(sound.id, new Audio(sound.assetPath));
+      const audio = new Audio(sound.assetPath);
+      audio.addEventListener(
+        'error',
+        () => console.warn(`3D sim: sound '${sound.assetPath}' failed to load — skipping.`),
+        { once: true },
+      );
+      this.sounds.set(sound.id, audio);
     });
   }
 
@@ -496,7 +585,7 @@ export class Simulator {
     if (width === 0 || height === 0) return;
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(width, height);
+    this.renderer?.setSize(width, height);
   }
 
   private createCollisionHelpers(): void {

@@ -44,6 +44,7 @@ export const operatorsCategory = {
   kind: 'category',
   name: 'Operators',
   categorystyle: 'operators_category',
+  cssconfig: { icon: 'icon-operators' },
   contents: [
     // --- Math Blocks ---
     { kind: 'block', type: 'math_number', fields: { NUM: 0 } },

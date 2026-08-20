@@ -15,11 +15,122 @@ import {
   ContinuousToolbox,
   ContinuousFlyout,
   ContinuousMetrics,
-} from '@blockly/continuous-toolbox';
+  registerContinuousToolbox,
+} from '@blockly/continuous-toolbox';class RobotkuCategory extends Blockly.ToolboxCategory {
+  private iconEl_?: HTMLDivElement;
+
+  override createDom_() {
+    super.createDom_();
+    if (this.rowDiv_) {
+      this.rowDiv_.style.display = 'flex';
+      this.rowDiv_.style.flexDirection = 'row';
+      this.rowDiv_.style.alignItems = 'center';
+      this.rowDiv_.style.justifyContent = 'flex-start';
+      this.rowDiv_.style.height = 'auto';
+      this.rowDiv_.style.minHeight = '64px';
+      this.rowDiv_.style.padding = '14px 20px';
+      this.rowDiv_.style.borderLeft = `8px solid ${this.colour_}`;
+      this.rowDiv_.style.marginBottom = '8px';
+      this.rowDiv_.style.borderRadius = '0';
+
+      const contentContainer = this.rowDiv_.querySelector('.blocklyTreeRowContentContainer') as HTMLElement;
+      if (contentContainer) {
+        contentContainer.style.display = 'flex';
+        contentContainer.style.flexDirection = 'row';
+        contentContainer.style.alignItems = 'center';
+        contentContainer.style.justifyContent = 'flex-start';
+        contentContainer.style.width = '100%';
+        contentContainer.style.gap = '14px';
+      }
+    }
+    const labelDiv =
+      (this as any).labelDiv_ ||
+      (this.rowDiv_ ? (this.rowDiv_.querySelector('.blocklyTreeLabel, .blocklyToolboxCategoryLabel') as HTMLElement) : null);
+    if (labelDiv) {
+      labelDiv.style.color = this.colour_;
+      labelDiv.style.fontSize = '30px';
+      labelDiv.style.fontWeight = '800';
+      labelDiv.style.fontFamily = "'Plus Jakarta Sans', sans-serif";
+      labelDiv.style.marginLeft = '0px';
+      labelDiv.style.marginTop = '0px';
+      labelDiv.style.marginBottom = '0px';
+      labelDiv.style.textAlign = 'left';
+      labelDiv.style.lineHeight = '1.2';
+    }
+    return this.rowDiv_ as HTMLDivElement;
+  }
+
+  override createIconDom_() {
+    const icon = document.createElement('div');
+    icon.classList.add('categoryBubble');
+    icon.classList.add('blocklyTreeIcon');
+    icon.style.display = 'flex';
+    icon.style.alignItems = 'center';
+    icon.style.justifyContent = 'center';
+    icon.style.backgroundColor = 'transparent';
+    icon.style.background = 'none';
+    icon.style.border = 'none';
+    icon.style.borderRadius = '0';
+    icon.style.boxShadow = 'none';
+    icon.style.width = '36px';
+    icon.style.height = '36px';
+    icon.style.margin = '0 14px 0 0';
+    icon.style.flexShrink = '0';
+
+    const svg = categoryIconSvg(((this as any).name_ as string) || '');
+    if (svg) {
+      icon.innerHTML = svg;
+      icon.style.color = this.colour_;
+    } else {
+      icon.style.backgroundColor = this.colour_;
+      icon.style.borderRadius = '50%';
+    }
+    this.iconEl_ = icon;
+    return icon;
+  }
+
+  override setSelected(isSelected: boolean) {
+    super.setSelected(isSelected);
+    const labelDiv =
+      (this as any).labelDiv_ ||
+      (this.rowDiv_ ? (this.rowDiv_.querySelector('.blocklyTreeLabel, .blocklyToolboxCategoryLabel') as HTMLElement) : null);
+    if (this.rowDiv_) {
+      this.rowDiv_.style.backgroundColor = isSelected ? this.colour_ : 'transparent';
+      this.rowDiv_.style.borderLeft = `8px solid ${this.colour_}`;
+    }
+    if (labelDiv) {
+      labelDiv.style.color = isSelected ? '#ffffff' : this.colour_;
+    }
+    if (this.iconEl_ && this.iconEl_.querySelector('svg')) {
+      this.iconEl_.style.color = isSelected ? '#ffffff' : this.colour_;
+    }
+    if (isSelected) {
+      const name = (this as any).name_ as string;
+      const bg: Record<string, string> = {
+        Movement: 'rgba(22, 163, 74, 0.18)',       // Soft low-saturation Green
+        Timing: 'rgba(224, 134, 0, 0.18)',         // Soft low-saturation Amber
+        Display: 'rgba(59, 130, 246, 0.18)',       // Soft low-saturation Blue
+        Audio: 'rgba(249, 115, 22, 0.18)',         // Soft low-saturation Orange
+        'Sensors & Data': 'rgba(139, 92, 246, 0.18)', // Soft low-saturation Purple
+        'Program Flow': 'rgba(6, 182, 212, 0.18)',  // Soft low-saturation Cyan
+        Logic: 'rgba(13, 148, 136, 0.18)',         // Soft low-saturation Teal
+        Math: 'rgba(79, 70, 229, 0.18)',           // Soft low-saturation Indigo
+        Variables: 'rgba(161, 98, 7, 0.18)',       // Soft low-saturation Brown
+        Functions: 'rgba(86, 83, 134, 0.18)',      // Soft low-saturation Ink Slate
+        Templates: 'rgba(202, 138, 4, 0.18)',      // Soft low-saturation Gold
+        AI: 'rgba(236, 45, 143, 0.18)',            // Soft low-saturation Pink
+      };
+      if (name && bg[name]) {
+        document.documentElement.style.setProperty('--flyout-bg-color', bg[name]);
+      }
+    }
+  }
+}
 
 import { initializeAstroidEditor } from '../../core';
 import { getAstroidToolbox } from '../../toolbox';
 import { getRobotkuTheme } from '../../visual/theme';
+import { categoryIconSvg } from '../../visual/categoryIcons';
 import { runCommandsOnRobot, setSimulatorRunner } from '../../command_runner';
 import { estop, onTelemetry } from '../../app/connection';
 import { Simulator } from '../../simulator';
@@ -41,7 +152,6 @@ const INITIAL_WORKSPACE_JSON = {
         y: 100,
         deletable: false,
         movable: false,
-        next: { block: { type: 'motor_stop' } },
       },
     ],
   },
@@ -59,22 +169,21 @@ export default function BlockCoding() {
 
   const [running, setRunning] = useState(false);
   const [showMonitor, setShowMonitor] = useState(false);
-  const [showSim, setShowSim] = useState(true);
+  const [showSim, setShowSim] = useState(false);
+  const [simError, setSimError] = useState(false);
   const [telemetry, setTelemetry] = useState<string[]>([]);
 
-  // ---- Boot the editor + simulator once, on mount (client only) ----
+  // ---- Boot the editor once, on mount (client only) ----
   useEffect(() => {
     const blocklyDiv = blocklyDivRef.current;
     if (!blocklyDiv) return;
 
     initializeAstroidEditor();
 
-    // Custom category renderer (from astroid-webview). Overwrite=true keeps
-    // React Strict Mode's double-mount from throwing on re-registration.
     Blockly.registry.register(
       Blockly.registry.Type.TOOLBOX_ITEM,
       Blockly.ToolboxCategory.registrationName,
-      ContinuousCategory,
+      RobotkuCategory,
       true,
     );
 
@@ -83,60 +192,45 @@ export default function BlockCoding() {
       toolbox: getAstroidToolbox(),
       renderer: 'zelos',
       toolboxPosition: 'start',
-      // The continuous (Scratch-style) scrolling flyout. Without these three
-      // plugins Blockly falls back to the classic vertical toolbox, which is
-      // what made this page look "berantakan" vs. the astroid editor.
-      plugins: {
-        toolbox: ContinuousToolbox,
-        flyout: ContinuousFlyout,
-        metricsManager: ContinuousMetrics,
-      },
       trashcan: false,
       zoom: { controls: false, wheel: true, startScale: 0.6, maxScale: 1.25, minScale: 0.4, scaleSpeed: 1.05 },
       grid: { spacing: 22, length: 2, colour: '#C6CAFF', snap: true },
       move: { scrollbars: true, drag: true, wheel: true },
     });
     workspaceRef.current = workspace;
-    // Load a project handed over from the Projects page, else the starter program.
+
     const pending = takePendingWorkspace();
     Blockly.serialization.workspaces.load(
       (pending as object) ?? INITIAL_WORKSPACE_JSON,
       workspace,
     );
 
-    // Per-category light flyout tint (matches the astroid-webview behaviour).
+    // Per-category light flyout tint with low saturation glass pane (Fix for DS glassmorphism).
     workspace.addChangeListener((event: Blockly.Events.Abstract) => {
       if (event.type !== Blockly.Events.TOOLBOX_ITEM_SELECT) return;
       const name = (event as any).newItem as string;
       const bg: Record<string, string> = {
-        Motion: 'rgba(238,244,255,.92)', Parts: 'rgba(232,250,250,.92)',
-        Looks: 'rgba(244,240,255,.92)', Sound: 'rgba(253,240,248,.92)',
-        Control: 'rgba(238,240,255,.92)', Operators: 'rgba(235,250,240,.92)',
-        Sensors: 'rgba(244,240,255,.92)',
+        Movement: 'rgba(22, 163, 74, 0.16)',       // Soft low-saturation Green
+        Timing: 'rgba(224, 134, 0, 0.16)',         // Soft low-saturation Amber
+        Display: 'rgba(59, 130, 246, 0.16)',       // Soft low-saturation Blue
+        Audio: 'rgba(249, 115, 22, 0.16)',         // Soft low-saturation Orange
+        'Sensors & Data': 'rgba(139, 92, 246, 0.16)', // Soft low-saturation Purple
+        'Program Flow': 'rgba(6, 182, 212, 0.16)',  // Soft low-saturation Cyan
+        Logic: 'rgba(13, 148, 136, 0.16)',         // Soft low-saturation Teal
+        Math: 'rgba(79, 70, 229, 0.16)',           // Soft low-saturation Indigo
+        Variables: 'rgba(161, 98, 7, 0.16)',       // Soft low-saturation Brown
+        Functions: 'rgba(86, 83, 134, 0.16)',      // Soft low-saturation Ink Slate
+        Templates: 'rgba(202, 138, 4, 0.16)',      // Soft low-saturation Gold
+        AI: 'rgba(236, 45, 143, 0.16)',            // Soft low-saturation Pink
       };
       document.documentElement.style.setProperty(
-        '--flyout-bg-color', bg[name] || 'rgba(255,255,255,.92)',
+        '--flyout-bg-color',
+        bg[name] || 'rgba(243, 244, 251, 0.65)',
       );
     });
 
-    // Offline 3D simulator so Run always does something when disconnected.
-    let simulator: Simulator | null = null;
-    let sequencer: SimulatorSequencer | null = null;
-    if (simDivRef.current) {
-      simulator = new Simulator(simDivRef.current);
-      simulator.loadRobotModel('Asteria-DashMinimal.glb').catch(() => {});
-      sequencer = new SimulatorSequencer(simulator);
-      simulator.sequencerVirtualPosition = sequencer.virtualPosition;
-      simulatorRef.current = simulator;
-      sequencerRef.current = sequencer;
-    }
-
-    setSimulatorRunner((commands: any[]) => {
-      setRunning(true);
-      sequencer
-        ?.runCommandSequence(commands)
-        .finally(() => setRunning(false));
-    });
+    // NOTE: the 3D simulator is created lazily in its own effect (Fix 2d): it is
+    // OFF by default and only spun up when the user opens the Simulator panel.
 
     onTelemetry((msg) => {
       setTelemetry((prev) => [
@@ -153,15 +247,54 @@ export default function BlockCoding() {
     return () => {
       window.removeEventListener('resize', onResize);
       cancelAnimationFrame(raf);
-      setSimulatorRunner(null);
       onTelemetry(() => {});
       workspace.dispose();
       workspaceRef.current = null;
+    };
+  }, []);
+
+  // ---- Lazy 3D simulator (opt-in). Default OFF; create exactly one WebGL
+  // context when the panel opens and dispose it when it closes / unmounts.
+  useEffect(() => {
+    if (!showSim) return;
+    const container = simDivRef.current;
+    if (!container || simulatorRef.current) return; // guard StrictMode double-invoke
+
+    let simulator: Simulator | null = null;
+    try {
+      simulator = new Simulator(container);
+    } catch (e) {
+      console.warn('3D sim disabled:', e);
+      setSimError(true);
+      return;
+    }
+    if (simulator.initFailed) {
+      setSimError(true);
+      simulator.dispose();
+      return;
+    }
+    setSimError(false);
+    simulator.onContextLost = () => setSimError(true);
+    simulator.loadRobotModel('/Asteria-DashMinimal.glb').catch(() => {});
+
+    const sequencer = new SimulatorSequencer(simulator);
+    simulator.sequencerVirtualPosition = sequencer.virtualPosition;
+    simulatorRef.current = simulator;
+    sequencerRef.current = sequencer;
+
+    // Route offline Run through the sequencer only while the sim is open.
+    setSimulatorRunner((commands: any[]) => {
+      setRunning(true);
+      sequencer.runCommandSequence(commands).finally(() => setRunning(false));
+    });
+
+    return () => {
+      setSimulatorRunner(null);
       simulator?.dispose();
       simulatorRef.current = null;
       sequencerRef.current = null;
     };
-  }, []);
+  }, [showSim]);
 
   // ---- Generate {"command":...} program from the workspace ----
   const generateCode = useCallback((): string => {
@@ -172,7 +305,21 @@ export default function BlockCoding() {
     const first = start?.getNextBlock();
     if (!first) return '[]';
     const code = javascriptGenerator.blockToCode(first) as string;
-    const commands = code.split(';').filter((c) => c.trim() !== '').map((c) => JSON.parse(c));
+    // Each statement block emits a `{"command":...};` segment. Skip any segment
+    // that isn't valid JSON (e.g. a stray expression from a reused built-in
+    // block) so one bad block can't abort the whole Run.
+    const commands = code
+      .split(';')
+      .map((c) => c.trim())
+      .filter((c) => c !== '')
+      .flatMap((c) => {
+        try {
+          return [JSON.parse(c)];
+        } catch {
+          console.warn('Skipping non-JSON command segment:', c);
+          return [];
+        }
+      });
     return JSON.stringify(commands);
   }, []);
 
@@ -231,13 +378,7 @@ export default function BlockCoding() {
       <div className={styles.editor}>
         <div ref={blocklyDivRef} className={styles.blockly} />
 
-        {!connected && (
-          <div className={styles.hint}>
-            Belum tersambung — <b>Run</b> akan jalan di simulator. Klik Connect
-            untuk mengendalikan robot asli.
-          </div>
-        )}
-
+        {/* Hint removed */}
         {/* Right action toolbar */}
         <div className={styles.toolbar}>
           <button className={`${styles.tbBtn} ${styles.run}`} onClick={handleRun} title="Run">
@@ -273,15 +414,25 @@ export default function BlockCoding() {
           </button>
         </div>
 
-        {/* 3D simulator card */}
+        {/* 3D simulator card — opt-in (closed by default). Run works without it. */}
         <div className={`${styles.simCard} ${showSim ? '' : styles.simHidden}`}>
           <div className={styles.simHead}>
             <span>{connected ? `Robot · ${robotInfo?.board ?? ''}` : 'Simulator'}</span>
-            <button className={styles.simToggle} onClick={() => setShowSim((v) => !v)}>
+            <button
+              className={styles.simToggle}
+              onClick={() => setShowSim((v) => !v)}
+              title={showSim ? 'Tutup simulator 3D' : 'Buka simulator 3D'}
+            >
               {showSim ? '–' : '+'}
             </button>
           </div>
-          <div ref={simDivRef} className={styles.simCanvas} />
+          {showSim && simError ? (
+            <div className={styles.simError}>
+              Simulator 3D tidak tersedia (WebGL). Menjalankan program tetap berfungsi.
+            </div>
+          ) : (
+            <div ref={simDivRef} className={styles.simCanvas} />
+          )}
         </div>
 
         {/* Serial monitor */}

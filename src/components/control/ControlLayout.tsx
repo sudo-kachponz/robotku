@@ -19,10 +19,12 @@ export default function ControlLayout({
   children,
   title,
   fullBleed = false,
+  topRightAction,
 }: {
   children: ReactNode;
   title?: string;
   fullBleed?: boolean;
+  topRightAction?: ReactNode;
 }) {
   const router = useRouter();
   const { connState } = useConnection();
@@ -46,20 +48,29 @@ export default function ControlLayout({
 
   return (
     <div className={styles.shell}>
-      {/* Top bar */}
-      <div className={styles.topLeft}>
-        <button
-          className={styles.iconBtn}
-          onClick={() => router.push('/')}
-          aria-label="Beranda"
-          title="Beranda"
-        >
-          <HomeIcon />
-        </button>
-        {title && <span className={styles.screenTitle}>{title}</span>}
-      </div>
+      {/* Top Navbar */}
+      <header className={styles.navbar}>
+        <div className={styles.topLeft}>
+          <button
+            className={styles.iconBtn}
+            onClick={() => router.push('/')}
+            aria-label="Beranda"
+            title="Beranda"
+          >
+            <HomeIcon />
+          </button>
+        </div>
 
-      <div className={styles.topCenter}>
+        <div className={styles.topCenter}>
+          {title && <h1 className={styles.screenTitle}>{title}</h1>}
+        </div>
+
+        <div className={styles.topRight}>
+          {topRightAction}
+        </div>
+      </header>
+
+      <div className={styles.connectionBadgeContainer}>
         <ConnectionBadge />
       </div>
 

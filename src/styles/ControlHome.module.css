@@ -24,7 +24,7 @@
   font-size: clamp(28px, 5vw, 40px);
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: var(--ink-900);
+  color: var(--rk-on);
 }
 
 .subtitle {
@@ -32,7 +32,7 @@
   max-width: 42ch;
   font-size: 16px;
   line-height: 1.55;
-  color: var(--ink-500);
+  color: var(--rk-on-muted);
 }
 
 .actions {
@@ -46,10 +46,10 @@
 
 .cta {
   padding: 15px 42px;
-  border-radius: var(--r-full);
+  border-radius: var(--rk-r-pill);
   border: none;
-  background: var(--green);
-  color: #fff;
+  background: var(--rk-success);
+  color: var(--rk-on);
   font-size: 17px;
   font-weight: 700;
   cursor: pointer;
@@ -61,22 +61,21 @@
   filter: brightness(1.04);
 }
 .ctaConnected {
-  background: var(--indigo-600);
-  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.28);
+  background: var(--rk-surface-alt);
+  box-shadow: var(--rk-shadow);
 }
 
 .secondary {
   padding: 15px 30px;
-  border-radius: var(--r-full);
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink-700);
+  border-radius: var(--rk-r-pill);
+  border: none;
+  background: var(--rk-surface-3);
+  color: var(--rk-on);
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.14s ease, color 0.14s ease;
+  transition: background 0.14s ease;
 }
 .secondary:hover {
-  border-color: var(--indigo-300);
-  color: var(--indigo-600);
+  background: var(--rk-surface-2);
 }
