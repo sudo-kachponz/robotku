@@ -1,160 +1,92 @@
-<p align="center">
-  <img src="public/brand/Robotku-Mascot-Logo-Horizontal.png" alt="Robotku Mascot Logo" width="480" />
-</p>
+<div align="center">
+  <img src="public/brand/Robotku-Mascot-Logo-Horizontal.png" alt="Robotku Logo" width="550" />
 
-<h1 align="center">Robotku — Web Control & Visual Block Coding Platform</h1>
+  # Robotku - Web Control & Block Coding Suite
 
-<p align="center">
-  <b>A Modern, Next-Generation Web Suite & Firmware Ecosystem for Robotics, ESP32 Control, and Visual Block Coding</b>
-</p>
+  **An intuitive, full-screen robotics control & scratch-style block coding platform built for Next.js, Blockly, and ESP32 robots.**
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Next.js-15.5-black?style=for-the-badge&logo=next.js" alt="Next.js" />
-  <img src="https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Blockly-Google-4285F4?style=for-the-badge&logo=google" alt="Blockly" />
-  <img src="https://img.shields.io/badge/ESP32-Arduino_C%2B%2B-E7352C?style=for-the-badge&logo=espressif" alt="ESP32" />
-  <img src="https://img.shields.io/badge/Styling-Robotku_Design_System-4F46E5?style=for-the-badge" alt="Robotku DS" />
-</p>
+  [![Next.js](https://img.shields.io/badge/Next.js-15.5-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+  [![Blockly](https://img.shields.io/badge/Blockly-Zelos_Renderer-FFAB19?style=for-the-badge&logo=google)](https://developers.google.com/blockly)
+  [![ESP32](https://img.shields.io/badge/Hardware-ESP32-E7352C?style=for-the-badge&logo=espressif)](https://www.espressif.com/)
+
+</div>
 
 ---
 
-## 📖 Overview
+## 🌟 Overview
 
-**Robotku** is an all-in-one web-based robotics platform engineered for physical hardware control, educational block-based programming, and interactive 3D robot simulation. Designed with a custom **Robotku Design System** built on top of *Plus Jakarta Sans* typography, glassmorphism UI elements, and vibrant category palettes, Robotku seamlessly bridges visual coding with real-time ESP32 hardware execution.
+**Robotku** is a state-of-the-art Web Application designed to control and program educational robots in real time. Built according to the **Robotku Design System**, it combines high-performance full-screen control interfaces with a high-fidelity Scratch-style (Zelos) Block Coding environment, complete with an embedded 3D Three.js simulator and real-time ESP32 hardware communication.
 
 ---
 
 ## ✨ Key Features
 
-### 🧩 1. Visual Block Coding (Blockly Engine)
-* **Custom Zelos Renderer Theme**: Reskinned with Robotku's signature visual language.
-* **Category Glass Pane**: Semi-transparent, low-saturation glassmorphism flyouts (`backdrop-filter: blur(16px)`) per active category.
-* **12 Comprehensive Categories**:
-  1. 🟩 **Movement**: Forward, Reverse, Steer, Claw, and Stop controls with timed execution.
-  2. 🟧 **Timing**: Program hat (`Start Program`), wait timers, and conditional pause handlers.
-  3. 🟦 **Display**: 5x5 LED Matrix pattern designer, LCD text & shape rendering.
-  4. 🟧 **Audio**: Tone synthesizer, sound effects, volume control, and audio recorder.
-  5. 🟪 **Sensors & Data**: Ultrasonic distance, temperature, humidity, light sensor, and I/O pin handlers.
-  6. 🩵 **Program Flow**: Loop forever, repeat N times, while loops, breaks, and if/else conditions.
-  7. 🟩 **Logic**: Logical operations, negation, and boolean values.
-  8. 🟦 **Math**: Arithmetic, modulo, random integer generation, and rounding.
-  9. 🟫 **Variables**: Variable creation, getters, and setters.
-  10. 🟪 **Functions**: Dynamic procedure definitions and execution calls.
-  11. 🟨 **Templates**: Inline documentation, note blocks, and saved snippets.
-  12. 🩷 **AI**: Experimental AI vision and frame capture stubs.
+### 🎮 1. Interactive Full-Screen Control Modes
+- **Base Robot**: Direct D-pad directional drive with claw grabber/release triggers.
+- **Port Control**: Precision testing for 8 motor/servo ports with individual sliders (`-100` to `+100`).
+- **Tank Mode**: Dual left/right tread throttle controls with turret rotation support.
+- **Joystick Mode**: Smooth 360° analog stick mixing with hardware action buttons.
 
-### 🎮 2. Control Modes Carousel
-* **Base Robot Mode**: D-pad navigation, grab & release controls.
-* **Port Control Mode**: 8-port manual PWM testing slider (-100 to 100).
-* **Tank Mode**: Dual left/right track throttles with turret steering.
-* **Joystick Mode**: Analog virtual joystick with arcade mixing algorithms.
-* **Block Coding Mode**: Workspace with live 3D simulator preview, console telemetry monitor, and hardware streaming bridge.
+### 🧩 2. Zelos Block Coding System
+- **12 Comprehensive Categories**:
+  - 🟢 **Movement**: Timed drive, steering, claw controls, emergency stop.
+  - 🟠 **Timing**: Program execution wait & conditional wait blocks.
+  - 🔵 **Display**: 5x5 LED Matrix patterns, LCD shapes, custom text strings.
+  - 🟧 **Audio**: Tone generators, sound effects, slot recording & BPM controls.
+  - 🟣 **Sensors & Data**: Touch buttons, ultrasonic, temperature, humidity, light, heading, & pin I/O.
+  - 🩵 **Program Flow**: Loop repeat, infinite loops, while guards, if/else conditions.
+  - 🧪 **Logic, Math, Variables, Functions, Templates, & AI**: Complete programming abstractions.
+- **Glassmorphic Category Flyout**: Dynamic low-saturation glass pane transparency matching each active category color (`backdrop-filter: blur(16px)`).
+- **Isolated Category Filtering**: Selecting a category opens only its corresponding blocks, preventing scroll bleeding across sections.
+- **Robotku Design System Typography**: Styled with **Plus Jakarta Sans** Display 30px / 800 Bold sidebar headers and H1 23px / 700 Bold flyout headers.
 
-### 🔌 3. ESP32 Hardware Integration
-* **Protocol & Firmware**: Line-delimited JSON RPC command protocol (`HELLO`, `DRIVE_DIRECT`, `MOVE_TIMED`, `SET_LED_COLOR`, `GET_SENSOR_DATA`, etc.).
-* **Web Serial Bridge**: Direct browser-to-ESP32 communication via USB/Serial without external drivers.
-* **Safety Failsafe**: Heartbeat watchdog automatic motor cutoff on connection loss.
+### 🤖 3. Embedded 3D Simulator & Real-Time Hardware Bridge
+- **Three.js 3D Robot Canvas**: Live 3D robot model animating program execution in real time right under the glass pane layout.
+- **ESP32 Serial & Telemetry Bridge**: Seamless WebSerial/WebSocket connectivity to stream generated JSON opcodes directly to ESP32 hardware.
 
 ---
 
-## 🛠 System Architecture
+## 🛠️ Technology Stack
 
-```
-                               ┌──────────────────────────────────────────┐
-                               │            Robotku Web Client            │
-                               │          (Next.js 15 + React 19)         │
-                               └────────────────────┬─────────────────────┘
-                                                    │
-                 ┌──────────────────────────────────┴──────────────────────────────────┐
-                 │                                                                     │
-                 ▼                                                                     ▼
-   ┌───────────────────────────┐                                         ┌───────────────────────────┐
-   │    Blockly Code Engine    │                                         │    Direct Control Modes   │
-   │ (Zelos + Glass Pane Flyout)│                                         │ (Joystick/Tank/Base/Ports)│
-   └─────────────┬─────────────┘                                         └─────────────┬─────────────┘
-                 │                                                                     │
-                 └──────────────────────────────────┬──────────────────────────────────┘
-                                                    │ JSON RPC Commands
-                                                    ▼
-                                     ┌─────────────────────────────┐
-                                     │  Web Serial Protocol Bridge │
-                                     └──────────────┬──────────────┘
-                                                    │ USB / Serial @ 115200 Baud
-                                                    ▼
-                                     ┌─────────────────────────────┐
-                                     │   Robotku ESP32 Firmware    │
-                                     │ (robotku-esp32/firmware.ino)│
-                                     └─────────────────────────────┘
-```
-
----
-
-## 📂 Directory Structure
-
-```
-robotku/
-├── firmware/
-│   └── robotku-esp32/
-│       └── robotku-esp32.ino        # ESP32 C++ Firmware source
-├── public/
-│   └── brand/
-│       ├── Robotku-Mascot-Logo-Horizontal.png
-│       └── Robotku-Mascot-Logo-Vertical.png
-├── src/
-│   ├── assets/                      # SVG icons & visual media
-│   ├── categories/                  # 12 Blockly category block definitions & generators
-│   ├── components/
-│   │   ├── blockcoding/             # Blockly workspace component & module styles
-│   │   ├── control/                 # Navigation, header, floating connection badge
-│   │   └── modes/                   # Control mode pages (Joystick, Tank, Base, Port)
-│   ├── hooks/                       # Custom React hooks (useConnection, useDrive)
-│   ├── pages/                       # Next.js page routes
-│   │   ├── control/
-│   │   │   └── modes/
-│   │   │       ├── base.tsx
-│   │   │       ├── code.tsx
-│   │   │       ├── joystick.tsx
-│   │   │       ├── port.tsx
-│   │   │       └── tank.tsx
-│   │   └── index.tsx
-│   ├── styles/                      # Modular CSS styling sheet
-│   ├── theme/                       # Design system CSS variables & tokens
-│   ├── simulator.ts                 # Three.js 3D robot preview renderer
-│   ├── toolbox.ts                   # Blockly category toolbox structure
-│   └── visual/                      # Theme definitions & category icon mappers
-├── package.json
-└── README.md
-```
+| Component | Technology |
+| :--- | :--- |
+| **Framework** | [Next.js 15](https://nextjs.org/) (Pages Router) |
+| **Language** | [TypeScript](https://www.typescriptlang.org/) |
+| **Block Coding Engine** | [Google Blockly](https://developers.google.com/blockly) (Zelos Renderer) |
+| **3D Rendering** | [Three.js](https://threejs.org/) |
+| **Design Tokens & Icons** | Vanilla CSS Modules, [Plus Jakarta Sans](https://fonts.google.com/specimen/Plus+Jakarta+Sans), Lucide Icons |
+| **Hardware Firmware** | C++ / Arduino ESP32 (`firmware/robotku-esp32/`) |
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-* **Node.js** >= 18.x
-* **npm** or **yarn** / **pnpm**
-* **Arduino IDE** (for flashing ESP32 firmware) + `ArduinoJson` v6 library
+
+- **Node.js**: v18.0.0 or higher
+- **npm**: v9.0.0 or higher
 
 ### Installation
 
-1. **Clone the repository:**
+1. **Clone the repository**:
    ```bash
    git clone git@github.com:sudo-kachponz/robotku.git
    cd robotku
    ```
 
-2. **Install frontend dependencies:**
+2. **Install dependencies**:
    ```bash
    npm install
    ```
 
-3. **Run the development server:**
+3. **Run the development server**:
    ```bash
    npm run dev
    ```
-   Open [http://localhost:3000](http://localhost:3000) in your web browser.
+   Open [http://localhost:3000](http://localhost:3000) in your browser to view the application.
 
-4. **Build for production:**
+4. **Build for production**:
    ```bash
    npm run build
    npm run start
@@ -162,22 +94,41 @@ robotku/
 
 ---
 
-## 🤖 ESP32 Firmware Setup
+## 🔌 Firmware Setup (ESP32)
 
-1. Open `firmware/robotku-esp32/robotku-esp32.ino` in Arduino IDE.
-2. Select your ESP32 board (e.g., `ESP32 Dev Module`).
-3. Ensure the `ArduinoJson` library (version 6.x) is installed via Library Manager.
-4. Upload the sketch to your ESP32 board via USB.
-5. Connect to the Robotku Web interface and select **Connect Device** via Web Serial.
+The firmware source code is located in `firmware/robotku-esp32/robotku-esp32.ino`.
+
+1. Open `firmware/robotku-esp32/robotku-esp32.ino` in **Arduino IDE** or **PlatformIO**.
+2. Install required ESP32 board support and libraries (ArduinoJson, WebSockets).
+3. Connect your ESP32 board via USB.
+4. Select board **ESP32 Dev Module** and upload.
+
+---
+
+## 📁 Repository Structure
+
+```
+robotku/
+├── public/
+│   └── brand/               # Brand assets & mascot logos
+├── src/
+│   ├── assets/              # SVGs, icons, and UI graphics
+│   ├── categories/          # 12 Blockly category definitions & generators
+│   ├── components/
+│   │   ├── blockcoding/     # Block coding editor & glass pane canvas
+│   │   ├── control/         # Control layout & connection status bar
+│   │   └── modes/           # Interactive mode components (Joystick, Tank, etc.)
+│   ├── pages/               # Next.js pages & control routing
+│   ├── styles/              # Design System tokens & module styles
+│   ├── simulator.ts         # Three.js 3D robot simulator engine
+│   ├── toolbox.ts           # Blockly category toolbox structure
+│   └── visual/              # Robotku theme, palette, and category icons
+└── firmware/
+    └── robotku-esp32/       # ESP32 Arduino C++ firmware
+```
 
 ---
 
 ## 📄 License
 
-Distributed under the MIT License. See `LICENSE` for more details.
-
----
-
-<p align="center">
-  Crafted with ❤️ by the <b>Robotku Team</b>
-</p>
+This project is open source and available under the [MIT License](LICENSE).
