@@ -19,34 +19,13 @@ export default function Home() {
         />
 
         <div className={styles.headerActions}>
-          <nav className={styles.navLinks}>
-            <a href="https://robotku.id" target="_blank" rel="noreferrer" className={styles.navLink}>
-              Program
-            </a>
-            <a href="https://robotku.id" target="_blank" rel="noreferrer" className={styles.navLink}>
-              Testimoni
-            </a>
-            <a href="https://robotku.id" target="_blank" rel="noreferrer" className={styles.navLink}>
-              Galeri
-            </a>
-            <a href="https://robotku.id" target="_blank" rel="noreferrer" className={styles.navLink}>
-              FAQ
-            </a>
-            <a href="https://robotku.id" target="_blank" rel="noreferrer" className={styles.navLink}>
-              Event
-            </a>
-            <a href="https://robotku.id" target="_blank" rel="noreferrer" className={styles.navLink}>
-              Blog
-            </a>
-          </nav>
-
           <a
-            href="https://wa.me/6285179640032"
+            href="https://robotku.id"
             target="_blank"
             rel="noreferrer"
             className={styles.navLinkBtn}
           >
-            Hubungi Kami
+            robotku.id ↗
           </a>
         </div>
       </header>

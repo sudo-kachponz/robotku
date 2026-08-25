@@ -20,17 +20,22 @@ export default function ControlLayout({
   title,
   fullBleed = false,
   topRightAction,
+  hideDock,
 }: {
   children: ReactNode;
   title?: string;
   fullBleed?: boolean;
   topRightAction?: ReactNode;
+  hideDock?: boolean;
 }) {
   const router = useRouter();
   const { connState } = useConnection();
   const [panelOpen, setPanelOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const connected = connState === 'connected';
+
+  const isAyoMulai = router.pathname === '/control';
+  const shouldHideDock = hideDock ?? isAyoMulai;
 
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -78,26 +83,28 @@ export default function ControlLayout({
       <main className={fullBleed ? styles.contentFull : styles.content}>{children}</main>
 
       {/* Bottom dock */}
-      <nav className={styles.dock}>
-        <DockButton
-          label="Projects"
-          active={router.pathname === '/control/projects'}
-          onClick={() => router.push('/control/projects')}
-        >
-          <FolderIcon />
-        </DockButton>
-        <a className={styles.dockBtn} href={COMMUNITY_URL} target="_blank" rel="noreferrer">
-          <CommunityIcon />
-          <span>Community</span>
-        </a>
-        <DockButton
-          label="Settings"
-          active={router.pathname === '/control/settings'}
-          onClick={() => router.push('/control/settings')}
-        >
-          <GearIcon />
-        </DockButton>
-      </nav>
+      {!shouldHideDock && (
+        <nav className={styles.dock}>
+          <DockButton
+            label="Projects"
+            active={router.pathname === '/control/projects'}
+            onClick={() => router.push('/control/projects')}
+          >
+            <FolderIcon />
+          </DockButton>
+          <a className={styles.dockBtn} href={COMMUNITY_URL} target="_blank" rel="noreferrer">
+            <CommunityIcon />
+            <span>Community</span>
+          </a>
+          <DockButton
+            label="Settings"
+            active={router.pathname === '/control/settings'}
+            onClick={() => router.push('/control/settings')}
+          >
+            <GearIcon />
+          </DockButton>
+        </nav>
+      )}
 
       {/* Bottom-left fullscreen */}
       <button
