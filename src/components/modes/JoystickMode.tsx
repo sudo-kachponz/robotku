@@ -6,7 +6,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ControlLayout from '../control/ControlLayout';
-import ConnectHint from './ConnectHint';
 import { useDrive, useSettings } from '../../hooks/useDrive';
 import styles from '../../styles/ModeControls.module.css';
 
@@ -88,7 +87,6 @@ export default function JoystickMode() {
 
   return (
     <ControlLayout title="Joystick">
-      <ConnectHint />
       <div className={styles.wrap}>
         <div className={styles.joyStage}>
           <div

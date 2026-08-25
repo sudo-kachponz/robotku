@@ -105,41 +105,125 @@
   .baseWrap { flex-direction: column; }
 }
 
-/* ---- Port sliders ---- */
-.portGrid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 18px 26px;
-  width: min(760px, 92vw);
+/* ---- Port Control: board (left) + 8 direction sliders (right) ---- */
+.portLayout {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(28px, 5vw, 72px);
+  flex-wrap: wrap;
+  width: 100%;
 }
-@media (max-width: 640px) {
-  .portGrid { grid-template-columns: repeat(2, 1fr); }
+
+/* LEFT — large board illustration */
+.portBoardCol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.portItem {
+.portBoardSvg {
+  width: clamp(320px, 34vw, 480px);
+  height: auto;
+  filter: drop-shadow(0 18px 40px rgba(20, 16, 60, 0.45));
+}
+
+/* RIGHT — stacked slider rows */
+.portRows {
   display: flex;
   flex-direction: column;
+  gap: 14px;
+  width: min(560px, 44vw);
+}
+
+/* number column + track column shared grid */
+.portHeader,
+.portRow {
+  display: grid;
+  grid-template-columns: 34px 1fr;
   align-items: center;
-  gap: 8px;
-  background: var(--rk-surface-3);
-  border: none;
-  border-radius: var(--rk-r-lg);
-  padding: 14px 12px;
-  box-shadow: var(--rk-shadow);
+  gap: 14px;
 }
-.portLabel {
-  font-size: 13px;
+.portHeaderLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
   font-weight: 700;
-  color: var(--rk-on);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rk-on-muted);
+  padding: 0 2px 4px;
 }
-.portValue {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--rk-accent);
+.portHeaderLabels span:nth-child(2) {
+  /* nudge Neutral to line up with the center detent */
+  transform: translateX(2px);
+}
+
+.portNum {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--rk-on);
+  text-align: center;
   font-variant-numeric: tabular-nums;
 }
+
+.portTrackWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+/* center Neutral detent */
+.portDetent {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 18px;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
 .portSlider {
+  -webkit-appearance: none;
+  appearance: none;
   width: 100%;
-  accent-color: var(--rk-accent);
+  height: 14px;
+  border-radius: var(--rk-r-pill);
+  background: rgba(255, 255, 255, 0.18); /* overridden inline (center-out fill) */
+  outline: none;
+  cursor: pointer;
+  touch-action: none;
+}
+.portSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 3px 10px rgba(20, 16, 60, 0.5);
+  cursor: grab;
+  border: none;
+}
+.portSlider::-webkit-slider-thumb:active {
+  cursor: grabbing;
+}
+.portSlider::-moz-range-thumb {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 3px 10px rgba(20, 16, 60, 0.5);
+  cursor: grab;
+  border: none;
+}
+
+@media (max-width: 900px) {
+  .portLayout { flex-direction: column; }
+  .portRows { width: min(560px, 92vw); }
+  .portBoardSvg { width: clamp(300px, 70vw, 440px); }
 }
 
 /* ---- Tank ---- */

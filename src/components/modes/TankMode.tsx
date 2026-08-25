@@ -7,7 +7,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ControlLayout from '../control/ControlLayout';
 import HoldButton from './HoldButton';
-import ConnectHint from './ConnectHint';
 import { useDrive, useSettings } from '../../hooks/useDrive';
 import styles from '../../styles/ModeControls.module.css';
 
@@ -64,7 +63,6 @@ export default function TankMode() {
 
   return (
     <ControlLayout title="Tank Mode">
-      <ConnectHint />
       <div className={styles.wrap}>
         <div className={styles.tankStage}>
           <div className={styles.throttle}>

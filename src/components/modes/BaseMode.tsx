@@ -12,7 +12,6 @@
 import { useEffect, useRef, useState } from 'react';
 import ControlLayout from '../control/ControlLayout';
 import HoldButton from './HoldButton';
-import ConnectHint from './ConnectHint';
 import RobotSprite from './RobotSprite';
 import { useDrive, useSettings } from '../../hooks/useDrive';
 import styles from '../../styles/ModeControls.module.css';
@@ -96,7 +95,6 @@ export default function BaseMode() {
 
   return (
     <ControlLayout title="Base Robot">
-      <ConnectHint />
       <div className={styles.baseWrap}>
         {/* ---- Robot stage ---- */}
         <div className={styles.stage} ref={stageRef}>
