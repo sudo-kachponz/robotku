@@ -1,13 +1,12 @@
 // src/components/academy/AcademyTopBar.tsx
 //
 // Sticky top bar for the All Lessons page: back-to-Home, Robotku Academy logo +
-// title, and the org / active-session / avatar cluster on the right.
+// title, and the session / avatar cluster on the right.
 
 import Link from 'next/link';
 import styles from '../../styles/Academy.module.css';
 
 export function AcademyTopBar({
-  org = 'Robotku School',
   sessions = { active: 1, total: 5 },
   user = 'RU',
 }: {
@@ -32,7 +31,6 @@ export function AcademyTopBar({
       </div>
 
       <div className={styles.topbarRight}>
-        <span className={styles.orgName}>{org}</span>
         <span className={styles.sessionBadge}>
           Sesi aktif: {sessions.active} / {sessions.total}
         </span>

@@ -1,9 +1,8 @@
 // src/pages/academy/index.tsx
 //
 // ROUTE /academy — Access Gate.
-// Strictly matching reference benchmark screenshot:
-// Centered single-row header, 2-column open layout with semi-bold typography,
-// custom styled inputs & buttons, and mini module preview grid under the left login option.
+// Bahasa Indonesia copy, single horizontal purple header bar,
+// Fredoka display font headings, and 2-column open access layout.
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
@@ -12,7 +11,7 @@ import styles from '../../styles/Academy.module.css';
 import { getLessons, type Lesson } from '../../data/lessons';
 import { enterAsGuest, unlockWithCode } from '../../academy/store';
 import { Thumb } from '../../components/academy/Thumb';
-import { LevelChip, ConceptChip } from '../../components/academy/chips';
+import { LevelChip } from '../../components/academy/chips';
 
 const CONTACT_EMAIL = 'team@robotku.id';
 
@@ -50,14 +49,14 @@ export default function AcademyGate() {
         <title>Robotku Academy — Akses</title>
       </Head>
       <div className={styles.page}>
-        {/* Top Bar — Single Row Horizontal */}
+        {/* Top Header Bar — Purple Single Row Horizontal */}
         <div className={styles.gateHeader}>
           <img
             className={styles.gateLogo}
             src="/brand/Robotku-Mascot-Logo-Horizontal.png"
             alt="Robotku Academy"
           />
-          <span className={styles.gateWelcome}>WELCOME TO ROBOTKU ACADEMY!</span>
+          <span className={styles.gateWelcome}>SELAMAT DATANG DI ROBOTKU ACADEMY!</span>
         </div>
 
         {/* Main 2-Column Section */}
@@ -65,7 +64,7 @@ export default function AcademyGate() {
           <div className={styles.gateGridOpen}>
             {/* Left Column — Access Code + Preview Cards */}
             <section className={styles.gateColOpen}>
-              <h2 className={styles.gateColTitleLeft}>GOT AN ACCESS CODE?</h2>
+              <h2 className={styles.gateColTitleLeft}>PUNYA KODE AKSES?</h2>
 
               <form onSubmit={submitCode}>
                 <div className={styles.codeField}>
@@ -95,7 +94,7 @@ export default function AcademyGate() {
                   className={styles.btnPurple}
                   disabled={busy}
                 >
-                  {busy ? 'Memeriksa…' : 'Access Robotku Academy!'}
+                  {busy ? 'Memeriksa…' : 'Akses Robotku Academy!'}
                 </button>
               </form>
 
@@ -122,19 +121,19 @@ export default function AcademyGate() {
 
             {/* Right Column — Guest / Contact */}
             <section className={styles.gateColOpen}>
-              <h2 className={styles.gateColTitleRight}>New here?</h2>
+              <h2 className={styles.gateColTitleRight}>Baru di sini?</h2>
               <p className={styles.gateColSub}>
-                Check out the 6 Robotku Basics lessons without a subscription! For the full range of lessons, reach out to <strong>{CONTACT_EMAIL}</strong> for subscriptions.
+                Coba 6 pelajaran Robotku Basics tanpa langganan! Untuk seluruh materi, hubungi <strong>{CONTACT_EMAIL}</strong> untuk berlangganan.
               </p>
               <div className={styles.gateActions}>
                 <button className={styles.btnGuest} onClick={continueAsGuest}>
-                  Continue As Guest
+                  Lanjut sebagai Tamu
                 </button>
                 <a
                   className={styles.btnContact}
                   href={`mailto:${CONTACT_EMAIL}`}
                 >
-                  Contact Us!
+                  Hubungi Kami
                 </a>
               </div>
             </section>
