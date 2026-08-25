@@ -1,8 +1,7 @@
 // src/pages/control/settings.tsx
 //
-// Settings — tabs [Settings | Guide]. Edits the shared RobotSettings (persisted
-// to IndexedDB via _app hydration). Sections: per-mode port mapping (chips),
-// Speed & Direction (per-port), keybind tables, reset. Guide: illustrated steps.
+// Settings — tabs [Settings | Guide]. Edits the shared RobotSettings.
+// Guide: Illustrated steps adhering strictly to Robotku Design System tokens (Pink accents & badges).
 
 import { useState } from 'react';
 import ControlLayout from '../../components/control/ControlLayout';
@@ -229,48 +228,84 @@ function KeybindTable({ title, rows }: { title: string; rows: [string, string[]]
 
 function GuideTab() {
   return (
-    <>
+    <div className={styles.guideContainer}>
+      {/* Header Banner */}
+      <div className={styles.guideBanner}>
+        <span className={styles.guideBannerBadge}>PANDUAN PENGGUNAAN</span>
+        <h2 className={styles.guideBannerTitle}>TUTORIAL PERANGKAT ROBOTKU</h2>
+        <p className={styles.guideBannerSub}>
+          Ikuti 3 langkah mudah di bawah ini untuk menghubungkan dan mengontrol robotmu!
+        </p>
+      </div>
+
       {/* Langkah 1 */}
       <div className={styles.guideCard}>
-        <h2 className={styles.guideTitle}>1. NYALAKAN PCB</h2>
+        <div className={styles.guideCardHeader}>
+          <span className={styles.stepBadge}>LANGKAH 01</span>
+          <h3 className={styles.guideTitle}>NYALAKAN PCB ROBOTKU</h3>
+        </div>
         <p className={styles.guideDesc}>
           Colok kabel USB-C dari PCB Robotku ke power bank atau laptop hingga indikator daya menyala.
         </p>
-        <img
-          src={typeof guide1Svg === 'string' ? guide1Svg : guide1Svg.src}
-          alt="1. Nyalakan PCB"
-          className={styles.guideImg}
-        />
+        <div className={styles.imgWrap}>
+          <img
+            src={typeof guide1Svg === 'string' ? guide1Svg : guide1Svg.src}
+            alt="1. Nyalakan PCB"
+            className={styles.guideImg}
+          />
+        </div>
       </div>
 
       {/* Langkah 2 */}
       <div className={styles.guideCard}>
-        <h2 className={styles.guideTitle}>2. PASANG KABEL SERVO</h2>
+        <div className={styles.guideCardHeader}>
+          <span className={styles.stepBadge}>LANGKAH 02</span>
+          <h3 className={styles.guideTitle}>PASANG KABEL SERVO DENGAN BENAR</h3>
+        </div>
         <p className={styles.guideDesc}>
           Perhatikan urutan dan warna kabel servo saat dipasang ke pin port:
-          <br />
-          <strong>Kabel Kuning → Pin S &nbsp;|&nbsp; Kabel Merah → Pin V &nbsp;|&nbsp; Kabel Cokelat → Pin G</strong>
         </p>
-        <img
-          src={typeof guide2Svg === 'string' ? guide2Svg : guide2Svg.src}
-          alt="2. Pasang Kabel Servo"
-          className={styles.guideImg}
-        />
+        <div className={styles.pinRow}>
+          <div className={`${styles.pinChip} ${styles.pinYellow}`}>
+            <span className={styles.pinDotYellow} />
+            <span>Kabel Kuning → Pin S (Signal)</span>
+          </div>
+          <div className={`${styles.pinChip} ${styles.pinRed}`}>
+            <span className={styles.pinDotRed} />
+            <span>Kabel Merah → Pin V (VCC/Daya)</span>
+          </div>
+          <div className={`${styles.pinChip} ${styles.pinBrown}`}>
+            <span className={styles.pinDotBrown} />
+            <span>Kabel Cokelat → Pin G (Ground)</span>
+          </div>
+        </div>
+        <div className={styles.imgWrap}>
+          <img
+            src={typeof guide2Svg === 'string' ? guide2Svg : guide2Svg.src}
+            alt="2. Pasang Kabel Servo"
+            className={styles.guideImg}
+          />
+        </div>
       </div>
 
       {/* Langkah 3 */}
       <div className={styles.guideCard}>
-        <h2 className={styles.guideTitle}>3. SAMBUNGKAN KE ROBOTKU</h2>
+        <div className={styles.guideCardHeader}>
+          <span className={styles.stepBadge}>LANGKAH 03</span>
+          <h3 className={styles.guideTitle}>SAMBUNGKAN BLUETOOTH KE ROBOTKU</h3>
+        </div>
         <p className={styles.guideDesc}>
-          Klik tombol Connect di kanan bawah, lalu pilih robotmu. Saat Bluetooth terhubung, ikon akan berwarna hijau!
+          Klik tombol <strong>Connect</strong> di kanan bawah, lalu pilih robotmu. Saat Bluetooth terhubung, ikon akan berwarna hijau!
         </p>
-        <img
-          src={typeof guide3Svg === 'string' ? guide3Svg : guide3Svg.src}
-          alt="3. Sambungkan ke Robotku"
-          className={styles.guideImg}
-        />
+        <div className={styles.imgWrap}>
+          <img
+            src={typeof guide3Svg === 'string' ? guide3Svg : guide3Svg.src}
+            alt="3. Sambungkan ke Robotku"
+            className={styles.guideImg}
+          />
+        </div>
       </div>
-    </>
+    </div>
   );
 }
 

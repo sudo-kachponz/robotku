@@ -36,8 +36,9 @@ export default function Home() {
         <section className={styles.heroCard}>
           <div className={styles.heroText}>
             <h1 className={styles.title}>
-              SELAMAT DATANG DI<br />
-              ROBOTKU PLAYGROUND
+              SELAMAT DATANG<br />
+              DI ROBOTKU<br />
+              PLAYGROUND
             </h1>
 
             <p className={styles.subtitle}>

@@ -1,10 +1,7 @@
 // src/pages/academy/lessons/[id].tsx
 //
-// ROUTE /academy/lessons/:id — lesson detail shell (ringkas).
-// Renders the lesson's content channels — slides (Google Slides / PDF.js target),
-// video (YouTube no-cookie), a "Praktikkan di Coding Studio" deep-link, and an
-// optional quiz — plus a progress bar. Progress (slides viewed / video ≥90% /
-// quiz passed) is tracked in IndexedDB. Full authoring is out of scope here.
+// ROUTE /academy/lessons/:id — Full Screen Presentation (PPT) Mode matching reference benchmark.
+// Fullscreen slide canvas, floating swipe prompt, bottom slide navigation, and quick access tabs.
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
@@ -16,10 +13,8 @@ import { getLesson, type Lesson } from '../../../data/lessons';
 import {
   loadLessonProgress,
   saveLessonProgress,
-  progressPercent,
   type LessonProgress,
 } from '../../../academy/store';
-import { StatusChip, LevelChip } from '../../../components/academy/chips';
 
 export default function LessonDetail() {
   const router = useRouter();
@@ -28,8 +23,10 @@ export default function LessonDetail() {
   const [lesson, setLesson] = useState<Lesson | null | undefined>(undefined);
   const [progress, setProgress] = useState<LessonProgress>({});
   const [slideIndex, setSlideIndex] = useState(0);
+  const [showPrompt, setShowPrompt] = useState(true);
+  const [activeTab, setActiveTab] = useState<'ppt' | 'video' | 'practice'>('ppt');
 
-  const TOTAL_SLIDES = 8; // stub — real count comes from the slide source later.
+  const TOTAL_SLIDES = 8; // stub for presentation slide count
 
   useEffect(() => {
     if (typeof id !== 'string') return;
@@ -57,6 +54,7 @@ export default function LessonDetail() {
       return next;
     });
   }
+
   function prevSlide() {
     setSlideIndex((i) => Math.max(i - 1, 0));
   }
@@ -64,7 +62,7 @@ export default function LessonDetail() {
   if (lesson === undefined) {
     return (
       <div className={`${page.page} ${page.loading}`}>
-        <div className={page.loadingText}>Memuat pelajaran…</div>
+        <div className={page.loadingText}>Memuat presentasi…</div>
       </div>
     );
   }
@@ -77,169 +75,159 @@ export default function LessonDetail() {
             ← Kembali ke Semua Pelajaran
           </Link>
           <h1 className={styles.title}>Pelajaran tidak ditemukan</h1>
-          <p className={styles.emptyNote}>Periksa kembali tautan yang kamu buka.</p>
         </div>
       </div>
     );
   }
 
   const content = lesson.content ?? {};
-  const pct = progressPercent(progress);
   const title = lesson.number ? `${lesson.number}. ${lesson.title}` : lesson.title;
 
   return (
     <>
       <Head>
-        <title>{`${lesson.title} — Robotku Academy`}</title>
+        <title>{`${lesson.title} — Robotku Academy Presentation`}</title>
       </Head>
-      <div className={page.page}>
-        <div className={styles.wrap}>
-          <Link href="/academy/lessons" className={styles.backLink}>
-            ← Kembali ke Semua Pelajaran
-          </Link>
+      <div className={styles.pptFullscreenPage}>
+        {/* Floating Top Banner Prompt */}
+        {showPrompt && (
+          <div className={styles.floatingPrompt}>
+            <span>Swipe or press right to see more!</span>
+            <button
+              className={styles.promptClose}
+              onClick={() => setShowPrompt(false)}
+              aria-label="Tutup petunjuk"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
-          <div className={styles.head}>
-            <div className={styles.headMain}>
-              <h1 className={styles.title}>{title}</h1>
-              <div className={styles.metaRow}>
-                <LevelChip level={lesson.levelType} />
-                <StatusChip status={lesson.status} />
-              </div>
-            </div>
+        {/* Top Header Bar */}
+        <header className={styles.pptHeader}>
+          <div className={styles.pptHeaderLeft}>
+            <button
+              className={styles.backBtn}
+              onClick={() => router.push('/academy/lessons')}
+              title="Kembali ke Katalog"
+            >
+              ←
+            </button>
+            <img
+              src="/brand/Robotku-Mascot-Logo-Horizontal.png"
+              alt="Robotku School"
+              className={styles.pptLogo}
+            />
+            <span className={styles.pptTitle}>ROBOTKU ACADEMY ({title})</span>
           </div>
 
-          {/* Progress */}
-          <div className={styles.progress}>
-            <div className={styles.progressTop}>
-              <span className={styles.progressLabel}>Kemajuan belajar</span>
-              <span className={styles.progressPct}>{pct}%</span>
+          <div className={styles.pptHeaderRight}>
+            <div className={styles.modeTabs}>
+              <button
+                className={`${styles.modeTab} ${activeTab === 'ppt' ? styles.modeTabActive : ''}`}
+                onClick={() => setActiveTab('ppt')}
+              >
+                📊 PPT
+              </button>
+              {content.videoEmbed && (
+                <button
+                  className={`${styles.modeTab} ${activeTab === 'video' ? styles.modeTabActive : ''}`}
+                  onClick={() => setActiveTab('video')}
+                >
+                  🎬 Video
+                </button>
+              )}
+              <Link
+                className={`${styles.modeTab} ${styles.modeTabPink}`}
+                href={{
+                  pathname: '/control/modes/code',
+                  query: content.practiceProjectId ? { project: content.practiceProjectId } : undefined,
+                }}
+              >
+                ⚡ Praktik Studio
+              </Link>
             </div>
-            <div className={styles.progressTrack}>
-              <div className={styles.progressFill} style={{ width: `${pct}%` }} />
-            </div>
+            <button
+              className={styles.closeFullscreenBtn}
+              onClick={() => router.push('/academy/lessons')}
+              title="Tutup Presentasi"
+            >
+              ✕
+            </button>
           </div>
+        </header>
 
-          {/* Slides */}
-          <section className={styles.section}>
-            <div className={styles.sectionHead}>
-              <h2 className={styles.sectionTitle}>Materi (Slide)</h2>
-              {progress.slidesViewed && <span className={styles.done}>✓ Selesai dilihat</span>}
-            </div>
-            <div className={styles.media}>
+        {/* Main Presentation Stage */}
+        <main className={styles.pptStage}>
+          {activeTab === 'ppt' ? (
+            <div className={styles.slideCanvas}>
               {content.slides ? (
                 <iframe
-                  className={styles.mediaFrame}
+                  className={styles.slideIframe}
                   src={content.slides}
-                  title="Slide pelajaran"
+                  title="Slide Pelajaran"
                   allowFullScreen
                 />
               ) : (
-                <div className={styles.mediaPlaceholder}>
-                  <SlidesIcon />
-                  <span className={styles.mediaHint}>
-                    Penampil slide (konversi .pptx→.pdf via PDF.js atau embed Google Slides) akan
-                    tampil di sini.
-                  </span>
+                <div className={styles.slidePlaceholder}>
+                  <div className={styles.slideSlideCover}>
+                    <h2 className={styles.slideCoverTitle}>Robotku Academy</h2>
+                    <h1 className={styles.slideCoverMain}>{title}</h1>
+                    <p className={styles.slideCoverSub}>({lesson.levelType} · Lesson {lesson.number ?? 1})</p>
+                    <div className={styles.slideCoverMascot}>🤖</div>
+                    <p className={styles.slideNotice}>(15 minutes)</p>
+                  </div>
                 </div>
               )}
             </div>
-            <div className={styles.slideNav}>
-              <button className={`${page.btnOutline} ${page.btnSm}`} onClick={prevSlide} disabled={slideIndex === 0}>
-                ← Sebelumnya
-              </button>
-              <span className={styles.slideCounter}>
-                Slide {slideIndex + 1} / {TOTAL_SLIDES}
-              </span>
-              <button
-                className={`${page.btnPrimary} ${page.btnSm}`}
-                onClick={nextSlide}
-                disabled={slideIndex === TOTAL_SLIDES - 1}
-              >
-                Berikutnya →
-              </button>
-            </div>
-          </section>
-
-          {/* Video */}
-          {content.videoEmbed && (
-            <section className={styles.section}>
-              <div className={styles.sectionHead}>
-                <h2 className={styles.sectionTitle}>Video</h2>
-                {progress.videoWatched && <span className={styles.done}>✓ Ditonton</span>}
-              </div>
-              <div className={styles.media}>
+          ) : (
+            <div className={styles.slideCanvas}>
+              {content.videoEmbed ? (
                 <iframe
-                  className={styles.mediaFrame}
+                  className={styles.slideIframe}
                   src={content.videoEmbed}
-                  title="Video pelajaran"
-                  allow="accelerometer; encrypted-media; picture-in-picture"
+                  title="Video Pelajaran"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 />
-              </div>
-              <div className={styles.slideNav}>
-                <span className={styles.slideCounter}>
-                  Progres video dilacak sampai ≥ 90% (stub).
-                </span>
-                <button
-                  className={`${page.btnPrimary} ${page.btnSm}`}
-                  onClick={() => mark({ videoWatched: true })}
-                >
-                  Tandai selesai ditonton
-                </button>
-              </div>
-            </section>
-          )}
-
-          {/* Practice deep-link */}
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Praktik</h2>
-            <p className={styles.emptyNote} style={{ marginBottom: 14 }}>
-              Terapkan pelajaran ini langsung di Coding Studio.
-            </p>
-            <div className={styles.practiceRow}>
-              <Link
-                className={page.btnPink}
-                href={{
-                  pathname: '/control/modes/code',
-                  query: content.practiceProjectId
-                    ? { project: content.practiceProjectId }
-                    : undefined,
-                }}
-              >
-                Praktikkan di Coding Studio →
-              </Link>
+              ) : (
+                <div className={styles.slidePlaceholder}>
+                  <p>Video materi belum tersedia untuk pelajaran ini.</p>
+                </div>
+              )}
             </div>
-          </section>
-
-          {/* Quiz (optional) */}
-          {content.quizId && (
-            <section className={styles.section}>
-              <div className={styles.sectionHead}>
-                <h2 className={styles.sectionTitle}>Kuis</h2>
-                {progress.quizPassed && <span className={styles.done}>✓ Lulus</span>}
-              </div>
-              <p className={styles.emptyNote} style={{ marginBottom: 14 }}>
-                Kuis singkat untuk menguji pemahaman (shell — implementasi menyusul).
-              </p>
-              <button
-                className={`${page.btnPrimary} ${page.btnSm}`}
-                onClick={() => mark({ quizPassed: true })}
-              >
-                Tandai kuis lulus
-              </button>
-            </section>
           )}
-        </div>
+        </main>
+
+        {/* Bottom Navigation Control Bar */}
+        <footer className={styles.pptControlBar}>
+          <div className={styles.pptNavGroup}>
+            <button
+              className={styles.navArrowBtn}
+              onClick={prevSlide}
+              disabled={slideIndex === 0}
+              title="Slide Sebelumnya"
+            >
+              ❮
+            </button>
+            <span className={styles.navCounter}>
+              {slideIndex + 1} / {TOTAL_SLIDES}
+            </span>
+            <button
+              className={styles.navArrowBtn}
+              onClick={nextSlide}
+              disabled={slideIndex === TOTAL_SLIDES - 1}
+              title="Slide Berikutnya"
+            >
+              ❯
+            </button>
+          </div>
+
+          <div className={styles.pptBrandGroup}>
+            <span className={styles.googleSlidesBrand}>Google Slides</span>
+          </div>
+        </footer>
       </div>
     </>
-  );
-}
-
-function SlidesIcon() {
-  return (
-    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <rect x="3" y="4" width="18" height="13" rx="2" />
-      <path d="M8 21h8M12 17v4" />
-    </svg>
   );
 }
