@@ -27,7 +27,7 @@ export function AcademyTopBar({
           src="/brand/Robotku-Mascot-Logo-Horizontal.png"
           alt="Robotku Academy"
         />
-        <span className={styles.topbarTitle}>Robotku Academy — Semua Pelajaran</span>
+        <span className={styles.topbarTitle}>Robotku Academy</span>
       </div>
 
       <div className={styles.topbarRight}>
