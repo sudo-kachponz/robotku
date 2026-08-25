@@ -135,6 +135,10 @@ import { runCommandsOnRobot, setSimulatorRunner } from '../../command_runner';
 import { estop, onTelemetry } from '../../app/connection';
 import { Simulator } from '../../simulator';
 import { SimulatorSequencer } from '../../simulator_sequencer';
+import SimStage from './SimStage';
+import { ProgramRunner } from '../../runtime/ProgramRunner';
+import { SimSink } from '../../runtime/SimSink';
+import { ingestTelemetry } from '../../runtime/telemetryCache';
 import { useConnection } from '../../hooks/useConnection';
 import { takePendingWorkspace } from '../../app/editorBridge';
 import { loadProjects, persistProjects, type RbkProject } from '../../app/persistence';
@@ -167,11 +171,30 @@ export default function BlockCoding() {
   const simulatorRef = useRef<Simulator | null>(null);
   const sequencerRef = useRef<SimulatorSequencer | null>(null);
 
+  // Shared headless runtime (no WebGL): drives the 2D stage and runs offline even
+  // with every panel closed.
+  const simSinkRef = useRef<SimSink | null>(null);
+  if (!simSinkRef.current) simSinkRef.current = new SimSink();
+  const runnerRef = useRef<ProgramRunner | null>(null);
+  if (!runnerRef.current) runnerRef.current = new ProgramRunner(simSinkRef.current);
+  const runningBlockIdRef = useRef<string | null>(null);
+
   const [running, setRunning] = useState(false);
   const [showMonitor, setShowMonitor] = useState(false);
   const [showSim, setShowSim] = useState(false);
+  const [use3D, setUse3D] = useState(false);
   const [simError, setSimError] = useState(false);
+  const [reduced, setReduced] = useState(false);
   const [telemetry, setTelemetry] = useState<string[]>([]);
+
+  // Register the shared 2D runner as the offline simulator runner (used by
+  // runCommandsOnRobot when no board is connected).
+  const registerSimSinkRunner = useCallback(() => {
+    setSimulatorRunner((commands: any[]) => {
+      setRunning(true);
+      runnerRef.current!.run(commands).finally(() => setRunning(false));
+    });
+  }, []);
 
   // ---- Boot the editor once, on mount (client only) ----
   useEffect(() => {
@@ -233,11 +256,31 @@ export default function BlockCoding() {
     // OFF by default and only spun up when the user opens the Simulator panel.
 
     onTelemetry((msg) => {
+      ingestTelemetry(msg);
       setTelemetry((prev) => [
         ...prev.slice(-200),
         typeof msg === 'string' ? msg : JSON.stringify(msg),
       ]);
     });
+
+    // Glow the block whose id produced the current command (params._bid).
+    runnerRef.current!.onStep = (_pc, cmd) => {
+      const ws = workspaceRef.current;
+      if (!ws) return;
+      const prev = runningBlockIdRef.current;
+      if (prev) ws.getBlockById(prev)?.getSvgRoot()?.classList.remove('blocklyRunningBlock');
+      const bid = cmd?.params?._bid as string | undefined;
+      if (bid) {
+        ws.getBlockById(bid)?.getSvgRoot()?.classList.add('blocklyRunningBlock');
+        runningBlockIdRef.current = bid;
+      } else {
+        runningBlockIdRef.current = null;
+      }
+    };
+
+    // Register the shared 2D runner ONCE on mount (not inside the sim effect) so
+    // Run works offline even with every panel closed.
+    registerSimSinkRunner();
 
     const onResize = () => Blockly.svgResize(workspace);
     window.addEventListener('resize', onResize);
@@ -256,7 +299,7 @@ export default function BlockCoding() {
   // ---- Lazy 3D simulator (opt-in). Default OFF; create exactly one WebGL
   // context when the panel opens and dispose it when it closes / unmounts.
   useEffect(() => {
-    if (!showSim) return;
+    if (!showSim || !use3D) return;
     const container = simDivRef.current;
     if (!container || simulatorRef.current) return; // guard StrictMode double-invoke
 
@@ -289,12 +332,22 @@ export default function BlockCoding() {
     });
 
     return () => {
-      setSimulatorRunner(null);
       simulator?.dispose();
       simulatorRef.current = null;
       sequencerRef.current = null;
+      // Hand offline Run back to the shared 2D runner.
+      registerSimSinkRunner();
     };
-  }, [showSim]);
+  }, [showSim, use3D, registerSimSinkRunner]);
+
+  // ---- prefers-reduced-motion (freeze the 2D animation like BaseMode) ----
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const apply = () => setReduced(mq.matches);
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
 
   // ---- Generate {"command":...} program from the workspace ----
   const generateCode = useCallback((): string => {
@@ -325,12 +378,26 @@ export default function BlockCoding() {
 
   const handleRun = useCallback(() => {
     const json = generateCode();
-    if (connected) setRunning(true); // simulator path toggles this itself
-    runCommandsOnRobot(json);
-  }, [connected, generateCode]);
+    if (connected) {
+      // Stream identical bytes to the firmware interpreter (unchanged path)…
+      setRunning(true);
+      runCommandsOnRobot(json);
+      // …and mirror on the 2D stage when it's open so the sprite shadows the robot.
+      if (showSim && !use3D) {
+        let commands: any[] = [];
+        try { commands = JSON.parse(json); } catch { commands = []; }
+        runnerRef.current!.run(commands).finally(() => setRunning(false));
+      }
+    } else {
+      // Disconnected → runCommandsOnRobot dispatches to the registered runner
+      // (SimSink 2D by default, or the 3D sequencer when that beta panel is open).
+      runCommandsOnRobot(json);
+    }
+  }, [connected, generateCode, showSim, use3D]);
 
   const handleStop = useCallback(() => {
     void estop();
+    runnerRef.current?.stop();
     sequencerRef.current?.stopSequence();
     setRunning(false);
   }, []);
@@ -414,25 +481,38 @@ export default function BlockCoding() {
           </button>
         </div>
 
-        {/* 3D simulator card — opt-in (closed by default). Run works without it. */}
+        {/* Simulator card — 2D by default (no WebGL). 3D is an opt-in beta. */}
         <div className={`${styles.simCard} ${showSim ? '' : styles.simHidden}`}>
           <div className={styles.simHead}>
             <span>{connected ? `Robot · ${robotInfo?.board ?? ''}` : 'Simulator'}</span>
-            <button
-              className={styles.simToggle}
-              onClick={() => setShowSim((v) => !v)}
-              title={showSim ? 'Tutup simulator 3D' : 'Buka simulator 3D'}
-            >
-              {showSim ? '–' : '+'}
-            </button>
-          </div>
-          {showSim && simError ? (
-            <div className={styles.simError}>
-              Simulator 3D tidak tersedia (WebGL). Menjalankan program tetap berfungsi.
+            <div className={styles.simHeadActions}>
+              {showSim && (
+                <label className={styles.simSwitch} title="Simulator 3D (beta, memakai WebGL)">
+                  <input type="checkbox" checked={use3D} onChange={(e) => setUse3D(e.target.checked)} />
+                  <span>3D (beta)</span>
+                </label>
+              )}
+              <button
+                className={styles.simToggle}
+                onClick={() => setShowSim((v) => !v)}
+                title={showSim ? 'Tutup simulator' : 'Buka simulator'}
+              >
+                {showSim ? '–' : '+'}
+              </button>
             </div>
-          ) : (
-            <div ref={simDivRef} className={styles.simCanvas} />
-          )}
+          </div>
+          {showSim &&
+            (use3D ? (
+              simError ? (
+                <div className={styles.simError}>
+                  Simulator 3D tidak tersedia (WebGL). Program tetap berjalan di 2D.
+                </div>
+              ) : (
+                <div ref={simDivRef} className={styles.simCanvas} />
+              )
+            ) : (
+              <SimStage sink={simSinkRef.current!} reduced={reduced} />
+            ))}
         </div>
 
         {/* Serial monitor */}

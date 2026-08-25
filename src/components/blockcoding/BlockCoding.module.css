@@ -108,13 +108,14 @@
   filter: brightness(1.1);
 }
 
-/* 3D simulator card */
+/* Simulator card (2D default, 3D beta) */
 .simCard {
   position: absolute;
   right: 18px;
   bottom: 90px;
   z-index: 22;
-  width: 320px;
+  width: 340px;
+  max-width: calc(100vw - 36px);
   background: var(--rk-surface-3);
   border: none;
   border-radius: var(--rk-r-lg);
@@ -124,6 +125,32 @@
 
 .simHidden .simCanvas {
   height: 0;
+}
+
+.simHeadActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.simSwitch {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--rk-on-muted);
+  cursor: pointer;
+  user-select: none;
+}
+.simSwitch input {
+  accent-color: var(--rk-accent);
+  cursor: pointer;
+}
+
+/* Running-block glow — set by ProgramRunner.onStep via params._bid. */
+.blockly :global(.blocklyRunningBlock) {
+  filter: drop-shadow(0 0 0 #ffd54a) drop-shadow(0 0 6px rgba(255, 193, 7, 0.9));
 }
 
 .simHead {
@@ -224,7 +251,7 @@
 
 @media (max-width: 640px) {
   .simCard {
-    width: 200px;
+    width: calc(100vw - 36px);
   }
 }
 

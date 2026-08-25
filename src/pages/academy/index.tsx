@@ -1,9 +1,9 @@
 // src/pages/academy/index.tsx
 //
 // ROUTE /academy — Access Gate.
-// Wide, open layout strictly matching reference screenshots:
-// Header in a single horizontal bar (Logo + Title), spacious 2-column login options,
-// and module preview cards positioned BELOW across full width.
+// Strictly matching reference benchmark screenshot:
+// Centered single-row header, 2-column open layout with semi-bold typography,
+// custom styled inputs & buttons, and mini module preview grid under the left login option.
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
@@ -24,7 +24,7 @@ export default function AcademyGate() {
   const [busy, setBusy] = useState(false);
   const [basics, setBasics] = useState<Lesson[]>([]);
 
-  // Free Basics preview (live Basics only — same set a guest can open).
+  // Free Basics preview
   useEffect(() => {
     getLessons({ guest: true }).then((ls) => setBasics(ls.slice(0, 6)));
   }, []);
@@ -50,23 +50,22 @@ export default function AcademyGate() {
         <title>Robotku Academy — Akses</title>
       </Head>
       <div className={styles.page}>
-        {/* Top Header Bar — Single Horizontal Row */}
+        {/* Top Bar — Single Row Horizontal */}
         <div className={styles.gateHeader}>
           <img
             className={styles.gateLogo}
             src="/brand/Robotku-Mascot-Logo-Horizontal.png"
             alt="Robotku Academy"
           />
-          <h1 className={styles.gateWelcome}>WELCOME TO ROBOTKU ACADEMY!</h1>
+          <span className={styles.gateWelcome}>WELCOME TO ROBOTKU ACADEMY!</span>
         </div>
 
-        {/* Spacious Main Container */}
+        {/* Main 2-Column Section */}
         <div className={styles.gateContainer}>
-          {/* Top Row: Login Options (No Cards wrapping container) */}
           <div className={styles.gateGridOpen}>
-            {/* Left Column — Access Code */}
+            {/* Left Column — Access Code + Preview Cards */}
             <section className={styles.gateColOpen}>
-              <h2 className={styles.gateColTitle}>GOT AN ACCESS CODE?</h2>
+              <h2 className={styles.gateColTitleLeft}>GOT AN ACCESS CODE?</h2>
 
               <form onSubmit={submitCode}>
                 <div className={styles.codeField}>
@@ -93,58 +92,52 @@ export default function AcademyGate() {
 
                 <button
                   type="submit"
-                  className={`${styles.btnPurple} ${styles.fullBtn}`}
+                  className={styles.btnPurple}
                   disabled={busy}
                 >
                   {busy ? 'Memeriksa…' : 'Access Robotku Academy!'}
                 </button>
               </form>
+
+              {/* Module Cards Grid directly under Left Access Form */}
+              <div className={styles.leftPreviewSection}>
+                <div className={styles.leftPreviewGrid}>
+                  {basics.map((l) => (
+                    <div key={l.id} className={styles.miniTile}>
+                      <Thumb src={l.thumbnail} alt={l.title} emoji="🤖" />
+                      <div className={styles.miniTileBody}>
+                        <div className={styles.miniTileTitle}>
+                          {l.number ? `${l.number}. ${l.title}` : l.title}
+                        </div>
+                        <div className={styles.miniTileMeta}>
+                          <LevelChip level={l.levelType} />
+                        </div>
+                        <span className={styles.miniPublicLink}>Public Link ↗</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </section>
 
             {/* Right Column — Guest / Contact */}
             <section className={styles.gateColOpen}>
-              <h2 className={styles.gateColTitle}>New here?</h2>
+              <h2 className={styles.gateColTitleRight}>New here?</h2>
               <p className={styles.gateColSub}>
                 Check out the 6 Robotku Basics lessons without a subscription! For the full range of lessons, reach out to <strong>{CONTACT_EMAIL}</strong> for subscriptions.
               </p>
               <div className={styles.gateActions}>
-                <button className={`${styles.btnOutlineWide} ${styles.fullBtn}`} onClick={continueAsGuest}>
+                <button className={styles.btnGuest} onClick={continueAsGuest}>
                   Continue As Guest
                 </button>
                 <a
-                  className={`${styles.btnDarkWide} ${styles.fullBtn}`}
+                  className={styles.btnContact}
                   href={`mailto:${CONTACT_EMAIL}`}
                 >
                   Contact Us!
                 </a>
               </div>
             </section>
-          </div>
-
-          {/* Module Cards Section BELOW Login Features */}
-          <div className={styles.previewSection}>
-            <h3 className={styles.previewSectionTitle}>PRATINJAU ROBOTKU BASICS (GRATIS)</h3>
-            <div className={styles.previewGridFull}>
-              {basics.map((l) => (
-                <div key={l.id} className={styles.tile}>
-                  <Thumb src={l.thumbnail} alt={l.title} emoji="🤖" />
-                  <div className={styles.tileBody}>
-                    <div className={styles.tileTitle}>
-                      {l.number ? `${l.number}. ${l.title}` : l.title}
-                    </div>
-                    <div className={styles.tileMetaRow}>
-                      <LevelChip level={l.levelType} />
-                    </div>
-                    <div className={styles.tileMetaRow}>
-                      {l.concepts.slice(0, 2).map((c) => (
-                        <ConceptChip key={c} concept={c} />
-                      ))}
-                    </div>
-                    <span className={styles.publicLink}>Public Link ↗</span>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </div>

@@ -10,7 +10,7 @@ import type { RobotSink } from './ProgramRunner';
 
 // Virtual arena — pose is kept in px inside a square stage, clamped to ±42% of the
 // half-extent exactly like BaseMode's clamp(). SimStage renders in this same space.
-export const SIM_STAGE = 300; // px (logical); SimStage draws at this size
+export const SIM_STAGE = 276; // px (logical); SimStage draws at this size
 const HALF = SIM_STAGE / 2;
 const CLAMP = HALF * 0.42;
 

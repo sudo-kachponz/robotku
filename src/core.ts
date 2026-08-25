@@ -1,6 +1,7 @@
 // src/core.ts
 
 import * as Blockly from 'blockly';
+import { javascriptGenerator } from 'blockly/javascript';
 import { FieldColourHsvSliders } from '@blockly/field-colour-hsv-sliders';
 import { FieldSlider } from '@blockly/field-slider';
 
@@ -82,6 +83,47 @@ export function initializeAstroidEditor(): void {
     }
   }
 
+  stampBlockIdsIntoCommands();
+
   isInitialized = true;
   console.log("Astroid Blockly Core Initialized.");
+}
+
+/**
+ * Wrap every statement generator ONCE so each emitted `{"command":...,"params":{...}}`
+ * segment carries `params._bid` = the source block id. The runtime uses it to glow
+ * the running block (onStep). Firmware ignores unknown params keys, so the wire
+ * contract is unchanged. Reporter generators (which return a [code, order] tuple)
+ * are skipped — they produce expressions, not command segments. Because nested
+ * child code is generated first, each segment is stamped by its OWN block: we only
+ * add `_bid` to segments that don't already have one.
+ */
+function stampBlockIdsIntoCommands(): void {
+  const forBlock = javascriptGenerator.forBlock;
+  for (const type of Object.keys(forBlock)) {
+    const original = forBlock[type];
+    if (typeof original !== 'function') continue;
+    forBlock[type] = function (this: unknown, block: Blockly.Block, generator: typeof javascriptGenerator) {
+      const code = (original as any).call(this, block, generator);
+      if (typeof code !== 'string' || code.indexOf('"command"') === -1) return code;
+      return code
+        .split(';')
+        .map((segment) => {
+          const trimmed = segment.trim();
+          if (!trimmed) return segment;
+          try {
+            const obj = JSON.parse(trimmed);
+            if (obj && typeof obj === 'object' && obj.command) {
+              obj.params = obj.params || {};
+              if (obj.params._bid == null) obj.params._bid = block.id;
+              return JSON.stringify(obj);
+            }
+          } catch {
+            /* not a JSON command segment — leave as-is */
+          }
+          return segment;
+        })
+        .join(';');
+    } as typeof original;
+  }
 }
