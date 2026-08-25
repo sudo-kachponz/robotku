@@ -91,17 +91,18 @@
 
 .title {
   margin: 0 0 16px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: var(--font-display);
   font-size: 54px;
-  font-weight: 800;
+  font-weight: 600;
   color: #fff;
   line-height: 1.1;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 .desc {
   margin: 0 0 36px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: var(--font);
   font-size: 24px;
   font-weight: 500;
   line-height: 1.5;
@@ -114,9 +115,11 @@
   border: none;
   background: var(--rk-success);
   color: #fff;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: var(--font-display);
   font-size: 24px;
-  font-weight: 800;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
   cursor: pointer;
   box-shadow: 0 12px 32px rgba(22, 163, 74, 0.4);
   transition: filter 0.12s ease, transform 0.15s ease;

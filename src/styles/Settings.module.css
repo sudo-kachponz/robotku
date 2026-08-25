@@ -212,6 +212,46 @@
 }
 
 /* Guide */
+.guideCard {
+  background: var(--rk-surface-3);
+  border: none;
+  border-radius: var(--rk-r-xl);
+  box-shadow: var(--rk-shadow);
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.guideTitle {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #FFFFFF;
+}
+
+.guideDesc {
+  margin: 0 0 20px;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.88);
+  max-width: 580px;
+}
+
+.guideImg {
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  border-radius: 12px;
+  display: block;
+}
+
 .guideStep {
   display: flex;
   gap: 18px;

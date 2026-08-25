@@ -5,77 +5,94 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 8px;
-}
-
-.logo {
-  height: 34px;
-  margin-bottom: 8px;
+  gap: 16px;
+  padding: 20px;
 }
 
 .mascot {
-  width: 180px;
+  width: clamp(220px, 30vw, 320px);
   height: auto;
-  filter: drop-shadow(0 20px 34px rgba(27, 24, 64, 0.2));
+  filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.3));
+  transition: transform 0.3s ease;
+}
+
+.mascot:hover {
+  transform: scale(1.03);
 }
 
 .title {
-  margin: 14px 0 0;
-  font-size: clamp(28px, 5vw, 40px);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--rk-on);
+  margin: 12px 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(38px, 6vw, 54px);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #FFFFFF;
+  line-height: 1.1;
 }
 
 .subtitle {
   margin: 0;
-  max-width: 42ch;
-  font-size: 16px;
-  line-height: 1.55;
-  color: var(--rk-on-muted);
+  max-width: 540px;
+  font-family: var(--font);
+  font-size: clamp(17px, 2.4vw, 22px);
+  font-weight: 500;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .actions {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-top: 22px;
+  gap: 18px;
+  margin-top: 28px;
   flex-wrap: wrap;
   justify-content: center;
 }
 
 .cta {
-  padding: 15px 42px;
-  border-radius: var(--rk-r-pill);
+  padding: 18px 48px;
+  border-radius: 99px;
   border: none;
   background: var(--rk-success);
-  color: var(--rk-on);
-  font-size: 17px;
-  font-weight: 700;
+  color: #FFFFFF;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  box-shadow: 0 10px 24px rgba(22, 163, 74, 0.28);
-  transition: transform 0.12s ease, filter 0.12s ease;
+  box-shadow: 0 12px 32px rgba(22, 163, 74, 0.4);
+  transition: transform 0.15s ease, filter 0.15s ease;
 }
+
 .cta:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.04);
+  transform: translateY(-3px) scale(1.02);
+  filter: brightness(1.08);
 }
+
 .ctaConnected {
   background: var(--rk-surface-alt);
   box-shadow: var(--rk-shadow);
 }
 
 .secondary {
-  padding: 15px 30px;
-  border-radius: var(--rk-r-pill);
+  padding: 18px 36px;
+  border-radius: 99px;
   border: none;
   background: var(--rk-surface-3);
-  color: var(--rk-on);
-  font-size: 16px;
+  color: #FFFFFF;
+  font-family: var(--font-display);
+  font-size: 19px;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  transition: background 0.14s ease;
+  box-shadow: var(--rk-shadow);
+  transition: background 0.16s ease, transform 0.15s ease;
 }
+
 .secondary:hover {
   background: var(--rk-surface-2);
+  transform: translateY(-2px);
 }

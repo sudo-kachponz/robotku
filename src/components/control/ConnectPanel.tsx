@@ -12,12 +12,14 @@ import {
 } from '../../transport';
 import { connect, disconnect } from '../../app/connection';
 import { useConnection } from '../../hooks/useConnection';
+import UnsupportedBrowserModal from './UnsupportedBrowserModal';
 import styles from './ConnectPanel.module.css';
 
 export default function ConnectPanel({ onClose }: { onClose: () => void }) {
   const { connState, robotInfo } = useConnection();
   const [caps, setCaps] = useState({ ble: false, serial: false });
   const [busy, setBusy] = useState<TransportKind | null>(null);
+  const [showUnsupportedModal, setShowUnsupportedModal] = useState(false);
 
   // Capability detection must run client-side only (navigator is undefined on
   // the server) — otherwise SSR/hydration would disagree.
@@ -29,79 +31,99 @@ export default function ConnectPanel({ onClose }: { onClose: () => void }) {
   const isConnected = connState === 'connected';
 
   async function handleConnect(kind: TransportKind) {
+    if (kind === 'ble' && !caps.ble) {
+      setShowUnsupportedModal(true);
+      return;
+    }
+
     setBusy(kind);
     try {
       await connect(kind);
       onClose();
-    } catch {
-      // connection.ts already toasts the reason.
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (kind === 'ble' && (msg.includes('Bluetooth') || !navigator.bluetooth)) {
+        setShowUnsupportedModal(true);
+      }
     } finally {
       setBusy(null);
     }
   }
 
   return (
-    <div className={styles.backdrop} onClick={onClose}>
-      <div
-        className={styles.panel}
-        role="dialog"
-        aria-label="Sambungkan robot"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className={styles.header}>
-          <h2 className={styles.title}>Sambungkan Robot</h2>
-          <button className={styles.close} onClick={onClose} aria-label="Tutup">
-            ✕
-          </button>
-        </div>
-
-        {isConnected ? (
-          <div className={styles.body}>
-            <div className={styles.connectedNote}>
-              <span className={styles.okDot} />
-              Tersambung ke <b>{robotInfo?.board}</b> · fw {robotInfo?.fwVersion}
-            </div>
-            <button
-              className={`${styles.btn} ${styles.disconnectBtn}`}
-              onClick={async () => {
-                await disconnect();
-                onClose();
-              }}
-            >
-              Putuskan
+    <>
+      <div className={styles.backdrop} onClick={onClose}>
+        <div
+          className={styles.panel}
+          role="dialog"
+          aria-label="Sambungkan robot"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className={styles.header}>
+            <h2 className={styles.title}>Sambungkan Robot</h2>
+            <button className={styles.close} onClick={onClose} aria-label="Tutup">
+              ✕
             </button>
           </div>
-        ) : (
-          <div className={styles.body}>
-            <button
-              className={`${styles.btn} ${styles.bleBtn}`}
-              disabled={!caps.ble || busy !== null}
-              onClick={() => handleConnect('ble')}
-            >
-              <BluetoothIcon />
-              <span>{busy === 'ble' ? 'Menyambungkan…' : 'Bluetooth'}</span>
-            </button>
 
-            <button
-              className={`${styles.btn} ${styles.serialBtn}`}
-              disabled={!caps.serial || busy !== null}
-              onClick={() => handleConnect('serial')}
-            >
-              <UsbIcon />
-              <span>{busy === 'serial' ? 'Menyambungkan…' : 'USB (Serial)'}</span>
-            </button>
-
-            {!anySupported && (
-              <div className={styles.unsupported}>
-                Browser ini belum mendukung Web Bluetooth / Web Serial. Buka di{' '}
-                <b>Chrome</b> atau <b>Edge</b> (desktop) lewat HTTPS/localhost.
-                Kamu tetap bisa memakai <b>Block Coding</b> di simulator.
+          {isConnected ? (
+            <div className={styles.body}>
+              <div className={styles.connectedNote}>
+                <span className={styles.okDot} />
+                Tersambung ke <b>{robotInfo?.board}</b> · fw {robotInfo?.fwVersion}
               </div>
-            )}
-          </div>
-        )}
+              <button
+                className={`${styles.btn} ${styles.disconnectBtn}`}
+                onClick={async () => {
+                  await disconnect();
+                  onClose();
+                }}
+              >
+                Putuskan
+              </button>
+            </div>
+          ) : (
+            <div className={styles.body}>
+              <button
+                className={`${styles.btn} ${styles.bleBtn}`}
+                disabled={busy !== null}
+                onClick={() => handleConnect('ble')}
+              >
+                <BluetoothIcon />
+                <span>{busy === 'ble' ? 'Menyambungkan…' : 'Bluetooth'}</span>
+              </button>
+
+              <button
+                className={`${styles.btn} ${styles.serialBtn}`}
+                disabled={!caps.serial || busy !== null}
+                onClick={() => handleConnect('serial')}
+              >
+                <UsbIcon />
+                <span>{busy === 'serial' ? 'Menyambungkan…' : 'USB (Serial)'}</span>
+              </button>
+
+              {!anySupported && (
+                <div
+                  className={styles.unsupported}
+                  onClick={() => setShowUnsupportedModal(true)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  Browser ini belum mendukung Web Bluetooth / Web Serial.{' '}
+                  <span style={{ textDecoration: 'underline', color: 'var(--pink-400)' }}>
+                    Lihat detail error
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      <UnsupportedBrowserModal
+        isOpen={showUnsupportedModal}
+        onClose={() => setShowUnsupportedModal(false)}
+      />
+    </>
   );
 }
 

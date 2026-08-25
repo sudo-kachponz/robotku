@@ -1,0 +1,190 @@
+/* src/styles/AcademyDetail.module.css
+ *
+ * Robotku Academy — lesson detail shell (slides / video / practice / quiz +
+ * progress). Same readable-immersive theme: indigo chrome, white content cards.
+ */
+
+.wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.headMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  font-size: clamp(22px, 4vw, 28px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--indigo-900);
+  margin: 0 0 8px;
+}
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Progress bar */
+.progress {
+  margin: 18px 0 24px;
+}
+
+.progressTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+
+.progressLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-600);
+}
+
+.progressPct {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--indigo-600);
+}
+
+.progressTrack {
+  height: 10px;
+  border-radius: var(--r-full);
+  background: var(--indigo-100);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: var(--r-full);
+  background: linear-gradient(90deg, var(--indigo-600), var(--pink-500));
+  transition: width 0.4s ease;
+}
+
+/* Content sections */
+.section {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow-sm);
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.sectionTitle {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ink-900);
+  margin: 0;
+}
+
+.done {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--green);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Media placeholder (slides / video) */
+.media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: linear-gradient(135deg, var(--indigo-100), var(--indigo-200));
+}
+
+.mediaFrame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.mediaPlaceholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--indigo-800);
+  text-align: center;
+  padding: 20px;
+}
+
+.mediaPlaceholder svg {
+  opacity: 0.6;
+}
+
+.mediaHint {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--indigo-700);
+  max-width: 40ch;
+}
+
+/* Slide nav */
+.slideNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  gap: 12px;
+}
+
+.slideCounter {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-500);
+}
+
+.emptyNote {
+  font-size: 14px;
+  color: var(--ink-500);
+}
+
+.practiceRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--indigo-600);
+  margin-bottom: 16px;
+}

@@ -1,0 +1,103 @@
+/* src/styles/RobotSprite.module.css
+ *
+ * Visuals + animation for the Base Robot top-down sprite. Wheel spin and gripper
+ * open/close are pure CSS driven by classes toggled in RobotSprite.tsx.
+ */
+
+.svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  display: block;
+}
+
+.shadow {
+  fill: rgba(20, 16, 60, 0.35);
+}
+
+/* ---- Chassis ---- */
+.chassis {
+  fill: #C2C6DB;
+  stroke: #9499B8;
+  stroke-width: 2;
+}
+.bumper {
+  fill: var(--indigo-600, #4F46E5);
+}
+.battery {
+  fill: #352DA0;
+}
+.batteryStripe {
+  fill: #A3A8FB;
+}
+.light {
+  fill: var(--pink-500, #EC2D8F);
+}
+
+/* ---- Wheels ---- */
+.wheel {
+  transform-box: view-box;
+  /* transform-origin set inline per wheel (SVG user units) */
+}
+.tire {
+  fill: #1B1840;
+  stroke: #403C6B;
+  stroke-width: 2;
+}
+.spoke {
+  stroke: #6B7194;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.hub {
+  fill: var(--indigo-400, #8085F4);
+}
+.spinFwd {
+  animation: rk-spin 0.7s linear infinite;
+}
+.spinBack {
+  animation: rk-spin 0.7s linear infinite reverse;
+}
+@keyframes rk-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---- Gripper ---- */
+.claw {
+  fill: #5B54EA;
+  stroke: #A3A8FB;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.gripper {
+  transform-box: view-box;
+  transition: transform 0.25s ease;
+}
+.gripperL {
+  transform-origin: 74px 78px;
+}
+.gripperR {
+  transform-origin: 126px 78px;
+}
+/* Closed = tips swing toward the centre; open = swing apart. */
+.gripperL.closed {
+  transform: rotate(16deg);
+}
+.gripperL.open {
+  transform: rotate(-6deg);
+}
+.gripperR.closed {
+  transform: rotate(-16deg);
+}
+.gripperR.open {
+  transform: rotate(6deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinFwd,
+  .spinBack {
+    animation: none;
+  }
+}

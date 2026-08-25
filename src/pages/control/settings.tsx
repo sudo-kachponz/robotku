@@ -10,6 +10,9 @@ import { useSettings } from '../../hooks/useDrive';
 import { setSettings, resetSettings } from '../../app/settingsStore';
 import { cloneSettings, type RobotSettings, type Speed } from '../../domain/settings';
 import { showToast } from '../../ui/toast';
+import guide1Svg from '../../assets/Guide1.svg';
+import guide2Svg from '../../assets/Guide2.svg';
+import guide3Svg from '../../assets/Guide3.svg';
 import styles from '../../styles/Settings.module.css';
 
 const COMMUNITY_URL = 'https://robotku.id/community';
@@ -227,40 +230,45 @@ function KeybindTable({ title, rows }: { title: string; rows: [string, string[]]
 function GuideTab() {
   return (
     <>
-      <div className={styles.card}>
-        <div className={styles.guideStep}>
-          <div className={styles.guideNum}>1</div>
-          <div className={styles.guideBody}>
-            <h3>Nyalakan PCB</h3>
-            <p>Colok kabel USB-C dari PCB Robotku ke power bank atau laptop hingga lampu indikator menyala.</p>
-          </div>
-        </div>
+      {/* Langkah 1 */}
+      <div className={styles.guideCard}>
+        <h2 className={styles.guideTitle}>1. NYALAKAN PCB</h2>
+        <p className={styles.guideDesc}>
+          Colok kabel USB-C dari PCB Robotku ke power bank atau laptop hingga indikator daya menyala.
+        </p>
+        <img
+          src={typeof guide1Svg === 'string' ? guide1Svg : guide1Svg.src}
+          alt="1. Nyalakan PCB"
+          className={styles.guideImg}
+        />
       </div>
 
-      <div className={styles.card}>
-        <div className={styles.guideStep}>
-          <div className={styles.guideNum}>2</div>
-          <div className={styles.guideBody}>
-            <h3>Pasang Servo</h3>
-            <p>Perhatikan orientasi kabel servo pada pin port:</p>
-            <div className={styles.pinRow}>
-              <span className={styles.pin}><span className={styles.pinDot} style={{ background: '#EAB308' }} /> Kuning → pin S</span>
-              <span className={styles.pin}><span className={styles.pinDot} style={{ background: '#E5484D' }} /> Merah → pin V</span>
-              <span className={styles.pin}><span className={styles.pinDot} style={{ background: '#7C4A2D' }} /> Coklat → pin G</span>
-            </div>
-            <p style={{ marginTop: 8 }}>✓ Kabel kuning di sisi bertanda S. ✗ Jangan terbalik — bisa merusak servo.</p>
-          </div>
-        </div>
+      {/* Langkah 2 */}
+      <div className={styles.guideCard}>
+        <h2 className={styles.guideTitle}>2. PASANG KABEL SERVO</h2>
+        <p className={styles.guideDesc}>
+          Perhatikan urutan dan warna kabel servo saat dipasang ke pin port:
+          <br />
+          <strong>Kabel Kuning → Pin S &nbsp;|&nbsp; Kabel Merah → Pin V &nbsp;|&nbsp; Kabel Cokelat → Pin G</strong>
+        </p>
+        <img
+          src={typeof guide2Svg === 'string' ? guide2Svg : guide2Svg.src}
+          alt="2. Pasang Kabel Servo"
+          className={styles.guideImg}
+        />
       </div>
 
-      <div className={styles.card}>
-        <div className={styles.guideStep}>
-          <div className={styles.guideNum}>3</div>
-          <div className={styles.guideBody}>
-            <h3>Pair via Bluetooth</h3>
-            <p>Klik tombol Connect (kanan bawah), pilih board Robotku. Saat tersambung, ikon Connect berubah menjadi hijau.</p>
-          </div>
-        </div>
+      {/* Langkah 3 */}
+      <div className={styles.guideCard}>
+        <h2 className={styles.guideTitle}>3. SAMBUNGKAN KE ROBOTKU</h2>
+        <p className={styles.guideDesc}>
+          Klik tombol Connect di kanan bawah, lalu pilih robotmu. Saat Bluetooth terhubung, ikon akan berwarna hijau!
+        </p>
+        <img
+          src={typeof guide3Svg === 'string' ? guide3Svg : guide3Svg.src}
+          alt="3. Sambungkan ke Robotku"
+          className={styles.guideImg}
+        />
       </div>
     </>
   );

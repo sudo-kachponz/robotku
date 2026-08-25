@@ -46,37 +46,63 @@
   transform: scale(0.96);
 }
 
-/* ---- D-pad (Base) ---- */
-.dpad {
-  display: grid;
-  grid-template-columns: repeat(3, 76px);
-  grid-template-rows: repeat(3, 76px);
-  gap: 10px;
-}
-.dUp { grid-column: 2; grid-row: 1; }
-.dLeft { grid-column: 1; grid-row: 2; }
-.dRight { grid-column: 3; grid-row: 2; }
-.dDown { grid-column: 2; grid-row: 3; }
-.dCenter {
-  grid-column: 2;
-  grid-row: 2;
-  display: grid;
-  place-items: center;
-  color: var(--rk-on-muted);
-  font-weight: 800;
-  font-size: 12px;
+/* ---- Base Robot: stage + control pad ---- */
+.baseWrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(28px, 5vw, 72px);
+  flex-wrap: wrap;
 }
 
-.armRow {
-  display: flex;
+.stage {
+  position: relative;
+  width: clamp(260px, 32vw, 360px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: var(--rk-r-xl);
+  background:
+    radial-gradient(120% 120% at 50% 0%, rgba(99, 102, 232, 0.35), rgba(43, 38, 128, 0) 70%),
+    var(--rk-surface-3);
+  box-shadow: inset 0 6px 20px rgba(20, 16, 60, 0.4), var(--rk-shadow);
+  overflow: hidden;
+}
+.robot {
+  width: 66%;
+  height: 66%;
+  will-change: transform;
+}
+
+.pad {
+  display: grid;
+  grid-template-columns: repeat(3, clamp(88px, 9vw, 110px));
+  grid-template-rows: repeat(3, clamp(88px, 9vw, 110px));
   gap: 16px;
 }
-.armBtn {
-  min-width: 120px;
-  padding: 16px 22px;
-  font-size: 16px;
+.padBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--rk-on);
+}
+.padLabel {
+  font-size: 13px;
   font-weight: 700;
-  gap: 8px;
+  color: var(--rk-on-muted);
+}
+.gGrab { grid-column: 1; grid-row: 1; }
+.gUp { grid-column: 2; grid-row: 1; }
+.gRelease { grid-column: 3; grid-row: 1; }
+.gLeft { grid-column: 1; grid-row: 2; }
+.gRight { grid-column: 3; grid-row: 2; }
+.gDown { grid-column: 2; grid-row: 3; }
+
+@media (max-width: 760px) {
+  .baseWrap { flex-direction: column; }
 }
 
 /* ---- Port sliders ---- */

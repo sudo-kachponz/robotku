@@ -1,13 +1,14 @@
 // src/pages/control/index.tsx
 //
-// "Let's Get Started" — Robotku mascot + big Connect button. After connecting
-// (or to explore first) the user proceeds to the Control Modes carousel.
+// "Let's Get Started" — Single Robotku mascot + big Connect button.
+// Typography scale & layout matched to /control/modes.
 
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import ControlLayout from '../../components/control/ControlLayout';
 import ConnectPanel from '../../components/control/ConnectPanel';
 import { useConnection } from '../../hooks/useConnection';
+import ayomulaiImg from '../../assets/ayomulai.png';
 import styles from '../../styles/ControlHome.module.css';
 
 export default function ControlStart() {
@@ -17,14 +18,13 @@ export default function ControlStart() {
   const connected = connState === 'connected';
 
   return (
-    <ControlLayout>
+    <ControlLayout title="Ayo Mulai!">
       <div className={styles.wrap}>
         <img
-          className={styles.logo}
-          src="/brand/Robotku-Mascot-Logo-Horizontal.png"
-          alt="Robotku"
+          className={styles.mascot}
+          src={typeof ayomulaiImg === 'string' ? ayomulaiImg : ayomulaiImg.src}
+          alt="Maskot Robotku Ayo Mulai"
         />
-        <img className={styles.mascot} src="/brand/Pose1.png" alt="Maskot Robotku" />
 
         <h1 className={styles.title}>Ayo Mulai!</h1>
         <p className={styles.subtitle}>
