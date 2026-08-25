@@ -56,7 +56,7 @@
 
 .connectionBadgeContainer {
   position: absolute;
-  top: 84px; /* floating overlay right under 72px navbar */
+  top: 80px; /* floating overlay right under 72px navbar */
   left: 0;
   right: 0;
   display: flex;
@@ -70,7 +70,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 24px 20px 96px; /* Reduced top padding since navbar is inline now */
+  padding: 56px 20px 96px; /* 56px top padding ensures clean clearance below badge on load */
   min-height: 0;
 }
 
