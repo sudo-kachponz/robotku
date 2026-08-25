@@ -1,9 +1,9 @@
 // src/pages/academy/index.tsx
 //
 // ROUTE /academy — Access Gate.
-// Two columns: "Punya kode akses?" (code input + free Basics preview) and
-// "Baru di sini?" (continue as guest / contact). Validating a code unlocks the
-// full catalog; guests see only live Basics. Session persists to IndexedDB.
+// Wide, open layout strictly matching reference screenshots:
+// Header in a single horizontal bar (Logo + Title), spacious 2-column login options,
+// and module preview cards positioned BELOW across full width.
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
@@ -50,20 +50,23 @@ export default function AcademyGate() {
         <title>Robotku Academy — Akses</title>
       </Head>
       <div className={styles.page}>
+        {/* Top Header Bar — Single Horizontal Row */}
         <div className={styles.gateHeader}>
           <img
             className={styles.gateLogo}
             src="/brand/Robotku-Mascot-Logo-Horizontal.png"
             alt="Robotku Academy"
           />
-          <h1 className={styles.gateWelcome}>SELAMAT DATANG DI ROBOTKU ACADEMY!</h1>
+          <h1 className={styles.gateWelcome}>WELCOME TO ROBOTKU ACADEMY!</h1>
         </div>
 
-        <div className={styles.container}>
-          <div className={styles.gateGrid}>
-            {/* Left — access code + Basics preview */}
-            <section className={styles.gateCol}>
-              <h2 className={styles.gateColTitle}>Punya Kode Akses?</h2>
+        {/* Spacious Main Container */}
+        <div className={styles.gateContainer}>
+          {/* Top Row: Login Options (No Cards wrapping container) */}
+          <div className={styles.gateGridOpen}>
+            {/* Left Column — Access Code */}
+            <section className={styles.gateColOpen}>
+              <h2 className={styles.gateColTitle}>GOT AN ACCESS CODE?</h2>
 
               <form onSubmit={submitCode}>
                 <div className={styles.codeField}>
@@ -90,56 +93,58 @@ export default function AcademyGate() {
 
                 <button
                   type="submit"
-                  className={`${styles.btnPrimary} ${styles.fullBtn}`}
+                  className={`${styles.btnPurple} ${styles.fullBtn}`}
                   disabled={busy}
                 >
-                  {busy ? 'Memeriksa…' : 'Akses Robotku Academy!'}
+                  {busy ? 'Memeriksa…' : 'Access Robotku Academy!'}
                 </button>
               </form>
-
-              <p className={styles.previewLabel}>Pratinjau Robotku Basics (gratis)</p>
-              <div className={styles.previewGrid}>
-                {basics.map((l) => (
-                  <div key={l.id} className={styles.tile}>
-                    <Thumb src={l.thumbnail} alt={l.title} emoji="🤖" />
-                    <div className={styles.tileBody}>
-                      <div className={styles.tileTitle}>
-                        {l.number ? `${l.number}. ${l.title}` : l.title}
-                      </div>
-                      <div className={styles.tileMetaRow}>
-                        <LevelChip level={l.levelType} />
-                      </div>
-                      <div className={styles.tileMetaRow}>
-                        {l.concepts.slice(0, 2).map((c) => (
-                          <ConceptChip key={c} concept={c} />
-                        ))}
-                      </div>
-                      <span className={styles.publicLink}>Public Link ↗</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </section>
 
-            {/* Right — guest / contact */}
-            <section className={styles.gateCol}>
-              <h2 className={styles.gateColTitle}>Baru di sini?</h2>
+            {/* Right Column — Guest / Contact */}
+            <section className={styles.gateColOpen}>
+              <h2 className={styles.gateColTitle}>New here?</h2>
               <p className={styles.gateColSub}>
-                Coba 6 pelajaran Robotku Basics tanpa langganan! Untuk seluruh materi,
-                hubungi <strong>{CONTACT_EMAIL}</strong>.
+                Check out the 6 Robotku Basics lessons without a subscription! For the full range of lessons, reach out to <strong>{CONTACT_EMAIL}</strong> for subscriptions.
               </p>
               <div className={styles.gateActions}>
-                <button className={`${styles.btnOutline} ${styles.fullBtn}`} onClick={continueAsGuest}>
-                  Lanjut sebagai Tamu
+                <button className={`${styles.btnOutlineWide} ${styles.fullBtn}`} onClick={continueAsGuest}>
+                  Continue As Guest
                 </button>
                 <a
-                  className={`${styles.btnDark} ${styles.fullBtn}`}
+                  className={`${styles.btnDarkWide} ${styles.fullBtn}`}
                   href={`mailto:${CONTACT_EMAIL}`}
                 >
-                  Hubungi Kami
+                  Contact Us!
                 </a>
               </div>
             </section>
+          </div>
+
+          {/* Module Cards Section BELOW Login Features */}
+          <div className={styles.previewSection}>
+            <h3 className={styles.previewSectionTitle}>PRATINJAU ROBOTKU BASICS (GRATIS)</h3>
+            <div className={styles.previewGridFull}>
+              {basics.map((l) => (
+                <div key={l.id} className={styles.tile}>
+                  <Thumb src={l.thumbnail} alt={l.title} emoji="🤖" />
+                  <div className={styles.tileBody}>
+                    <div className={styles.tileTitle}>
+                      {l.number ? `${l.number}. ${l.title}` : l.title}
+                    </div>
+                    <div className={styles.tileMetaRow}>
+                      <LevelChip level={l.levelType} />
+                    </div>
+                    <div className={styles.tileMetaRow}>
+                      {l.concepts.slice(0, 2).map((c) => (
+                        <ConceptChip key={c} concept={c} />
+                      ))}
+                    </div>
+                    <span className={styles.publicLink}>Public Link ↗</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
