@@ -1,7 +1,8 @@
 // src/pages/index.tsx
 //
-// Home — White background landing page with Robotku Design System accents
-// Benchmarked against robotku.id identity & tokens.
+// Landing Page — "Selamat Datang di Robotku Lab"
+// Deep-indigo marketing hero with Robotku Design System identity,
+// white elevation cards, CTA buttons, and floating emojis around the mascot.
 
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -20,38 +21,78 @@ export default function Home() {
           alt="Robotku Logo"
         />
         <div className={styles.headerActions}>
+          <nav className={styles.navLinks}>
+            <a href="https://robotku.id" target="_blank" rel="noreferrer" className={styles.navLink}>
+              Program
+            </a>
+            <Link href="/academy" className={styles.navLink}>
+              Academy
+            </Link>
+            <a href="https://robotku.id" target="_blank" rel="noreferrer" className={styles.navLink}>
+              Event
+            </a>
+          </nav>
           <a
             href="https://robotku.id"
             target="_blank"
             rel="noreferrer"
             className={styles.navLinkBtn}
           >
-            <span>robotku.id</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-              <polyline points="15 3 21 3 21 9" />
-              <line x1="10" y1="14" x2="21" y2="3" />
-            </svg>
+            <span>robotku.id ↗</span>
           </a>
         </div>
       </header>
 
       {/* Main Hero & Content */}
       <main className={styles.main}>
-        <div className={styles.hero}>
-          <span className={styles.badgePill}>
-            Robotku Web Platform
-          </span>
-          <img className={styles.mascot} src="/brand/Pose1.png" alt="Maskot Robotku" />
-          <h1 className={styles.title}>
-            Selamat datang di <span className={styles.accent}>Robotku</span>
-          </h1>
-          <p className={styles.lead}>
-            Kendalikan robotmu langsung dari browser. Pilih mode dan coba coding!
-          </p>
-        </div>
+        {/* Deep Indigo Hero Section */}
+        <section className={styles.hero}>
+          <div className={styles.heroText}>
+            <span className={styles.badgePill}>
+              ROBOTKU WEB PLATFORM
+            </span>
 
-        {/* Section Title matching Image 2 Benchmark ("EVENT TERDEKAT") */}
+            <h1 className={styles.title}>
+              Selamat Datang di <br />
+              <span className={styles.accent}>Robotku Lab</span>
+            </h1>
+
+            <p className={styles.lead}>
+              Kendalikan robotmu langsung dari browser. Pilih mode dan coba coding!
+              <mark className={styles.highlightTag}>#BikinRobotMu</mark>
+            </p>
+
+            <div className={styles.heroActions}>
+              <Link href="/control" className={styles.btnPrimaryPink}>
+                Mulai Sekarang →
+              </Link>
+              <Link href="/academy" className={styles.btnSecondaryGhost}>
+                Buka Academy →
+              </Link>
+            </div>
+          </div>
+
+          {/* Mascot & Surrounding Floating Emojis */}
+          <div className={styles.mascotContainer}>
+            <img
+              className={styles.mascot}
+              src="/brand/Pose1.png"
+              alt="Maskot Robotku"
+            />
+
+            {/* Emojis floating around mascot (naik turun animation) */}
+            <span className={`${styles.floatingEmoji} ${styles.e1}`}>🧩</span>
+            <span className={`${styles.floatingEmoji} ${styles.e2}`}>👾</span>
+            <span className={`${styles.floatingEmoji} ${styles.e3}`}>🤖</span>
+            <span className={`${styles.floatingEmoji} ${styles.e4}`}>🧑🏻‍💻</span>
+            <span className={`${styles.floatingEmoji} ${styles.e5}`}>✨</span>
+            <span className={`${styles.floatingEmoji} ${styles.e6}`}>👩🏻‍💻</span>
+            <span className={`${styles.floatingEmoji} ${styles.e7}`}>🎮</span>
+            <span className={`${styles.floatingEmoji} ${styles.e8}`}>🕹️</span>
+          </div>
+        </section>
+
+        {/* Section Title */}
         <h2 className={styles.sectionHeader}>MODUL & FITUR UTAMA</h2>
 
         {/* Main Action Cards */}
@@ -62,7 +103,7 @@ export default function Home() {
                 <RobotIcon />
               </div>
               <span className={`${styles.statusBadge} ${styles.statusBadgeBlue}`}>
-                Siap Digunakan
+                SIAP DIGUNAKAN
               </span>
             </div>
             <div className={styles.cardBody}>
@@ -84,7 +125,7 @@ export default function Home() {
                 <CapIcon />
               </div>
               <span className={`${styles.statusBadge} ${styles.statusBadgePink}`}>
-                Modul Belajar
+                MODUL BELAJAR
               </span>
             </div>
             <div className={styles.cardBody}>
@@ -102,7 +143,7 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Dark Navy Footer matching Image 2 bottom bar benchmark */}
+      {/* Footer Bar */}
       <footer className={styles.footerBar}>
         <div className={styles.footerLeft}>
           <a
