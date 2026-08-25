@@ -32,6 +32,7 @@ import {
   type ViewMode,
 } from '../../../components/academy/controls';
 import { SubscribeModal } from '../../../components/academy/SubscribeModal';
+import { QuickTutorialModal } from '../../../components/academy/QuickTutorialModal';
 
 import refreshImg from '../../../assets/refresh.png';
 
@@ -49,6 +50,7 @@ export default function AllLessons() {
 
   const [folderOpen, setFolderOpenState] = useState<Record<string, boolean>>({});
   const [showHelper, setShowHelper] = useState(false);
+  const [showTutorialModal, setShowTutorialModal] = useState(false);
   const [locked, setLocked] = useState<Lesson | null>(null);
 
   // Gate check + initial load (with a short, calming loading beat).
@@ -197,13 +199,12 @@ export default function AllLessons() {
         {showHelper && (
           <MascotHelper
             onDismiss={dismissHelper}
-            onTour={() => {
-              dismissHelper();
-              alert(
-                'Tutorial singkat:\n• Gunakan Folder untuk menjelajah per tema.\n• Gunakan Grid untuk melihat semua kartu.\n• Saring dengan Level atau cari nama pelajaran.',
-              );
-            }}
+            onTour={() => setShowTutorialModal(true)}
           />
+        )}
+
+        {showTutorialModal && (
+          <QuickTutorialModal onClose={() => setShowTutorialModal(false)} />
         )}
 
         {locked && (

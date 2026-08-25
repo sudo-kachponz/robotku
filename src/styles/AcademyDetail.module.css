@@ -1,6 +1,6 @@
 /* src/styles/AcademyDetail.module.css
  *
- * Full Screen PPT Presentation Viewer Mode — strictly matching reference screenshot.
+ * Full Screen PPT Presentation Viewer Mode & Quick Tutorial Modal — strictly matching reference benchmark.
  */
 
 .pptFullscreenPage {
@@ -325,6 +325,290 @@
   font-size: 12px;
   color: #9CA3AF;
   font-weight: 600;
+}
+
+/* Quick Tutorial Modal */
+.tutorialModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  padding: 20px;
+  animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.tutorialModalCard {
+  width: min(820px, 94vw);
+  background: #FFFFFF;
+  border-radius: 24px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+  border: 2px solid #E2E8F0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.tutorialCloseBtn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #F1F5F9;
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  transition: all 0.15s ease;
+}
+
+.tutorialCloseBtn:hover {
+  background: #EC2D8F;
+  color: #FFFFFF;
+}
+
+.tutorialStage {
+  padding: 44px 36px 36px;
+  min-height: 380px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+}
+
+.tutorialSlideContent {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  width: 100%;
+}
+
+.tutorialMascotImg {
+  width: 150px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.15));
+}
+
+.tutorialMascotImgLarge {
+  width: 180px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 24px rgba(236, 45, 143, 0.2));
+}
+
+.tutorialTextGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+
+.tutorialTextGroupCenter {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+  width: 100%;
+  align-items: center;
+}
+
+.tutorialTag {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: #EC2D8F;
+  color: #FFFFFF;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  align-self: flex-start;
+  box-shadow: 0 4px 12px rgba(236, 45, 143, 0.35);
+}
+
+.tutorialTextGroupCenter .tutorialTag {
+  align-self: center;
+}
+
+.tutorialHeading {
+  font-family: var(--font-display);
+  font-size: clamp(22px, 3.2vw, 30px);
+  font-weight: 700;
+  color: #1E1B4B;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.tutorialSub {
+  font-size: 15px;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 560px;
+}
+
+.tutorialDiagramGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 14px;
+  width: 100%;
+}
+
+.diagramBox {
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 16px 20px;
+  text-align: left;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.diagramBox h4 {
+  margin: 8px 0 4px;
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: #1E1B4B;
+}
+
+.diagramBox p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748B;
+}
+
+.diagramBadge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #4F46E5;
+  color: #FFFFFF;
+}
+
+.subjectPillsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.subPill {
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  color: #1E293B;
+  font-weight: 700;
+  font-size: 13.5px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.segmentsFlow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.segItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 14px;
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #334155;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.segNum {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #EC2D8F;
+  color: #FFFFFF;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+}
+
+.segArrow {
+  font-size: 18px;
+  color: #94A3B8;
+  font-weight: 700;
+}
+
+.tutorialFooterBar {
+  height: 48px;
+  background: #0F172A;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  color: #94A3B8;
+  font-size: 13px;
+}
+
+.tutorialNavControls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.tutorialNavBtn {
+  background: transparent;
+  border: none;
+  color: #F1F5F9;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.tutorialNavBtn:hover:not(:disabled) {
+  background: #334155;
+  color: #FFFFFF;
+}
+
+.tutorialNavBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.tutorialCounter {
+  font-family: monospace;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.tutorialBrandText {
+  font-weight: 600;
+  color: #94A3B8;
 }
 
 /* Standard Detail Shell fallbacks */

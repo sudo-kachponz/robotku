@@ -16,14 +16,8 @@
   flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
-  color: var(--ink-700);
-  /* Soft indigo gradient — NOT stark white */
-  background-color: var(--indigo-50);
-  background-image:
-    linear-gradient(180deg, var(--indigo-50) 0%, var(--indigo-100) 100%),
-    radial-gradient(60% 40% at 85% 8%, rgba(236, 45, 143, 0.06), transparent),
-    radial-gradient(50% 40% at 10% 4%, rgba(79, 70, 229, 0.08), transparent);
-  background-attachment: fixed;
+  color: var(--ink-900);
+  background-color: #FFFFFF;
 }
 
 .container {

@@ -1,0 +1,181 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 12px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* ---- a) Robot stage ---- */
+.arena {
+  position: relative;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: var(--rk-r-lg);
+  background:
+    radial-gradient(120% 120% at 50% 0%, rgba(99, 102, 232, 0.12), rgba(243, 244, 251, 0) 70%),
+    #F3F4FB;
+  background-image:
+    linear-gradient(rgba(99, 102, 232, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 232, 0.08) 1px, transparent 1px);
+  background-size: 100% 100%, 22px 22px, 22px 22px;
+  box-shadow: inset 0 4px 14px rgba(20, 16, 60, 0.08);
+  overflow: hidden;
+}
+.trail {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.robot {
+  width: 72px;
+  height: 86px;
+  will-change: transform;
+}
+
+/* ---- b) Port strip ---- */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bars {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 14px;
+}
+.barRow {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  align-items: center;
+  gap: 8px;
+}
+.barNum {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--rk-on-muted, #565386);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.bar {
+  height: 8px;
+  border-radius: var(--rk-r-pill, 999px);
+}
+
+/* ---- c) Output panel ---- */
+.output {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 10px;
+  border-radius: var(--rk-r-lg);
+  background: rgba(243, 244, 251, 0.6);
+}
+.matrix {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  width: 110px;
+  height: 110px;
+  flex-shrink: 0;
+}
+.dot {
+  border-radius: 50%;
+  aspect-ratio: 1;
+  transition: background 0.1s ease, opacity 0.1s ease;
+}
+.outputRight {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+.lcd {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1B1840;
+  background: #DCEBD8;
+  border-radius: var(--rk-r-sm, 8px);
+  padding: 8px 10px;
+  min-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.outputRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.ledDot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(60, 64, 120, 0.1);
+  transition: background 0.1s ease;
+}
+.buzzer {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 13px;
+  transition: background 0.12s ease, transform 0.12s ease;
+}
+
+/* ---- Virtual sensor controls ---- */
+.sensors {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(99, 102, 232, 0.12);
+}
+.sliderRow {
+  display: grid;
+  grid-template-columns: 70px 1fr 54px;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--rk-on-muted, #565386);
+}
+.sliderRow input {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+}
+.sliderVal {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.buttonsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.holdBtn {
+  padding: 8px 10px;
+  border: none;
+  border-radius: var(--rk-r-md, 10px);
+  background: #EEF0FF;
+  color: #4F46E5;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  transition: background 0.12s ease, transform 0.08s ease;
+}
+.holdActive {
+  background: #4F46E5;
+  color: #fff;
+  transform: scale(0.96);
+}
