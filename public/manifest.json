@@ -1,0 +1,24 @@
+{
+  "name": "Robotku Playground",
+  "short_name": "Robotku",
+  "description": "Platform Belajar Robotika & Pemrograman Blok Robotku",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1E1B4B",
+  "theme_color": "#4F46E5",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/brand/Robotku-Mascot-Logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/brand/Robotku-Mascot-Logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

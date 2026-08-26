@@ -8,14 +8,14 @@
   overflow: hidden;
 }
 
-
-
 .navbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 72px;
-  padding: 0 24px;
+  height: calc(64px + var(--safe-t));
+  padding-top: var(--safe-t);
+  padding-left: calc(16px + var(--safe-l));
+  padding-right: calc(16px + var(--safe-r));
   background-color: var(--rk-header, #2B2680);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   position: relative;
@@ -38,12 +38,13 @@
 
 .screenTitle {
   font-family: var(--font-display);
-  font-size: 28px;
-  font-weight: 600;
+  font-size: clamp(18px, 4vw, 26px);
+  font-weight: 700;
   color: #FFFFFF;
   margin: 0;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
+  text-align: center;
 }
 
 .topRight {
@@ -56,7 +57,7 @@
 
 .connectionBadgeContainer {
   position: absolute;
-  top: 80px; /* floating overlay right under 72px navbar */
+  top: calc(72px + var(--safe-t));
   left: 0;
   right: 0;
   display: flex;
@@ -70,11 +71,10 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 56px 20px 96px; /* 56px top padding ensures clean clearance below badge on load */
+  padding: 48px 16px calc(90px + var(--safe-b));
   min-height: 0;
 }
 
-/* Full-bleed content (Block Coding): canvas fills, chrome floats on top. */
 .contentFull {
   position: relative;
   flex: 1;
@@ -86,6 +86,8 @@
   place-items: center;
   width: 42px;
   height: 42px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: var(--rk-r-pill);
   background: var(--rk-surface-3);
   border: none;
@@ -94,6 +96,7 @@
   box-shadow: var(--rk-shadow);
   transition: background 0.14s ease, transform 0.12s ease;
   z-index: 1;
+  touch-action: manipulation;
 }
 .iconBtn:hover {
   background: var(--rk-surface-2);
@@ -103,36 +106,39 @@
 /* Bottom dock */
 .dock {
   position: fixed;
-  bottom: 16px;
+  bottom: calc(14px + var(--safe-b));
   left: 50%;
   transform: translateX(-50%);
   z-index: 40;
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 7px;
+  padding: 6px 12px;
   background: var(--rk-surface-3);
   border: none;
   border-radius: var(--rk-r-pill);
   box-shadow: var(--rk-shadow);
+  max-width: calc(100vw - 120px);
 }
 
 .dockBtn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 16px;
+  gap: 6px;
+  padding: 8px 14px;
+  min-height: 44px;
   border-radius: var(--rk-r-pill);
   border: none;
   background: transparent;
   color: var(--rk-on-muted);
   font-family: var(--font-display);
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: 12.5px;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
   cursor: pointer;
   transition: background 0.14s ease, color 0.14s ease;
+  touch-action: manipulation;
 }
 .dockBtn:hover {
   background: var(--rk-surface-2);
@@ -146,12 +152,12 @@
 /* Corner buttons */
 .cornerBtn {
   position: fixed;
-  bottom: 18px;
+  bottom: calc(14px + var(--safe-b));
   z-index: 41;
   display: grid;
   place-items: center;
-  width: 54px;
-  height: 54px;
+  width: 48px;
+  height: 48px;
   border-radius: var(--rk-r-pill);
   border: none;
   background: var(--rk-surface-3);
@@ -159,6 +165,7 @@
   cursor: pointer;
   box-shadow: var(--rk-shadow);
   transition: transform 0.12s ease, background 0.16s ease;
+  touch-action: manipulation;
 }
 .cornerBtn:hover {
   transform: translateY(-2px);
@@ -166,13 +173,13 @@
 }
 
 .fullscreenBtn {
-  left: 18px;
+  left: calc(14px + var(--safe-l));
   width: 46px;
   height: 46px;
 }
 
 .connectBtn {
-  right: 18px;
+  right: calc(14px + var(--safe-r));
   color: var(--rk-danger);
 }
 .connectBtnOn {
@@ -184,8 +191,12 @@
   background: var(--rk-success);
 }
 
-@media (max-width: 520px) {
+@media (max-width: 480px) {
   .dockBtn span {
-    display: none;
+    display: inline;
+    font-size: 11px;
+  }
+  .dockBtn {
+    padding: 6px 10px;
   }
 }

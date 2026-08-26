@@ -10,6 +10,8 @@
 // behave identically. On top of that we also handle META_CONTINUE_LOOP,
 // META_END_IF and WAIT_UNTIL, which the 3D sequencer left as no-ops.
 
+import { showToast } from '../ui/toast';
+
 /** Where side effects (motion, display, sound, sensors) are applied. */
 export interface RobotSink {
   /** Perform one timed/instant action. Timed actions resolve when their duration elapses. */
@@ -24,7 +26,28 @@ interface LoopFrame {
   type: 'finite' | 'infinite';
   startIndex: number;
   iterationsLeft?: number;
+  total?: number; // finite loops: original `times`, for the iteration counter
+  ifDepth: number; // ifStack length at loop entry, so break/continue can't leak if-frames
 }
+
+interface IfFrame {
+  taken: boolean; // has any branch (if/else-if/else) of this conditional already run?
+}
+
+interface FuncEntry {
+  startPc: number;
+  endPc: number;
+  argNames: string[];
+}
+
+interface CallFrame {
+  returnPc: number;
+  savedArgs: Record<string, unknown>;
+  savedLoopStack: LoopFrame[];
+  savedIfStack: IfFrame[];
+}
+
+const sanitize = (name: string): string => String(name ?? 'var').replace(/[^A-Za-z0-9_]/g, '_');
 
 export class ProgramRunner {
   private sink: RobotSink;
@@ -32,11 +55,66 @@ export class ProgramRunner {
   private stopRequested = false;
   private wakers = new Set<() => void>();
 
+  // Run-time variable scope (cleared each run) + compiled-expression cache so a
+  // forever loop never recompiles the same expression.
+  private scope: Record<string, unknown> = {};
+  private compileCache = new Map<string, Function>();
+
+  // Run controls (PROMPT B): time scaling + pause/step gate.
+  private speed = 1;
+  private paused = false;
+  private stepOnce = false;
+  private gateResolvers: Array<() => void> = [];
+
   /** Fired before each command executes; used to highlight the running block. */
   onStep?: (pc: number, cmd: any) => void;
+  /** Fired whenever the variable scope changes; used by the Variables watch. */
+  onScopeChange?: (scope: Record<string, unknown>) => void;
+  /** Fired with lightweight status (innermost loop iteration) for the status strip. */
+  onStatus?: (status: { loopIteration: number }) => void;
 
   constructor(sink: RobotSink) {
     this.sink = sink;
+  }
+
+  get isPaused(): boolean {
+    return this.paused;
+  }
+
+  /** 0.25 | 0.5 | 1 | 2 | 4 — scales every sleep (never below 1 ms). */
+  setSpeed(mult: number): void {
+    this.speed = mult > 0 ? mult : 1;
+  }
+
+  pause(): void {
+    this.paused = true;
+  }
+
+  resume(): void {
+    this.paused = false;
+    this.flushGate();
+  }
+
+  /** Execute exactly one more command, then pause again. */
+  step(): void {
+    if (this.paused) {
+      this.stepOnce = true;
+      this.flushGate();
+    }
+  }
+
+  private flushGate(): void {
+    const resolvers = this.gateResolvers;
+    this.gateResolvers = [];
+    for (const r of resolvers) r();
+  }
+
+  /** Awaited at the top of the loop; blocks while paused unless a step token exists. */
+  private async gate(): Promise<void> {
+    while (this.paused && !this.stepOnce && !this.stopRequested) {
+      await new Promise<void>((res) => this.gateResolvers.push(res));
+    }
+    if (this.stepOnce) this.stepOnce = false;
   }
 
   get isRunning(): boolean {
@@ -47,9 +125,30 @@ export class ProgramRunner {
     if (this.running) return;
     this.running = true;
     this.stopRequested = false;
+    this.scope = {};
+    this.compileCache.clear();
 
     let pc = 0;
-    const loopStack: LoopFrame[] = [];
+    let loopStack: LoopFrame[] = [];
+    let ifStack: IfFrame[] = [];
+    const callStack: CallFrame[] = [];
+
+    // --- Pre-pass: index functions and pre-declare variables ---------------
+    const funcTable = new Map<string, FuncEntry>();
+    for (let i = 0; i < commands.length; i++) {
+      const c = commands[i];
+      if (c?.command === 'META_FUNC_DEF') {
+        funcTable.set(c.params?.name, {
+          startPc: i,
+          endPc: this.findMatchingFuncEnd(commands, i),
+          argNames: Array.isArray(c.params?.args) ? c.params.args : [],
+        });
+      } else if (c?.command === 'META_SET_VAR') {
+        const n = sanitize(c.params?.name);
+        if (!(n in this.scope)) this.scope[n] = 0; // so `set x to x + 1` works first run
+      }
+    }
+    this.onScopeChange?.({ ...this.scope });
 
     try {
       while (pc < commands.length && !this.stopRequested) {
@@ -60,28 +159,94 @@ export class ProgramRunner {
 
         this.onStep?.(pc, command);
 
+        // Step/pause gate (PROMPT B). Blocks here while paused.
+        await this.gate();
+        if (this.stopRequested) break;
+
         switch (commandName) {
+          // --- Variables ---
+          case 'META_SET_VAR': {
+            this.scope[sanitize(command.params?.name)] = this.resolveParams(command.params?.value);
+            this.onScopeChange?.({ ...this.scope });
+            break;
+          }
+
+          // --- Functions ---
+          case 'META_FUNC_DEF': {
+            // Definitions must not run inline — skip straight to the matching end.
+            const entry = funcTable.get(command.params?.name);
+            pc = entry ? entry.endPc : this.findMatchingFuncEnd(commands, pc);
+            break;
+          }
+          case 'META_CALL': {
+            if (callStack.length >= 32) {
+              showToast('Fungsi memanggil dirinya terlalu dalam', 'error');
+              this.stopRequested = true;
+              break;
+            }
+            const entry = funcTable.get(command.params?.name);
+            if (!entry) break; // unknown function → no-op
+            const argValues = (Array.isArray(command.params?.args) ? command.params.args : []).map(
+              (a: unknown) => this.resolveParams(a),
+            );
+            const savedArgs: Record<string, unknown> = {};
+            entry.argNames.forEach((n, idx) => {
+              savedArgs[n] = this.scope[n];
+              this.scope[n] = argValues[idx];
+            });
+            callStack.push({ returnPc: pc + 1, savedArgs, savedLoopStack: loopStack, savedIfStack: ifStack });
+            loopStack = []; // a break inside the function must not escape the caller's loop
+            ifStack = []; // ...nor may an if inside the function see the caller's frames
+            pc = entry.startPc + 1;
+            pcIncrement = 0;
+            this.onScopeChange?.({ ...this.scope });
+            break;
+          }
+          case 'META_FUNC_END':
+          case 'META_RETURN': {
+            const frame = callStack.pop();
+            if (frame) {
+              for (const k of Object.keys(frame.savedArgs)) {
+                if (frame.savedArgs[k] === undefined) delete this.scope[k];
+                else this.scope[k] = frame.savedArgs[k];
+              }
+              loopStack = frame.savedLoopStack;
+              ifStack = frame.savedIfStack;
+              pc = frame.returnPc;
+              pcIncrement = 0;
+              this.onScopeChange?.({ ...this.scope });
+            }
+            break;
+          }
+
           // --- Loop Commands ---
           case 'META_START_LOOP': {
             loopStack.push({
               type: 'finite',
               startIndex: pc + 1,
               iterationsLeft: command.params?.times,
+              total: command.params?.times,
+              ifDepth: ifStack.length,
             });
+            this.onStatus?.({ loopIteration: 1 });
             break;
           }
           case 'META_START_INFINITE_LOOP': {
-            loopStack.push({ type: 'infinite', startIndex: pc + 1 });
+            loopStack.push({ type: 'infinite', startIndex: pc + 1, iterationsLeft: 0, ifDepth: ifStack.length });
+            this.onStatus?.({ loopIteration: 1 });
             break;
           }
           case 'META_END_LOOP': {
             if (loopStack.length > 0) {
               const currentLoop = loopStack[loopStack.length - 1];
               if (currentLoop.type === 'infinite') {
+                currentLoop.iterationsLeft = (currentLoop.iterationsLeft ?? 0) + 1;
+                this.onStatus?.({ loopIteration: currentLoop.iterationsLeft });
                 pc = currentLoop.startIndex;
                 pcIncrement = 0;
               } else if ((currentLoop.iterationsLeft ?? 0) > 1) {
                 currentLoop.iterationsLeft!--;
+                this.onStatus?.({ loopIteration: (currentLoop.total ?? 0) - currentLoop.iterationsLeft! + 1 });
                 pc = currentLoop.startIndex;
                 pcIncrement = 0;
               } else {
@@ -92,7 +257,8 @@ export class ProgramRunner {
           }
           case 'META_BREAK_LOOP': {
             if (loopStack.length > 0) {
-              loopStack.pop();
+              const frame = loopStack.pop()!;
+              ifStack.length = frame.ifDepth; // drop if-frames opened inside the loop body
               pc = this.findMatchingEndLoop(commands, pc);
             }
             break;
@@ -100,6 +266,7 @@ export class ProgramRunner {
           case 'META_CONTINUE_LOOP': {
             // Jump to the innermost matching END_LOOP and let it re-run the loop.
             if (loopStack.length > 0) {
+              ifStack.length = loopStack[loopStack.length - 1].ifDepth; // same leak guard
               pc = this.findMatchingEndLoop(commands, pc);
               pcIncrement = 0;
             }
@@ -107,22 +274,46 @@ export class ProgramRunner {
           }
 
           // --- Conditional Commands ---
-          case 'META_IF':
+          // An if/else-if/else chain runs EXACTLY ONE branch. We track that with an
+          // IfFrame (`taken`) so, once a branch fires, later else-if/else markers skip
+          // straight to END_IF instead of re-running. Conditions are evaluated FRESH
+          // here every iteration, so "forever + if sensor" still reacts live.
+          case 'META_IF': {
+            const frame: IfFrame = { taken: false };
+            ifStack.push(frame);
+            if (this.evaluateCondition(command.params?.condition)) {
+              frame.taken = true; // enter this branch's body (fall through)
+            } else {
+              pc = this.findNextBranch(commands, pc); // land ON the next branch marker
+              pcIncrement = 0;
+            }
+            break;
+          }
           case 'META_ELSE_IF': {
-            // Conditions are evaluated FRESH here every iteration — that is what
-            // makes "forever + if sensor" react live to the world.
-            const conditionMet = this.evaluateCondition(command.params?.condition);
-            if (!conditionMet) {
+            const frame = ifStack[ifStack.length - 1];
+            if (!frame || frame.taken) {
+              pc = this.findMatchingEndIf(commands, pc); // a branch already ran → skip rest
+              pcIncrement = 0;
+            } else if (this.evaluateCondition(command.params?.condition)) {
+              frame.taken = true;
+            } else {
               pc = this.findNextBranch(commands, pc);
+              pcIncrement = 0;
             }
             break;
           }
           case 'META_ELSE': {
-            pc = this.findMatchingEndIf(commands, pc);
+            const frame = ifStack[ifStack.length - 1];
+            if (frame && frame.taken) {
+              pc = this.findMatchingEndIf(commands, pc); // a branch already ran → skip else
+              pcIncrement = 0;
+            } else if (frame) {
+              frame.taken = true; // no branch ran yet → execute the else body
+            }
             break;
           }
           case 'META_END_IF': {
-            // no-op: falls through to the next command
+            ifStack.pop();
             break;
           }
 
@@ -135,7 +326,10 @@ export class ProgramRunner {
           // --- Everything else is a side-effecting action ---
           default: {
             if (commandName) {
-              await this.sink.exec(command);
+              // Resolve any `{$expr}` params (variables/math/sensor reporters)
+              // against the live scope right before executing, so the sink and
+              // the firmware only ever see plain literals.
+              await this.sink.exec({ command: commandName, params: this.resolveParams(command.params) });
             }
           }
         }
@@ -165,13 +359,16 @@ export class ProgramRunner {
   /** Cooperative stop: awaited sleeps bail out immediately so Stop is instant. */
   stop(): void {
     this.stopRequested = true;
+    this.paused = false;
+    this.flushGate();
     for (const wake of this.wakers) wake();
     this.wakers.clear();
     this.sink.stopAll();
   }
 
-  // --- Interruptible sleep -------------------------------------------------
+  // --- Interruptible sleep (scaled by the speed multiplier) ----------------
   private sleep(ms: number): Promise<void> {
+    const scaled = Math.max(1, ms / this.speed);
     return new Promise<void>((resolve) => {
       if (this.stopRequested) {
         resolve();
@@ -185,7 +382,7 @@ export class ProgramRunner {
       const timer = setTimeout(() => {
         this.wakers.delete(wake);
         resolve();
-      }, ms);
+      }, scaled);
       this.wakers.add(wake);
     });
   }
@@ -194,32 +391,68 @@ export class ProgramRunner {
     const start = performance.now();
     while (!this.stopRequested && !this.evaluateCondition(condition)) {
       await this.sleep(30);
-      if (performance.now() - start > 60000) break; // 60 s safety cap
+      if (performance.now() - start > 60000) {
+        showToast('Menunggu terlalu lama — dilewati', 'info');
+        break; // 60 s safety cap
+      }
     }
   }
 
-  // --- Condition sandbox (same contract as simulator_sequencer.ts) ---------
+  // --- Expression sandbox (shared by conditions + $expr params) ------------
+  // Compiles `new Function('getSensorValue','mathRandomInt', ...scopeKeys, ...)`
+  // so variables are real identifiers; cached per (scope-key-set + expression).
+  private evalExpr(expr: string): unknown {
+    const keys = Object.keys(this.scope);
+    const cacheKey = keys.join(',') + '::' + expr;
+    let fn = this.compileCache.get(cacheKey);
+    if (!fn) {
+      fn = new Function('getSensorValue', 'mathRandomInt', ...keys, `return (${expr});`);
+      this.compileCache.set(cacheKey, fn);
+    }
+    return (fn as any)(
+      (json: string) => this.sink.getSensorValue(json),
+      (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min,
+      ...keys.map((k) => this.scope[k]),
+    );
+  }
+
   private evaluateCondition(condition?: string): boolean {
     if (condition == null) return false;
     const trimmed = String(condition).trim().toLowerCase();
     if (trimmed === 'true') return true;
     if (trimmed === 'false' || trimmed === '') return false;
-
     try {
-      const evaluator = new Function(
-        'getSensorValue',
-        'mathRandomInt',
-        `return ${condition};`,
-      );
-      const result = evaluator(
-        (json: string) => this.sink.getSensorValue(json),
-        (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min,
-      );
-      return result === true;
+      return this.evalExpr(condition) === true;
     } catch (error) {
       console.error(`Error evaluating condition "${condition}":`, error);
       return false;
     }
+  }
+
+  /** Deep-resolve `{$expr}` nodes in a params tree; everything else passes through. */
+  private resolveParams(value: any): any {
+    if (value == null) return value;
+    if (Array.isArray(value)) return value.map((v) => this.resolveParams(v));
+    if (typeof value === 'object') {
+      if (typeof value.$expr === 'string') {
+        try {
+          return this.evalExpr(value.$expr);
+        } catch {
+          return 0;
+        }
+      }
+      const out: Record<string, unknown> = {};
+      for (const k of Object.keys(value)) out[k] = this.resolveParams(value[k]);
+      return out;
+    }
+    return value;
+  }
+
+  private findMatchingFuncEnd(commands: any[], startIndex: number): number {
+    for (let i = startIndex + 1; i < commands.length; i++) {
+      if (commands[i].command === 'META_FUNC_END') return i;
+    }
+    return commands.length;
   }
 
   // --- PC jump helpers (copied from simulator_sequencer.ts) -----------------

@@ -4,8 +4,9 @@
 
 import * as Blockly from 'blockly/core';
 import { defineOnce } from './_defineOnce';
-import { javascriptGenerator, Order } from 'blockly/javascript';
+import { javascriptGenerator } from 'blockly/javascript';
 import { astroidV2 } from '../robotProfiles';
+import { numArg, type NumOrExpr } from './_args';
 
 const WAIT_OPTIONS: [string, string][] = [['until done', 'true'], ['and continue', 'false']];
 const NOTE_OPTIONS: [string, string][] = [
@@ -88,8 +89,8 @@ defineOnce([
   }
 ]);
 
-const num = (block: Blockly.Block, gen: typeof javascriptGenerator, name: string, dflt = '1') =>
-  parseFloat(gen.valueToCode(block, name, Order.ATOMIC) || dflt);
+const num = (block: Blockly.Block, gen: typeof javascriptGenerator, name: string, dflt = 1): NumOrExpr =>
+  numArg(block, gen, name, dflt);
 const wait = (block: Blockly.Block) => block.getFieldValue('WAIT') === 'true';
 
 javascriptGenerator.forBlock['audio_record'] = function (block, gen) {

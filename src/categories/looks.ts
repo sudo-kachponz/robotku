@@ -5,8 +5,9 @@
 
 import * as Blockly from 'blockly/core';
 import { defineOnce } from './_defineOnce';
-import { javascriptGenerator, Order } from 'blockly/javascript';
+import { javascriptGenerator } from 'blockly/javascript';
 import { astroidV2 } from '../robotProfiles';
+import { numArg, type NumOrExpr } from './_args';
 
 const DEFAULT_MATRIX = '0110010010111110100010001'; // a friendly heart-ish glyph
 
@@ -70,8 +71,8 @@ defineOnce([
   }
 ]);
 
-const secs = (block: Blockly.Block, gen: typeof javascriptGenerator) =>
-  Math.max(0, parseFloat(gen.valueToCode(block, 'DURATION', Order.ATOMIC) || '1'));
+const secs = (block: Blockly.Block, gen: typeof javascriptGenerator): NumOrExpr =>
+  numArg(block, gen, 'DURATION', 1);
 
 javascriptGenerator.forBlock['display_matrix'] = function (block, gen) {
   const raw = String(block.getFieldValue('PATTERN') || '');

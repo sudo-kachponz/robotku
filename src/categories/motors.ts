@@ -8,8 +8,9 @@
 
 import * as Blockly from 'blockly/core';
 import { defineOnce } from './_defineOnce';
-import { javascriptGenerator, Order } from 'blockly/javascript';
+import { javascriptGenerator } from 'blockly/javascript';
 import { astroidV2, SPEED_ENUM } from '../robotProfiles';
+import { numArg, mulNum } from './_args';
 
 const SPEED_OPTIONS: [string, string][] = [['Slow', 'slow'], ['Medium', 'medium'], ['Fast', 'fast']];
 const MOTOR_PORTS: [string, string][] = [['M1', 'M1'], ['M2', 'M2'], ['M3', 'M3'], ['M4', 'M4']];
@@ -101,25 +102,20 @@ defineOnce([
   }
 ]);
 
-// --- Helpers ---
-function durSecs(block: Blockly.Block, gen: typeof javascriptGenerator): number {
-  const raw = parseFloat(gen.valueToCode(block, 'DURATION', Order.ATOMIC) || '1');
-  return Math.max(0.1, raw);
-}
-
 // --- Block Generators ---
 // Forward/Reverse/Left/Right map to the legacy simulator opcodes so the robot
 // still animates offline, while carrying the extra Robotku fields as params.
+// DURATION is run-time-resolvable (numArg) so variables / Math / sensor reporters
+// work inside it; constant inputs stay byte-identical.
 function driveTimed(command: string, direction: string) {
   return function (block: Blockly.Block, gen: typeof javascriptGenerator) {
-    const secs = durSecs(block, gen);
     const speed = SPEED_ENUM[block.getFieldValue('SPEED')] ?? 70;
     const commandObj = {
       command,
       params: {
         direction,
         speed,
-        duration_ms: secs * 1000,
+        duration_ms: mulNum(numArg(block, gen, 'DURATION', 1), 1000),
         left: block.getFieldValue('LEFT'),
         right: block.getFieldValue('RIGHT'),
       },
@@ -137,7 +133,7 @@ javascriptGenerator.forBlock['move_steer'] = function (block, gen) {
   const commandObj = {
     command: astroidV2.commands.steerTimed,
     params: {
-      duration_ms: durSecs(block, gen) * 1000,
+      duration_ms: mulNum(numArg(block, gen, 'DURATION', 1), 1000),
       steering: parseInt(block.getFieldValue('STEERING'), 10),
       speed: SPEED_ENUM[block.getFieldValue('SPEED')] ?? 70,
       left: block.getFieldValue('LEFT'),
@@ -151,7 +147,7 @@ javascriptGenerator.forBlock['move_claw'] = function (block, gen) {
   const commandObj = {
     command: astroidV2.commands.clawTimed,
     params: {
-      duration_ms: durSecs(block, gen) * 1000,
+      duration_ms: mulNum(numArg(block, gen, 'DURATION', 1), 1000),
       direction: block.getFieldValue('DIRECTION'),
       speed: SPEED_ENUM[block.getFieldValue('SPEED')] ?? 70,
       port: block.getFieldValue('PORT'),

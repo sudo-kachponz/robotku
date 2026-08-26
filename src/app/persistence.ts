@@ -15,6 +15,7 @@ const store =
 const SETTINGS_KEY = 'settings';
 const PROJECTS_KEY = 'projects';
 const PRESETS_KEY = 'settingsPresets';
+const TEMPLATES_KEY = 'templates';
 
 async function safeGet<T>(key: string, fallback: T): Promise<T> {
   if (!store) return fallback;
@@ -69,4 +70,18 @@ export function loadProjects(): Promise<RbkProject[]> {
 }
 export function persistProjects(list: RbkProject[]): Promise<void> {
   return safeSet(PROJECTS_KEY, list);
+}
+
+/* ---- User templates (Template Saya) ---- */
+export interface UserTemplateRecord {
+  id: string;
+  name: string;
+  savedAt: number;
+  workspace: unknown; // Blockly.serialization.workspaces.save() output
+}
+export function loadUserTemplates(): Promise<UserTemplateRecord[]> {
+  return safeGet<UserTemplateRecord[]>(TEMPLATES_KEY, []);
+}
+export function persistUserTemplates(list: UserTemplateRecord[]): Promise<void> {
+  return safeSet(TEMPLATES_KEY, list);
 }

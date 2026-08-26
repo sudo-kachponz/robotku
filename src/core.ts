@@ -13,6 +13,8 @@ import './categories/sensors';
 import './categories/control';
 import './categories/operators';
 import './categories/events';
+import './categories/variables';
+import './categories/functions_gen';
 
 // Force the standard Blockly blocks onto the Robotku theme styles (a.md map):
 // Program Flow = control_blocks (cyan), Logic = logic_blocks (teal),

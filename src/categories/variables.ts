@@ -7,10 +7,13 @@
 // variables in the simulator is a TODO.
 
 import { javascriptGenerator, Order } from 'blockly/javascript';
+import { exprOrLiteral } from './_args';
 
 javascriptGenerator.forBlock['variables_set'] = function (block, generator) {
   const name = block.getField('VAR')?.getText() ?? 'var';
-  const value = generator.valueToCode(block, 'VALUE', Order.ATOMIC) || '0';
+  // Resolve the value at RUN time (against the live scope + sensor sandbox) so
+  // `set score to score + 1`, math, and reporters work — not frozen at generate.
+  const value = exprOrLiteral(generator.valueToCode(block, 'VALUE', Order.ATOMIC), 0);
   return JSON.stringify({ command: 'META_SET_VAR', params: { name, value } }) + ';';
 };
 

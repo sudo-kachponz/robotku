@@ -15,12 +15,20 @@ export default function RobotSprite({
   turn,
   gripperOpen,
   reduced,
+  headYaw,
+  headPitch,
 }: {
   fwd: number;
   turn: number;
   gripperOpen: boolean;
   reduced: boolean;
+  headYaw?: number; // 80..100; omitted → no head marker (Base Robot look unchanged)
+  headPitch?: number; // 80..100
 }) {
+  // Head/sensor marker only renders when a yaw is supplied (Block Coding sim).
+  const showHead = headYaw != null;
+  const yawDeg = ((headYaw ?? 90) - 90) * 2.2; // exaggerate for visibility
+  const pitchLift = ((headPitch ?? 90) - 90) * 0.4;
   // Differential wheels: forward spins both same way; turning spins them opposite.
   const leftDir = reduced ? 0 : sign(fwd + turn);
   const rightDir = reduced ? 0 : sign(fwd - turn);
@@ -84,6 +92,15 @@ export default function RobotSprite({
       <circle cx="100" cy="160" r="9" className={styles.light} />
       {/* front bumper accent */}
       <rect x="76" y="76" width="48" height="10" rx="5" className={styles.bumper} />
+
+      {/* head / ultrasonic sensor marker — Block Coding only (rotates with yaw) */}
+      {showHead && (
+        <g transform={`rotate(${yawDeg} 100 74)`}>
+          <rect x="86" y={58 - pitchLift} width="28" height="20" rx="6" className={styles.bumper} />
+          <circle cx="94" cy={68 - pitchLift} r="3.4" fill="#1B1840" />
+          <circle cx="106" cy={68 - pitchLift} r="3.4" fill="#1B1840" />
+        </g>
+      )}
     </svg>
   );
 }

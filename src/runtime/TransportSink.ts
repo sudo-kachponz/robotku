@@ -11,6 +11,7 @@ import type { RobotTransport } from '../transport';
 import { encodeCommand } from '../domain/protocol';
 import { estop } from '../app/connection';
 import { getCachedSensor } from './telemetryCache';
+import { cvStore } from '../ai/cvStore';
 
 export class TransportSink implements RobotSink {
   private transport: RobotTransport;
@@ -23,8 +24,24 @@ export class TransportSink implements RobotSink {
 
   async exec(cmd: { command: string; params: any }): Promise<void> {
     this.stopRequested = false;
+    // AI camera commands are host-side — the board never runs a model.
+    if (cmd.command === 'AI_CAMERA') {
+      if (cmd.params?.on) void cvStore.startCamera();
+      else cvStore.stop();
+      return;
+    }
+    if (cmd.command === 'AI_SET_MODEL') {
+      if (cmd.params?.model) void cvStore.setModel(String(cmd.params.model));
+      return;
+    }
+    // Strip the editor-only highlight id so the firmware sees clean bytes.
+    let params = cmd.params;
+    if (params && typeof params === 'object' && '_bid' in params) {
+      params = { ...params };
+      delete params._bid;
+    }
     try {
-      this.transport.sendLine(encodeCommand(cmd as any));
+      this.transport.sendLine(encodeCommand({ command: cmd.command, params } as any));
     } catch (err) {
       console.warn('[TransportSink] sendLine failed', err);
     }
@@ -37,6 +54,8 @@ export class TransportSink implements RobotSink {
     let port: string | number | undefined;
     try {
       const parsed = JSON.parse(getSensorDataJson);
+      // AI reporters resolve in the BROWSER (cvStore), never from the board.
+      if (parsed?.command === 'GET_AI_DATA') return cvStore.getAiValue(parsed.params ?? {});
       sensor = parsed?.params?.sensor;
       port = parsed?.params?.port;
     } catch {

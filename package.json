@@ -1,18 +1,24 @@
 {
-  "name": "robotku-web-control",
+  "name": "robotku-playground",
   "private": true,
   "version": "0.1.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@blockly/continuous-toolbox": "^7.0.3",
     "@blockly/field-colour": "^6.0.5",
     "@blockly/field-colour-hsv-sliders": "^6.0.5",
     "@blockly/field-slider": "^8.0.3",
+    "@mediapipe/tasks-vision": "^1.0.1",
+    "@teachablemachine/image": "^0.8.5",
+    "@tensorflow-models/coco-ssd": "^2.2.3",
+    "@tensorflow/tfjs": "^4.22.0",
     "blockly": "^12.3.1",
     "localforage": "^1.10.0",
     "next": "^15.5.4",
@@ -27,6 +33,9 @@
     "@types/three": "^0.180.0",
     "@types/w3c-web-serial": "^1.0.7",
     "@types/web-bluetooth": "^0.0.20",
-    "typescript": "~5.9.3"
+    "@vitest/coverage-v8": "^2.1.9",
+    "jsdom": "^30.0.1",
+    "typescript": "~5.9.3",
+    "vitest": "^2.1.9"
   }
 }

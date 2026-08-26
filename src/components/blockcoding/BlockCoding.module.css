@@ -1,16 +1,20 @@
 .wrap {
   position: absolute;
   inset: 0;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 .editor {
   position: absolute;
   inset: 0;
+  height: 100dvh;
 }
 
 .blockly {
   position: absolute;
   inset: 0;
+  touch-action: none;
 }
 
 /* Blockly injects its own absolutely-positioned svg; ensure it fills. */
@@ -18,37 +22,16 @@
   border-radius: 0;
 }
 
-.hint {
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 20;
-  max-width: 520px;
-  text-align: center;
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--rk-on);
-  background: var(--rk-surface-3);
-  border: none;
-  padding: 8px 16px;
-  border-radius: var(--rk-r-pill);
-  box-shadow: var(--rk-shadow);
-}
-
 /* Right action toolbar */
 .toolbar {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  z-index: 25;
+  top: calc(16px + var(--safe-t));
+  right: calc(16px + var(--safe-r));
+  z-index: 30;
   display: flex;
   flex-direction: column;
   gap: 10px;
   padding: 0;
-  background: transparent;
-  border: none;
-  box-shadow: none;
 }
 
 .tbBtn {
@@ -56,13 +39,16 @@
   place-items: center;
   width: 48px;
   height: 48px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: 50%;
   border: none;
-  background: var(--rk-surface-3);
-  color: var(--rk-on);
+  background: #1E1B4B;
+  color: #C6CAFF;
   cursor: pointer;
-  box-shadow: var(--rk-shadow);
-  transition: transform 0.14s ease, background 0.14s ease;
+  box-shadow: 0 4px 14px rgba(12, 10, 36, 0.35);
+  transition: transform 0.14s ease, background 0.14s ease, color 0.14s ease;
+  touch-action: manipulation;
 }
 
 .tbBtn span {
@@ -70,61 +56,101 @@
 }
 
 .tbBtn:hover:not(:disabled) {
-  background: var(--rk-surface-2);
+  background: #2E2A6B;
+  color: #FFFFFF;
   transform: translateY(-2px);
 }
 
 .tbBtn:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 .tbActive {
-  background: var(--rk-accent);
-  color: var(--rk-on);
+  background: #EC2D8F !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 0 16px rgba(236, 45, 143, 0.5) !important;
 }
 
 .tbDiv {
   display: none;
 }
 
+/* Live camera dot on the AI toolbar button */
+.tbBtn {
+  position: relative;
+}
+.tbBtn span.tbLiveDot {
+  display: block;
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #4ade80;
+  border: 2px solid #1e1b4b;
+  box-shadow: 0 0 8px #4ade80;
+  animation: tbLivePulse 1.2s infinite;
+}
+@keyframes tbLivePulse { 50% { opacity: 0.4; } }
+
 .run {
-  background: var(--rk-success);
-  color: var(--rk-on);
+  background: #16A34A;
+  color: #ffffff;
 }
 
 .run:hover:not(:disabled) {
-  background: var(--rk-success);
+  background: #15803D;
   filter: brightness(1.1);
 }
 
 .stop {
-  background: var(--rk-danger);
-  color: var(--rk-on);
+  background: #DC2626;
+  color: #ffffff;
 }
 
 .stop:hover:not(:disabled) {
-  background: var(--rk-danger);
+  background: #B91C1C;
   filter: brightness(1.1);
 }
 
-/* Simulator card (2D default, 3D beta) */
+/* Simulator card — desktop drawer, mobile bottom sheet */
 .simCard {
   position: absolute;
-  right: 18px;
-  bottom: 90px;
-  z-index: 22;
-  width: 340px;
-  max-width: calc(100vw - 36px);
-  background: var(--rk-surface-3);
-  border: none;
-  border-radius: var(--rk-r-lg);
-  box-shadow: var(--rk-shadow);
+  right: calc(76px + var(--safe-r));
+  top: calc(20px + var(--safe-t));
+  bottom: calc(20px + var(--safe-b));
+  z-index: 25;
+  width: 480px;
+  max-width: calc(100vw - 150px);
+  background: #151333;
+  border: 1px solid rgba(198, 202, 255, 0.2);
+  border-radius: 20px;
+  box-shadow: 0 16px 44px rgba(10, 8, 30, 0.45);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
 }
 
-.simHidden .simCanvas {
-  height: 0;
+.simHidden {
+  transform: translateX(calc(100% + 120px));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.simHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
 }
 
 .simHeadActions {
@@ -136,79 +162,77 @@
 .simSwitch {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 11px;
+  gap: 6px;
+  font-size: 11.5px;
   font-weight: 700;
-  color: var(--rk-on-muted);
+  color: #C6CAFF;
   cursor: pointer;
   user-select: none;
 }
 .simSwitch input {
-  accent-color: var(--rk-accent);
+  accent-color: #EC2D8F;
   cursor: pointer;
-}
-
-/* Running-block glow — set by ProgramRunner.onStep via params._bid. */
-.blockly :global(.blocklyRunningBlock) {
-  filter: drop-shadow(0 0 0 #ffd54a) drop-shadow(0 0 6px rgba(255, 193, 7, 0.9));
-}
-
-.simHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--rk-on);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .simToggle {
   border: none;
-  background: transparent;
-  color: var(--rk-on-muted);
+  background: rgba(255, 255, 255, 0.1);
+  color: #C6CAFF;
   font-size: 16px;
   line-height: 1;
   cursor: pointer;
-  width: 22px;
-  height: 22px;
-  border-radius: var(--rk-r-sm);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .simToggle:hover {
-  background: var(--rk-surface-2);
-  color: var(--rk-on);
+  background: #EC2D8F;
+  color: #ffffff;
 }
 
 .simCanvas {
   width: 100%;
-  height: 200px;
-  background: var(--rk-bg-top);
-  transition: height 0.2s ease;
+  flex: 1;
+  min-height: 0;
+  background: #110F2B;
 }
 
 .simError {
-  padding: 18px 16px;
-  font-size: 12.5px;
+  padding: 24px 18px;
+  font-size: 13px;
   line-height: 1.5;
   font-weight: 600;
-  color: var(--rk-on-muted);
-  background: var(--rk-bg-top);
+  color: #C6CAFF;
+  background: #110F2B;
   text-align: center;
+}
+
+/* Running-block glow */
+.blockly :global(.blocklyRunningBlock) {
+  filter: drop-shadow(0 0 0 #ffd54a) drop-shadow(0 0 6px rgba(255, 193, 7, 0.9));
+}
+
+/* Freshly-inserted template flash (gold), toggled 2×300 ms by insertTemplate() */
+.blockly :global(.blocklyTemplateFlash) {
+  filter: drop-shadow(0 0 0 #ca8a04) drop-shadow(0 0 8px rgba(202, 138, 4, 0.95));
 }
 
 /* Serial monitor */
 .monitor {
   position: absolute;
-  left: 18px;
-  bottom: 90px;
-  z-index: 22;
-  width: 360px;
-  max-width: calc(100vw - 40px);
-  background: var(--rk-bg-top);
-  border-radius: var(--rk-r-lg);
-  box-shadow: var(--rk-shadow);
+  left: 380px;
+  bottom: calc(20px + var(--safe-b));
+  z-index: 28;
+  width: 400px;
+  max-width: calc(100vw - 400px);
+  background: #151333;
+  border: 1px solid rgba(198, 202, 255, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(10, 8, 30, 0.45);
   overflow: hidden;
 }
 
@@ -216,8 +240,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  font-size: 12.5px;
+  padding: 10px 14px;
+  font-size: 13px;
   font-weight: 700;
   color: #fff;
   background: rgba(255, 255, 255, 0.06);
@@ -228,15 +252,16 @@
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
   font-size: 11px;
-  padding: 3px 10px;
-  border-radius: var(--rk-r-pill);
+  padding: 6px 14px;
+  border-radius: 999px;
   cursor: pointer;
+  min-height: 32px;
 }
 
 .monitorBody {
-  max-height: 200px;
+  max-height: 220px;
   overflow-y: auto;
-  padding: 10px 12px;
+  padding: 12px 14px;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 11.5px;
   line-height: 1.6;
@@ -249,18 +274,12 @@
   color: rgba(255, 255, 255, 0.4);
 }
 
-@media (max-width: 640px) {
-  .simCard {
-    width: calc(100vw - 36px);
-  }
-}
-
-/* --- Blockly Continuous Toolbox & Glass Pane Flyout --- */
+/* --- Blockly Continuous Toolbox Responsive Rules --- */
 .blockly :global(.blocklyToolboxDiv) {
   background-color: #EEF0FF;
   border-right: none;
   box-shadow: 4px 0 24px rgba(20, 16, 60, 0.15);
-  width: 360px !important;
+  width: 320px !important;
   z-index: 20 !important;
 }
 
@@ -268,6 +287,7 @@
   backdrop-filter: blur(16px) saturate(140%) !important;
   -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
   background-color: transparent !important;
+  z-index: 21 !important;
 }
 
 .blockly :global(.blocklyFlyoutBackground) {
@@ -276,156 +296,111 @@
   transition: fill 0.3s ease !important;
 }
 
-/* Glass Pane Top Category Title: H1 · 23 / 700 Plus Jakarta Sans */
-.blockly :global(.blocklyFlyoutLabelText),
-.blockly :global(.blocklyFlyoutHeading),
-.blockly :global(text.blocklyFlyoutLabelText),
-.blockly :global(.blocklyFlyoutLabel) {
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
-  font-size: 23px !important;
-  font-weight: 700 !important;
-  fill: #1B1840 !important;
-  letter-spacing: -0.01em !important;
+/* Tablet (768px to 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .blockly :global(.blocklyToolboxDiv) {
+    width: 240px !important;
+  }
+  .simCard {
+    width: 380px;
+    right: calc(68px + var(--safe-r));
+  }
+  .monitor {
+    left: 260px;
+    width: 340px;
+  }
 }
 
-.blockly :global(.blocklyTreeRowContentContainer) {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-  width: 100% !important;
-  height: 100% !important;
-  gap: 14px !important;
+/* Phone (<768px) Bottom Sheet & Touch Responsive Layout */
+@media (max-width: 767px) {
+  .toolbar {
+    top: calc(8px + var(--safe-t));
+    right: calc(8px + var(--safe-r));
+    left: auto;
+    flex-direction: row;
+    gap: 6px;
+    max-width: calc(100vw - 16px);
+    overflow-x: auto;
+    padding: 4px;
+    background: rgba(15, 12, 42, 0.7);
+    backdrop-filter: blur(12px);
+    border-radius: 999px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .tbBtn {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    flex-shrink: 0;
+  }
+
+  .blockly :global(.blocklyToolboxDiv) {
+    width: 180px !important;
+    max-width: 50vw !important;
+  }
+
+  .simCard {
+    right: calc(10px + var(--safe-r));
+    left: calc(10px + var(--safe-l));
+    top: auto;
+    bottom: calc(10px + var(--safe-b));
+    width: auto;
+    max-width: none;
+    height: 50vh;
+    z-index: 40;
+    border-radius: 20px;
+  }
+
+  .simHidden {
+    transform: translateY(calc(100% + 80px));
+  }
+
+  .monitor {
+    position: fixed;
+    inset: auto 12px calc(12px + var(--safe-b)) 12px;
+    width: auto;
+    max-width: none;
+    z-index: 50;
+  }
 }
 
-.blockly :global(.blocklyToolboxCategory),
-.blockly :global(.blocklyTreeRow) {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-  height: auto !important;
-  min-height: 64px !important;
-  padding: 14px 20px !important;
-  cursor: pointer;
-  margin-bottom: 8px !important;
-  border-radius: 0 !important;
-  transition: background-color 0.15s ease;
-  width: 100% !important;
-  box-sizing: border-box !important;
-}
+/* Landscape orientation adjustments (<960px) */
+@media (max-width: 959px) and (orientation: landscape) {
+  .toolbar {
+    top: calc(6px + var(--safe-t));
+    right: calc(6px + var(--safe-r));
+    flex-direction: row;
+    gap: 6px;
+    padding: 4px;
+    max-width: calc(100vw - 12px);
+    overflow-x: auto;
+  }
 
-.blockly :global(.categoryBubble) {
-  width: 38px !important;
-  height: 38px !important;
-  min-width: 38px !important;
-  min-height: 38px !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  background-color: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  margin: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  flex-shrink: 0 !important;
-}
+  .tbBtn {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
+  }
 
-.blockly :global(.categoryBubble) svg {
-  width: 32px !important;
-  height: 32px !important;
-  display: block !important;
-}
+  .blockly :global(.blocklyToolboxDiv) {
+    width: 160px !important;
+    max-width: 35vw !important;
+  }
 
-/* Sidebar Category Button Label: Display · 30 / 800 Plus Jakarta Sans */
-.blockly :global(.blocklyTreeLabel),
-.blockly :global(.blocklyToolboxCategoryLabel) {
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
-  font-size: 30px !important;
-  font-weight: 800 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  text-align: left !important;
-  line-height: 1.2 !important;
-  white-space: nowrap !important;
-  letter-spacing: -0.01em !important;
-}
+  .simCard {
+    right: calc(6px + var(--safe-r));
+    top: calc(52px + var(--safe-t));
+    bottom: calc(6px + var(--safe-b));
+    left: auto;
+    width: 320px;
+    height: auto;
+    max-width: 55vw;
+  }
 
-.blockly :global(.blocklyTreeIcon) {
-  width: 36px !important;
-  height: 36px !important;
-  background-size: contain !important;
-  background-repeat: no-repeat !important;
-  background-position: center !important;
-  opacity: 1 !important;
-}
-
-.blockly :global(.blocklyTreeSelected) :global(.blocklyTreeIcon) {
-  transform: scale(1.08);
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-/* Category SVG Logos */
-.blockly :global(.icon-motion) {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233B82F6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='13 5 19 12 13 19'/%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E");
-}
-
-.blockly :global(.icon-mechanisms) {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234F46E5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z'/%3E%3Cpath d='M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z'/%3E%3C/svg%3E");
-}
-
-.blockly :global(.icon-looks) {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238B5CF6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E");
-}
-
-.blockly :global(.icon-audio) {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23EC2D8F' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18V5l12-2v13'/%3E%3Ccircle cx='6' cy='18' r='3'/%3E%3Ccircle cx='18' cy='16' r='3'/%3E%3C/svg%3E");
-}
-
-.blockly :global(.icon-control) {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234338CA' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7'/%3E%3Cpath d='m16 5 3 3-3 3'/%3E%3Cpath d='M19 8H9v6'/%3E%3C/svg%3E");
-}
-
-.blockly :global(.icon-operators) {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2316A34A' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2' ry='2'/%3E%3Cline x1='8' x2='16' y1='12' y2='12'/%3E%3Cline x1='12' x2='12' y1='8' y2='16'/%3E%3C/svg%3E");
-}
-
-.blockly :global(.icon-sensors) {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23E08600' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2'/%3E%3Cpath d='M12 20v2'/%3E%3Cpath d='Mm5 12H2'/%3E%3Cpath d='M22 12h-2'/%3E%3Cpath d='m19 5-1.5 1.5'/%3E%3Cpath d='m6.5 17.5-1.5 1.5'/%3E%3Cpath d='m5 5 1.5 1.5'/%3E%3Cpath d='m17.5 17.5 1.5 1.5'/%3E%3C/svg%3E");
-}
-
-/* Timing — clock */
-.blockly :global(.icon-timing) {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23E08600' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 3'/%3E%3C/svg%3E");
-}
-
-/* Logic — branches */
-.blockly :global(.icon-logic) {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230D9488' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='6' cy='6' r='2.5'/%3E%3Ccircle cx='18' cy='6' r='2.5'/%3E%3Ccircle cx='12' cy='18' r='2.5'/%3E%3Cpath d='M6 8.5v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3'/%3E%3Cpath d='M12 13.5v2'/%3E%3C/svg%3E");
-}
-
-/* Math — plus/minus */
-.blockly :global(.icon-math) {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234F46E5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2'/%3E%3Cpath d='M8 7v4M6 9h4M14 9h4M13.5 15.5l3 3M16.5 15.5l-3 3'/%3E%3C/svg%3E");
-}
-
-/* Variables — tag */
-.blockly :global(.icon-variables) {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A16207' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2H2v10l9 9a2 2 0 0 0 3 0l7-7a2 2 0 0 0 0-3z'/%3E%3Ccircle cx='7' cy='7' r='1.5'/%3E%3C/svg%3E");
-}
-
-/* Functions — f(x) puzzle */
-.blockly :global(.icon-functions) {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23565386' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 21c0-4 1-16 5-16'/%3E%3Cpath d='M6 12h7'/%3E%3Cpath d='M15 12l5 6M20 12l-5 6'/%3E%3C/svg%3E");
-}
-
-/* Templates — bookmark stack */
-.blockly :global(.icon-templates) {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23CA8A04' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z'/%3E%3C/svg%3E");
-}
-
-/* AI — sparkle */
-.blockly :global(.icon-ai) {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23EC2D8F' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z'/%3E%3C/svg%3E");
+  .simHidden {
+    transform: translateX(calc(100% + 60px));
+  }
 }

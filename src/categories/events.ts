@@ -9,6 +9,7 @@
 import * as Blockly from 'blockly/core';
 import { defineOnce } from './_defineOnce';
 import { javascriptGenerator, Order } from 'blockly/javascript';
+import { numArg, mulNum } from './_args';
 
 defineOnce([
   {
@@ -45,8 +46,7 @@ defineOnce([
 ]);
 
 javascriptGenerator.forBlock['timing_wait'] = function (block, gen) {
-  const secs = Math.max(0, parseFloat(gen.valueToCode(block, 'DURATION', Order.ATOMIC) || '1'));
-  return JSON.stringify({ command: 'WAIT', params: { duration_ms: secs * 1000 } }) + ';';
+  return JSON.stringify({ command: 'WAIT', params: { duration_ms: mulNum(numArg(block, gen, 'DURATION', 1), 1000) } }) + ';';
 };
 
 javascriptGenerator.forBlock['timing_wait_until'] = function (block, gen) {

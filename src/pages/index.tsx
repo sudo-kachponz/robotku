@@ -1,38 +1,91 @@
 // src/pages/index.tsx
 //
-// Landing Page — Exact benchmark matching robotku.id screenshot:
-// Clean white page background, white sticky top navbar, and a single full-screen
-// deep-blue rounded card containing hero text, mascot, floating emojis, and primary CTAs.
+// Landing Page — Updated mobile dropdown overlay matching exact screenshot benchmark (Hubungi Kami pink button).
 
+import { useState } from 'react';
 import Link from 'next/link';
 import styles from '../styles/Home.module.css';
 
 export default function Home() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <div className={styles.page}>
-      {/* Top Navbar — Clean White */}
+      {/* Navbar — Clean White on Desktop, Floating Glass on Mobile */}
       <header className={styles.bar}>
-        <img
-          className={styles.logo}
-          src="/brand/Robotku-Mascot-Logo-Horizontal.png"
-          alt="Robotku School"
-        />
+        {!mobileMenuOpen ? (
+          <div className={styles.barInner}>
+            <img
+              className={styles.logo}
+              src="/brand/Robotku-Mascot-Logo-Horizontal.png"
+              alt="Robotku School"
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = 'none';
+              }}
+            />
 
-        <div className={styles.headerActions}>
-          <a
-            href="https://robotku.id"
-            target="_blank"
-            rel="noreferrer"
-            className={styles.navLinkBtn}
-          >
-            robotku.id ↗
-          </a>
-        </div>
+            <div className={styles.headerActions}>
+              <a
+                href="https://robotku.id"
+                target="_blank"
+                rel="noreferrer"
+                className={styles.navLinkBtn}
+              >
+                robotku.id ↗
+              </a>
+            </div>
+
+            {/* Mobile Hamburger Button */}
+            <button
+              className={styles.hamburgerBtn}
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Open menu"
+            >
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M4 7h16M4 12h16M4 17h16" />
+              </svg>
+            </button>
+          </div>
+        ) : (
+          /* Mobile Expanded Dropdown Overlay Card */
+          <div className={styles.mobileExpandedOverlay}>
+            <div className={styles.overlayHeader}>
+              <img
+                className={styles.logo}
+                src="/brand/Robotku-Mascot-Logo-Horizontal.png"
+                alt="Robotku School"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+              />
+              <button
+                className={styles.closeBtn}
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label="Close menu"
+              >
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className={styles.overlayBody}>
+              <a
+                href="https://robotku.id"
+                target="_blank"
+                rel="noreferrer"
+                className={styles.mobileHubungiBtn}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Hubungi Kami
+              </a>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Main Full-Screen Hero Container */}
       <main className={styles.main}>
-        {/* Single Deep-Blue Hero Card (Rounded, full width) */}
         <section className={styles.heroCard}>
           <div className={styles.heroText}>
             <h1 className={styles.title}>
@@ -72,7 +125,7 @@ export default function Home() {
               alt="Maskot Robotku"
             />
 
-            {/* Emojis floating around mascot (naik turun animation) */}
+            {/* Emojis floating around mascot */}
             <span className={`${styles.floatingEmoji} ${styles.e1}`}>🧩</span>
             <span className={`${styles.floatingEmoji} ${styles.e2}`}>👾</span>
             <span className={`${styles.floatingEmoji} ${styles.e3}`}>🤖</span>

@@ -1,178 +1,59 @@
 // src/components/blockcoding/BlockCoding.tsx
 //
-// The Robotku Block Coding editor — a thin React wrapper around the EXISTING
-// astroid-webview Blockly boot (we reuse core.ts / toolbox.ts / theme.ts /
-// simulator + the {"command":...} generator; we do NOT rewrite Blockly).
-//
-// This module imports `blockly` and three.js, both of which touch document/window
-// at import time, so the page must load it via next/dynamic({ ssr: false }).
+// The Robotku Block Coding editor — modular React wrapper around Blockly.
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import dynamic from 'next/dynamic';
 import * as Blockly from 'blockly';
-import { javascriptGenerator } from 'blockly/javascript';
-import {
-  ContinuousCategory,
-  ContinuousToolbox,
-  ContinuousFlyout,
-  ContinuousMetrics,
-  registerContinuousToolbox,
-} from '@blockly/continuous-toolbox';class RobotkuCategory extends Blockly.ToolboxCategory {
-  private iconEl_?: HTMLDivElement;
-
-  override createDom_() {
-    super.createDom_();
-    if (this.rowDiv_) {
-      this.rowDiv_.style.display = 'flex';
-      this.rowDiv_.style.flexDirection = 'row';
-      this.rowDiv_.style.alignItems = 'center';
-      this.rowDiv_.style.justifyContent = 'flex-start';
-      this.rowDiv_.style.height = 'auto';
-      this.rowDiv_.style.minHeight = '64px';
-      this.rowDiv_.style.padding = '14px 20px';
-      this.rowDiv_.style.borderLeft = `8px solid ${this.colour_}`;
-      this.rowDiv_.style.marginBottom = '8px';
-      this.rowDiv_.style.borderRadius = '0';
-
-      const contentContainer = this.rowDiv_.querySelector('.blocklyTreeRowContentContainer') as HTMLElement;
-      if (contentContainer) {
-        contentContainer.style.display = 'flex';
-        contentContainer.style.flexDirection = 'row';
-        contentContainer.style.alignItems = 'center';
-        contentContainer.style.justifyContent = 'flex-start';
-        contentContainer.style.width = '100%';
-        contentContainer.style.gap = '14px';
-      }
-    }
-    const labelDiv =
-      (this as any).labelDiv_ ||
-      (this.rowDiv_ ? (this.rowDiv_.querySelector('.blocklyTreeLabel, .blocklyToolboxCategoryLabel') as HTMLElement) : null);
-    if (labelDiv) {
-      labelDiv.style.color = this.colour_;
-      labelDiv.style.fontSize = '30px';
-      labelDiv.style.fontWeight = '800';
-      labelDiv.style.fontFamily = "'Plus Jakarta Sans', sans-serif";
-      labelDiv.style.marginLeft = '0px';
-      labelDiv.style.marginTop = '0px';
-      labelDiv.style.marginBottom = '0px';
-      labelDiv.style.textAlign = 'left';
-      labelDiv.style.lineHeight = '1.2';
-    }
-    return this.rowDiv_ as HTMLDivElement;
-  }
-
-  override createIconDom_() {
-    const icon = document.createElement('div');
-    icon.classList.add('categoryBubble');
-    icon.classList.add('blocklyTreeIcon');
-    icon.style.display = 'flex';
-    icon.style.alignItems = 'center';
-    icon.style.justifyContent = 'center';
-    icon.style.backgroundColor = 'transparent';
-    icon.style.background = 'none';
-    icon.style.border = 'none';
-    icon.style.borderRadius = '0';
-    icon.style.boxShadow = 'none';
-    icon.style.width = '36px';
-    icon.style.height = '36px';
-    icon.style.margin = '0 14px 0 0';
-    icon.style.flexShrink = '0';
-
-    const svg = categoryIconSvg(((this as any).name_ as string) || '');
-    if (svg) {
-      icon.innerHTML = svg;
-      icon.style.color = this.colour_;
-    } else {
-      icon.style.backgroundColor = this.colour_;
-      icon.style.borderRadius = '50%';
-    }
-    this.iconEl_ = icon;
-    return icon;
-  }
-
-  override setSelected(isSelected: boolean) {
-    super.setSelected(isSelected);
-    const labelDiv =
-      (this as any).labelDiv_ ||
-      (this.rowDiv_ ? (this.rowDiv_.querySelector('.blocklyTreeLabel, .blocklyToolboxCategoryLabel') as HTMLElement) : null);
-    if (this.rowDiv_) {
-      this.rowDiv_.style.backgroundColor = isSelected ? this.colour_ : 'transparent';
-      this.rowDiv_.style.borderLeft = `8px solid ${this.colour_}`;
-    }
-    if (labelDiv) {
-      labelDiv.style.color = isSelected ? '#ffffff' : this.colour_;
-    }
-    if (this.iconEl_ && this.iconEl_.querySelector('svg')) {
-      this.iconEl_.style.color = isSelected ? '#ffffff' : this.colour_;
-    }
-    if (isSelected) {
-      const name = (this as any).name_ as string;
-      const bg: Record<string, string> = {
-        Movement: 'rgba(22, 163, 74, 0.18)',       // Soft low-saturation Green
-        Timing: 'rgba(224, 134, 0, 0.18)',         // Soft low-saturation Amber
-        Display: 'rgba(59, 130, 246, 0.18)',       // Soft low-saturation Blue
-        Audio: 'rgba(249, 115, 22, 0.18)',         // Soft low-saturation Orange
-        'Sensors & Data': 'rgba(139, 92, 246, 0.18)', // Soft low-saturation Purple
-        'Program Flow': 'rgba(6, 182, 212, 0.18)',  // Soft low-saturation Cyan
-        Logic: 'rgba(13, 148, 136, 0.18)',         // Soft low-saturation Teal
-        Math: 'rgba(79, 70, 229, 0.18)',           // Soft low-saturation Indigo
-        Variables: 'rgba(161, 98, 7, 0.18)',       // Soft low-saturation Brown
-        Functions: 'rgba(86, 83, 134, 0.18)',      // Soft low-saturation Ink Slate
-        Templates: 'rgba(202, 138, 4, 0.18)',      // Soft low-saturation Gold
-        AI: 'rgba(236, 45, 143, 0.18)',            // Soft low-saturation Pink
-      };
-      if (name && bg[name]) {
-        document.documentElement.style.setProperty('--flyout-bg-color', bg[name]);
-      }
-    }
-  }
-}
-
-import { initializeAstroidEditor } from '../../core';
-import { getAstroidToolbox } from '../../toolbox';
-import { getRobotkuTheme } from '../../visual/theme';
-import { categoryIconSvg } from '../../visual/categoryIcons';
-import { runCommandsOnRobot, setSimulatorRunner } from '../../command_runner';
-import { estop, onTelemetry } from '../../app/connection';
+import { generateProgramJson } from '../../blockcoding/generateProgram';
+import { cvStore } from '../../ai/cvStore';
+import { estop } from '../../app/connection';
+import { getState } from '../../app/store';
 import { Simulator } from '../../simulator';
 import { SimulatorSequencer } from '../../simulator_sequencer';
 import SimStage from './SimStage';
-import { ProgramRunner } from '../../runtime/ProgramRunner';
+import { ProgramRunner, type RobotSink } from '../../runtime/ProgramRunner';
 import { SimSink } from '../../runtime/SimSink';
-import { ingestTelemetry } from '../../runtime/telemetryCache';
+import { TransportSink } from '../../runtime/TransportSink';
+import { FanOutSink } from '../../runtime/FanOutSink';
 import { useConnection } from '../../hooks/useConnection';
-import { takePendingWorkspace } from '../../app/editorBridge';
-import { loadProjects, persistProjects, type RbkProject } from '../../app/persistence';
+import {
+  loadProjects,
+  persistProjects,
+  loadUserTemplates,
+  persistUserTemplates,
+  type RbkProject,
+} from '../../app/persistence';
 import { showToast } from '../../ui/toast';
+import { useBlocklyWorkspace } from './hooks/useBlocklyWorkspace';
+import { ErrorBoundary } from '../common/ErrorBoundary';
+import TemplateGallery from './TemplateGallery';
+import { insertTemplate } from '../../templates/insert';
+import { setGalleryOpener } from '../../templates/galleryBridge';
 import styles from './BlockCoding.module.css';
 
-const INITIAL_WORKSPACE_JSON = {
-  blocks: {
-    languageVersion: 0,
-    blocks: [
-      {
-        type: 'program_start',
-        id: 'start_block',
-        x: 200,
-        y: 100,
-        deletable: false,
-        movable: false,
-      },
-    ],
-  },
-};
+// Client-only: the CV panel pulls in camera + (lazily) ML libs.
+const CvPanel = dynamic(() => import('./CvPanel'), { ssr: false });
 
-export default function BlockCoding() {
+export default function BlockCodingWrapper() {
+  return (
+    <ErrorBoundary fallbackTitle="Kendala pada Editor Blockly">
+      <BlockCodingInner />
+    </ErrorBoundary>
+  );
+}
+
+function BlockCodingInner() {
   const { connState, robotInfo } = useConnection();
   const connected = connState === 'connected';
 
   const blocklyDivRef = useRef<HTMLDivElement | null>(null);
   const simDivRef = useRef<HTMLDivElement | null>(null);
-  const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null);
+  const { workspaceRef, telemetry, setTelemetry, showToolbox, toggleToolbox } = useBlocklyWorkspace(blocklyDivRef);
+
   const simulatorRef = useRef<Simulator | null>(null);
   const sequencerRef = useRef<SimulatorSequencer | null>(null);
 
-  // Shared headless runtime (no WebGL): drives the 2D stage and runs offline even
-  // with every panel closed.
   const simSinkRef = useRef<SimSink | null>(null);
   if (!simSinkRef.current) simSinkRef.current = new SimSink();
   const runnerRef = useRef<ProgramRunner | null>(null);
@@ -180,91 +61,21 @@ export default function BlockCoding() {
   const runningBlockIdRef = useRef<string | null>(null);
 
   const [running, setRunning] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [speed, setSpeed] = useState(1);
+  const [scope, setScope] = useState<Record<string, unknown>>({});
   const [showMonitor, setShowMonitor] = useState(false);
-  const [showSim, setShowSim] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
+  const [showCvPanel, setShowCvPanel] = useState(false);
+  const aiNoticeShownRef = useRef(false);
+  const [showSim, setShowSim] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [use3D, setUse3D] = useState(false);
   const [simError, setSimError] = useState(false);
   const [reduced, setReduced] = useState(false);
-  const [telemetry, setTelemetry] = useState<string[]>([]);
 
-  // Register the shared 2D runner as the offline simulator runner (used by
-  // runCommandsOnRobot when no board is connected).
-  const registerSimSinkRunner = useCallback(() => {
-    setSimulatorRunner((commands: any[]) => {
-      setRunning(true);
-      runnerRef.current!.run(commands).finally(() => setRunning(false));
-    });
-  }, []);
-
-  // ---- Boot the editor once, on mount (client only) ----
-  useEffect(() => {
-    const blocklyDiv = blocklyDivRef.current;
-    if (!blocklyDiv) return;
-
-    initializeAstroidEditor();
-
-    Blockly.registry.register(
-      Blockly.registry.Type.TOOLBOX_ITEM,
-      Blockly.ToolboxCategory.registrationName,
-      RobotkuCategory,
-      true,
-    );
-
-    const workspace = Blockly.inject(blocklyDiv, {
-      theme: getRobotkuTheme(),
-      toolbox: getAstroidToolbox(),
-      renderer: 'zelos',
-      toolboxPosition: 'start',
-      trashcan: false,
-      zoom: { controls: false, wheel: true, startScale: 0.6, maxScale: 1.25, minScale: 0.4, scaleSpeed: 1.05 },
-      grid: { spacing: 22, length: 2, colour: '#C6CAFF', snap: true },
-      move: { scrollbars: true, drag: true, wheel: true },
-    });
-    workspaceRef.current = workspace;
-
-    const pending = takePendingWorkspace();
-    Blockly.serialization.workspaces.load(
-      (pending as object) ?? INITIAL_WORKSPACE_JSON,
-      workspace,
-    );
-
-    // Per-category light flyout tint with low saturation glass pane (Fix for DS glassmorphism).
-    workspace.addChangeListener((event: Blockly.Events.Abstract) => {
-      if (event.type !== Blockly.Events.TOOLBOX_ITEM_SELECT) return;
-      const name = (event as any).newItem as string;
-      const bg: Record<string, string> = {
-        Movement: 'rgba(22, 163, 74, 0.16)',       // Soft low-saturation Green
-        Timing: 'rgba(224, 134, 0, 0.16)',         // Soft low-saturation Amber
-        Display: 'rgba(59, 130, 246, 0.16)',       // Soft low-saturation Blue
-        Audio: 'rgba(249, 115, 22, 0.16)',         // Soft low-saturation Orange
-        'Sensors & Data': 'rgba(139, 92, 246, 0.16)', // Soft low-saturation Purple
-        'Program Flow': 'rgba(6, 182, 212, 0.16)',  // Soft low-saturation Cyan
-        Logic: 'rgba(13, 148, 136, 0.16)',         // Soft low-saturation Teal
-        Math: 'rgba(79, 70, 229, 0.16)',           // Soft low-saturation Indigo
-        Variables: 'rgba(161, 98, 7, 0.16)',       // Soft low-saturation Brown
-        Functions: 'rgba(86, 83, 134, 0.16)',      // Soft low-saturation Ink Slate
-        Templates: 'rgba(202, 138, 4, 0.16)',      // Soft low-saturation Gold
-        AI: 'rgba(236, 45, 143, 0.16)',            // Soft low-saturation Pink
-      };
-      document.documentElement.style.setProperty(
-        '--flyout-bg-color',
-        bg[name] || 'rgba(243, 244, 251, 0.65)',
-      );
-    });
-
-    // NOTE: the 3D simulator is created lazily in its own effect (Fix 2d): it is
-    // OFF by default and only spun up when the user opens the Simulator panel.
-
-    onTelemetry((msg) => {
-      ingestTelemetry(msg);
-      setTelemetry((prev) => [
-        ...prev.slice(-200),
-        typeof msg === 'string' ? msg : JSON.stringify(msg),
-      ]);
-    });
-
-    // Glow the block whose id produced the current command (params._bid).
-    runnerRef.current!.onStep = (_pc, cmd) => {
+  const attachRunner = useCallback((runner: ProgramRunner) => {
+    runner.onStep = (_pc, cmd) => {
+      simSinkRef.current?.setStatus(cmd ? commandLabel(cmd.command) : null);
       const ws = workspaceRef.current;
       if (!ws) return;
       const prev = runningBlockIdRef.current;
@@ -277,37 +88,53 @@ export default function BlockCoding() {
         runningBlockIdRef.current = null;
       }
     };
+    runner.onScopeChange = (s) => setScope({ ...s });
+    runner.onStatus = ({ loopIteration }) => simSinkRef.current?.setLoopIteration(loopIteration);
+  }, [workspaceRef]);
 
-    // Register the shared 2D runner ONCE on mount (not inside the sim effect) so
-    // Run works offline even with every panel closed.
-    registerSimSinkRunner();
+  const pickSink = useCallback((): RobotSink => {
+    const transport = getState().transport;
+    if (connected && transport) {
+      const t = new TransportSink(transport);
+      return showSim && !use3D ? new FanOutSink([t, simSinkRef.current!]) : t;
+    }
+    return simSinkRef.current!;
+  }, [connected, showSim, use3D]);
 
-    const onResize = () => Blockly.svgResize(workspace);
-    window.addEventListener('resize', onResize);
-    // Blockly needs a resize once its container has real dimensions.
-    const raf = requestAnimationFrame(onResize);
-
-    return () => {
-      window.removeEventListener('resize', onResize);
-      cancelAnimationFrame(raf);
-      onTelemetry(() => {});
-      workspace.dispose();
-      workspaceRef.current = null;
-    };
+  // Prefers reduced motion
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const apply = () => setReduced(mq.matches);
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
   }, []);
 
-  // ---- Lazy 3D simulator (opt-in). Default OFF; create exactly one WebGL
-  // context when the panel opens and dispose it when it closes / unmounts.
+  // Let the Templates flyout button open the gallery.
+  useEffect(() => {
+    setGalleryOpener(() => setShowGallery(true));
+    return () => setGalleryOpener(null);
+  }, []);
+
+  // Camera on? (drives the AI button's live dot). Stop the camera on unmount so a
+  // forgotten MediaStream can never leave the webcam LED on.
+  const cameraOn = useSyncExternalStore(
+    cvStore.subscribe,
+    () => cvStore.isOn(),
+    () => false,
+  );
+  useEffect(() => () => cvStore.stop(), []);
+
+  // Lazy 3D Simulator (opt-in)
   useEffect(() => {
     if (!showSim || !use3D) return;
     const container = simDivRef.current;
-    if (!container || simulatorRef.current) return; // guard StrictMode double-invoke
+    if (!container || simulatorRef.current) return;
 
     let simulator: Simulator | null = null;
     try {
       simulator = new Simulator(container);
-    } catch (e) {
-      console.warn('3D sim disabled:', e);
+    } catch {
       setSimError(true);
       return;
     }
@@ -325,81 +152,117 @@ export default function BlockCoding() {
     simulatorRef.current = simulator;
     sequencerRef.current = sequencer;
 
-    // Route offline Run through the sequencer only while the sim is open.
-    setSimulatorRunner((commands: any[]) => {
-      setRunning(true);
-      sequencer.runCommandSequence(commands).finally(() => setRunning(false));
-    });
-
     return () => {
       simulator?.dispose();
       simulatorRef.current = null;
       sequencerRef.current = null;
-      // Hand offline Run back to the shared 2D runner.
-      registerSimSinkRunner();
     };
-  }, [showSim, use3D, registerSimSinkRunner]);
+  }, [showSim, use3D]);
 
-  // ---- prefers-reduced-motion (freeze the 2D animation like BaseMode) ----
+  // Unsaved work guard
   useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const apply = () => setReduced(mq.matches);
-    apply();
-    mq.addEventListener('change', apply);
-    return () => mq.removeEventListener('change', apply);
-  }, []);
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const ws = workspaceRef.current;
+      if (ws && ws.getAllBlocks(false).length > 1) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [workspaceRef]);
 
-  // ---- Generate {"command":...} program from the workspace ----
   const generateCode = useCallback((): string => {
     const workspace = workspaceRef.current;
     if (!workspace) return '[]';
-    javascriptGenerator.init(workspace);
-    const start = workspace.getTopBlocks(true).find((b) => b.type === 'program_start');
-    const first = start?.getNextBlock();
-    if (!first) return '[]';
-    const code = javascriptGenerator.blockToCode(first) as string;
-    // Each statement block emits a `{"command":...};` segment. Skip any segment
-    // that isn't valid JSON (e.g. a stray expression from a reused built-in
-    // block) so one bad block can't abort the whole Run.
-    const commands = code
-      .split(';')
-      .map((c) => c.trim())
-      .filter((c) => c !== '')
-      .flatMap((c) => {
-        try {
-          return [JSON.parse(c)];
-        } catch {
-          console.warn('Skipping non-JSON command segment:', c);
-          return [];
-        }
-      });
-    return JSON.stringify(commands);
-  }, []);
+    return generateProgramJson(workspace);
+  }, [workspaceRef]);
 
   const handleRun = useCallback(() => {
     const json = generateCode();
-    if (connected) {
-      // Stream identical bytes to the firmware interpreter (unchanged path)…
-      setRunning(true);
-      runCommandsOnRobot(json);
-      // …and mirror on the 2D stage when it's open so the sprite shadows the robot.
-      if (showSim && !use3D) {
-        let commands: any[] = [];
-        try { commands = JSON.parse(json); } catch { commands = []; }
-        runnerRef.current!.run(commands).finally(() => setRunning(false));
-      }
-    } else {
-      // Disconnected → runCommandsOnRobot dispatches to the registered runner
-      // (SimSink 2D by default, or the 3D sequencer when that beta panel is open).
-      runCommandsOnRobot(json);
+    let commands: any[] = [];
+    try { commands = JSON.parse(json); } catch { commands = []; }
+
+    // AI programs are host-executed (inference in the browser); the board only
+    // ever receives motion. Say so ONCE in the monitor so it's not a mystery.
+    const usesAi = json.includes('GET_AI_DATA') || json.includes('AI_CAMERA') || json.includes('AI_SET_MODEL');
+    if (usesAi && !aiNoticeShownRef.current) {
+      aiNoticeShownRef.current = true;
+      setShowMonitor(true);
+      setTelemetry((prev) => [...prev.slice(-200), 'ℹ️ Program AI dijalankan dari browser; robot menerima perintah gerak saja.']);
     }
-  }, [connected, generateCode, showSim, use3D]);
+
+    if (use3D && showSim && sequencerRef.current) {
+      setRunning(true);
+      sequencerRef.current.runCommandSequence(commands).finally(() => setRunning(false));
+      return;
+    }
+
+    if (runnerRef.current?.isRunning) runnerRef.current.stop();
+
+    const runner = new ProgramRunner(pickSink());
+    attachRunner(runner);
+    runner.setSpeed(speed);
+    simSinkRef.current?.setSpeed(speed);
+    runnerRef.current = runner;
+    setPaused(false);
+    setRunning(true);
+    simSinkRef.current?.setRunning(true);
+    runner.run(commands).finally(() => {
+      if (runnerRef.current === runner) {
+        setRunning(false);
+        setPaused(false);
+        simSinkRef.current?.setRunning(false);
+        simSinkRef.current?.setStatus(null);
+      }
+    });
+  }, [generateCode, showSim, use3D, pickSink, attachRunner, speed]);
 
   const handleStop = useCallback(() => {
     void estop();
     runnerRef.current?.stop();
+    simSinkRef.current?.stopAll();
+    simSinkRef.current?.setRunning(false);
+    simSinkRef.current?.setStatus(null);
     sequencerRef.current?.stopSequence();
     setRunning(false);
+    setPaused(false);
+  }, []);
+
+  const handleSpeed = useCallback((mult: number) => {
+    setSpeed(mult);
+    runnerRef.current?.setSpeed(mult);
+    simSinkRef.current?.setSpeed(mult);
+  }, []);
+
+  const handlePauseToggle = useCallback(() => {
+    const runner = runnerRef.current;
+    if (!runner?.isRunning) return;
+    if (runner.isPaused) {
+      runner.resume();
+      setPaused(false);
+    } else {
+      runner.pause();
+      setPaused(true);
+    }
+  }, []);
+
+  const handleStepOne = useCallback(() => {
+    const runner = runnerRef.current;
+    if (!runner) return;
+    if (!runner.isPaused) {
+      runner.pause();
+      setPaused(true);
+    }
+    runner.step();
+  }, []);
+
+  const handleReset = useCallback(() => {
+    runnerRef.current?.stop();
+    simSinkRef.current?.reset();
+    setRunning(false);
+    setPaused(false);
+    setScope({});
   }, []);
 
   const handleDownload = useCallback(() => {
@@ -413,7 +276,7 @@ export default function BlockCoding() {
     a.download = 'program.rbk';
     a.click();
     URL.revokeObjectURL(url);
-  }, []);
+  }, [workspaceRef]);
 
   const handleSave = useCallback(async () => {
     const workspace = workspaceRef.current;
@@ -429,25 +292,79 @@ export default function BlockCoding() {
     const list = await loadProjects();
     await persistProjects([project, ...list]);
     showToast(`Tersimpan: ${project.name}`, 'success');
-  }, []);
+  }, [workspaceRef]);
 
   const handleShare = useCallback(async () => {
     const json = generateCode();
     try {
       await navigator.clipboard.writeText(json);
+      showToast('Program disalin ke clipboard!', 'info');
     } catch {
-      /* clipboard may be blocked — ignore */
+      /* ignore */
     }
   }, [generateCode]);
+
+  // --- Templates ---------------------------------------------------------
+  const handleUseTemplate = useCallback((workspaceJson: object, name: string) => {
+    const ws = workspaceRef.current;
+    if (!ws) return;
+    let mode: 'replace' | 'append' = 'replace';
+    if (ws.getAllBlocks(false).length > 1) {
+      const replace = window.confirm(
+        `Muat "${name}"?\n\nOK = Ganti program yang ada\nBatal = Tambahkan di samping`,
+      );
+      mode = replace ? 'replace' : 'append';
+    }
+    insertTemplate(ws, workspaceJson, mode);
+    showToast(`Template dimuat: ${name}`, 'success');
+  }, [workspaceRef]);
+
+  const handleTryTemplate = useCallback((workspaceJson: object) => {
+    const ws = workspaceRef.current;
+    if (!ws) return;
+    insertTemplate(ws, workspaceJson, 'replace');
+    setShowSim(true);
+    setTimeout(() => handleRun(), 80);
+  }, [workspaceRef, handleRun]);
+
+  const handleSaveTemplate = useCallback(async () => {
+    const ws = workspaceRef.current;
+    if (!ws) return;
+    const selected =
+      (Blockly as any).getSelected?.() ?? (Blockly as any).common?.getSelected?.();
+    if (!selected || selected.type === 'program_start') {
+      showToast('Pilih satu blok dulu untuk disimpan sebagai template', 'info');
+      return;
+    }
+    const name = window.prompt('Nama template:', 'Template Saya');
+    if (!name) return;
+    const savedBlock = Blockly.serialization.blocks.save(selected, { addNextBlocks: true });
+    const full = Blockly.serialization.workspaces.save(ws) as { variables?: unknown[] };
+    const workspace = {
+      blocks: { languageVersion: 0, blocks: [savedBlock] },
+      variables: full.variables ?? [],
+    };
+    const list = await loadUserTemplates();
+    await persistUserTemplates([
+      { id: `t_${Date.now()}`, name: name.trim(), savedAt: Date.now(), workspace },
+      ...list,
+    ]);
+    showToast(`Tersimpan di Template Saya: ${name}`, 'success');
+  }, [workspaceRef]);
 
   return (
     <div className={styles.wrap}>
       <div className={styles.editor}>
         <div ref={blocklyDivRef} className={styles.blockly} />
 
-        {/* Hint removed */}
-        {/* Right action toolbar */}
         <div className={styles.toolbar}>
+          <button
+            className={`${styles.tbBtn} ${showToolbox ? styles.tbActive : ''}`}
+            onClick={toggleToolbox}
+            title={showToolbox ? 'Tutup Sidebar Blok' : 'Buka Sidebar Blok'}
+          >
+            <SidebarIcon /> <span>Sidebar</span>
+          </button>
           <button className={`${styles.tbBtn} ${styles.run}`} onClick={handleRun} title="Run">
             <PlayIcon /> <span>Run</span>
           </button>
@@ -459,7 +376,31 @@ export default function BlockCoding() {
           >
             <StopIcon /> <span>Stop</span>
           </button>
-          <div className={styles.tbDiv} />
+          <button
+            className={`${styles.tbBtn} ${showSim ? styles.tbActive : ''}`}
+            onClick={() => setShowSim((v) => !v)}
+            title={showSim ? 'Tutup Simulator' : 'Buka Simulator'}
+          >
+            <SimIcon /> <span>Simulator</span>
+          </button>
+          <button
+            className={`${styles.tbBtn} ${showCvPanel || cameraOn ? styles.tbActive : ''}`}
+            onClick={() => setShowCvPanel((v) => !v)}
+            title="Computer Vision (kamera AI)"
+          >
+            <AiIcon /> <span>AI</span>
+            {cameraOn && <span className={styles.tbLiveDot} />}
+          </button>
+          <button
+            className={`${styles.tbBtn} ${showGallery ? styles.tbActive : ''}`}
+            onClick={() => setShowGallery(true)}
+            title="Galeri Template"
+          >
+            <TemplatesIcon /> <span>Templates</span>
+          </button>
+          <button className={styles.tbBtn} onClick={handleSaveTemplate} title="Simpan blok terpilih sebagai template">
+            <SaveTemplateIcon /> <span>+ Template</span>
+          </button>
           <button className={styles.tbBtn} onClick={handleSave} title="Simpan ke Projects">
             <SaveIcon /> <span>Save</span>
           </button>
@@ -476,12 +417,8 @@ export default function BlockCoding() {
           >
             <MonitorIcon /> <span>Monitor</span>
           </button>
-          <button className={styles.tbBtn} onClick={() => {}} title="AI (segera hadir)" disabled>
-            <SparkIcon /> <span>AI</span>
-          </button>
         </div>
 
-        {/* Simulator card — 2D by default (no WebGL). 3D is an opt-in beta. */}
         <div className={`${styles.simCard} ${showSim ? '' : styles.simHidden}`}>
           <div className={styles.simHead}>
             <span>{connected ? `Robot · ${robotInfo?.board ?? ''}` : 'Simulator'}</span>
@@ -511,11 +448,31 @@ export default function BlockCoding() {
                 <div ref={simDivRef} className={styles.simCanvas} />
               )
             ) : (
-              <SimStage sink={simSinkRef.current!} reduced={reduced} />
+              <SimStage
+                sink={simSinkRef.current!}
+                reduced={reduced}
+                running={running}
+                paused={paused}
+                speed={speed}
+                scope={scope}
+                onSpeed={handleSpeed}
+                onPauseToggle={handlePauseToggle}
+                onStepOne={handleStepOne}
+                onReset={handleReset}
+              />
             ))}
         </div>
 
-        {/* Serial monitor */}
+        <TemplateGallery
+          open={showGallery}
+          onClose={() => setShowGallery(false)}
+          onUse={handleUseTemplate}
+          onTry={handleTryTemplate}
+          aiEnabled
+        />
+
+        <CvPanel open={showCvPanel} onClose={() => setShowCvPanel(false)} />
+
         {showMonitor && (
           <div className={styles.monitor}>
             <div className={styles.monitorHead}>
@@ -536,11 +493,29 @@ export default function BlockCoding() {
   );
 }
 
-/* ---- icons ---- */
+function commandLabel(command: string): string {
+  const map: Record<string, string> = {
+    MOVE_TIMED: 'Gerak', TURN_TIMED: 'Belok', STEER_TIMED: 'Setir', CLAW_TIMED: 'Capit',
+    STOP: 'Berhenti', STOP_ALL: 'Berhenti Semua', WAIT: 'Tunggu', WAIT_UNTIL: 'Tunggu sampai',
+    DISPLAY_MATRIX: 'LED Matrix', DISPLAY_TEXT: 'Teks LED', SET_LED_BRIGHTNESS: 'Kecerahan',
+    CLEAR_MATRIX: 'Hapus Matrix', LCD_SHAPE: 'Bentuk LCD', LCD_TEXT: 'Teks LCD', LCD_CLEAR: 'Hapus LCD',
+    SET_LED_COLOR: 'Warna LED', DISPLAY_ICON: 'Ikon', PLAY_TONE: 'Nada', PLAY_SOUND_EFFECT: 'Efek Suara',
+    PLAY_INTERNAL_SOUND: 'Suara', RECORD_AUDIO: 'Rekam', PLAY_RECORDING: 'Putar Rekaman',
+    SET_VOLUME: 'Volume', SET_BPM: 'BPM', STOP_SOUNDS: 'Stop Suara', SET_ANALOG: 'Set Analog',
+    SET_DIGITAL: 'Set Digital', RESET_DISTANCE: 'Reset Jarak', RESET_HEADING: 'Reset Arah',
+    SET_HEAD_POSITION: 'Kepala', SET_GRIPPER: 'Capit', META_SET_VAR: 'Set Variabel', META_CALL: 'Panggil Fungsi',
+  };
+  return map[command] ?? command;
+}
+
+function SidebarIcon() { return <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 3v18" /></svg>; }
 function PlayIcon() { return <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>; }
 function StopIcon() { return <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>; }
 function SaveIcon() { return <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M5 3h11l3 3v15H5z" /><path d="M8 3v6h7V3M8 21v-6h8v6" /></svg>; }
 function ShareIcon() { return <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="2.5" /><circle cx="6" cy="12" r="2.5" /><circle cx="18" cy="19" r="2.5" /><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4" /></svg>; }
 function DownloadIcon() { return <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></svg>; }
 function MonitorIcon() { return <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8M12 16v4" /></svg>; }
-function SparkIcon() { return <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" /></svg>; }
+function SimIcon() { return <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" /><path d="M7 9l3 3-3 3M13 15h4" /></svg>; }
+function TemplatesIcon() { return <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg>; }
+function SaveTemplateIcon() { return <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M12 8v8M8 12h8" /></svg>; }
+function AiIcon() { return <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="3" /><circle cx="12" cy="12" r="3.2" /><path d="M8 5l1.5-2h5L16 5" /></svg>; }
