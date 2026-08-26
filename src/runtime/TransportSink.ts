@@ -8,7 +8,7 @@
 
 import type { RobotSink } from './ProgramRunner';
 import type { RobotTransport } from '../transport';
-import { encodeCommand } from '../domain/protocol';
+import { encodeCommand, type RuntimeCommand, type CommandParams, type RobotCommand } from '../domain/protocol';
 import { estop } from '../app/connection';
 import { getCachedSensor } from './telemetryCache';
 import { cvStore } from '../ai/cvStore';
@@ -22,7 +22,7 @@ export class TransportSink implements RobotSink {
     this.transport = transport;
   }
 
-  async exec(cmd: { command: string; params: any }): Promise<void> {
+  async exec(cmd: RuntimeCommand): Promise<void> {
     this.stopRequested = false;
     // AI camera commands are host-side — the board never runs a model.
     if (cmd.command === 'AI_CAMERA') {
@@ -35,13 +35,13 @@ export class TransportSink implements RobotSink {
       return;
     }
     // Strip the editor-only highlight id so the firmware sees clean bytes.
-    let params = cmd.params;
-    if (params && typeof params === 'object' && '_bid' in params) {
+    let params: CommandParams | undefined = cmd.params;
+    if (params && '_bid' in params) {
       params = { ...params };
       delete params._bid;
     }
     try {
-      this.transport.sendLine(encodeCommand({ command: cmd.command, params } as any));
+      this.transport.sendLine(encodeCommand({ command: cmd.command, params } as RobotCommand));
     } catch (err) {
       console.warn('[TransportSink] sendLine failed', err);
     }
@@ -99,7 +99,7 @@ export class TransportSink implements RobotSink {
   }
 }
 
-function durMs(params: any): number {
+function durMs(params: CommandParams | undefined): number {
   if (params == null) return 0;
   if (typeof params.duration_ms === 'number') return params.duration_ms;
   if (typeof params.ms === 'number') return params.ms;

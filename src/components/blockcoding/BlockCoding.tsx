@@ -16,7 +16,7 @@ import type { Simulator } from '../../simulator';
 import type { SimulatorSequencer } from '../../simulator_sequencer';
 import SimStage from './SimStage';
 import { ProgramRunner, type RobotSink } from '../../runtime/ProgramRunner';
-import { SimSink } from '../../runtime/SimSink';
+import { SimSink, closeSharedAudio } from '../../runtime/SimSink';
 import { TransportSink } from '../../runtime/TransportSink';
 import { FanOutSink } from '../../runtime/FanOutSink';
 import { useConnection } from '../../hooks/useConnection';
@@ -127,7 +127,7 @@ function BlockCodingInner() {
     () => cvStore.isOn(),
     () => false,
   );
-  useEffect(() => () => cvStore.stop(), []);
+  useEffect(() => () => { cvStore.stop(); closeSharedAudio(); }, []);
 
   // Lazy 3D Simulator (opt-in). three.js (~600 KB) is dynamically imported HERE so
   // it never ships to a child who just uses the 2D sim (the default).

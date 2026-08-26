@@ -18,15 +18,17 @@ function key(sensor: string, port?: string | number | null): string {
  *   {sensor, port?, value}
  *   {command:'GET_SENSOR_DATA', params:{sensor, port?}, value}
  */
-export function ingestTelemetry(msg: any): void {
+export function ingestTelemetry(msg: unknown): void {
   if (!msg || typeof msg !== 'object') return;
-  const body = msg.params && typeof msg.params === 'object' ? msg.params : msg;
-  const sensor = body.sensor ?? msg.sensor;
+  const m = msg as Record<string, unknown>;
+  const body = (m.params && typeof m.params === 'object' ? m.params : m) as Record<string, unknown>;
+  const sensor = body.sensor ?? m.sensor;
   if (typeof sensor !== 'string') return;
-  const rawValue = body.value ?? msg.value;
+  const rawValue = body.value ?? m.value;
   const value = typeof rawValue === 'number' ? rawValue : Number(rawValue);
   if (!Number.isFinite(value)) return;
-  cache.set(key(sensor, body.port ?? msg.port), value);
+  const port = (body.port ?? m.port) as string | number | null | undefined;
+  cache.set(key(sensor, port), value);
 }
 
 /** Latest cached value for a sensor(+port), or null if none has arrived yet. */

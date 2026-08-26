@@ -104,15 +104,13 @@ export function useBlocklyWorkspace(blocklyDivRef: React.RefObject<HTMLDivElemen
       document.documentElement.style.setProperty('--flyout-bg-color', tint);
     });
 
-    onTelemetry((msg) => {
+    const unsubTelemetry = onTelemetry((msg) => {
       ingestTelemetry(msg);
-      setTelemetry((prev) => [
-        ...prev.slice(-200),
-        typeof msg === 'string' ? msg : JSON.stringify(msg),
-      ]);
+      const line = typeof msg === 'string' ? msg : JSON.stringify(msg);
+      // Cap each line at 500 chars — a runaway firmware line can be megabytes.
+      const capped = line.length > 500 ? line.slice(0, 500) + '…' : line;
+      setTelemetry((prev) => [...prev.slice(-200), capped]);
     });
-
-    const unsubTelemetry = () => onTelemetry(() => {});
 
     const onResize = () => {
       if (workspaceRef.current) {

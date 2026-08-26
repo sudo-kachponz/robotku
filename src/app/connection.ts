@@ -19,11 +19,24 @@ import {
 import { setActiveTransport as runnerSetTransport } from '../command_runner';
 import { showToast } from '../ui/toast';
 
-let telemetryCb: ((msg: any) => void) | null = null;
+type TelemetryCb = (msg: any) => void;
+const telemetryCbs = new Set<TelemetryCb>();
 
-/** Optional hook so modules (joystick, block sim) can watch telemetry frames. */
-export function onTelemetry(cb: (msg: any) => void): void {
-  telemetryCb = cb;
+/**
+ * Subscribe to telemetry frames. Returns an unsubscribe. Multiple subscribers
+ * coexist (the Serial Monitor and telemetryCache both listen) — previously a
+ * second subscriber silently replaced the first.
+ */
+export function onTelemetry(cb: TelemetryCb): () => void {
+  telemetryCbs.add(cb);
+  return () => {
+    telemetryCbs.delete(cb);
+  };
+}
+
+/** Fan a telemetry frame out to every subscriber (used by the active transport). */
+export function dispatchTelemetry(msg: any): void {
+  for (const cb of telemetryCbs) cb(msg);
 }
 
 /** Connect via the chosen transport, run the handshake, publish to the store. */
@@ -43,9 +56,7 @@ export async function connect(kind: TransportKind): Promise<RobotInfo> {
     }
   });
 
-  transport.onTelemetry((msg) => {
-    telemetryCb?.(msg);
-  });
+  transport.onTelemetry(dispatchTelemetry);
 
   storeSetTransport(transport);
 

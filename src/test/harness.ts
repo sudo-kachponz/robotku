@@ -124,7 +124,7 @@ export function buildBlock(spec: BlockSpec): any[] {
 
 export interface RunResult {
   state: SimState;
-  log: Array<{ command: string; params: any }>;
+  log: Array<{ command: string; params?: any }>;
   sink: SimSink;
   runner: ProgramRunner;
 }
@@ -138,7 +138,7 @@ export interface RunOpts {
 export interface PendingRun {
   sink: SimSink;
   runner: ProgramRunner;
-  log: Array<{ command: string; params: any }>;
+  log: Array<{ command: string; params?: any }>;
   done: Promise<void>;
 }
 
@@ -150,7 +150,7 @@ export function startRun(commands: any[], opts: RunOpts = {}): PendingRun {
   const sink = new SimSink();
   const speed = opts.speed ?? 4;
   sink.setSpeed(speed);
-  const log: Array<{ command: string; params: any }> = [];
+  const log: Array<{ command: string; params?: any }> = [];
   const wrapped: RobotSink = {
     exec: (c) => {
       log.push(c);

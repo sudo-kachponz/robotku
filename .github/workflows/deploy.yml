@@ -1,0 +1,63 @@
+name: Deploy to hub.robotku.id
+
+# Static export → FTPS mirror. Credentials live ONLY in repository Secrets:
+#   FTP_HOST  FTP_USER  FTP_PASS   (rotate on every leak; never commit them)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true # remove once R2's lint config lands green
+
+      - name: Test
+        run: npm test
+
+      - name: Build (emits out/.htaccess + version.json)
+        run: npm run build
+
+      # Safety: never deploy with missing/old credentials. Fails loudly if the
+      # Secrets have not been set (rotate the leaked FTP creds first).
+      - name: Verify FTP secrets are present
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+        run: |
+          if [ -z "$FTP_HOST" ] || [ -z "$FTP_USER" ] || [ -z "$FTP_PASS" ]; then
+            echo "::error::FTP_HOST/FTP_USER/FTP_PASS secrets are not set. Rotate the leaked credentials and add them to repository Secrets before deploying." >&2
+            exit 1
+          fi
+
+      - name: Install lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
+
+      - name: Deploy (FTPS)
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+          SKIP_SIM3D: '1' # launch payload excludes the 26 MB of 3D assets
+        run: bash scripts/deploy.sh

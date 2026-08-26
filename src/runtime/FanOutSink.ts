@@ -7,6 +7,7 @@
 // first, sim as fallback).
 
 import type { RobotSink } from './ProgramRunner';
+import type { RuntimeCommand } from '../domain/protocol';
 
 export class FanOutSink implements RobotSink {
   private sinks: RobotSink[];
@@ -15,7 +16,7 @@ export class FanOutSink implements RobotSink {
     this.sinks = sinks;
   }
 
-  async exec(cmd: { command: string; params: any }): Promise<void> {
+  async exec(cmd: RuntimeCommand): Promise<void> {
     await Promise.all(this.sinks.map((s) => s.exec(cmd)));
   }
 

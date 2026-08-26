@@ -11,11 +11,20 @@
 // META_END_IF and WAIT_UNTIL, which the 3D sequencer left as no-ops.
 
 import { showToast } from '../ui/toast';
+import type { RuntimeCommand, CommandParams } from '../domain/protocol';
+
+/** Read a params field as a finite number, else a default. */
+const numOf = (v: unknown, dflt = 0): number => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : dflt;
+};
+/** Read a params field as a string array (function arg names / call args). */
+const arrOf = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 
 /** Where side effects (motion, display, sound, sensors) are applied. */
 export interface RobotSink {
   /** Perform one timed/instant action. Timed actions resolve when their duration elapses. */
-  exec(cmd: { command: string; params: any }): Promise<void>;
+  exec(cmd: RuntimeCommand): Promise<void>;
   /** Synchronous, latest cached sensor value for a GET_SENSOR_DATA json string. */
   getSensorValue(getSensorDataJson: string): number | null;
   /** Zero every output and cancel any in-flight timed action. */
@@ -47,7 +56,7 @@ interface CallFrame {
   savedIfStack: IfFrame[];
 }
 
-const sanitize = (name: string): string => String(name ?? 'var').replace(/[^A-Za-z0-9_]/g, '_');
+const sanitize = (name: unknown): string => String(name ?? 'var').replace(/[^A-Za-z0-9_]/g, '_');
 
 export class ProgramRunner {
   private sink: RobotSink;
@@ -58,7 +67,7 @@ export class ProgramRunner {
   // Run-time variable scope (cleared each run) + compiled-expression cache so a
   // forever loop never recompiles the same expression.
   private scope: Record<string, unknown> = {};
-  private compileCache = new Map<string, Function>();
+  private compileCache = new Map<string, (...args: unknown[]) => unknown>();
 
   // Run controls (PROMPT B): time scaling + pause/step gate.
   private speed = 1;
@@ -67,7 +76,7 @@ export class ProgramRunner {
   private gateResolvers: Array<() => void> = [];
 
   /** Fired before each command executes; used to highlight the running block. */
-  onStep?: (pc: number, cmd: any) => void;
+  onStep?: (pc: number, cmd: RuntimeCommand | null) => void;
   /** Fired whenever the variable scope changes; used by the Variables watch. */
   onScopeChange?: (scope: Record<string, unknown>) => void;
   /** Fired with lightweight status (innermost loop iteration) for the status strip. */
@@ -121,7 +130,7 @@ export class ProgramRunner {
     return this.running;
   }
 
-  async run(commands: any[]): Promise<void> {
+  async run(commands: RuntimeCommand[]): Promise<void> {
     if (this.running) return;
     this.running = true;
     this.stopRequested = false;
@@ -138,10 +147,10 @@ export class ProgramRunner {
     for (let i = 0; i < commands.length; i++) {
       const c = commands[i];
       if (c?.command === 'META_FUNC_DEF') {
-        funcTable.set(c.params?.name, {
+        funcTable.set(String(c.params?.name), {
           startPc: i,
           endPc: this.findMatchingFuncEnd(commands, i),
-          argNames: Array.isArray(c.params?.args) ? c.params.args : [],
+          argNames: arrOf(c.params?.args).map((n) => sanitize(n)),
         });
       } else if (c?.command === 'META_SET_VAR') {
         const n = sanitize(c.params?.name);
@@ -174,7 +183,7 @@ export class ProgramRunner {
           // --- Functions ---
           case 'META_FUNC_DEF': {
             // Definitions must not run inline — skip straight to the matching end.
-            const entry = funcTable.get(command.params?.name);
+            const entry = funcTable.get(String(command.params?.name));
             pc = entry ? entry.endPc : this.findMatchingFuncEnd(commands, pc);
             break;
           }
@@ -184,11 +193,9 @@ export class ProgramRunner {
               this.stopRequested = true;
               break;
             }
-            const entry = funcTable.get(command.params?.name);
+            const entry = funcTable.get(String(command.params?.name));
             if (!entry) break; // unknown function → no-op
-            const argValues = (Array.isArray(command.params?.args) ? command.params.args : []).map(
-              (a: unknown) => this.resolveParams(a),
-            );
+            const argValues = arrOf(command.params?.args).map((a) => this.resolveParams(a));
             const savedArgs: Record<string, unknown> = {};
             entry.argNames.forEach((n, idx) => {
               savedArgs[n] = this.scope[n];
@@ -224,8 +231,8 @@ export class ProgramRunner {
             loopStack.push({
               type: 'finite',
               startIndex: pc + 1,
-              iterationsLeft: command.params?.times,
-              total: command.params?.times,
+              iterationsLeft: numOf(command.params?.times),
+              total: numOf(command.params?.times),
               ifDepth: ifStack.length,
             });
             this.onStatus?.({ loopIteration: 1 });
@@ -329,7 +336,8 @@ export class ProgramRunner {
               // Resolve any `{$expr}` params (variables/math/sensor reporters)
               // against the live scope right before executing, so the sink and
               // the firmware only ever see plain literals.
-              await this.sink.exec({ command: commandName, params: this.resolveParams(command.params) });
+              const params = (this.resolveParams(command.params) as CommandParams | undefined) ?? {};
+              await this.sink.exec({ command: commandName, params });
             }
           }
         }
@@ -353,6 +361,10 @@ export class ProgramRunner {
       this.sink.stopAll();
       this.running = false;
       this.onStep?.(-1, null);
+      // Release compiled condition/expression Functions so an edited program that
+      // is re-run never accumulates another closure per run (R3 leak audit #4).
+      this.compileCache.clear();
+      this.scope = {};
     }
   }
 
@@ -387,7 +399,7 @@ export class ProgramRunner {
     });
   }
 
-  private async waitUntil(condition?: string): Promise<void> {
+  private async waitUntil(condition?: unknown): Promise<void> {
     const start = performance.now();
     while (!this.stopRequested && !this.evaluateCondition(condition)) {
       await this.sleep(30);
@@ -406,49 +418,53 @@ export class ProgramRunner {
     const cacheKey = keys.join(',') + '::' + expr;
     let fn = this.compileCache.get(cacheKey);
     if (!fn) {
-      fn = new Function('getSensorValue', 'mathRandomInt', ...keys, `return (${expr});`);
+      // eslint-disable-next-line @typescript-eslint/no-implied-eval
+      fn = new Function('getSensorValue', 'mathRandomInt', ...keys, `return (${expr});`) as (
+        ...args: unknown[]
+      ) => unknown;
       this.compileCache.set(cacheKey, fn);
     }
-    return (fn as any)(
+    return fn(
       (json: string) => this.sink.getSensorValue(json),
       (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min,
       ...keys.map((k) => this.scope[k]),
     );
   }
 
-  private evaluateCondition(condition?: string): boolean {
+  private evaluateCondition(condition?: unknown): boolean {
     if (condition == null) return false;
     const trimmed = String(condition).trim().toLowerCase();
     if (trimmed === 'true') return true;
     if (trimmed === 'false' || trimmed === '') return false;
     try {
-      return this.evalExpr(condition) === true;
+      return this.evalExpr(String(condition)) === true;
     } catch (error) {
-      console.error(`Error evaluating condition "${condition}":`, error);
+      console.error(`Error evaluating condition "${String(condition)}":`, error);
       return false;
     }
   }
 
   /** Deep-resolve `{$expr}` nodes in a params tree; everything else passes through. */
-  private resolveParams(value: any): any {
+  private resolveParams(value: unknown): unknown {
     if (value == null) return value;
     if (Array.isArray(value)) return value.map((v) => this.resolveParams(v));
     if (typeof value === 'object') {
-      if (typeof value.$expr === 'string') {
+      const rec = value as Record<string, unknown>;
+      if (typeof rec.$expr === 'string') {
         try {
-          return this.evalExpr(value.$expr);
+          return this.evalExpr(rec.$expr);
         } catch {
           return 0;
         }
       }
       const out: Record<string, unknown> = {};
-      for (const k of Object.keys(value)) out[k] = this.resolveParams(value[k]);
+      for (const k of Object.keys(rec)) out[k] = this.resolveParams(rec[k]);
       return out;
     }
     return value;
   }
 
-  private findMatchingFuncEnd(commands: any[], startIndex: number): number {
+  private findMatchingFuncEnd(commands: RuntimeCommand[], startIndex: number): number {
     for (let i = startIndex + 1; i < commands.length; i++) {
       if (commands[i].command === 'META_FUNC_END') return i;
     }
@@ -456,7 +472,7 @@ export class ProgramRunner {
   }
 
   // --- PC jump helpers (copied from simulator_sequencer.ts) -----------------
-  private findNextBranch(commands: any[], startIndex: number): number {
+  private findNextBranch(commands: RuntimeCommand[], startIndex: number): number {
     let nestLevel = 0;
     for (let i = startIndex + 1; i < commands.length; i++) {
       const cmd = commands[i].command;
@@ -472,7 +488,7 @@ export class ProgramRunner {
     return commands.length;
   }
 
-  private findMatchingEndIf(commands: any[], startIndex: number): number {
+  private findMatchingEndIf(commands: RuntimeCommand[], startIndex: number): number {
     let nestLevel = 0;
     for (let i = startIndex + 1; i < commands.length; i++) {
       const cmd = commands[i].command;
@@ -485,7 +501,7 @@ export class ProgramRunner {
     return commands.length;
   }
 
-  private findMatchingEndLoop(commands: any[], startIndex: number): number {
+  private findMatchingEndLoop(commands: RuntimeCommand[], startIndex: number): number {
     let nestLevel = 0;
     for (let i = startIndex + 1; i < commands.length; i++) {
       const cmd = commands[i].command;

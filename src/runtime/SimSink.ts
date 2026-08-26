@@ -7,6 +7,7 @@
 // never covered. React reads it through subscribe()/getState().
 
 import type { RobotSink } from './ProgramRunner';
+import type { RuntimeCommand, CommandParams } from '../domain/protocol';
 import { portIndex, NUM_PORTS } from '../domain/ports';
 import { cvStore } from '../ai/cvStore';
 
@@ -126,7 +127,6 @@ export class SimSink implements RobotSink {
   private volume = 0.8; // 0..1
   private simSpeed = 1; // matches ProgramRunner's speed multiplier
   private lastCollisionAt = 0;
-  private audioCtx: AudioContext | null = null;
 
   // --- External store ------------------------------------------------------
   subscribe = (cb: () => void): (() => void) => {
@@ -152,8 +152,9 @@ export class SimSink implements RobotSink {
   }
 
   // --- RobotSink -----------------------------------------------------------
-  async exec(cmd: { command: string; params: any }): Promise<void> {
-    const { command, params = {} } = cmd;
+  async exec(cmd: RuntimeCommand): Promise<void> {
+    const { command } = cmd;
+    const params: CommandParams = cmd.params ?? {};
     switch (command) {
       case 'MOVE_TIMED':
         await this.animateDrive(params, 'move');
@@ -171,7 +172,7 @@ export class SimSink implements RobotSink {
         // Zero ONLY the named motor ports (LEFT/RIGHT), leaving others untouched.
         const next = [...this.state.portValues];
         for (const name of [params.left, params.right]) {
-          const idx = portIndex(name);
+          const idx = portIndex(asPortArg(name));
           if (idx != null) next[idx] = 0;
         }
         this.commit({ fwd: 0, turn: 0, portValues: next }, true);
@@ -224,7 +225,9 @@ export class SimSink implements RobotSink {
         this.commit({ lcdText: '', lcdShape: null }, true);
         break;
       case 'SET_LED_COLOR': {
-        const { r = 0, g = 0, b = 0 } = params;
+        const r = Number(params.r) || 0;
+        const g = Number(params.g) || 0;
+        const b = Number(params.b) || 0;
         this.commit({ ledColor: `rgb(${r | 0}, ${g | 0}, ${b | 0})` }, true);
         break;
       }
@@ -232,7 +235,7 @@ export class SimSink implements RobotSink {
         this.commit({ lcdShape: String(params.icon_name ?? params.icon ?? '') }, true);
         break;
       case 'PLAY_TONE': {
-        const hz = NOTE_HZ[params.note] ?? 440;
+        const hz = NOTE_HZ[String(params.note)] ?? 440;
         // `beats` resolves against BPM: ms = beats * 60000 / bpm.
         const ms =
           typeof params.beats === 'number'
@@ -284,7 +287,7 @@ export class SimSink implements RobotSink {
         this.commit({ buzzerHz: 0 }, true);
         break;
       case 'SET_ANALOG': {
-        const idx = portIndex(params.port);
+        const idx = portIndex(asPortArg(params.port));
         if (idx != null) {
           const analogPorts = [...this.state.analogPorts];
           analogPorts[idx] = clamp(Number(params.value) || 0, 0, 255);
@@ -293,7 +296,7 @@ export class SimSink implements RobotSink {
         break;
       }
       case 'SET_DIGITAL': {
-        const idx = portIndex(params.port);
+        const idx = portIndex(asPortArg(params.port));
         if (idx != null) {
           const digitalPorts = [...this.state.digitalPorts];
           digitalPorts[idx] = params.value === 'HIGH' || params.value === 1 ? 1 : 0;
@@ -439,7 +442,7 @@ export class SimSink implements RobotSink {
   }
 
   // --- Kinematics ----------------------------------------------------------
-  private async animateDrive(params: any, mode: 'move' | 'turn' | 'steer'): Promise<void> {
+  private async animateDrive(params: CommandParams, mode: 'move' | 'turn' | 'steer'): Promise<void> {
     this.stopRequested = false;
     const duration = (durMs(params) || 0) / this.simSpeed;
     const speed = Number(params.speed) || 70;
@@ -464,8 +467,8 @@ export class SimSink implements RobotSink {
       this.commit({ fwd: 1, turn: steer });
     }
     // Light the ports the block actually names, so the strip tells the truth.
-    const li = portIndex(params.left) ?? 0;
-    const ri = portIndex(params.right) ?? 1;
+    const li = portIndex(asPortArg(params.left)) ?? 0;
+    const ri = portIndex(asPortArg(params.right)) ?? 1;
     const nextPorts = [...this.state.portValues];
     nextPorts[li] = leftPort;
     nextPorts[ri] = rightPort;
@@ -489,7 +492,7 @@ export class SimSink implements RobotSink {
     this.commit({ fwd: 0, turn: 0, portValues: cleared }, true);
   }
 
-  private integrate(dt: number, mode: 'move' | 'turn' | 'steer', params: any, scale: number): void {
+  private integrate(dt: number, mode: 'move' | 'turn' | 'steer', params: CommandParams, scale: number): void {
     const p = { x: this.state.x, y: this.state.y, heading: this.state.headingDeg };
 
     if (mode === 'turn') {
@@ -556,12 +559,12 @@ export class SimSink implements RobotSink {
     return Math.max(0, Math.round((dist - ROBOT_R - OBSTACLE_R) / 10)); // 10 px ≈ 1 cm
   }
 
-  private async animateClaw(params: any): Promise<void> {
+  private async animateClaw(params: CommandParams): Promise<void> {
     this.stopRequested = false;
     const duration = (durMs(params) || 600) / this.simSpeed;
     const target = params.direction === 'clockwise' ? 0 : 1; // clockwise = close
     const from = this.state.gripperOpen;
-    const idx = portIndex(params.port);
+    const idx = portIndex(asPortArg(params.port));
     if (idx != null) {
       const p = [...this.state.portValues];
       p[idx] = clampPort(params.speed) * (target === 0 ? 1 : -1);
@@ -588,11 +591,10 @@ export class SimSink implements RobotSink {
   private beep(hz: number, ms: number): void {
     this.commit({ buzzerHz: hz, buzzerPulse: performance.now() }, true);
     try {
-      if (typeof window === 'undefined') return;
-      const Ctx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!Ctx) return;
-      if (!this.audioCtx) this.audioCtx = new Ctx();
-      const ctx = this.audioCtx;
+      // One AudioContext per APP (module singleton), created lazily on the first
+      // beep — which only happens during a run, i.e. after the user pressed Run.
+      const ctx = getSharedAudioCtx();
+      if (!ctx) return;
       if (ctx.state === 'suspended') void ctx.resume().catch(() => {});
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -634,8 +636,28 @@ export class SimSink implements RobotSink {
   }
 }
 
+// --- shared AudioContext (one per app) -------------------------------------
+// R3 #7: at most one AudioContext for the whole app, created lazily on the first
+// beep (which only happens during a run → after a user gesture), closed on unmount.
+let sharedAudioCtx: AudioContext | null = null;
+
+function getSharedAudioCtx(): AudioContext | null {
+  if (typeof window === 'undefined') return null;
+  const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!Ctx) return null;
+  if (!sharedAudioCtx) sharedAudioCtx = new Ctx();
+  return sharedAudioCtx;
+}
+
+/** Close the shared AudioContext (call on editor unmount). Safe to call repeatedly. */
+export function closeSharedAudio(): void {
+  const ctx = sharedAudioCtx;
+  sharedAudioCtx = null;
+  if (ctx) void ctx.close().catch(() => {});
+}
+
 // --- helpers ---------------------------------------------------------------
-function durMs(params: any): number {
+function durMs(params: CommandParams | undefined): number {
   if (params == null) return 0;
   if (typeof params.duration_ms === 'number') return params.duration_ms;
   if (typeof params.ms === 'number') return params.ms;
@@ -643,12 +665,17 @@ function durMs(params: any): number {
   return 0;
 }
 
-function clampPort(v: any): number {
+/** Coerce an unknown params value into a port identifier portIndex() accepts. */
+function asPortArg(v: unknown): string | number | null {
+  return typeof v === 'string' || typeof v === 'number' ? v : null;
+}
+
+function clampPort(v: unknown): number {
   return clamp(Math.round(Number(v) || 0), -100, 100);
 }
 
 /** Accept the looks.ts pattern in either number[] (25) or on/off string form. */
-function normalizeMatrix(pattern: any): number[] {
+function normalizeMatrix(pattern: unknown): number[] {
   const out = Array(25).fill(0);
   if (Array.isArray(pattern)) {
     for (let i = 0; i < 25 && i < pattern.length; i++) out[i] = pattern[i] ? 1 : 0;

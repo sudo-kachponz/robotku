@@ -26,6 +26,55 @@ export const OPCODES = astroidV2.commands;
  */
 export const SET_PORT = 'SET_PORT';
 
+/**
+ * The COMPLETE opcode table the host runtime understands — device opcodes (streamed
+ * to firmware), host-only opcodes (AI camera, resolved in the browser), and META_*
+ * control-flow opcodes the ProgramRunner interprets. Using these constants instead
+ * of bare strings turns a typo into a compile error. `as const` makes each a literal.
+ */
+export const RUNTIME_OPCODES = {
+  ...astroidV2.commands,
+  SET_PORT: 'SET_PORT',
+  // Host-side timing / sensors
+  WAIT: 'WAIT',
+  WAIT_UNTIL: 'WAIT_UNTIL',
+  GET_SENSOR_DATA: 'GET_SENSOR_DATA',
+  // AI (host-executed; never sent to the board)
+  GET_AI_DATA: 'GET_AI_DATA',
+  AI_CAMERA: 'AI_CAMERA',
+  AI_SET_MODEL: 'AI_SET_MODEL',
+  // META control flow (interpreted, not streamed)
+  META_SET_VAR: 'META_SET_VAR',
+  META_FUNC_DEF: 'META_FUNC_DEF',
+  META_FUNC_END: 'META_FUNC_END',
+  META_CALL: 'META_CALL',
+  META_RETURN: 'META_RETURN',
+  META_START_LOOP: 'META_START_LOOP',
+  META_START_INFINITE_LOOP: 'META_START_INFINITE_LOOP',
+  META_END_LOOP: 'META_END_LOOP',
+  META_BREAK_LOOP: 'META_BREAK_LOOP',
+  META_CONTINUE_LOOP: 'META_CONTINUE_LOOP',
+  META_IF: 'META_IF',
+  META_ELSE_IF: 'META_ELSE_IF',
+  META_ELSE: 'META_ELSE',
+  META_END_IF: 'META_END_IF',
+} as const;
+
+/** Every opcode string the runtime can emit or interpret. */
+export type Opcode = (typeof RUNTIME_OPCODES)[keyof typeof RUNTIME_OPCODES];
+
+/** Params bag carried by a runtime command. Values are narrowed at the use site. */
+export type CommandParams = Record<string, unknown>;
+
+/**
+ * A command as the host RUNTIME sees it: `{command, params:{…}}` (nested). This is
+ * distinct from the flat wire {@link RobotCommand} that `encodeCommand` serialises.
+ */
+export interface RuntimeCommand {
+  command: string;
+  params?: CommandParams;
+}
+
 /** Encode a single SET_PORT command (value clamped to -100..100). */
 export function setPortLine(port: number, value: number): string {
   const v = Math.max(-100, Math.min(100, Math.round(value)));
