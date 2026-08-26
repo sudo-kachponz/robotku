@@ -13,7 +13,7 @@ import { useConnection } from '../../hooks/useConnection';
 import styles from './ControlLayout.module.css';
 
 // Configurable external community link (spec: "link to Robotku community").
-const COMMUNITY_URL = 'https://robotku.id/community';
+const COMMUNITY_URL = 'https://robotku.id/#course';
 
 export default function ControlLayout({
   children,

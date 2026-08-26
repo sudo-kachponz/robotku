@@ -14,7 +14,7 @@ import guide2Svg from '../../assets/Guide2.svg';
 import guide3Svg from '../../assets/Guide3.svg';
 import styles from '../../styles/Settings.module.css';
 
-const COMMUNITY_URL = 'https://robotku.id/community';
+const COMMUNITY_URL = 'https://robotku.id/#course';
 const SPEEDS: Speed[] = ['Fast', 'Medium', 'Slow'];
 
 export default function SettingsPage() {

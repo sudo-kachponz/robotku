@@ -9,8 +9,11 @@ import { generateProgramJson } from '../../blockcoding/generateProgram';
 import { cvStore } from '../../ai/cvStore';
 import { estop } from '../../app/connection';
 import { getState } from '../../app/store';
-import { Simulator } from '../../simulator';
-import { SimulatorSequencer } from '../../simulator_sequencer';
+// three.js is a ~600 KB dependency used ONLY by the opt-in 3D beta (default OFF),
+// so Simulator/SimulatorSequencer are imported lazily inside the use3D effect and
+// kept as type-only imports here to stay off the editor's critical path.
+import type { Simulator } from '../../simulator';
+import type { SimulatorSequencer } from '../../simulator_sequencer';
 import SimStage from './SimStage';
 import { ProgramRunner, type RobotSink } from '../../runtime/ProgramRunner';
 import { SimSink } from '../../runtime/SimSink';
@@ -71,6 +74,7 @@ function BlockCodingInner() {
   const [showSim, setShowSim] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [use3D, setUse3D] = useState(false);
   const [simError, setSimError] = useState(false);
+  const [sim3DLoading, setSim3DLoading] = useState(false);
   const [reduced, setReduced] = useState(false);
 
   const attachRunner = useCallback((runner: ProgramRunner) => {
@@ -125,34 +129,50 @@ function BlockCodingInner() {
   );
   useEffect(() => () => cvStore.stop(), []);
 
-  // Lazy 3D Simulator (opt-in)
+  // Lazy 3D Simulator (opt-in). three.js (~600 KB) is dynamically imported HERE so
+  // it never ships to a child who just uses the 2D sim (the default).
   useEffect(() => {
     if (!showSim || !use3D) return;
     const container = simDivRef.current;
     if (!container || simulatorRef.current) return;
 
     let simulator: Simulator | null = null;
-    try {
-      simulator = new Simulator(container);
-    } catch {
-      setSimError(true);
-      return;
-    }
-    if (simulator.initFailed) {
-      setSimError(true);
-      simulator.dispose();
-      return;
-    }
-    setSimError(false);
-    simulator.onContextLost = () => setSimError(true);
-    simulator.loadRobotModel('/Asteria-DashMinimal.glb').catch(() => {});
+    let cancelled = false;
+    setSim3DLoading(true);
 
-    const sequencer = new SimulatorSequencer(simulator);
-    simulator.sequencerVirtualPosition = sequencer.virtualPosition;
-    simulatorRef.current = simulator;
-    sequencerRef.current = sequencer;
+    (async () => {
+      const [{ Simulator }, { SimulatorSequencer }] = await Promise.all([
+        import('../../simulator'),
+        import('../../simulator_sequencer'),
+      ]);
+      if (cancelled || !simDivRef.current) return;
+
+      try {
+        simulator = new Simulator(container);
+      } catch {
+        setSimError(true);
+        setSim3DLoading(false);
+        return;
+      }
+      if (simulator.initFailed) {
+        setSimError(true);
+        setSim3DLoading(false);
+        simulator.dispose();
+        return;
+      }
+      setSimError(false);
+      setSim3DLoading(false);
+      simulator.onContextLost = () => setSimError(true);
+      simulator.loadRobotModel('/Asteria-DashMinimal.glb').catch(() => {});
+
+      const sequencer = new SimulatorSequencer(simulator);
+      simulator.sequencerVirtualPosition = sequencer.virtualPosition;
+      simulatorRef.current = simulator;
+      sequencerRef.current = sequencer;
+    })();
 
     return () => {
+      cancelled = true;
       simulator?.dispose();
       simulatorRef.current = null;
       sequencerRef.current = null;
@@ -445,7 +465,10 @@ function BlockCodingInner() {
                   Simulator 3D tidak tersedia (WebGL). Program tetap berjalan di 2D.
                 </div>
               ) : (
-                <div ref={simDivRef} className={styles.simCanvas} />
+                <>
+                  <div ref={simDivRef} className={styles.simCanvas} />
+                  {sim3DLoading && <div className={styles.simError}>Menyiapkan 3D…</div>}
+                </>
               )
             ) : (
               <SimStage
