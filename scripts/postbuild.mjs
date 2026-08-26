@@ -4,11 +4,15 @@
 //   - .htaccess    : HTTPS force, SPA 404, immutable caching, compression, MIME,
 //                    security + Permissions-Policy (camera/bluetooth) for the AI/BLE stack.
 //   - version.json : { sha, builtAt } so Settings can answer "versi berapa?".
+//   - sitemap.xml  : derived from the routes actually exported into out/ (not a
+//                    hardcoded list, which would rot the moment a page is added).
 // Never fails the build for a missing out/ (e.g. dev) — it just no-ops.
 
 import { execSync } from 'node:child_process';
-import { writeFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { writeFileSync, existsSync, readdirSync } from 'node:fs';
+import { join, sep } from 'node:path';
+
+const SITE_URL = 'https://hub.robotku.id';
 
 const OUT = join(process.cwd(), 'out');
 if (!existsSync(OUT)) {
@@ -78,4 +82,30 @@ ErrorDocument 404 /404/index.html
 `;
 writeFileSync(join(OUT, '.htaccess'), htaccess);
 
-console.log(`[postbuild] wrote out/.htaccess and out/version.json (sha ${version.sha}).`);
+// --- sitemap.xml ----------------------------------------------------------
+// Every route Next exported is an `index.html` somewhere under out/. Walk them,
+// turn each dir into a canonical trailing-slash URL, and skip error pages.
+function routesFromExport(root) {
+  const routes = [];
+  for (const entry of readdirSync(root, { recursive: true, withFileTypes: true })) {
+    if (entry.name !== 'index.html') continue;
+    const dir = entry.parentPath ?? entry.path; // parentPath (Node 20.12+), path (older)
+    const rel = dir.slice(root.length).split(sep).filter(Boolean).join('/');
+    const route = rel ? `/${rel}/` : '/';
+    if (/^\/(404|500)\//.test(route)) continue;
+    if (route.includes('[')) continue; // dynamic-route placeholder (e.g. /lessons/[id]/), not a real URL
+    routes.push(route);
+  }
+  return [...new Set(routes)].sort();
+}
+
+const lastmod = version.builtAt.slice(0, 10); // YYYY-MM-DD
+const urls = routesFromExport(OUT)
+  .map((r) => `  <url>\n    <loc>${SITE_URL}${r}</loc>\n    <lastmod>${lastmod}</lastmod>\n  </url>`)
+  .join('\n');
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
+writeFileSync(join(OUT, 'sitemap.xml'), sitemap);
+
+console.log(
+  `[postbuild] wrote out/.htaccess, out/version.json (sha ${version.sha}), out/sitemap.xml.`,
+);
