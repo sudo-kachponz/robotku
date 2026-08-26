@@ -223,16 +223,16 @@
 
 /* Serial monitor */
 .monitor {
-  position: absolute;
+  position: fixed;
   left: 380px;
-  bottom: calc(20px + var(--safe-b));
-  z-index: 28;
+  bottom: calc(76px + var(--safe-b));
+  z-index: 50;
   width: 400px;
   max-width: calc(100vw - 400px);
   background: #151333;
-  border: 1px solid rgba(198, 202, 255, 0.2);
+  border: 1px solid rgba(198, 202, 255, 0.3);
   border-radius: 16px;
-  box-shadow: 0 16px 40px rgba(10, 8, 30, 0.45);
+  box-shadow: 0 16px 40px rgba(10, 8, 30, 0.6);
   overflow: hidden;
 }
 
@@ -359,10 +359,10 @@
 
   .monitor {
     position: fixed;
-    inset: auto 12px calc(12px + var(--safe-b)) 12px;
+    inset: auto 12px calc(76px + var(--safe-b)) 12px;
     width: auto;
     max-width: none;
-    z-index: 50;
+    z-index: 60;
   }
 }
 
