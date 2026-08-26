@@ -67,7 +67,10 @@
   font-weight: 700;
   cursor: pointer;
   border: 1px solid transparent;
-  transition: transform 0.12s ease, filter 0.12s ease, opacity 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    filter 0.12s ease,
+    opacity 0.12s ease;
 }
 .btn:disabled {
   opacity: 0.45;

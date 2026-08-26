@@ -19,12 +19,17 @@ if (!existsSync(OUT)) {
 // --- version.json ---------------------------------------------------------
 function gitSha() {
   try {
-    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim();
   } catch {
     return 'unknown';
   }
 }
-const version = { sha: process.env.GITHUB_SHA?.slice(0, 7) || gitSha(), builtAt: new Date().toISOString() };
+const version = {
+  sha: process.env.GITHUB_SHA?.slice(0, 7) || gitSha(),
+  builtAt: new Date().toISOString(),
+};
 writeFileSync(join(OUT, 'version.json'), JSON.stringify(version, null, 2));
 
 // --- .htaccess ------------------------------------------------------------

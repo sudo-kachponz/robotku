@@ -46,20 +46,52 @@ export default function BaseMode() {
   };
 
   // ---- Transport intents (unchanged hardware behaviour) ----
-  const forward = () => { driveGroup(left, DRIVE); driveGroup(right, DRIVE); setFwd(1); };
-  const backward = () => { driveGroup(left, -DRIVE); driveGroup(right, -DRIVE); setFwd(-1); };
-  const turnLeft = () => { driveGroup(left, -DRIVE); driveGroup(right, DRIVE); setTurn(-1); };
-  const turnRight = () => { driveGroup(left, DRIVE); driveGroup(right, -DRIVE); setTurn(1); };
-  const stopWheels = () => { stopGroup(left); stopGroup(right); setFwd(0); setTurn(0); };
+  const forward = () => {
+    driveGroup(left, DRIVE);
+    driveGroup(right, DRIVE);
+    setFwd(1);
+  };
+  const backward = () => {
+    driveGroup(left, -DRIVE);
+    driveGroup(right, -DRIVE);
+    setFwd(-1);
+  };
+  const turnLeft = () => {
+    driveGroup(left, -DRIVE);
+    driveGroup(right, DRIVE);
+    setTurn(-1);
+  };
+  const turnRight = () => {
+    driveGroup(left, DRIVE);
+    driveGroup(right, -DRIVE);
+    setTurn(1);
+  };
+  const stopWheels = () => {
+    stopGroup(left);
+    stopGroup(right);
+    setFwd(0);
+    setTurn(0);
+  };
 
-  const grab = () => { setGripper(false); driveGroup(arms, DRIVE); setGripperOpen(false); };
-  const release = () => { setGripper(true); driveGroup(arms, -DRIVE); setGripperOpen(true); };
+  const grab = () => {
+    setGripper(false);
+    driveGroup(arms, DRIVE);
+    setGripperOpen(false);
+  };
+  const release = () => {
+    setGripper(true);
+    driveGroup(arms, -DRIVE);
+    setGripperOpen(true);
+  };
   const stopArms = () => stopGroup(arms);
 
   // ---- prefers-reduced-motion ----
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const apply = () => { reducedRef.current = mq.matches; setReduced(mq.matches); };
+    const apply = () => {
+      reducedRef.current = mq.matches;
+      setReduced(mq.matches);
+    };
     apply();
     mq.addEventListener('change', apply);
     return () => mq.removeEventListener('change', apply);
@@ -186,7 +218,13 @@ export default function BaseMode() {
 function Arrow({ dir }: { dir: 'up' | 'down' | 'left' | 'right' }) {
   const rot = { up: 0, right: 90, down: 180, left: 270 }[dir];
   return (
-    <svg viewBox="0 0 24 24" width="42" height="42" fill="currentColor" style={{ transform: `rotate(${rot}deg)` }}>
+    <svg
+      viewBox="0 0 24 24"
+      width="42"
+      height="42"
+      fill="currentColor"
+      style={{ transform: `rotate(${rot}deg)` }}
+    >
       <path d="M12 3l8 9h-5v9H9v-9H4z" />
     </svg>
   );
@@ -196,7 +234,16 @@ function ClawIcon({ closed = false }: { closed?: boolean }) {
   // Simple claw/hand glyph; `closed` pulls the pincers together for the Grab button.
   const spread = closed ? 3 : 7;
   return (
-    <svg viewBox="0 0 40 40" width="38" height="38" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      viewBox="0 0 40 40"
+      width="38"
+      height="38"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d={`M${20 - spread} 8 L14 22 Q14 30 20 30 Q26 30 26 22 L${20 + spread} 8`} />
       <line x1="20" y1="30" x2="20" y2="36" />
       <circle cx="20" cy="22" r="2.4" fill="currentColor" stroke="none" />

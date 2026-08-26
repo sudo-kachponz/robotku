@@ -62,7 +62,6 @@ export default function HoldButton({
       window.removeEventListener('keydown', down);
       window.removeEventListener('keyup', up);
     };
-     
   }, [keys?.join(',')]);
 
   return (

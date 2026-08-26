@@ -28,6 +28,7 @@ use these types. If `BlockCoding.tsx` still types `commands: any[]` /
 ## 3. Already applied by me before the coordination rule (FYI, no action)
 
 These edits to `BlockCoding.tsx` landed earlier and are intentional — don't revert:
+
 - three.js lazy-load inside the `use3D` effect (`import type` + `await import`) +
   `sim3DLoading` "Menyiapkan 3D…" state (R1 STEP 2).
 - `closeSharedAudio()` in the unmount cleanup (R3 #7, module-singleton AudioContext).
@@ -37,6 +38,7 @@ These edits to `BlockCoding.tsx` landed earlier and are intentional — don't re
 `useBlocklyWorkspace.ts` adds a `workspace.addChangeListener(...)` (toolbox tint) and
 sets `--flyout-bg-color`; on unmount it disposes the workspace but does not remove
 that listener or clear the custom property. Worth adding for the leak audit:
+
 - keep the return of `addChangeListener` and `removeChangeListener` it on cleanup;
 - `document.documentElement.style.removeProperty('--flyout-bg-color')`;
 - assert `document.querySelectorAll('.blocklyWidgetDiv').length` stays 1 across 20

@@ -5,18 +5,18 @@
 // then the "Advanced" group: Variables, Functions, Templates, AI).
 import * as Blockly from 'blockly/core';
 
-import { motorsCategory } from './categories/motors';       // Movement
-import { timingCategory } from './categories/events';        // Timing
-import { looksCategory } from './categories/looks';          // Display
-import { audioCategory } from './categories/audio';          // Audio
-import { sensorsCategory } from './categories/sensors';      // Sensors & Data
-import { controlCategory } from './categories/control';      // Program Flow
-import { logicCategory } from './categories/logic';          // Logic
-import { mathCategory } from './categories/math';            // Math
-import { variablesCategory } from './categories/variables';  // Variables
-import { functionsCategory } from './categories/functions';  // Functions
-import { templatesCategory } from './categories/templates';  // Templates
-import { aiCategory } from './categories/ai';                // AI
+import { motorsCategory } from './categories/motors'; // Movement
+import { timingCategory } from './categories/events'; // Timing
+import { looksCategory } from './categories/looks'; // Display
+import { audioCategory } from './categories/audio'; // Audio
+import { sensorsCategory } from './categories/sensors'; // Sensors & Data
+import { controlCategory } from './categories/control'; // Program Flow
+import { logicCategory } from './categories/logic'; // Logic
+import { mathCategory } from './categories/math'; // Math
+import { variablesCategory } from './categories/variables'; // Variables
+import { functionsCategory } from './categories/functions'; // Functions
+import { templatesCategory } from './categories/templates'; // Templates
+import { aiCategory } from './categories/ai'; // AI
 
 export function getAstroidToolbox(): Blockly.utils.toolbox.ToolboxDefinition {
   return {

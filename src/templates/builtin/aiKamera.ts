@@ -18,7 +18,11 @@ export const stopGo: BuiltinTemplate = {
   tags: ['ai', 'kamera', 'gestur'],
   requires: ['kamera'],
   difficulty: 2,
-  learn: ['Klasifikasi gambar (Teachable Machine)', 'Blok deteksi AI di dalam kondisi', 'Program berjalan dari browser'],
+  learn: [
+    'Klasifikasi gambar (Teachable Machine)',
+    'Blok deteksi AI di dalam kondisi',
+    'Program berjalan dari browser',
+  ],
   thumbnail: aiThumb(),
   program: [
     {
@@ -67,7 +71,9 @@ export const balloonChase: BuiltinTemplate = {
             extraState: { hasElse: true },
             inputs: { IF0: sees('balloon') },
             statements: {
-              DO0: [{ type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.3 } }],
+              DO0: [
+                { type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.3 } },
+              ],
               ELSE: [{ type: 'move_left', fields: { SPEED: 'slow' }, inputs: { DURATION: 0.2 } }],
             },
           },
@@ -99,7 +105,11 @@ export const balloonPop: BuiltinTemplate = {
               DO0: [
                 { type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.3 } },
                 { type: 'mechanism_set_gripper', fields: { STATE: 'closed' } },
-                { type: 'audio_play_tone_sec', fields: { NOTE: 'C5', WAIT: 'true' }, inputs: { DURATION: 0.3 } },
+                {
+                  type: 'audio_play_tone_sec',
+                  fields: { NOTE: 'C5', WAIT: 'true' },
+                  inputs: { DURATION: 0.3 },
+                },
                 { type: 'mechanism_set_gripper', fields: { STATE: 'open' } },
               ],
             },
@@ -161,8 +171,12 @@ export const smileLight: BuiltinTemplate = {
             extraState: { hasElse: true },
             inputs: { IF0: sees('smiling') },
             statements: {
-              DO0: [{ type: 'display_matrix', fields: { PATTERN: CHECK }, inputs: { DURATION: 0.3 } }],
-              ELSE: [{ type: 'display_matrix', fields: { PATTERN: CROSS }, inputs: { DURATION: 0.3 } }],
+              DO0: [
+                { type: 'display_matrix', fields: { PATTERN: CHECK }, inputs: { DURATION: 0.3 } },
+              ],
+              ELSE: [
+                { type: 'display_matrix', fields: { PATTERN: CROSS }, inputs: { DURATION: 0.3 } },
+              ],
             },
           },
         ],

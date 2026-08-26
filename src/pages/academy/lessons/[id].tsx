@@ -141,7 +141,9 @@ export default function LessonDetail() {
                 className={`${styles.modeTab} ${styles.modeTabPink}`}
                 href={{
                   pathname: '/control/modes/code',
-                  query: content.practiceProjectId ? { project: content.practiceProjectId } : undefined,
+                  query: content.practiceProjectId
+                    ? { project: content.practiceProjectId }
+                    : undefined,
                 }}
               >
                 ⚡ Praktik Studio
@@ -173,7 +175,9 @@ export default function LessonDetail() {
                   <div className={styles.slideSlideCover}>
                     <h2 className={styles.slideCoverTitle}>Robotku Academy</h2>
                     <h1 className={styles.slideCoverMain}>{title}</h1>
-                    <p className={styles.slideCoverSub}>({lesson.levelType} · Lesson {lesson.number ?? 1})</p>
+                    <p className={styles.slideCoverSub}>
+                      ({lesson.levelType} · Lesson {lesson.number ?? 1})
+                    </p>
                     <div className={styles.slideCoverMascot}>🤖</div>
                     <p className={styles.slideNotice}>(15 minutes)</p>
                   </div>

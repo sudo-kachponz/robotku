@@ -5,19 +5,19 @@ Semua path, nama fungsi, dan kontrak command di bawah sudah dicocokkan dengan ko
 
 ## Fakta repo yang dipakai semua prompt (jangan diubah)
 
-| Hal | Kenyataan di repo |
-|---|---|
-| Editor | `src/components/blockcoding/BlockCoding.tsx` (Blockly inject, zelos, continuous-toolbox) |
-| Toolbox | `src/toolbox.ts` → 12 kategori, `templatesCategory` & `aiCategory` masih **stub** |
-| Blok | `src/categories/*.ts`, registrasi via `defineOnce()` (`_defineOnce.ts`) |
-| Bentuk command | `{"command":"MOVE_TIMED","params":{...}};` — **selalu ada `params`** |
-| Meta opcode | `META_START_LOOP` / `META_START_INFINITE_LOOP` / `META_END_LOOP` / `META_BREAK_LOOP` / `META_CONTINUE_LOOP` / `META_IF` / `META_ELSE_IF` / `META_ELSE` / `META_END_IF` |
-| Reporter sensor | generate string `getSensorValue("<json GET_SENSOR_DATA>")`, dievaluasi sandbox `new Function(...)` di `simulator_sequencer.ts` |
-| Run path | `src/command_runner.ts` → transport kalau connect, else `simulatorRunner` |
-| Transport | `src/transport/*` (BLE NUS + Web Serial), `src/domain/protocol.ts` (`SET_PORT`, `DRIVE_DIRECT`, `estopLines`) |
-| Sim 3D | `src/simulator.ts` + `src/simulator_sequencer.ts` (three.js, opt-in, sering WebGL context error) |
-| Sim 2D acuan | `src/components/modes/BaseMode.tsx` (pose loop + `RobotSprite.tsx`) & `src/components/modes/PortMode.tsx` (`PortBoard`, 8 slider, `fillBg()`) |
-| Persist | `src/app/persistence.ts` (localforage: `settings`, `projects`, `settingsPresets`) |
+| Hal             | Kenyataan di repo                                                                                                                                                      |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Editor          | `src/components/blockcoding/BlockCoding.tsx` (Blockly inject, zelos, continuous-toolbox)                                                                               |
+| Toolbox         | `src/toolbox.ts` → 12 kategori, `templatesCategory` & `aiCategory` masih **stub**                                                                                      |
+| Blok            | `src/categories/*.ts`, registrasi via `defineOnce()` (`_defineOnce.ts`)                                                                                                |
+| Bentuk command  | `{"command":"MOVE_TIMED","params":{...}};` — **selalu ada `params`**                                                                                                   |
+| Meta opcode     | `META_START_LOOP` / `META_START_INFINITE_LOOP` / `META_END_LOOP` / `META_BREAK_LOOP` / `META_CONTINUE_LOOP` / `META_IF` / `META_ELSE_IF` / `META_ELSE` / `META_END_IF` |
+| Reporter sensor | generate string `getSensorValue("<json GET_SENSOR_DATA>")`, dievaluasi sandbox `new Function(...)` di `simulator_sequencer.ts`                                         |
+| Run path        | `src/command_runner.ts` → transport kalau connect, else `simulatorRunner`                                                                                              |
+| Transport       | `src/transport/*` (BLE NUS + Web Serial), `src/domain/protocol.ts` (`SET_PORT`, `DRIVE_DIRECT`, `estopLines`)                                                          |
+| Sim 3D          | `src/simulator.ts` + `src/simulator_sequencer.ts` (three.js, opt-in, sering WebGL context error)                                                                       |
+| Sim 2D acuan    | `src/components/modes/BaseMode.tsx` (pose loop + `RobotSprite.tsx`) & `src/components/modes/PortMode.tsx` (`PortBoard`, 8 slider, `fillBg()`)                          |
+| Persist         | `src/app/persistence.ts` (localforage: `settings`, `projects`, `settingsPresets`)                                                                                      |
 
 **Urutan eksekusi yang disarankan:** `PROMPT 1` (runtime + sim 2D) → `PROMPT 2` (AI/CV) → `PROMPT 3` (Templates) → `PROMPT 4` (Share code) → `PROMPT 5` (Sensor Monitor, opsional).
 PROMPT 1 wajib duluan: Templates dan AI dua-duanya butuh interpreter yang bisa jalan tanpa WebGL.

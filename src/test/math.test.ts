@@ -29,7 +29,11 @@ describe('Parity: Math', () => {
   });
 
   it('math_arithmetic evaluates ADD at run time', async () => {
-    const sum: BlockSpec = { type: 'math_arithmetic', fields: { OP: 'ADD' }, inputs: { A: 0.03, B: 0.02 } };
+    const sum: BlockSpec = {
+      type: 'math_arithmetic',
+      fields: { OP: 'ADD' },
+      inputs: { A: 0.03, B: 0.02 },
+    };
     expect(await forwardDurationFrom(sum)).toBeCloseTo(50, 0);
   });
 
@@ -40,17 +44,27 @@ describe('Parity: Math', () => {
 
   it('math_constant resolves PI', async () => {
     // PI / 100 * 1000 ≈ 31.4 ms
-    expect(await forwardDurationFrom(div({ type: 'math_constant', fields: { CONSTANT: 'PI' } }, 100))).toBeCloseTo(31.4, 0);
+    expect(
+      await forwardDurationFrom(div({ type: 'math_constant', fields: { CONSTANT: 'PI' } }, 100)),
+    ).toBeCloseTo(31.4, 0);
   });
 
   it('math_single computes the square root', async () => {
-    const root: BlockSpec = { type: 'math_single', fields: { OP: 'ROOT' }, inputs: { NUM: 0.0025 } };
+    const root: BlockSpec = {
+      type: 'math_single',
+      fields: { OP: 'ROOT' },
+      inputs: { NUM: 0.0025 },
+    };
     expect(await forwardDurationFrom(root)).toBeCloseTo(50, 0);
   });
 
   it('math_round rounds to the nearest integer', async () => {
     // round(3.1) = 3 → /100 * 1000 = 30 ms
-    const rounded: BlockSpec = { type: 'math_round', fields: { OP: 'ROUND' }, inputs: { NUM: 3.1 } };
+    const rounded: BlockSpec = {
+      type: 'math_round',
+      fields: { OP: 'ROUND' },
+      inputs: { NUM: 3.1 },
+    };
     expect(await forwardDurationFrom(div(rounded, 100))).toBeCloseTo(30, 0);
   });
 

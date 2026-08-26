@@ -6,8 +6,15 @@
 import { describe, it, expect } from 'vitest';
 import { buildAndRun, type BlockSpec } from './harness';
 
-const forward: BlockSpec = { type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.2 } };
-const bool = (v: boolean): BlockSpec => ({ type: 'logic_boolean', fields: { BOOL: v ? 'TRUE' : 'FALSE' } });
+const forward: BlockSpec = {
+  type: 'move_forward',
+  fields: { SPEED: 'medium' },
+  inputs: { DURATION: 0.2 },
+};
+const bool = (v: boolean): BlockSpec => ({
+  type: 'logic_boolean',
+  fields: { BOOL: v ? 'TRUE' : 'FALSE' },
+});
 const moves = (log: any[]) => log.filter((c) => c.command === 'MOVE_TIMED').length;
 
 const define = (name: string, body: BlockSpec[]): BlockSpec => ({
@@ -15,7 +22,10 @@ const define = (name: string, body: BlockSpec[]): BlockSpec => ({
   fields: { NAME: name },
   statements: { STACK: body },
 });
-const call = (name: string): BlockSpec => ({ type: 'procedures_callnoreturn', fields: { NAME: name } });
+const call = (name: string): BlockSpec => ({
+  type: 'procedures_callnoreturn',
+  fields: { NAME: name },
+});
 
 describe('Parity: Functions', () => {
   it('define + call executes the body exactly once', async () => {

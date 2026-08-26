@@ -69,20 +69,20 @@ const lightComponentStyles: Blockly.Theme.ComponentStyle = {
 // built-in loop/logic/math/variable/procedure/text styles are named to match
 // Blockly's own block styles so the reskin covers the standard blocks too.
 const categoryColors: Record<string, string> = {
-  motors: DS.green,      // Movement
-  events: DS.amber,      // Timing (Wait / hat)
-  looks: DS.blue,        // Display (LED Matrix + LCD)
-  audio: DS.orange,      // Audio
-  sensors: DS.purple,    // Sensors & Data
-  control: DS.cyan,      // Program Flow (custom control blocks)
-  loop: DS.cyan,         // Program Flow (built-in loop blocks)
-  logic: DS.teal,        // Logic
-  math: DS.indigo600,    // Math
-  variable: DS.brown,    // Variables
-  procedure: DS.inkSlate,// Functions
-  text: DS.blue,         // text fields used across Display/Audio
-  templates: DS.gold,    // Templates
-  ai: DS.pink500,        // AI (stub)
+  motors: DS.green, // Movement
+  events: DS.amber, // Timing (Wait / hat)
+  looks: DS.blue, // Display (LED Matrix + LCD)
+  audio: DS.orange, // Audio
+  sensors: DS.purple, // Sensors & Data
+  control: DS.cyan, // Program Flow (custom control blocks)
+  loop: DS.cyan, // Program Flow (built-in loop blocks)
+  logic: DS.teal, // Logic
+  math: DS.indigo600, // Math
+  variable: DS.brown, // Variables
+  procedure: DS.inkSlate, // Functions
+  text: DS.blue, // text fields used across Display/Audio
+  templates: DS.gold, // Templates
+  ai: DS.pink500, // AI (stub)
 };
 
 const blockStyles: { [key: string]: Blockly.Theme.BlockStyle } = {};

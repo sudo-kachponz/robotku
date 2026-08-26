@@ -1,4 +1,5 @@
 # Robotku Web — Prompt Pack v3
+
 ### Refactor brutal · Responsif mobile brutal · Siap deploy di server sendiri
 
 Dari audit `robotku-main__3_.zip`. Semua angka dan path di bawah hasil pembacaan repo, bukan asumsi — pakai apa adanya di prompt supaya model tidak menebak.
@@ -8,10 +9,12 @@ Dari audit `robotku-main__3_.zip`. Semua angka dan path di bawah hasil pembacaan
 ## AUDIT SINGKAT (bukti, biar prompt-nya tidak ngarang)
 
 **Berat & sampah**
+
 - `public/` = **26 MB**, dan yang berat semua milik simulator 3D beta: `Cyberpunk.hdr` 5.8 MB, `rocks_ground_09_diff_2k.jpg` 3.4 MB, `rubber_tiles_rough_2k.jpg` 2.7 MB, `rubber_tiles_nor_gl_2k.jpg` 2.3 MB, `plastered_wall_05_diff_2k.jpg` 2.3 MB, `rubber_tiles_diff_2k.jpg` 1.7 MB, `Asteria-DashMinimal.glb` 2.1 MB, `brand/` 3.7 MB, `icons/` 1.8 MB. Di 4G sekolah, ini pertempuran utamanya.
 - Ikut ter-commit: `tsconfig.tsbuildinfo` (293 KB, tidak ada di `.gitignore`), `Robotku Design System.html` (1.6 MB), dan 7 dump prompt di root (`a.md`, `o.md`, `fe.md`, `prompt.md`, `block.md`, `lms.md`, `baserobot.md`), plus `public/vite.svg` sisa Vite.
 
 **Kode mati / salah tempat**
+
 - `src/components/layout/AppShell.tsx` masih shell LMS: 7 menu ke `/pengumuman`, `/akademik/*`, `/master/*` — **tidak satu pun route itu ada** di `src/pages/`. Dengan `output: 'export'` dan tanpa `404.tsx`, kliknya = halaman mati.
 - `operatorsCategory` dan `mechanismsCategory` diekspor tapi **tidak dipakai** `toolbox.ts` — bloknya tidak bisa dijangkau anak, padahal `mechanisms` sudah punya generator.
 - `BlockCoding.tsx` 546 baris: class `RobotkuCategory` (±120 baris inline style) numpang di file yang sama, dan **tabel warna kategori ditulis dua kali** di file itu (di `setSelected` dan di listener `TOOLBOX_ITEM_SELECT`) — plus salinan ketiga di `visual/theme.ts`.
@@ -19,6 +22,7 @@ Dari audit `robotku-main__3_.zip`. Semua angka dan path di bawah hasil pembacaan
 - Tidak ada ESLint, Prettier, test, CI, error boundary, `404.tsx`/`500.tsx`.
 
 **Responsif — praktis belum digarap**
+
 - Total **11 `@media`** di seluruh app, 1 di antaranya `prefers-reduced-motion`. Jadi efektif 10 breakpoint untuk 20+ layar.
 - `AppShell.module.css`: `width: 100vw`, `height: 100vh`, sidebar **fixed 320px**, `overflow: hidden` — di HP: sidebar makan 85% layar, konten tidak bisa di-scroll.
 - `BlockCoding.module.css`: `.blocklyToolboxDiv { width: 360px !important }` dan label kategori `font-size: 30px` (inline di `RobotkuCategory`). Di layar 375 px, toolbox saja sudah 96% lebar.
@@ -28,6 +32,7 @@ Dari audit `robotku-main__3_.zip`. Semua angka dan path di bawah hasil pembacaan
 - `.simCard` di ≤640px jadi `calc(100vw - 36px)` — menutupi hampir seluruh kanvas, sementara toolbar bulat 48px tetap di `top:20px; right:20px` di atasnya.
 
 **Kenyataan pahit soal mobile (harus jujur di UI, bukan disembunyikan)**
+
 - Web Serial: **hanya Chrome/Edge desktop**. Tidak ada di Android maupun iOS.
 - Web Bluetooth: **ada di Chrome Android**, **tidak ada di Safari iOS** (semua browser di iOS pakai WebKit).
 - Artinya di iPhone/iPad, seluruh alur Connect mati total; di Android hanya BLE. Aplikasi harus mendeteksi ini di awal dan menawarkan mode yang tetap berguna (Simulator + Block Coding + Academy), bukan melempar error saat tombol Connect ditekan.

@@ -130,7 +130,9 @@ export default function JoystickMode() {
             >
               🦾 {gripOpen ? 'Open' : 'Close'}
             </button>
-            <div className={styles.readout}>L {readout.l} · R {readout.r}</div>
+            <div className={styles.readout}>
+              L {readout.l} · R {readout.r}
+            </div>
           </div>
         </div>
       </div>

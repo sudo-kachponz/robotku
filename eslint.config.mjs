@@ -35,7 +35,13 @@ export default [
       '@typescript-eslint/no-unused-vars': 'off', // superseded by the plugin below
       'unused-imports/no-unused-vars': [
         'error',
-        { vars: 'all', varsIgnorePattern: '^_', args: 'after-used', argsIgnorePattern: '^_', ignoreRestSiblings: true },
+        {
+          vars: 'all',
+          varsIgnorePattern: '^_',
+          args: 'after-used',
+          argsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+        },
       ],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
 

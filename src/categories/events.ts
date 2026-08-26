@@ -12,40 +12,41 @@ import { numArg, mulNum } from './_args';
 
 defineOnce([
   {
-    "type": "program_start",
-    "message0": "Start Program",
-    "nextStatement": null,
-    "style": "hat_blocks",
-    "tooltip": "The starting point of your program."
+    type: 'program_start',
+    message0: 'Start Program',
+    nextStatement: null,
+    style: 'hat_blocks',
+    tooltip: 'The starting point of your program.',
   },
   {
-    "type": "timing_wait",
-    "message0": "Wait for %1 sec",
-    "args0": [
-      { "type": "input_value", "name": "DURATION", "check": "Number" }
-    ],
-    "previousStatement": null,
-    "nextStatement": null,
-    "style": "events_blocks",
-    "inputsInline": true,
-    "tooltip": "Pause the program for a number of seconds."
+    type: 'timing_wait',
+    message0: 'Wait for %1 sec',
+    args0: [{ type: 'input_value', name: 'DURATION', check: 'Number' }],
+    previousStatement: null,
+    nextStatement: null,
+    style: 'events_blocks',
+    inputsInline: true,
+    tooltip: 'Pause the program for a number of seconds.',
   },
   {
-    "type": "timing_wait_until",
-    "message0": "Wait until %1",
-    "args0": [
-      { "type": "input_value", "name": "CONDITION", "check": "Boolean" }
-    ],
-    "previousStatement": null,
-    "nextStatement": null,
-    "style": "events_blocks",
-    "inputsInline": true,
-    "tooltip": "Pause the program until the condition becomes true."
-  }
+    type: 'timing_wait_until',
+    message0: 'Wait until %1',
+    args0: [{ type: 'input_value', name: 'CONDITION', check: 'Boolean' }],
+    previousStatement: null,
+    nextStatement: null,
+    style: 'events_blocks',
+    inputsInline: true,
+    tooltip: 'Pause the program until the condition becomes true.',
+  },
 ]);
 
 javascriptGenerator.forBlock['timing_wait'] = function (block, gen) {
-  return JSON.stringify({ command: 'WAIT', params: { duration_ms: mulNum(numArg(block, gen, 'DURATION', 1), 1000) } }) + ';';
+  return (
+    JSON.stringify({
+      command: 'WAIT',
+      params: { duration_ms: mulNum(numArg(block, gen, 'DURATION', 1), 1000) },
+    }) + ';'
+  );
 };
 
 javascriptGenerator.forBlock['timing_wait_until'] = function (block, gen) {
@@ -60,7 +61,11 @@ export const timingCategory = {
   cssconfig: { icon: 'icon-timing' },
   contents: [
     { kind: 'label', text: 'Timing' },
-    { kind: 'block', type: 'timing_wait', inputs: { DURATION: { shadow: { type: 'math_number', fields: { NUM: 1 } } } } },
+    {
+      kind: 'block',
+      type: 'timing_wait',
+      inputs: { DURATION: { shadow: { type: 'math_number', fields: { NUM: 1 } } } },
+    },
     { kind: 'block', type: 'timing_wait_until' },
   ],
 };

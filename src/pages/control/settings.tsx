@@ -45,11 +45,7 @@ export default function SettingsPage() {
           </button>
         </div>
 
-        {tab === 'settings' ? (
-          <SettingsTab settings={settings} edit={edit} />
-        ) : (
-          <GuideTab />
-        )}
+        {tab === 'settings' ? <SettingsTab settings={settings} edit={edit} /> : <GuideTab />}
       </div>
     </ControlLayout>
   );
@@ -69,28 +65,58 @@ function SettingsTab({
         <h2 className={styles.cardTitle}>Port Mapping</h2>
         <p className={styles.cardSub}>Pilih port (1–8) untuk tiap fungsi di setiap mode.</p>
 
-        <MapGroup label="Base · Arms" ports={settings.mapping.base.arms}
-          onToggle={(p) => edit((s) => toggle(s.mapping.base.arms, p))} />
-        <MapGroup label="Base · Kiri" ports={settings.mapping.base.left}
-          onToggle={(p) => edit((s) => toggle(s.mapping.base.left, p))} />
-        <MapGroup label="Base · Kanan" ports={settings.mapping.base.right}
-          onToggle={(p) => edit((s) => toggle(s.mapping.base.right, p))} />
+        <MapGroup
+          label="Base · Arms"
+          ports={settings.mapping.base.arms}
+          onToggle={(p) => edit((s) => toggle(s.mapping.base.arms, p))}
+        />
+        <MapGroup
+          label="Base · Kiri"
+          ports={settings.mapping.base.left}
+          onToggle={(p) => edit((s) => toggle(s.mapping.base.left, p))}
+        />
+        <MapGroup
+          label="Base · Kanan"
+          ports={settings.mapping.base.right}
+          onToggle={(p) => edit((s) => toggle(s.mapping.base.right, p))}
+        />
 
-        <MapGroup label="Tank · Turret" ports={settings.mapping.tank.turret}
-          onToggle={(p) => edit((s) => toggle(s.mapping.tank.turret, p))} />
-        <MapGroup label="Tank · Kiri" ports={settings.mapping.tank.left}
-          onToggle={(p) => edit((s) => toggle(s.mapping.tank.left, p))} />
-        <MapGroup label="Tank · Kanan" ports={settings.mapping.tank.right}
-          onToggle={(p) => edit((s) => toggle(s.mapping.tank.right, p))} />
+        <MapGroup
+          label="Tank · Turret"
+          ports={settings.mapping.tank.turret}
+          onToggle={(p) => edit((s) => toggle(s.mapping.tank.turret, p))}
+        />
+        <MapGroup
+          label="Tank · Kiri"
+          ports={settings.mapping.tank.left}
+          onToggle={(p) => edit((s) => toggle(s.mapping.tank.left, p))}
+        />
+        <MapGroup
+          label="Tank · Kanan"
+          ports={settings.mapping.tank.right}
+          onToggle={(p) => edit((s) => toggle(s.mapping.tank.right, p))}
+        />
 
-        <MapGroup label="Joystick · Kiri" ports={settings.mapping.joystick.left}
-          onToggle={(p) => edit((s) => toggle(s.mapping.joystick.left, p))} />
-        <MapGroup label="Joystick · Kanan" ports={settings.mapping.joystick.right}
-          onToggle={(p) => edit((s) => toggle(s.mapping.joystick.right, p))} />
-        <MapGroup label="Joystick · Custom Y" ports={settings.mapping.joystick.customY}
-          onToggle={(p) => edit((s) => toggle(s.mapping.joystick.customY, p))} />
-        <MapGroup label="Joystick · Custom X" ports={settings.mapping.joystick.customX}
-          onToggle={(p) => edit((s) => toggle(s.mapping.joystick.customX, p))} />
+        <MapGroup
+          label="Joystick · Kiri"
+          ports={settings.mapping.joystick.left}
+          onToggle={(p) => edit((s) => toggle(s.mapping.joystick.left, p))}
+        />
+        <MapGroup
+          label="Joystick · Kanan"
+          ports={settings.mapping.joystick.right}
+          onToggle={(p) => edit((s) => toggle(s.mapping.joystick.right, p))}
+        />
+        <MapGroup
+          label="Joystick · Custom Y"
+          ports={settings.mapping.joystick.customY}
+          onToggle={(p) => edit((s) => toggle(s.mapping.joystick.customY, p))}
+        />
+        <MapGroup
+          label="Joystick · Custom X"
+          ports={settings.mapping.joystick.customX}
+          onToggle={(p) => edit((s) => toggle(s.mapping.joystick.customX, p))}
+        />
       </div>
 
       {/* Speed & direction */}
@@ -109,7 +135,11 @@ function SettingsTab({
                     <button
                       key={sp}
                       className={`${styles.seg} ${cfg.speed === sp ? styles.segOn : ''}`}
-                      onClick={() => edit((s) => { s.ports[port].speed = sp; })}
+                      onClick={() =>
+                        edit((s) => {
+                          s.ports[port].speed = sp;
+                        })
+                      }
                     >
                       {sp}
                     </button>
@@ -117,7 +147,11 @@ function SettingsTab({
                 </div>
                 <button
                   className={`${styles.invertBtn} ${cfg.invert ? styles.invertOn : ''}`}
-                  onClick={() => edit((s) => { s.ports[port].invert = !s.ports[port].invert; })}
+                  onClick={() =>
+                    edit((s) => {
+                      s.ports[port].invert = !s.ports[port].invert;
+                    })
+                  }
                 >
                   {cfg.invert ? 'Inverted' : 'Default'}
                 </button>
@@ -134,9 +168,12 @@ function SettingsTab({
         <KeybindTable
           title="Base / Clawbot"
           rows={[
-            ['Forward', ['W', '↑']], ['Backward', ['S', '↓']],
-            ['Left', ['A', '←']], ['Right', ['D', '→']],
-            ['Grab', ['Q']], ['Release', ['E']],
+            ['Forward', ['W', '↑']],
+            ['Backward', ['S', '↓']],
+            ['Left', ['A', '←']],
+            ['Right', ['D', '→']],
+            ['Grab', ['Q']],
+            ['Release', ['E']],
           ]}
         />
         <KeybindTable
@@ -146,7 +183,8 @@ function SettingsTab({
         <KeybindTable
           title="Tank"
           rows={[
-            ['Left Throttle +/−', ['W', 'S']], ['Right Throttle +/−', ['E', 'D']],
+            ['Left Throttle +/−', ['W', 'S']],
+            ['Right Throttle +/−', ['E', 'D']],
             ['Turret CCW / CW', ['Q', 'R']],
           ]}
         />
@@ -155,7 +193,10 @@ function SettingsTab({
       {/* Footer */}
       <div className={styles.footer}>
         <span className={styles.footMeta}>
-          App Version: v1.0.0 · <a href={COMMUNITY_URL} target="_blank" rel="noreferrer">Report a bug</a>
+          App Version: v1.0.0 ·{' '}
+          <a href={COMMUNITY_URL} target="_blank" rel="noreferrer">
+            Report a bug
+          </a>
         </span>
         <button
           className={styles.resetBtn}
@@ -205,7 +246,10 @@ function MapGroup({
 function KeybindTable({ title, rows }: { title: string; rows: [string, string[]][] }) {
   return (
     <>
-      <p className={styles.cardSub} style={{ marginTop: 14, marginBottom: 4, fontWeight: 700, color: 'var(--ink-700)' }}>
+      <p
+        className={styles.cardSub}
+        style={{ marginTop: 14, marginBottom: 4, fontWeight: 700, color: 'var(--ink-700)' }}
+      >
         {title}
       </p>
       <table className={styles.kbTable}>
@@ -215,7 +259,9 @@ function KeybindTable({ title, rows }: { title: string; rows: [string, string[]]
               <td>{action}</td>
               <td className={styles.kbKeys}>
                 {keys.map((k, i) => (
-                  <span key={i} className={styles.kbd}>{k}</span>
+                  <span key={i} className={styles.kbd}>
+                    {k}
+                  </span>
                 ))}
               </td>
             </tr>
@@ -245,7 +291,8 @@ function GuideTab() {
           <h3 className={styles.guideTitle}>NYALAKAN PCB ROBOTKU</h3>
         </div>
         <p className={styles.guideDesc}>
-          Colok kabel USB-C dari PCB Robotku ke power bank atau laptop hingga indikator daya menyala.
+          Colok kabel USB-C dari PCB Robotku ke power bank atau laptop hingga indikator daya
+          menyala.
         </p>
         <div className={styles.imgWrap}>
           <img
@@ -295,7 +342,8 @@ function GuideTab() {
           <h3 className={styles.guideTitle}>SAMBUNGKAN BLUETOOTH KE ROBOTKU</h3>
         </div>
         <p className={styles.guideDesc}>
-          Klik tombol <strong>Connect</strong> di kanan bawah, lalu pilih robotmu. Saat Bluetooth terhubung, ikon akan berwarna hijau!
+          Klik tombol <strong>Connect</strong> di kanan bawah, lalu pilih robotmu. Saat Bluetooth
+          terhubung, ikon akan berwarna hijau!
         </p>
         <div className={styles.imgWrap}>
           <img

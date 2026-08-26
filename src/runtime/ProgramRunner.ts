@@ -201,7 +201,12 @@ export class ProgramRunner {
               savedArgs[n] = this.scope[n];
               this.scope[n] = argValues[idx];
             });
-            callStack.push({ returnPc: pc + 1, savedArgs, savedLoopStack: loopStack, savedIfStack: ifStack });
+            callStack.push({
+              returnPc: pc + 1,
+              savedArgs,
+              savedLoopStack: loopStack,
+              savedIfStack: ifStack,
+            });
             loopStack = []; // a break inside the function must not escape the caller's loop
             ifStack = []; // ...nor may an if inside the function see the caller's frames
             pc = entry.startPc + 1;
@@ -239,7 +244,12 @@ export class ProgramRunner {
             break;
           }
           case 'META_START_INFINITE_LOOP': {
-            loopStack.push({ type: 'infinite', startIndex: pc + 1, iterationsLeft: 0, ifDepth: ifStack.length });
+            loopStack.push({
+              type: 'infinite',
+              startIndex: pc + 1,
+              iterationsLeft: 0,
+              ifDepth: ifStack.length,
+            });
             this.onStatus?.({ loopIteration: 1 });
             break;
           }
@@ -253,7 +263,9 @@ export class ProgramRunner {
                 pcIncrement = 0;
               } else if ((currentLoop.iterationsLeft ?? 0) > 1) {
                 currentLoop.iterationsLeft!--;
-                this.onStatus?.({ loopIteration: (currentLoop.total ?? 0) - currentLoop.iterationsLeft! + 1 });
+                this.onStatus?.({
+                  loopIteration: (currentLoop.total ?? 0) - currentLoop.iterationsLeft! + 1,
+                });
                 pc = currentLoop.startIndex;
                 pcIncrement = 0;
               } else {
@@ -336,7 +348,8 @@ export class ProgramRunner {
               // Resolve any `{$expr}` params (variables/math/sensor reporters)
               // against the live scope right before executing, so the sink and
               // the firmware only ever see plain literals.
-              const params = (this.resolveParams(command.params) as CommandParams | undefined) ?? {};
+              const params =
+                (this.resolveParams(command.params) as CommandParams | undefined) ?? {};
               await this.sink.exec({ command: commandName, params });
             }
           }
@@ -418,7 +431,6 @@ export class ProgramRunner {
     const cacheKey = keys.join(',') + '::' + expr;
     let fn = this.compileCache.get(cacheKey);
     if (!fn) {
-       
       fn = new Function('getSensorValue', 'mathRandomInt', ...keys, `return (${expr});`) as (
         ...args: unknown[]
       ) => unknown;

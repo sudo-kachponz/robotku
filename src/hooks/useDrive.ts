@@ -9,12 +9,7 @@ import { useCallback, useSyncExternalStore } from 'react';
 import { getState } from '../app/store';
 import { getSettings, subscribeSettings } from '../app/settingsStore';
 import { applyPortTuning, type RobotSettings } from '../domain/settings';
-import {
-  setPortLine,
-  driveDirectLine,
-  encodeCommand,
-  OPCODES,
-} from '../domain/protocol';
+import { setPortLine, driveDirectLine, encodeCommand, OPCODES } from '../domain/protocol';
 
 function sendLine(line: string): void {
   const { transport } = getState();
@@ -59,12 +54,9 @@ export function useDrive(): DriveApi {
     [setPort],
   );
 
-  const stopGroup = useCallback(
-    (ports: number[]) => {
-      for (const p of ports) sendLine(setPortLine(p, 0));
-    },
-    [],
-  );
+  const stopGroup = useCallback((ports: number[]) => {
+    for (const p of ports) sendLine(setPortLine(p, 0));
+  }, []);
 
   const driveDirect = useCallback((left: number, right: number) => {
     sendLine(driveDirectLine(left, right));

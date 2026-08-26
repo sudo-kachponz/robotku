@@ -8,13 +8,7 @@ import { LEVEL_OPTIONS } from '../../data/lessons';
 
 export type ViewMode = 'folder' | 'grid';
 
-export function LevelSelect({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
+export function LevelSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <select
       className={styles.select}
@@ -31,13 +25,7 @@ export function LevelSelect({
   );
 }
 
-export function SearchBox({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
+export function SearchBox({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <div className={styles.searchBox}>
       <svg
@@ -78,7 +66,14 @@ export function ViewToggle({
         onClick={() => onChange('folder')}
         aria-pressed={value === 'folder'}
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
           <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
         </svg>
         Folder
@@ -88,7 +83,14 @@ export function ViewToggle({
         onClick={() => onChange('grid')}
         aria-pressed={value === 'grid'}
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
           <rect x="3" y="3" width="7" height="7" rx="1" />
           <rect x="14" y="3" width="7" height="7" rx="1" />
           <rect x="3" y="14" width="7" height="7" rx="1" />

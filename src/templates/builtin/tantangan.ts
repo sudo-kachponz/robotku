@@ -13,7 +13,11 @@ export const counterGame: BuiltinTemplate = {
   collection: 'tantangan',
   tags: ['variabel', 'perulangan', 'logika'],
   difficulty: 2,
-  learn: ['Membuat & memakai variabel', 'Mengubah variabel dalam loop', 'Menguji nilai dengan Jika'],
+  learn: [
+    'Membuat & memakai variabel',
+    'Mengubah variabel dalam loop',
+    'Menguji nilai dengan Jika',
+  ],
   thumbnail: counterThumb(),
   program: [
     { type: 'variables_set', fields: { VAR: 'sisa' }, inputs: { VALUE: 3 } },
@@ -22,18 +26,30 @@ export const counterGame: BuiltinTemplate = {
       inputs: { TIMES: 3 },
       statements: {
         DO: [
-          { type: 'audio_play_tone_sec', fields: { NOTE: 'A4', WAIT: 'true' }, inputs: { DURATION: 0.3 } },
+          {
+            type: 'audio_play_tone_sec',
+            fields: { NOTE: 'A4', WAIT: 'true' },
+            inputs: { DURATION: 0.3 },
+          },
           {
             type: 'variables_set',
             fields: { VAR: 'sisa' },
-            inputs: { VALUE: { type: 'math_arithmetic', fields: { OP: 'MINUS' }, inputs: { A: get('sisa'), B: 1 } } },
+            inputs: {
+              VALUE: {
+                type: 'math_arithmetic',
+                fields: { OP: 'MINUS' },
+                inputs: { A: get('sisa'), B: 1 },
+              },
+            },
           },
         ],
       },
     },
     {
       type: 'controls_if',
-      inputs: { IF0: { type: 'logic_compare', fields: { OP: 'EQ' }, inputs: { A: get('sisa'), B: 0 } } },
+      inputs: {
+        IF0: { type: 'logic_compare', fields: { OP: 'EQ' }, inputs: { A: get('sisa'), B: 0 } },
+      },
       statements: {
         DO0: [
           { type: 'display_matrix', fields: { PATTERN: CHECK }, inputs: { DURATION: 0.6 } },
@@ -51,7 +67,11 @@ export const patrolFunc: BuiltinTemplate = {
   collection: 'tantangan',
   tags: ['fungsi', 'perulangan', 'gerak'],
   difficulty: 3,
-  learn: ['Mendefinisikan fungsi (Define)', 'Memanggil fungsi berulang', 'Merapikan program dengan fungsi'],
+  learn: [
+    'Mendefinisikan fungsi (Define)',
+    'Memanggil fungsi berulang',
+    'Merapikan program dengan fungsi',
+  ],
   thumbnail: funcThumb(),
   program: [
     {

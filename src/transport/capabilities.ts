@@ -15,7 +15,9 @@ export function getCapabilities(): BrowserCapabilities {
   }
 
   const ua = navigator.userAgent || '';
-  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isIOS =
+    /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isAndroid = /Android/.test(ua);
   const platform = isIOS ? 'ios' : isAndroid ? 'android' : 'desktop';
 

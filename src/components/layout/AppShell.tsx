@@ -96,24 +96,20 @@ export default function AppShell({
         {/* Topbar */}
         <header className={styles.topbar}>
           <h1 className={styles.topbarTitle}>{pageTitle}</h1>
-          
+
           <div className={styles.topbarRight}>
             <div className={styles.profileInfo}>
               <div className={styles.userText}>
                 <span className={styles.userName}>{userName}</span>
                 <span className={styles.userRole}>{userRole}</span>
               </div>
-              <div className={styles.avatar}>
-                {userName.charAt(0).toUpperCase()}
-              </div>
+              <div className={styles.avatar}>{userName.charAt(0).toUpperCase()}</div>
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className={styles.contentWrapper}>
-          {children}
-        </main>
+        <main className={styles.contentWrapper}>{children}</main>
       </div>
     </div>
   );

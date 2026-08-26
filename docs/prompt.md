@@ -8,20 +8,20 @@ Membangun **editor Block Coding** yang meniru layout & set blok Stick'em (dibaca
 
 ## Peta kategori & warna (Robotku)
 
-| Kategori (sidebar) | Warna blok (hex) | Sumber di astroid-webview | Reuse / Tambah |
-|---|---|---|---|
-| Movement | `#16A34A` hijau | `categories/motors.ts` | reuse + tambah Steering, Claw, Stop variants |
-| Timing | `#E08600` amber | `categories/events.ts` | Wait sec + Wait-until-boolean |
-| Display | `#3B82F6` biru | `categories/looks.ts` | LED Matrix + LCD Screen (tambah) |
-| Audio | `#F97316` oranye | `categories/audio.ts` | Microphone + Tune + Volume + Tempo (tambah) |
-| Sensors & Data | `#8B5CF6` ungu | `categories/sensors.ts` | perluas suite sensor + pin I/O |
-| Program Flow | `#06B6D4` cyan | Blockly built-in `control` | reskin |
-| Logic | `#0D9488` teal | Blockly built-in `logic` | reskin |
-| Math | `#4F46E5` indigo | Blockly built-in `math` | reskin |
-| Variables | `#A16207` coklat-amber | Blockly typed vars | num/bool/string |
-| Functions | `#565386` ink-slate | Blockly `procedures` | Define / Exit |
-| Templates | `#CA8A04` emas | (baru) | snippet tersimpan + comment |
-| AI | `#EC2D8F` pink | (baru, stub) | kategori eksperimen |
+| Kategori (sidebar) | Warna blok (hex)       | Sumber di astroid-webview  | Reuse / Tambah                               |
+| ------------------ | ---------------------- | -------------------------- | -------------------------------------------- |
+| Movement           | `#16A34A` hijau        | `categories/motors.ts`     | reuse + tambah Steering, Claw, Stop variants |
+| Timing             | `#E08600` amber        | `categories/events.ts`     | Wait sec + Wait-until-boolean                |
+| Display            | `#3B82F6` biru         | `categories/looks.ts`      | LED Matrix + LCD Screen (tambah)             |
+| Audio              | `#F97316` oranye       | `categories/audio.ts`      | Microphone + Tune + Volume + Tempo (tambah)  |
+| Sensors & Data     | `#8B5CF6` ungu         | `categories/sensors.ts`    | perluas suite sensor + pin I/O               |
+| Program Flow       | `#06B6D4` cyan         | Blockly built-in `control` | reskin                                       |
+| Logic              | `#0D9488` teal         | Blockly built-in `logic`   | reskin                                       |
+| Math               | `#4F46E5` indigo       | Blockly built-in `math`    | reskin                                       |
+| Variables          | `#A16207` coklat-amber | Blockly typed vars         | num/bool/string                              |
+| Functions          | `#565386` ink-slate    | Blockly `procedures`       | Define / Exit                                |
+| Templates          | `#CA8A04` emas         | (baru)                     | snippet tersimpan + comment                  |
+| AI                 | `#EC2D8F` pink         | (baru, stub)               | kategori eksperimen                          |
 
 Header bar: indigo `--indigo-800 #352DA0`, judul putih “Block Coding” + panah back. Sidebar: surface putih, baris kategori (ikon + label warna kategori); kategori terpilih = pill terisi warna kategori + teks putih. Canvas `#F3F4FB` dotted grid. Blok pembungkus **“Start Program … End”** (hat block, lilac lembut). Font semua UI & blok: **Plus Jakarta Sans**.
 
@@ -150,6 +150,7 @@ Start by printing: (1) the category→block plan mapped to existing astroid-webv
 ---
 
 ## Catatan
+
 - Ini **melengkapi** prompt sebelumnya (`PROMPT_Robotku_WebControl_FullApp.md`): pakai file ini saat menggarap **modul Block Coding** secara detail; modul lain (Joystick, Tank, Port, Base, Settings, Guide) ikut prompt full-app.
 - Reporter sensor (Ultrasonic/Temperature/Heading/dll) itu blok **nilai** — di model streaming, nilainya diambil via `GET_SENSOR_DATA` → `TELEMETRY`. Pola ini sudah ada di `simulator_sequencer.ts`, tinggal disambungkan ke transport nyata.
 - Opcode display/audio/sensor baru = **perluasan sah** untuk bahasa block; beda dari guardrail “jangan ngarang opcode” pada modul kendali. Semua didokumentasikan di `robotProfiles.ts` v1.1 + stub firmware.

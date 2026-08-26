@@ -66,7 +66,12 @@ export class Simulator {
     this.scene.fog = new THREE.Fog(0x1a2a4f, 10, 25);
 
     // --- Camera ---
-    this.camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+    this.camera = new THREE.PerspectiveCamera(
+      75,
+      container.clientWidth / container.clientHeight,
+      0.1,
+      1000,
+    );
     this.camera.position.set(0.8, 1, 1.5);
     this.camera.lookAt(0, 0, 0);
 
@@ -80,12 +85,18 @@ export class Simulator {
       container.appendChild(this.renderer.domElement);
 
       // Show the calm fallback ONCE if the browser drops the context later.
-      this.renderer.domElement.addEventListener('webglcontextlost', (ev) => {
-        ev.preventDefault();
-        this.reportContextLost();
-      }, false);
+      this.renderer.domElement.addEventListener(
+        'webglcontextlost',
+        (ev) => {
+          ev.preventDefault();
+          this.reportContextLost();
+        },
+        false,
+      );
     } catch {
-      console.warn('3D sim disabled: WebGL context could not be created (limit reached or unsupported).');
+      console.warn(
+        '3D sim disabled: WebGL context could not be created (limit reached or unsupported).',
+      );
       this.initFailed = true;
     }
 
@@ -119,10 +130,13 @@ export class Simulator {
     this.scene.add(directionalLight);
 
     // --- Controls ---
-    this.controls = new OrbitControls(this.camera, this.renderer ? this.renderer.domElement : container);
+    this.controls = new OrbitControls(
+      this.camera,
+      this.renderer ? this.renderer.domElement : container,
+    );
     this.controls.enableDamping = true;
     this.controls.target.set(0, 0.3, 0);
-    
+
     // --- Camera Constraints ---
     // 1. Prevent camera from going below ground
     this.controls.maxPolarAngle = Math.PI / 2 - 0.05;
@@ -134,10 +148,25 @@ export class Simulator {
     const textureLoader = new THREE.TextureLoader();
     const onTexError = (file: string) => () =>
       console.warn(`3D sim: texture '${file}' failed to load — continuing without it.`);
-    const colorTexture = textureLoader.load('sim3d/rubber_tiles_diff_2k.jpg', undefined, undefined, onTexError('rubber_tiles_diff_2k.jpg'));
-    const normalTexture = textureLoader.load('sim3d/rubber_tiles_nor_gl_2k.jpg', undefined, undefined, onTexError('rubber_tiles_nor_gl_2k.jpg'));
-    const roughnessTexture = textureLoader.load('sim3d/rubber_tiles_rough_2k.jpg', undefined, undefined, onTexError('rubber_tiles_rough_2k.jpg'));
-    
+    const colorTexture = textureLoader.load(
+      'sim3d/rubber_tiles_diff_2k.jpg',
+      undefined,
+      undefined,
+      onTexError('rubber_tiles_diff_2k.jpg'),
+    );
+    const normalTexture = textureLoader.load(
+      'sim3d/rubber_tiles_nor_gl_2k.jpg',
+      undefined,
+      undefined,
+      onTexError('rubber_tiles_nor_gl_2k.jpg'),
+    );
+    const roughnessTexture = textureLoader.load(
+      'sim3d/rubber_tiles_rough_2k.jpg',
+      undefined,
+      undefined,
+      onTexError('rubber_tiles_rough_2k.jpg'),
+    );
+
     for (const texture of [colorTexture, normalTexture, roughnessTexture]) {
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
       texture.repeat.set(8, 8);
@@ -145,10 +174,10 @@ export class Simulator {
 
     const groundGeometry = new THREE.PlaneGeometry(20, 20);
     this.groundMaterial = new THREE.MeshStandardMaterial({
-        map: colorTexture,
-        normalMap: normalTexture,
-        roughnessMap: roughnessTexture,
-        metalness: 0.1
+      map: colorTexture,
+      normalMap: normalTexture,
+      roughnessMap: roughnessTexture,
+      metalness: 0.1,
     });
     const ground = new THREE.Mesh(groundGeometry, this.groundMaterial);
     ground.rotation.x = -Math.PI / 2;
@@ -156,13 +185,13 @@ export class Simulator {
     this._preloadAssets();
 
     // --- Event Listeners ---
-    this.resizeObserver = new ResizeObserver(entries => {
-        for (const entry of entries) {
-            const { width, height } = entry.contentRect;
-            this.onCanvasResize(width, height);
-        }
+    this.resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        this.onCanvasResize(width, height);
+      }
     });
-    this.resizeObserver.observe(container);    
+    this.resizeObserver.observe(container);
     this.animate();
   }
 
@@ -175,20 +204,20 @@ export class Simulator {
 
       const masterScale = 0.4;
       this.robotModel.scale.set(masterScale, masterScale, masterScale);
-      
+
       const box = new THREE.Box3().setFromObject(this.robotModel);
       const center = box.getCenter(new THREE.Vector3());
       this.robotModel.position.x -= center.x;
       this.robotModel.position.z -= center.z;
       this.robotModel.position.y -= box.min.y;
-      
+
       this.scene.add(this.robotModel);
 
       this.createCollisionHelpers();
 
       this.robotModel.traverse((node) => {
-        if (node.name === 'Dash-Head') { 
-          this.head = node; 
+        if (node.name === 'Dash-Head') {
+          this.head = node;
           this.targetHeadRotation.copy(this.head.rotation);
         }
         if (node.name === 'Dash-Display' && node instanceof THREE.Mesh) {
@@ -197,7 +226,7 @@ export class Simulator {
             this.displayMesh.material = node.material.clone();
           }
         }
-        
+
         if (node.name.startsWith('Dash-LED') && node instanceof THREE.Mesh) {
           const ledNum = parseInt(node.name.replace('Dash-LED', ''), 10);
           if (!isNaN(ledNum)) {
@@ -208,7 +237,6 @@ export class Simulator {
           }
         }
       });
-
 
       this.mixer = new THREE.AnimationMixer(this.robotModel);
       gltf.animations.forEach((clip) => {
@@ -239,7 +267,7 @@ export class Simulator {
     // 2. Free every geometry / material / texture in the scene graph.
     this.scene?.traverse((o: any) => {
       o.geometry?.dispose?.();
-      const mats = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
+      const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
       for (const m of mats) {
         for (const k in m) {
           const v: any = m[k];
@@ -265,7 +293,7 @@ export class Simulator {
   // --- Public Methods (Robot Part Control) ---
   public setHeadPosition(pitch: number, yaw: number): void {
     if (!this.head) return;
-    
+
     const clampedPitch = Math.max(80, Math.min(100, pitch));
     const clampedYaw = Math.max(80, Math.min(100, yaw));
 
@@ -275,42 +303,43 @@ export class Simulator {
 
   public setLedColor(ledId: number | 'all', color: THREE.Color): void {
     const applyColor = (ledMesh: THREE.Mesh) => {
-        if (ledMesh && ledMesh.material instanceof THREE.MeshStandardMaterial) {
-            ledMesh.material.emissive = color;
-            ledMesh.material.emissiveIntensity = 2.0;
-        }
+      if (ledMesh && ledMesh.material instanceof THREE.MeshStandardMaterial) {
+        ledMesh.material.emissive = color;
+        ledMesh.material.emissiveIntensity = 2.0;
+      }
     };
 
     if (ledId === 'all') {
-        this.leds.forEach(applyColor);
+      this.leds.forEach(applyColor);
     } else {
       const LED_NUMBERING_OFFSET = 9;
       const visualIndex = (ledId - 1 + LED_NUMBERING_OFFSET) % 12; // Adjust for 0-based index and offset
 
       if (this.leds[visualIndex]) {
-          applyColor(this.leds[visualIndex]);
+        applyColor(this.leds[visualIndex]);
       }
     }
   }
 
   public displayIcon(iconName: string): void {
-    if (!this.displayMesh || !(this.displayMesh.material instanceof THREE.MeshStandardMaterial)) return;
-    
+    if (!this.displayMesh || !(this.displayMesh.material instanceof THREE.MeshStandardMaterial))
+      return;
+
     const material = this.displayMesh.material;
 
-    if (iconName === "clear") {
+    if (iconName === 'clear') {
+      material.emissiveMap = null;
+      material.emissive.set(0x000000);
+    } else {
+      const texture = this.iconTextures.get(iconName);
+      if (texture) {
+        material.emissiveMap = texture;
+        material.emissive.set(0xffffff);
+        material.emissiveIntensity = 0.5;
+      } else {
         material.emissiveMap = null;
         material.emissive.set(0x000000);
-    } else {
-        const texture = this.iconTextures.get(iconName);
-        if (texture) {
-            material.emissiveMap = texture;
-            material.emissive.set(0xffffff);
-            material.emissiveIntensity = 0.5;
-        } else {
-            material.emissiveMap = null;
-            material.emissive.set(0x000000);
-        }
+      }
     }
     material.needsUpdate = true;
   }
@@ -318,83 +347,102 @@ export class Simulator {
   public playSound(soundId: number): void {
     const sound = this.sounds.get(soundId);
     if (sound) {
-        sound.currentTime = 0;
-        sound.play();
+      sound.currentTime = 0;
+      sound.play();
     } else {
-        console.warn(`Sound not found for ID: ${soundId}`);
+      console.warn(`Sound not found for ID: ${soundId}`);
     }
   }
 
   public playWheelAnimation(wheel: 'L' | 'R' | 'B', direction: 'Forward' | 'Backward') {
-      const animName = `Wheel_${wheel}_${direction}`;
-      const action = this.animations.get(animName);
-      if (action) {
-          action.reset().play();
-      } else {
-          console.warn(`Animation not found: ${animName}`);
-      }
+    const animName = `Wheel_${wheel}_${direction}`;
+    const action = this.animations.get(animName);
+    if (action) {
+      action.reset().play();
+    } else {
+      console.warn(`Animation not found: ${animName}`);
+    }
   }
-  
+
   public stopWheelAnimation(wheel: 'L' | 'R' | 'B') {
-      const forwardAction = this.animations.get(`Wheel_${wheel}_Forward`);
-      const backwardAction = this.animations.get(`Wheel_${wheel}_Backward`);
-      forwardAction?.stop();
-      backwardAction?.stop();
+    const forwardAction = this.animations.get(`Wheel_${wheel}_Forward`);
+    const backwardAction = this.animations.get(`Wheel_${wheel}_Backward`);
+    forwardAction?.stop();
+    backwardAction?.stop();
   }
 
   // --- Public Method (Environment Control) ---
   public addLevelObject(objData: any): void {
     let geometry: THREE.BufferGeometry;
     let material: THREE.Material;
-    
+
     const virtualPosition = new THREE.Vector2(objData.position.x, objData.position.y);
     const textureLoader = new THREE.TextureLoader();
 
     if (objData.type === 'circle') {
-        const colorMap = textureLoader.load('sim3d/rocks_ground_09_diff_2k.jpg', undefined, undefined,
-          () => console.warn("3D sim: texture 'rocks_ground_09_diff_2k.jpg' failed to load — continuing."));
-        
-        colorMap.colorSpace = THREE.SRGBColorSpace;
-        colorMap.wrapS = colorMap.wrapT = THREE.RepeatWrapping;
-        colorMap.repeat.set(2, 2);
-        
-        material = new THREE.MeshBasicMaterial({ 
-          map: colorMap,
-          color: 0xcccccc
-        });
-        
-        const radius = objData.radius || 0.5;
-        geometry = new THREE.CylinderGeometry(radius, radius, 1, 32);
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.y = 0.5;
-        this.scene.add(mesh);
-        this.levelObjects.push({ mesh, type: 'circle', virtualPosition, radius });
+      const colorMap = textureLoader.load(
+        'sim3d/rocks_ground_09_diff_2k.jpg',
+        undefined,
+        undefined,
+        () =>
+          console.warn(
+            "3D sim: texture 'rocks_ground_09_diff_2k.jpg' failed to load — continuing.",
+          ),
+      );
 
+      colorMap.colorSpace = THREE.SRGBColorSpace;
+      colorMap.wrapS = colorMap.wrapT = THREE.RepeatWrapping;
+      colorMap.repeat.set(2, 2);
+
+      material = new THREE.MeshBasicMaterial({
+        map: colorMap,
+        color: 0xcccccc,
+      });
+
+      const radius = objData.radius || 0.5;
+      geometry = new THREE.CylinderGeometry(radius, radius, 1, 32);
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.y = 0.5;
+      this.scene.add(mesh);
+      this.levelObjects.push({ mesh, type: 'circle', virtualPosition, radius });
     } else if (objData.type === 'rectangle') {
-        const colorMap = textureLoader.load('sim3d/plastered_wall_05_diff_2k.jpg', undefined, undefined,
-          () => console.warn("3D sim: texture 'plastered_wall_05_diff_2k.jpg' failed to load — continuing."));
-        
-        colorMap.colorSpace = THREE.SRGBColorSpace;
-        colorMap.wrapS = colorMap.wrapT = THREE.RepeatWrapping;
-        colorMap.repeat.set(2, 1);
-        
-        material = new THREE.MeshBasicMaterial({ 
-          map: colorMap,
-          color: 0xFFFFFF,
-          side: THREE.DoubleSide
-        });
-        
-        const width = objData.width || 1;
-        const height = objData.height || 1;
-        geometry = new THREE.BoxGeometry(width, 1, height);
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.y = 0.5;
-        this.scene.add(mesh);
-        this.levelObjects.push({ mesh, type: 'rectangle', virtualPosition, width, height });
+      const colorMap = textureLoader.load(
+        'sim3d/plastered_wall_05_diff_2k.jpg',
+        undefined,
+        undefined,
+        () =>
+          console.warn(
+            "3D sim: texture 'plastered_wall_05_diff_2k.jpg' failed to load — continuing.",
+          ),
+      );
+
+      colorMap.colorSpace = THREE.SRGBColorSpace;
+      colorMap.wrapS = colorMap.wrapT = THREE.RepeatWrapping;
+      colorMap.repeat.set(2, 1);
+
+      material = new THREE.MeshBasicMaterial({
+        map: colorMap,
+        color: 0xffffff,
+        side: THREE.DoubleSide,
+      });
+
+      const width = objData.width || 1;
+      const height = objData.height || 1;
+      geometry = new THREE.BoxGeometry(width, 1, height);
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.y = 0.5;
+      this.scene.add(mesh);
+      this.levelObjects.push({ mesh, type: 'rectangle', virtualPosition, width, height });
     }
   }
 
-  public addFinishZone(checkpointData: { type?: 'circle' | 'rectangle'; position: { x: number; y: number }; radius?: number; width?: number; height?: number }): void {
+  public addFinishZone(checkpointData: {
+    type?: 'circle' | 'rectangle';
+    position: { x: number; y: number };
+    radius?: number;
+    width?: number;
+    height?: number;
+  }): void {
     this.clearFinishZone();
 
     const virtualPosition = new THREE.Vector2(checkpointData.position.x, checkpointData.position.y);
@@ -406,7 +454,7 @@ export class Simulator {
     if (type === 'rectangle') {
       const width = checkpointData.width || 1;
       const height = checkpointData.height || 1;
-      
+
       geometry = new THREE.BoxGeometry(width, 0.1, height);
       const material = new THREE.MeshStandardMaterial({
         color: 0x00ff00,
@@ -415,16 +463,16 @@ export class Simulator {
         transparent: true,
         opacity: 0.6,
         metalness: 0.3,
-        roughness: 0.7
+        roughness: 0.7,
       });
       mesh = new THREE.Mesh(geometry, material);
       mesh.position.y = 0.05;
       this.scene.add(mesh);
 
       const borderGeometry = new THREE.EdgesGeometry(geometry);
-      const borderMaterial = new THREE.LineBasicMaterial({ 
+      const borderMaterial = new THREE.LineBasicMaterial({
         color: 0x00ff88,
-        linewidth: 2
+        linewidth: 2,
       });
       const border = new THREE.LineSegments(borderGeometry, borderMaterial);
       border.position.y = 0.11;
@@ -438,10 +486,9 @@ export class Simulator {
       (mesh as any).pulseAnimation = pulseAnimation;
 
       this.finishZone = { mesh, virtualPosition, type: 'rectangle', width, height };
-
     } else {
       const radius = checkpointData.radius || 0.6;
-      
+
       geometry = new THREE.CylinderGeometry(radius, radius, 0.1, 32);
       const material = new THREE.MeshStandardMaterial({
         color: 0x00ff00,
@@ -450,7 +497,7 @@ export class Simulator {
         transparent: true,
         opacity: 0.6,
         metalness: 0.3,
-        roughness: 0.7
+        roughness: 0.7,
       });
       mesh = new THREE.Mesh(geometry, material);
       mesh.position.y = 0.05;
@@ -461,7 +508,7 @@ export class Simulator {
         color: 0x00ff88,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 0.8
+        opacity: 0.8,
       });
       const ring = new THREE.Mesh(ringGeometry, ringMaterial);
       ring.rotation.x = -Math.PI / 2;
@@ -481,19 +528,19 @@ export class Simulator {
 
   public clearFinishZone(): void {
     if (this.finishZone) {
-        this.scene.remove(this.finishZone.mesh);
+      this.scene.remove(this.finishZone.mesh);
       this.finishZone = null;
     }
   }
 
   public clearObstacles(): void {
-      this.levelObjects.forEach(obj => this.scene.remove(obj.mesh));
-      this.levelObjects = [];
+    this.levelObjects.forEach((obj) => this.scene.remove(obj.mesh));
+    this.levelObjects = [];
   }
 
   public clearLevel(): void {
-      this.levelObjects.forEach(obj => this.scene.remove(obj.mesh));
-      this.levelObjects = [];
+    this.levelObjects.forEach((obj) => this.scene.remove(obj.mesh));
+    this.levelObjects = [];
   }
 
   public toggleCollisionHelpers(visible: boolean): void {
@@ -510,7 +557,7 @@ export class Simulator {
     this.mixer?.update(deltaTime);
 
     if (this.sequencerVirtualPosition) {
-        this.updateEnvironment(this.sequencerVirtualPosition);
+      this.updateEnvironment(this.sequencerVirtualPosition);
     }
 
     if (this.finishZone && (this.finishZone.mesh as any).pulseAnimation) {
@@ -518,8 +565,16 @@ export class Simulator {
     }
 
     if (this.head) {
-      this.head.rotation.x = THREE.MathUtils.lerp(this.head.rotation.x, this.targetHeadRotation.x, this.headLerpFactor);
-      this.head.rotation.y = THREE.MathUtils.lerp(this.head.rotation.y, this.targetHeadRotation.y, this.headLerpFactor);
+      this.head.rotation.x = THREE.MathUtils.lerp(
+        this.head.rotation.x,
+        this.targetHeadRotation.x,
+        this.headLerpFactor,
+      );
+      this.head.rotation.y = THREE.MathUtils.lerp(
+        this.head.rotation.y,
+        this.targetHeadRotation.y,
+        this.headLerpFactor,
+      );
     }
 
     if (this.robotModel) {
@@ -528,7 +583,7 @@ export class Simulator {
     }
     this.controls.update();
     this.renderer?.render(this.scene, this.camera);
-  }
+  };
 
   // --- Internal Helpers & Event Handlers ---
   private updateEnvironment(robotVirtualPosition: THREE.Vector2): void {
@@ -540,7 +595,7 @@ export class Simulator {
       this.groundMaterial.roughnessMap?.offset.set(textureOffset.x, -textureOffset.y);
     }
 
-    this.levelObjects.forEach(obj => {
+    this.levelObjects.forEach((obj) => {
       const relativePos = obj.virtualPosition.clone().sub(robotVirtualPosition);
       obj.mesh.position.x = relativePos.x;
       obj.mesh.position.z = relativePos.y;
@@ -556,18 +611,15 @@ export class Simulator {
   private _preloadAssets(): void {
     const textureLoader = new THREE.TextureLoader();
     const iconsToLoad = ['happy', 'sad', 'confused', 'mad'];
-    iconsToLoad.forEach(name => {
-      const texture = textureLoader.load(
-        `icons/${name}.png`,
-        undefined,
-        undefined,
-        () => console.warn(`3D sim: icon 'icons/${name}.png' failed to load — skipping.`),
+    iconsToLoad.forEach((name) => {
+      const texture = textureLoader.load(`icons/${name}.png`, undefined, undefined, () =>
+        console.warn(`3D sim: icon 'icons/${name}.png' failed to load — skipping.`),
       );
       texture.colorSpace = THREE.SRGBColorSpace;
       this.iconTextures.set(name, texture);
     });
 
-    SOUND_MAPPING.forEach(sound => {
+    SOUND_MAPPING.forEach((sound) => {
       const audio = new Audio(sound.assetPath);
       audio.addEventListener(
         'error',
@@ -591,15 +643,33 @@ export class Simulator {
     const height = 0.02;
     const segments = 32;
 
-    const collisionGeometry = new THREE.CylinderGeometry(ROBOT_LINEAR_RADIUS, ROBOT_LINEAR_RADIUS, height, segments);
-    const collisionMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00, transparent: true, opacity: 0.25 });
+    const collisionGeometry = new THREE.CylinderGeometry(
+      ROBOT_LINEAR_RADIUS,
+      ROBOT_LINEAR_RADIUS,
+      height,
+      segments,
+    );
+    const collisionMaterial = new THREE.MeshStandardMaterial({
+      color: 0x00ff00,
+      transparent: true,
+      opacity: 0.25,
+    });
     this.collisionHelper = new THREE.Mesh(collisionGeometry, collisionMaterial);
     this.collisionHelper.position.y = height / 2;
     this.collisionHelper.visible = false;
     this.robotModel.add(this.collisionHelper);
 
-    const turningGeometry = new THREE.CylinderGeometry(ROBOT_TURNING_RADIUS, ROBOT_TURNING_RADIUS, height, segments);
-    const turningMaterial = new THREE.MeshStandardMaterial({ color: 0xffff00, transparent: true, opacity: 0.2 });
+    const turningGeometry = new THREE.CylinderGeometry(
+      ROBOT_TURNING_RADIUS,
+      ROBOT_TURNING_RADIUS,
+      height,
+      segments,
+    );
+    const turningMaterial = new THREE.MeshStandardMaterial({
+      color: 0xffff00,
+      transparent: true,
+      opacity: 0.2,
+    });
     this.turningHelper = new THREE.Mesh(turningGeometry, turningMaterial);
     this.turningHelper.position.y = height / 2;
     this.turningHelper.visible = false;

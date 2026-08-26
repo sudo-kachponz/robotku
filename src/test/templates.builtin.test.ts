@@ -20,11 +20,23 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** Actuator/output fingerprint — NOT sensors, so priming inputs doesn't count. */
 function fingerprint(s: SimState): string {
   return JSON.stringify([
-    Math.round(s.x), Math.round(s.y), Math.round(s.headingDeg),
-    s.matrix.join(''), s.displayText, s.lcdText, s.lcdShape,
-    s.buzzerPulse > 0, s.bpm, s.gripperOpen, s.volume, s.recording,
-    s.collisions, s.trail.length, s.portValues.join(','),
-    s.analogPorts.join(','), s.digitalPorts.join(','),
+    Math.round(s.x),
+    Math.round(s.y),
+    Math.round(s.headingDeg),
+    s.matrix.join(''),
+    s.displayText,
+    s.lcdText,
+    s.lcdShape,
+    s.buzzerPulse > 0,
+    s.bpm,
+    s.gripperOpen,
+    s.volume,
+    s.recording,
+    s.collisions,
+    s.trail.length,
+    s.portValues.join(','),
+    s.analogPorts.join(','),
+    s.digitalPorts.join(','),
   ]);
 }
 

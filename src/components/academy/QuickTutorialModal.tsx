@@ -52,8 +52,9 @@ export function QuickTutorialModal({ onClose }: { onClose: () => void }) {
                 <span className={styles.tutorialTag}>MODUL & MEKANISME</span>
                 <h2 className={styles.tutorialHeading}>Robotku Basics & Mechanism Tutorials</h2>
                 <p className={styles.tutorialSub}>
-                  <strong>Robotku Basics</strong> mencakup 6 materi dasar yang wajib dipahami untuk merakit & memrogram robot pertama kamu.
-                  Mekanisme lain dapat dibongkar pasang secara modular!
+                  <strong>Robotku Basics</strong> mencakup 6 materi dasar yang wajib dipahami untuk
+                  merakit & memrogram robot pertama kamu. Mekanisme lain dapat dibongkar pasang
+                  secara modular!
                 </p>
                 <div className={styles.tutorialDiagramGrid}>
                   <div className={styles.diagramBox}>
@@ -77,7 +78,9 @@ export function QuickTutorialModal({ onClose }: { onClose: () => void }) {
                 <span className={styles.tutorialTag}>KATEGORI FOLDER</span>
                 <h2 className={styles.tutorialHeading}>Subject & Use-Case Categorization</h2>
                 <p className={styles.tutorialSub}>
-                  Semua materi dikelompokkan secara terstruktur berdasarkan mata pelajaran dan topik seperti <strong>Sciences</strong>, <strong>Robotics & Makerspace</strong>, <strong>AI & Machine Learning</strong>, serta <strong>Sustainability</strong>!
+                  Semua materi dikelompokkan secara terstruktur berdasarkan mata pelajaran dan topik
+                  seperti <strong>Sciences</strong>, <strong>Robotics & Makerspace</strong>,{' '}
+                  <strong>AI & Machine Learning</strong>, serta <strong>Sustainability</strong>!
                 </p>
                 <div className={styles.subjectPillsRow}>
                   <span className={styles.subPill}>🧲 Sciences</span>
@@ -134,7 +137,8 @@ export function QuickTutorialModal({ onClose }: { onClose: () => void }) {
                 <span className={styles.tutorialTag}>SIAP BELAJAR!</span>
                 <h2 className={styles.tutorialHeading}>Kamu Siap Memulai!</h2>
                 <p className={styles.tutorialSub}>
-                  Pilih pelajaran mana saja, nikmati materi presentasinya, dan langsung uji di Coding Studio!
+                  Pilih pelajaran mana saja, nikmati materi presentasinya, dan langsung uji di
+                  Coding Studio!
                 </p>
                 <button className={pageStyles.btnPink} onClick={onClose} style={{ marginTop: 12 }}>
                   Mulai Belajar Sekarang 🚀
@@ -153,7 +157,11 @@ export function QuickTutorialModal({ onClose }: { onClose: () => void }) {
             <span className={styles.tutorialCounter}>
               {slide} / {TOTAL_SLIDES}
             </span>
-            <button className={styles.tutorialNavBtn} onClick={next} disabled={slide === TOTAL_SLIDES}>
+            <button
+              className={styles.tutorialNavBtn}
+              onClick={next}
+              disabled={slide === TOTAL_SLIDES}
+            >
               ❯
             </button>
           </div>

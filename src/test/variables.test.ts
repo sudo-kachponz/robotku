@@ -14,7 +14,11 @@ const forward = (duration: BlockSpec | number): BlockSpec => ({
 
 describe('Parity: Variables', () => {
   it('variables_set generates META_SET_VAR', () => {
-    const cmds = buildBlock({ type: 'variables_set', fields: { VAR: 'score' }, inputs: { VALUE: 7 } });
+    const cmds = buildBlock({
+      type: 'variables_set',
+      fields: { VAR: 'score' },
+      inputs: { VALUE: 7 },
+    });
     expect(cmds[0]).toMatchObject({ command: 'META_SET_VAR', params: { name: 'score', value: 7 } });
   });
 
@@ -36,12 +40,18 @@ describe('Parity: Variables', () => {
         type: 'variables_set',
         fields: { VAR: 'score' },
         inputs: {
-          VALUE: { type: 'math_arithmetic', fields: { OP: 'ADD' }, inputs: { A: get('score'), B: 1 } },
+          VALUE: {
+            type: 'math_arithmetic',
+            fields: { OP: 'ADD' },
+            inputs: { A: get('score'), B: 1 },
+          },
         },
       },
       {
         type: 'controls_if',
-        inputs: { IF0: { type: 'logic_compare', fields: { OP: 'EQ' }, inputs: { A: get('score'), B: 1 } } },
+        inputs: {
+          IF0: { type: 'logic_compare', fields: { OP: 'EQ' }, inputs: { A: get('score'), B: 1 } },
+        },
         statements: { DO0: [forward(0.2)] },
       },
     ]);
@@ -54,7 +64,11 @@ describe('Parity: Variables', () => {
       {
         type: 'controls_if',
         inputs: {
-          IF0: { type: 'logic_compare', fields: { OP: 'EQ' }, inputs: { A: get('greeting'), B: target } },
+          IF0: {
+            type: 'logic_compare',
+            fields: { OP: 'EQ' },
+            inputs: { A: get('greeting'), B: target },
+          },
         },
         statements: { DO0: [forward(0.2)] },
       },

@@ -7,9 +7,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import {
-  BUILTIN_TEMPLATES,
-} from '../../templates/builtin';
+import { BUILTIN_TEMPLATES } from '../../templates/builtin';
 import {
   COLLECTION_LABELS,
   REQUIREMENT_LABELS,
@@ -54,7 +52,9 @@ function countBlocks(program: BlockSpec[]): number {
   let n = 0;
   const walk = (spec: BlockSpec) => {
     n++;
-    if (spec.inputs) for (const v of Object.values(spec.inputs)) if (v && typeof v === 'object') walk(v as BlockSpec);
+    if (spec.inputs)
+      for (const v of Object.values(spec.inputs))
+        if (v && typeof v === 'object') walk(v as BlockSpec);
     if (spec.statements) for (const kids of Object.values(spec.statements)) kids.forEach(walk);
   };
   program.forEach(walk);
@@ -72,7 +72,9 @@ export default function TemplateGallery({ open, onClose, onUse, onTry, aiEnabled
   // Load Template Saya whenever the gallery opens.
   useEffect(() => {
     if (!open) return;
-    loadUserTemplates().then(setUserTemplates).catch(() => setUserTemplates([]));
+    loadUserTemplates()
+      .then(setUserTemplates)
+      .catch(() => setUserTemplates([]));
     setSelected(null);
     const t = setTimeout(() => searchRef.current?.focus(), 30);
     return () => clearTimeout(t);
@@ -111,7 +113,10 @@ export default function TemplateGallery({ open, onClose, onUse, onTry, aiEnabled
     [aiEnabled],
   );
 
-  const workspaceOf = useCallback((t: BuiltinTemplate): object => buildTemplateWorkspace(t.program), []);
+  const workspaceOf = useCallback(
+    (t: BuiltinTemplate): object => buildTemplateWorkspace(t.program),
+    [],
+  );
 
   const handleTry = useCallback(
     (t: BuiltinTemplate) => {
@@ -129,20 +134,26 @@ export default function TemplateGallery({ open, onClose, onUse, onTry, aiEnabled
     [onUse, onClose],
   );
 
-  const renameUser = useCallback(async (rec: UserTemplateRecord) => {
-    const name = window.prompt('Nama baru:', rec.name);
-    if (!name) return;
-    const next = userTemplates.map((u) => (u.id === rec.id ? { ...u, name: name.trim() } : u));
-    setUserTemplates(next);
-    await persistUserTemplates(next);
-  }, [userTemplates]);
+  const renameUser = useCallback(
+    async (rec: UserTemplateRecord) => {
+      const name = window.prompt('Nama baru:', rec.name);
+      if (!name) return;
+      const next = userTemplates.map((u) => (u.id === rec.id ? { ...u, name: name.trim() } : u));
+      setUserTemplates(next);
+      await persistUserTemplates(next);
+    },
+    [userTemplates],
+  );
 
-  const deleteUser = useCallback(async (rec: UserTemplateRecord) => {
-    const next = userTemplates.filter((u) => u.id !== rec.id);
-    setUserTemplates(next);
-    await persistUserTemplates(next);
-    showToast(`Dihapus: ${rec.name}`, 'info');
-  }, [userTemplates]);
+  const deleteUser = useCallback(
+    async (rec: UserTemplateRecord) => {
+      const next = userTemplates.filter((u) => u.id !== rec.id);
+      setUserTemplates(next);
+      await persistUserTemplates(next);
+      showToast(`Dihapus: ${rec.name}`, 'info');
+    },
+    [userTemplates],
+  );
 
   if (!open) return null;
 
@@ -150,7 +161,9 @@ export default function TemplateGallery({ open, onClose, onUse, onTry, aiEnabled
     <div
       ref={overlayRef}
       className={styles.overlay}
-      onMouseDown={(e) => { if (e.target === overlayRef.current) onClose(); }}
+      onMouseDown={(e) => {
+        if (e.target === overlayRef.current) onClose();
+      }}
       role="dialog"
       aria-modal="true"
       aria-label="Galeri Template"
@@ -162,7 +175,10 @@ export default function TemplateGallery({ open, onClose, onUse, onTry, aiEnabled
             <button
               key={r.key}
               className={`${styles.railBtn} ${rail === r.key ? styles.railBtnActive : ''}`}
-              onClick={() => { setRail(r.key); setSelected(null); }}
+              onClick={() => {
+                setRail(r.key);
+                setSelected(null);
+              }}
             >
               {r.label}
             </button>
@@ -180,7 +196,9 @@ export default function TemplateGallery({ open, onClose, onUse, onTry, aiEnabled
               onChange={(e) => setQuery(e.target.value)}
               aria-label="Cari template"
             />
-            <button className={styles.closeBtn} onClick={onClose} aria-label="Tutup">×</button>
+            <button className={styles.closeBtn} onClick={onClose} aria-label="Tutup">
+              ×
+            </button>
           </div>
 
           {rail === 'saya' ? (
@@ -198,10 +216,19 @@ export default function TemplateGallery({ open, onClose, onUse, onTry, aiEnabled
                         Disimpan {new Date(u.savedAt).toLocaleDateString('id-ID')}
                       </div>
                       <div className={styles.cardMeta}>
-                        <button className={styles.btn + ' ' + styles.btnGhost} onClick={() => handleUse(u.workspace as object, u.name)}>Pakai</button>
+                        <button
+                          className={styles.btn + ' ' + styles.btnGhost}
+                          onClick={() => handleUse(u.workspace as object, u.name)}
+                        >
+                          Pakai
+                        </button>
                         <span className={styles.overflowMenu}>
-                          <button className={styles.miniBtn} onClick={() => renameUser(u)}>Ubah nama</button>
-                          <button className={styles.miniBtn} onClick={() => deleteUser(u)}>Hapus</button>
+                          <button className={styles.miniBtn} onClick={() => renameUser(u)}>
+                            Ubah nama
+                          </button>
+                          <button className={styles.miniBtn} onClick={() => deleteUser(u)}>
+                            Hapus
+                          </button>
                         </span>
                       </div>
                     </div>
@@ -212,23 +239,33 @@ export default function TemplateGallery({ open, onClose, onUse, onTry, aiEnabled
           ) : (
             <div className={styles.grid}>
               {filtered.length === 0 ? (
-                <div className={styles.empty}>Tidak ada template yang cocok. Coba kata kunci lain 🤖</div>
+                <div className={styles.empty}>
+                  Tidak ada template yang cocok. Coba kata kunci lain 🤖
+                </div>
               ) : (
                 filtered.map((t) => (
                   <button key={t.id} className={styles.card} onClick={() => setSelected(t)}>
-                    <span className={styles.thumb} dangerouslySetInnerHTML={{ __html: t.thumbnail }} />
+                    <span
+                      className={styles.thumb}
+                      dangerouslySetInnerHTML={{ __html: t.thumbnail }}
+                    />
                     <span className={styles.cardBody}>
                       <span className={styles.cardTitle}>{t.name}</span>
                       <span className={styles.cardDesc}>{t.description}</span>
                       <span className={styles.cardMeta}>
                         <span className={styles.dots} aria-label={`Tingkat ${t.difficulty}`}>
                           {[1, 2, 3].map((d) => (
-                            <span key={d} className={`${styles.dot} ${d <= t.difficulty ? styles.dotOn : ''}`} />
+                            <span
+                              key={d}
+                              className={`${styles.dot} ${d <= t.difficulty ? styles.dotOn : ''}`}
+                            />
                           ))}
                         </span>
                         {isGated(t) && <span className={styles.chipAi}>butuh AI</span>}
                         {(t.requires ?? []).map((r) => (
-                          <span key={r} className={styles.chipReq + ' ' + styles.chip}>{REQUIREMENT_LABELS[r]}</span>
+                          <span key={r} className={styles.chipReq + ' ' + styles.chip}>
+                            {REQUIREMENT_LABELS[r]}
+                          </span>
                         ))}
                         <span className={styles.count}>~{countBlocks(t.program)} blok</span>
                       </span>
@@ -271,28 +308,43 @@ function DetailSheet({
   return (
     <div className={styles.sheet}>
       <div className={styles.sheetHead}>
-        <button className={styles.back} onClick={onBack}>← Kembali</button>
+        <button className={styles.back} onClick={onBack}>
+          ← Kembali
+        </button>
         <h3>{template.name}</h3>
       </div>
       <div className={styles.sheetBody}>
-        <span className={styles.sheetPreview} dangerouslySetInnerHTML={{ __html: template.thumbnail }} />
+        <span
+          className={styles.sheetPreview}
+          dangerouslySetInnerHTML={{ __html: template.thumbnail }}
+        />
         <div>
           <p className={styles.sheetDesc}>{template.description}</p>
           <div className={styles.learnTitle}>Apa yang dipelajari</div>
           <ul className={styles.learn}>
-            {template.learn.map((l, i) => <li key={i}>{l}</li>)}
+            {template.learn.map((l, i) => (
+              <li key={i}>{l}</li>
+            ))}
           </ul>
         </div>
       </div>
       <div className={styles.sheetFoot}>
         {gated ? (
-          <button className={`${styles.btn} ${styles.btnAi}`} disabled title="Aktifkan kamera AI di PROMPT E">
+          <button
+            className={`${styles.btn} ${styles.btnAi}`}
+            disabled
+            title="Aktifkan kamera AI di PROMPT E"
+          >
             Aktifkan AI dulu
           </button>
         ) : (
           <>
-            <button className={`${styles.btn} ${styles.btnGhost}`} onClick={onTry}>▶ Coba di Simulator</button>
-            <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={onUse}>Pakai Template</button>
+            <button className={`${styles.btn} ${styles.btnGhost}`} onClick={onTry}>
+              ▶ Coba di Simulator
+            </button>
+            <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={onUse}>
+              Pakai Template
+            </button>
           </>
         )}
       </div>

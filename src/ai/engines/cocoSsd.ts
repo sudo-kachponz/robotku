@@ -61,7 +61,11 @@ export class CocoSsdEngine implements CvEngine {
   }
 
   dispose(): void {
-    try { this.model?.dispose?.(); } catch { /* ignore */ }
+    try {
+      this.model?.dispose?.();
+    } catch {
+      /* ignore */
+    }
     this.model = null;
   }
 }

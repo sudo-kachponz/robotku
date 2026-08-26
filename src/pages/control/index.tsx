@@ -28,8 +28,7 @@ export default function ControlStart() {
 
         <h1 className={styles.title}>Ayo Mulai!</h1>
         <p className={styles.subtitle}>
-          Klik Connect untuk langsung mengendalikan robotmu. Jelajahi mode dan
-          coba coding!
+          Klik Connect untuk langsung mengendalikan robotmu. Jelajahi mode dan coba coding!
         </p>
 
         <div className={styles.actions}>
@@ -39,10 +38,7 @@ export default function ControlStart() {
           >
             {connected ? 'Lanjut ke Mode →' : 'Connect'}
           </button>
-          <button
-            className={styles.secondary}
-            onClick={() => router.push('/control/modes')}
-          >
+          <button className={styles.secondary} onClick={() => router.push('/control/modes')}>
             Jelajahi Mode
           </button>
         </div>

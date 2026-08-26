@@ -8,61 +8,61 @@
 
 :root {
   /* Brand — indigo */
-  --indigo-50: #EEF0FF;
-  --indigo-100: #E0E3FF;
-  --indigo-200: #C6CAFF;
-  --indigo-300: #A3A8FB;
-  --indigo-400: #8085F4;
-  --indigo-500: #6366E8;
-  --indigo-600: #4F46E5;
-  --indigo-700: #4338CA;
-  --indigo-800: #352DA0;
-  --indigo-900: #2B2680;
+  --indigo-50: #eef0ff;
+  --indigo-100: #e0e3ff;
+  --indigo-200: #c6caff;
+  --indigo-300: #a3a8fb;
+  --indigo-400: #8085f4;
+  --indigo-500: #6366e8;
+  --indigo-600: #4f46e5;
+  --indigo-700: #4338ca;
+  --indigo-800: #352da0;
+  --indigo-900: #2b2680;
 
   /* Accent — pink */
-  --pink-50: #FDF1F8;
-  --pink-100: #FCE2F0;
-  --pink-200: #FBC7E2;
-  --pink-300: #F89BCB;
-  --pink-400: #F265AE;
-  --pink-500: #EC2D8F;
-  --pink-600: #D81B7E;
-  --pink-700: #B41268;
+  --pink-50: #fdf1f8;
+  --pink-100: #fce2f0;
+  --pink-200: #fbc7e2;
+  --pink-300: #f89bcb;
+  --pink-400: #f265ae;
+  --pink-500: #ec2d8f;
+  --pink-600: #d81b7e;
+  --pink-700: #b41268;
 
   /* Semantic */
-  --blue: #3B82F6;
-  --blue-bg: #E8F1FE;
-  --green: #16A34A;
-  --green-bg: #E4F7EC;
-  --amber: #E08600;
-  --amber-bg: #FCF0DB;
-  --purple: #8B5CF6;
-  --purple-bg: #F0EBFE;
-  --red: #E5484D;
-  --red-bg: #FDE9EA;
+  --blue: #3b82f6;
+  --blue-bg: #e8f1fe;
+  --green: #16a34a;
+  --green-bg: #e4f7ec;
+  --amber: #e08600;
+  --amber-bg: #fcf0db;
+  --purple: #8b5cf6;
+  --purple-bg: #f0ebfe;
+  --red: #e5484d;
+  --red-bg: #fde9ea;
 
   /* Data-viz */
-  --viz-reguler: #4F46E5;
-  --viz-reguler-soft: #A3A8FB;
-  --viz-ekstra: #EC2D8F;
-  --viz-ekstra-soft: #F89BCB;
-  --viz-grid: #EDEEF6;
+  --viz-reguler: #4f46e5;
+  --viz-reguler-soft: #a3a8fb;
+  --viz-ekstra: #ec2d8f;
+  --viz-ekstra-soft: #f89bcb;
+  --viz-grid: #edeef6;
 
   /* Ink text scale */
-  --ink-900: #1B1840;
+  --ink-900: #1b1840;
   --ink-800: #272350;
-  --ink-700: #403C6B;
+  --ink-700: #403c6b;
   --ink-600: #565386;
-  --ink-500: #6B7194;
-  --ink-400: #9499B8;
-  --ink-300: #C2C6DB;
+  --ink-500: #6b7194;
+  --ink-400: #9499b8;
+  --ink-300: #c2c6db;
 
   /* Lines & surfaces */
-  --line: #E7E9F2;
-  --line-soft: #F0F1F8;
-  --surface: #FFFFFF;
-  --surface-2: #FAFAFE;
-  --bg: #F3F4FB;
+  --line: #e7e9f2;
+  --line-soft: #f0f1f8;
+  --surface: #ffffff;
+  --surface-2: #fafafe;
+  --bg: #f3f4fb;
 
   /* Radii */
   --r-xs: 6px;
@@ -74,41 +74,41 @@
   --r-full: 999px;
 
   /* Shadows */
-  --shadow-xs: 0 1px 2px rgba(27, 24, 64, .05);
-  --shadow-sm: 0 2px 8px rgba(27, 24, 64, .06);
-  --shadow-md: 0 6px 20px rgba(27, 24, 64, .07);
-  --shadow-lg: 0 16px 40px rgba(27, 24, 64, .12);
+  --shadow-xs: 0 1px 2px rgba(27, 24, 64, 0.05);
+  --shadow-sm: 0 2px 8px rgba(27, 24, 64, 0.06);
+  --shadow-md: 0 6px 20px rgba(27, 24, 64, 0.07);
+  --shadow-lg: 0 16px 40px rgba(27, 24, 64, 0.12);
 
   /* Focus ring */
-  --ring: 0 0 0 4px rgba(79, 70, 229, .14);
+  --ring: 0 0 0 4px rgba(79, 70, 229, 0.14);
 
   /* Robotku Play — Immersive Tokens */
-  --rk-bg-top: #2B2680;
-  --rk-bg-bottom: #4338CA;
-  --rk-bg-gradient: radial-gradient(120% 120% at 50% 0%, #4338CA 0%, #352DA0 45%, #2B2680 100%);
-  --rk-header: #241F5E;
+  --rk-bg-top: #2b2680;
+  --rk-bg-bottom: #4338ca;
+  --rk-bg-gradient: radial-gradient(120% 120% at 50% 0%, #4338ca 0%, #352da0 45%, #2b2680 100%);
+  --rk-header: #241f5e;
 
-  --rk-surface-1: #4F46E5;
-  --rk-surface-2: #5B54EA;
-  --rk-surface-3: #352DA0;
-  --rk-surface-alt: #6366E8;
+  --rk-surface-1: #4f46e5;
+  --rk-surface-2: #5b54ea;
+  --rk-surface-3: #352da0;
+  --rk-surface-alt: #6366e8;
 
-  --rk-input: #FFFFFF;
-  --rk-chip: #E0E3FF;
-  --rk-canvas: #F3F4FB;
+  --rk-input: #ffffff;
+  --rk-chip: #e0e3ff;
+  --rk-canvas: #f3f4fb;
 
-  --rk-on: #FFFFFF;
-  --rk-on-muted: rgba(255,255,255,.72);
+  --rk-on: #ffffff;
+  --rk-on-muted: rgba(255, 255, 255, 0.72);
 
-  --rk-accent: #EC2D8F;
-  --rk-success: #16A34A;
-  --rk-danger: #E5484D;
-  --rk-info: #3B82F6;
+  --rk-accent: #ec2d8f;
+  --rk-success: #16a34a;
+  --rk-danger: #e5484d;
+  --rk-info: #3b82f6;
 
   --rk-r-lg: 20px;
   --rk-r-xl: 28px;
   --rk-r-pill: 999px;
-  --rk-shadow: 0 12px 30px rgba(20,16,60,.35);
+  --rk-shadow: 0 12px 30px rgba(20, 16, 60, 0.35);
 
   /* Type */
   --font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
