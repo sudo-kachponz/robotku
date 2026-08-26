@@ -3,7 +3,7 @@
 // Control Modes carousel — 5 cards with left/right arrows + 5 dots. Order:
 // Base Robot, Port Control, Tank Mode, Joystick, Block Coding.
 
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import ControlLayout from '../../../components/control/ControlLayout';

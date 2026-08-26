@@ -418,7 +418,7 @@ export class ProgramRunner {
     const cacheKey = keys.join(',') + '::' + expr;
     let fn = this.compileCache.get(cacheKey);
     if (!fn) {
-      // eslint-disable-next-line @typescript-eslint/no-implied-eval
+       
       fn = new Function('getSensorValue', 'mathRandomInt', ...keys, `return (${expr});`) as (
         ...args: unknown[]
       ) => unknown;

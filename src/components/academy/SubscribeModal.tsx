@@ -20,7 +20,7 @@ export function SubscribeModal({ lesson, onClose }: { lesson: Lesson; onClose: (
         <div className={styles.modalIcon}>🔒</div>
         <h3 className={styles.modalTitle}>Pelajaran Berlangganan</h3>
         <p className={styles.modalText}>
-          "<strong>{lesson.title}</strong>" tersedia untuk anggota berlangganan. Hubungi tim
+          &quot;<strong>{lesson.title}</strong>&quot; tersedia untuk anggota berlangganan. Hubungi tim
           Robotku untuk membuka seluruh katalog.
         </p>
         <div className={styles.modalActions}>

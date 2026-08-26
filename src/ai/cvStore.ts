@@ -10,7 +10,7 @@
 
 import type { CvEngine, CvFrameResult, CvBox } from './types';
 import { EMPTY_FRAME } from './types';
-import { getModel, type CvModelEntry } from './registry';
+import { getModel } from './registry';
 import { createEngine } from './engines';
 
 const ANY = 'any'; // the "apa saja" label

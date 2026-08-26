@@ -5,7 +5,6 @@
 // If <bool> Then/Else. Every block emits META_* opcodes the simulator
 // sequencer understands (Timing's Wait now lives in categories/events.ts).
 
-import * as Blockly from 'blockly/core';
 import { defineOnce } from './_defineOnce';
 import { javascriptGenerator, Order } from 'blockly/javascript';
 

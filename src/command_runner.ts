@@ -33,14 +33,12 @@ export function runCommandsOnRobot(commandJson: string): void {
   const lines = normalizeProgram(commandJson);
 
   if (activeTransport) {
-    console.log(`[run] streaming ${lines.length} command(s) over ${activeTransport.kind}`);
     activeTransport.sendProgram(lines).catch((err) => {
       console.error('[run] sendProgram failed', err);
     });
     return;
   }
 
-  console.log(`[run] no device connected -> running ${lines.length} command(s) in SIMULATOR`);
   if (simulatorRunner) {
     try {
       const commands = JSON.parse(commandJson);

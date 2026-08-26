@@ -26,8 +26,8 @@ javascriptGenerator.forBlock['logic_compare'] = function(block) {
 javascriptGenerator.forBlock['logic_operation'] = function(block) {
   const operator = (block.getFieldValue('OP') === 'AND') ? '&&' : '||';
   const order = (operator === '&&') ? Order.LOGICAL_AND : Order.LOGICAL_OR;
-  let argument0 = javascriptGenerator.valueToCode(block, 'A', order) || 'false';
-  let argument1 = javascriptGenerator.valueToCode(block, 'B', order) || 'false';
+  const argument0 = javascriptGenerator.valueToCode(block, 'A', order) || 'false';
+  const argument1 = javascriptGenerator.valueToCode(block, 'B', order) || 'false';
   const code = `${argument0} ${operator} ${argument1}`;
   return [code, order];
 };

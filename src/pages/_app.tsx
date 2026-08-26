@@ -26,7 +26,7 @@ export default function App({ Component, pageProps }: AppProps) {
       });
     });
     return () => unsub();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   return (

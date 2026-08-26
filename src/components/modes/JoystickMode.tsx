@@ -13,7 +13,7 @@ const SEND_MS = 50; // ~20 Hz
 const clamp1 = (v: number) => Math.max(-1, Math.min(1, v));
 
 export default function JoystickMode() {
-  const { driveGroup, setPort, setGripper, setLed } = useDrive();
+  const { driveGroup, setGripper, setLed } = useDrive();
   const { mapping } = useSettings();
   const { left, right, customX, customY } = mapping.joystick;
 

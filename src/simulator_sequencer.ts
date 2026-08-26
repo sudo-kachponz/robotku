@@ -153,7 +153,6 @@ export class SimulatorSequencer {
         let pc = 0;
         const loopStack: LoopFrame[] = [];
 
-        console.log("--- Starting Simulation Interpreter ---");
 
         let lastWinCheck = 0;
         const winCheckInterval = 100;
@@ -164,7 +163,6 @@ export class SimulatorSequencer {
                     const now = performance.now();
                     if (now - lastWinCheck > winCheckInterval) {
                         if (this.checkWinCondition()) {
-                            console.log("🎉 Level completed!");
                             this.stopRequested = true;
                             break;
                         }
@@ -248,7 +246,6 @@ export class SimulatorSequencer {
         } catch (error) { console.error("Error during simulation sequence:", error);
         } finally {
             this.stopAllMovement();
-            console.log("--- Simulation Interpreter Finished ---");
             this.isRunning = false;
         }
     }
@@ -258,7 +255,6 @@ export class SimulatorSequencer {
     }
 
     public resetSimulationState(): void {
-        console.log("--- Resetting Simulation State ---");
         this.virtualPosition.set(0, 0);
         if (this.simulator.robotModel) {
             this.simulator.robotModel.rotation.set(0, 0, 0);
@@ -287,7 +283,6 @@ export class SimulatorSequencer {
         if (commandName === 'TURN_TIMED') {
             const turningClearanceMultiplier = ROBOT_TURNING_RADIUS / ROBOT_LINEAR_RADIUS;
             if (this.isCollisionAt(this.virtualPosition, turningClearanceMultiplier)) {
-                console.log("Turn cancelled: Not enough clearance.");
                 this.showCollisionNotification("⚠️ Cannot turn - obstacle too close!");
                 this.stopAllMovement();
                 setTimeout(() => resolve(), 200);
@@ -335,7 +330,7 @@ export class SimulatorSequencer {
                     const moveSpeed = 0.5 * (speed / 100);
                     const forwardVector = new THREE.Vector3(0, 0, 1).applyQuaternion(robot.quaternion);
                     const distance = moveSpeed * deltaTime;
-                    let moveDelta = new THREE.Vector2(forwardVector.x, forwardVector.z).multiplyScalar(distance);
+                    const moveDelta = new THREE.Vector2(forwardVector.x, forwardVector.z).multiplyScalar(distance);
                     if (direction === 'backward') { moveDelta.negate(); }
                     const nextPosition = this.virtualPosition.clone().add(moveDelta);
                     
@@ -386,7 +381,7 @@ export class SimulatorSequencer {
                         }
                     }
                     return null;
-                } catch (e) {
+                } catch {
                     return null;
                 }
             },
@@ -423,7 +418,6 @@ export class SimulatorSequencer {
             if (isHit) {
                 const now = performance.now();
                 if (now - this.lastCollisionLogTime > this.COLLISION_LOG_THROTTLE_MS) {
-                    console.log(`Collision detected! Effective radius ${effectiveRobotRadius.toFixed(2)}m`);
                     this.lastCollisionLogTime = now;
 
                     if (this.isChallengeMode && this.challengeMetrics) {
@@ -591,7 +585,6 @@ export class SimulatorSequencer {
 
     // --- Challenge Mode Methods ---
     public loadLevel(levelData: LevelData): void {
-        console.log(`Loading level: ${levelData.name}`);
         this.currentLevel = levelData;
         this.isChallengeMode = true;
 
@@ -635,7 +628,6 @@ export class SimulatorSequencer {
 
         this.resetLevel();
 
-        console.log(`Level loaded with ${obstacles.length} obstacles and ${checkpoints.length} checkpoint(s)`);
     }
 
     public resetLevel(): void {
@@ -661,7 +653,6 @@ export class SimulatorSequencer {
             this.simulator.addFinishZone(checkpoints[0]);
         }
 
-        console.log(`Robot reset to start: (${startPos.x}, ${startPos.y}), rotation: ${startRot}`);
     }
 
     public checkWinCondition(): boolean {
@@ -696,14 +687,11 @@ export class SimulatorSequencer {
             this.checkpointReachedFlags[this.currentCheckpointIndex] = true;
             this.currentCheckpointIndex++;
 
-            console.log(`✓ Checkpoint ${this.currentCheckpointIndex}/${checkpoints.length} reached!`);
 
             if (this.currentCheckpointIndex < checkpoints.length) {
                 this.simulator.addFinishZone(checkpoints[this.currentCheckpointIndex]);
-                console.log(`→ Next checkpoint loaded at (${checkpoints[this.currentCheckpointIndex].position.x}, ${checkpoints[this.currentCheckpointIndex].position.y})`);
                 return false;
             } else {
-                console.log(`✓ All ${checkpoints.length} checkpoints reached! Level complete!`);
                 return true;
             }
         }
@@ -724,7 +712,6 @@ export class SimulatorSequencer {
             completed: false,
             finalDistance: undefined
         };
-        console.log(`Challenge run started - Attempt #${attemptNumber}`);
     }
 
     public endChallengeRun(completed: boolean): void {
@@ -741,9 +728,6 @@ export class SimulatorSequencer {
                 this.challengeMetrics.finalDistance = this.virtualPosition.distanceTo(finalPos);
             }
         }
-
-        const elapsedMs = this.challengeMetrics.endTime - this.challengeMetrics.startTime;
-        console.log(`Challenge run ended - Completed: ${completed}, Time: ${(elapsedMs / 1000).toFixed(2)}s, Collisions: ${this.challengeMetrics.collisionCount}`);
     }
 
     public exitChallengeMode(): void {
@@ -752,7 +736,6 @@ export class SimulatorSequencer {
         this.challengeMetrics = null;
         this.simulator.clearFinishZone();
         this.setupEnvironment();
-        console.log('Exited challenge mode, restored sandbox environment');
     }
 
     // --- Environment & General Helpers ---

@@ -6,7 +6,6 @@
 // - timing_wait: Wait for N sec  → {"command":"WAIT",...}
 // - timing_wait_until: Wait for <boolean> → sequencer polls until true.
 
-import * as Blockly from 'blockly/core';
 import { defineOnce } from './_defineOnce';
 import { javascriptGenerator, Order } from 'blockly/javascript';
 import { numArg, mulNum } from './_args';

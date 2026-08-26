@@ -1,6 +1,5 @@
 // src/categories/mechanisms.ts
 
-import * as Blockly from 'blockly/core';
 import { defineOnce } from './_defineOnce';
 import { javascriptGenerator } from 'blockly/javascript';
 import { astroidV2 } from '../robotProfiles';

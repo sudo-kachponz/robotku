@@ -84,7 +84,7 @@ export class Simulator {
         ev.preventDefault();
         this.reportContextLost();
       }, false);
-    } catch (e) {
+    } catch {
       console.warn('3D sim disabled: WebGL context could not be created (limit reached or unsupported).');
       this.initFailed = true;
     }
@@ -183,7 +183,6 @@ export class Simulator {
       this.robotModel.position.y -= box.min.y;
       
       this.scene.add(this.robotModel);
-      console.log('Robot model loaded successfully.');
 
       this.createCollisionHelpers();
 
@@ -210,13 +209,11 @@ export class Simulator {
         }
       });
 
-      console.log(`Found Head: ${!!this.head}, Display: ${!!this.displayMesh}, LEDs: ${this.leds.length}`);
 
       this.mixer = new THREE.AnimationMixer(this.robotModel);
       gltf.animations.forEach((clip) => {
         const action = this.mixer!.clipAction(clip);
         this.animations.set(clip.name, action);
-        console.log(`Found animation clip: ${clip.name}`);
       });
     } catch (error) {
       console.error('Error loading robot model:', error);

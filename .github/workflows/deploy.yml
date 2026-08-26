@@ -30,7 +30,6 @@ jobs:
 
       - name: Lint
         run: npm run lint
-        continue-on-error: true # remove once R2's lint config lands green
 
       - name: Test
         run: npm test

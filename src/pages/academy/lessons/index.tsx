@@ -81,7 +81,7 @@ export default function AllLessons() {
     return () => {
       alive = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   // Client-side filtered view of the already-loaded (access-scoped) lessons.

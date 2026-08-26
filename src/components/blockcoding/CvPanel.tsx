@@ -81,7 +81,7 @@ export default function CvPanel({ open, onClose }: { open: boolean; onClose: () 
   }, []);
   const onPointerUp = useCallback(() => { drag.current = null; }, []);
 
-  const useModel = useCallback((id: string) => {
+  const selectModel = useCallback((id: string) => {
     if (!cvStore.isOn()) void cvStore.startCamera();
     void cvStore.setModel(id);
   }, []);
@@ -95,8 +95,8 @@ export default function CvPanel({ open, onClose }: { open: boolean; onClose: () 
       labels: [], modelUrl: url.replace(/\/?$/, '/'), engine: 'tm',
     };
     registerModel(entry);
-    useModel(id);
-  }, [useModel]);
+    selectModel(id);
+  }, [selectModel]);
 
   if (!open) return null;
 
@@ -133,7 +133,7 @@ export default function CvPanel({ open, onClose }: { open: boolean; onClose: () 
         <select
           className={styles.select}
           value={state.modelId ?? ''}
-          onChange={(e) => useModel(e.target.value)}
+          onChange={(e) => selectModel(e.target.value)}
         >
           <option value="" disabled>Select CV Model…</option>
           <optgroup label="Classification Models">

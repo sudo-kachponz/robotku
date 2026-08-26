@@ -86,7 +86,6 @@ export function initializeAstroidEditor(): void {
   stampBlockIdsIntoCommands();
 
   isInitialized = true;
-  console.log("Astroid Blockly Core Initialized.");
 }
 
 /**
