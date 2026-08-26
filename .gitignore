@@ -29,3 +29,8 @@ next-env.d.ts
 *.sw?
 *.tsbuildinfo
 tsconfig.tsbuildinfo
+
+# Coverage & env
+coverage/
+.env*
+!.env.example
