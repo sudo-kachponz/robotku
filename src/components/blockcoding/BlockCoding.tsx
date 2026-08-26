@@ -163,7 +163,7 @@ function BlockCodingInner() {
       setSimError(false);
       setSim3DLoading(false);
       simulator.onContextLost = () => setSimError(true);
-      simulator.loadRobotModel('/Asteria-DashMinimal.glb').catch(() => {});
+      simulator.loadRobotModel('/sim3d/Asteria-DashMinimal.glb').catch(() => {});
 
       const sequencer = new SimulatorSequencer(simulator);
       simulator.sequencerVirtualPosition = sequencer.virtualPosition;

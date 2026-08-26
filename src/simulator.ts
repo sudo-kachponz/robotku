@@ -101,7 +101,7 @@ export class Simulator {
     // --- Skybox and Environment Lighting ---
     const hdrLoader = new HDRLoader();
     hdrLoader.load(
-      'Cyberpunk.hdr',
+      'sim3d/Cyberpunk.hdr',
       (texture) => {
         texture.mapping = THREE.EquirectangularReflectionMapping;
         this.scene.background = texture;
@@ -134,9 +134,9 @@ export class Simulator {
     const textureLoader = new THREE.TextureLoader();
     const onTexError = (file: string) => () =>
       console.warn(`3D sim: texture '${file}' failed to load — continuing without it.`);
-    const colorTexture = textureLoader.load('rubber_tiles_diff_2k.jpg', undefined, undefined, onTexError('rubber_tiles_diff_2k.jpg'));
-    const normalTexture = textureLoader.load('rubber_tiles_nor_gl_2k.jpg', undefined, undefined, onTexError('rubber_tiles_nor_gl_2k.jpg'));
-    const roughnessTexture = textureLoader.load('rubber_tiles_rough_2k.jpg', undefined, undefined, onTexError('rubber_tiles_rough_2k.jpg'));
+    const colorTexture = textureLoader.load('sim3d/rubber_tiles_diff_2k.jpg', undefined, undefined, onTexError('rubber_tiles_diff_2k.jpg'));
+    const normalTexture = textureLoader.load('sim3d/rubber_tiles_nor_gl_2k.jpg', undefined, undefined, onTexError('rubber_tiles_nor_gl_2k.jpg'));
+    const roughnessTexture = textureLoader.load('sim3d/rubber_tiles_rough_2k.jpg', undefined, undefined, onTexError('rubber_tiles_rough_2k.jpg'));
     
     for (const texture of [colorTexture, normalTexture, roughnessTexture]) {
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
@@ -354,7 +354,7 @@ export class Simulator {
     const textureLoader = new THREE.TextureLoader();
 
     if (objData.type === 'circle') {
-        const colorMap = textureLoader.load('rocks_ground_09_diff_2k.jpg', undefined, undefined,
+        const colorMap = textureLoader.load('sim3d/rocks_ground_09_diff_2k.jpg', undefined, undefined,
           () => console.warn("3D sim: texture 'rocks_ground_09_diff_2k.jpg' failed to load — continuing."));
         
         colorMap.colorSpace = THREE.SRGBColorSpace;
@@ -374,7 +374,7 @@ export class Simulator {
         this.levelObjects.push({ mesh, type: 'circle', virtualPosition, radius });
 
     } else if (objData.type === 'rectangle') {
-        const colorMap = textureLoader.load('plastered_wall_05_diff_2k.jpg', undefined, undefined,
+        const colorMap = textureLoader.load('sim3d/plastered_wall_05_diff_2k.jpg', undefined, undefined,
           () => console.warn("3D sim: texture 'plastered_wall_05_diff_2k.jpg' failed to load — continuing."));
         
         colorMap.colorSpace = THREE.SRGBColorSpace;
