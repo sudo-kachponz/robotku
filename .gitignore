@@ -38,3 +38,6 @@ coverage/
 
 # Deploy release archives (local snapshots, can be large)
 releases/
+
+# PlatformIO firmware build output (firmware/robotku-esp32/.pio)
+.pio/

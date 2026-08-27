@@ -3,8 +3,8 @@
 // Shared behaviour for every concrete transport (BLE, Serial):
 //   - HELLO handshake with 4s timeout
 //   - 500ms HEARTBEAT + 1.5s watchdog -> 'error' + auto e-stop
-//   - outgoing chunking to <=180 bytes, never splitting a `;`-terminated command
-//     across writes when it fits
+//   - outgoing framing: every command leaves as `...;\n`, chunked to <=180 bytes
+//     and never split across writes when it fits
 //   - inbound framing: buffer until `;`/newline, JSON.parse, forward as telemetry
 //
 // Subclasses only implement the wire-level open/close/write; all protocol logic
@@ -85,7 +85,12 @@ export abstract class BaseTransport implements RobotTransport {
   // ---- sending -----------------------------------------------------------
 
   async sendLine(line: string): Promise<void> {
-    const normalized = line.trim().endsWith(';') ? line.trim() : `${line.trim()};`;
+    const trimmed = line.trim();
+    if (trimmed.length === 0) return;
+    // writeFramed re-splits on ';' and terminates every command with ';\n',
+    // so we only need the ';' here — never append the newline ourselves or the
+    // split would emit a bare "\n;" frame.
+    const normalized = trimmed.endsWith(';') ? trimmed : `${trimmed};`;
     await this.writeFramed(normalized);
   }
 
@@ -223,14 +228,21 @@ export abstract class BaseTransport implements RobotTransport {
   /**
    * UTF-8 encode a `;`-terminated blob and write it in <=180-byte chunks,
    * splitting on `;` boundaries so a single command isn't torn across writes
-   * when it fits in a chunk.
+   * when it fits in a chunk. Each command goes out `;\n`-terminated — see the
+   * comment inside for why the newline is not optional.
    */
   private async writeFramed(blob: string): Promise<void> {
     // Group commands so each chunk stays <=MAX_CHUNK and prefers `;` boundaries.
+    // Every command leaves as `...;\n`. The trailing newline matters: firmware
+    // that reads with Serial.readStringUntil('\n') (the ControllerV1 sketch)
+    // otherwise hangs until its ~1s timeout and then parses several concatenated
+    // commands as one string. Robotku's own feed() splits on ';' AND '\n', so the
+    // extra byte is read as an empty line and ignored.
     const commands = blob
       .split(';')
+      .map((c) => c.trim())
       .filter((c) => c.length > 0)
-      .map((c) => `${c};`);
+      .map((c) => `${c};\n`);
 
     let batch = '';
     for (const cmd of commands) {

@@ -103,12 +103,22 @@
 
 ## 🔌 Firmware Setup (ESP32)
 
-The firmware source code is located in `firmware/robotku-esp32/robotku-esp32.ino`.
+The firmware source code is located in `firmware/robotku-esp32/src/main.cpp`
+(pins and wiring in `src/config.h`). See
+[`firmware/robotku-esp32/README.md`](firmware/robotku-esp32/README.md) for wiring,
+pinned library versions, and the verification order.
 
-1. Open `firmware/robotku-esp32/robotku-esp32.ino` in **Arduino IDE** or **PlatformIO**.
-2. Install required ESP32 board support and libraries (ArduinoJson, WebSockets).
-3. Connect your ESP32 board via USB.
-4. Select board **ESP32 Dev Module** and upload.
+**PlatformIO** (the `src/` layout is its default, nothing to configure):
+
+1. `cd firmware/robotku-esp32`
+2. `pio run -t upload`
+3. `pio device monitor` (115200)
+
+**Arduino IDE:** open `firmware/robotku-esp32/robotku-esp32.ino` — an empty stub
+that exists only because the IDE needs a sketch named after its folder; the IDE
+compiles `src/main.cpp` from the sketch's `src/` subdirectory. Install the
+libraries at the versions pinned in `platformio.ini`, select board **ESP32 Dev
+Module** on ESP32 core 2.0.x, and upload.
 
 ---
 
