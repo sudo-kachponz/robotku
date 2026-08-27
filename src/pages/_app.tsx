@@ -7,7 +7,6 @@ import { useEffect } from 'react';
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import '../styles/globals.css';
-import { fredoka, jakarta } from '../theme/fonts';
 import { DialogHost } from '../ui/dialog';
 import { setSettings, subscribeSettings } from '../app/settingsStore';
 import { loadSettings, persistSettings } from '../app/persistence';
@@ -66,10 +65,8 @@ export default function App({ Component, pageProps }: AppProps) {
         />
         <meta name="twitter:image" content="https://hub.robotku.id/og-image.png" />
       </Head>
-      <div className={`${fredoka.variable} ${jakarta.variable}`}>
-        <Component {...pageProps} />
-        <DialogHost />
-      </div>
+      <Component {...pageProps} />
+      <DialogHost />
     </>
   );
 }
