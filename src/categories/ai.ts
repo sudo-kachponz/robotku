@@ -53,61 +53,99 @@ const modelOptions = (): Blockly.MenuOption[] =>
 // --- Block definitions ----------------------------------------------------
 defineOnce([
   {
-    "type": "ai_camera_on",
-    "message0": "AI: %1 kamera",
-    "args0": [{ "type": "field_dropdown", "name": "STATE", "options": [["nyalakan", "on"], ["matikan", "off"]] }],
-    "previousStatement": null, "nextStatement": null, "style": "ai_blocks", "inputsInline": true,
-    "tooltip": "Menyalakan / mematikan kamera AI di browser."
-  },
-  {
-    "type": "ai_use_model",
-    "message0": "AI: pakai model %1",
-    "args0": [{ "type": "field_dropdown", "name": "MODEL", "options": modelOptions() }],
-    "previousStatement": null, "nextStatement": null, "style": "ai_blocks", "inputsInline": true,
-    "tooltip": "Memilih model Computer Vision yang dipakai."
-  },
-  {
-    "type": "ai_wait_until_seen",
-    "message0": "AI: tunggu sampai %1 terlihat",
-    "args0": [{ "type": "field_label_dropdown", "name": "LABEL", "label": ANY }],
-    "previousStatement": null, "nextStatement": null, "style": "ai_blocks", "inputsInline": true,
-    "tooltip": "Jeda program sampai objek terlihat kamera."
-  },
-  {
-    "type": "ai_confidence",
-    "message0": "%% keyakinan %1",
-    "args0": [{ "type": "field_label_dropdown", "name": "LABEL", "label": ANY }],
-    "output": "Number", "style": "ai_blocks", "inputsInline": true,
-    "tooltip": "Seberapa yakin (0-100) kamera melihat objek ini."
-  },
-  {
-    "type": "ai_bbox",
-    "message0": "Bounding Box %1 dari %2",
-    "args0": [
-      { "type": "field_dropdown", "name": "PART", "options": [["Center X", "x"], ["Center Y", "y"], ["Width", "w"], ["Height", "h"]] },
-      { "type": "field_label_dropdown", "name": "LABEL", "label": ANY }
+    type: 'ai_camera_on',
+    message0: 'AI: %1 kamera',
+    args0: [
+      {
+        type: 'field_dropdown',
+        name: 'STATE',
+        options: [
+          ['nyalakan', 'on'],
+          ['matikan', 'off'],
+        ],
+      },
     ],
-    "output": "Number", "style": "ai_blocks", "inputsInline": true,
-    "tooltip": "Posisi/ukuran kotak objek (0-100 dari lebar/tinggi frame)."
+    previousStatement: null,
+    nextStatement: null,
+    style: 'ai_blocks',
+    inputsInline: true,
+    tooltip: 'Menyalakan / mematikan kamera AI di browser.',
   },
   {
-    "type": "ai_object_count",
-    "message0": "jumlah %1 terlihat",
-    "args0": [{ "type": "field_label_dropdown", "name": "LABEL", "label": ANY }],
-    "output": "Number", "style": "ai_blocks", "inputsInline": true,
-    "tooltip": "Berapa banyak objek ini yang terlihat."
+    type: 'ai_use_model',
+    message0: 'AI: pakai model %1',
+    args0: [{ type: 'field_dropdown', name: 'MODEL', options: modelOptions() }],
+    previousStatement: null,
+    nextStatement: null,
+    style: 'ai_blocks',
+    inputsInline: true,
+    tooltip: 'Memilih model Computer Vision yang dipakai.',
   },
   {
-    "type": "ai_detected",
-    "message0": "%1 terdeteksi?",
-    "args0": [{ "type": "field_label_dropdown", "name": "LABEL", "label": ANY }],
-    "output": "Boolean", "style": "ai_blocks", "inputsInline": true,
-    "tooltip": "Benar jika objek ini terlihat kamera."
+    type: 'ai_wait_until_seen',
+    message0: 'AI: tunggu sampai %1 terlihat',
+    args0: [{ type: 'field_label_dropdown', name: 'LABEL', label: ANY }],
+    previousStatement: null,
+    nextStatement: null,
+    style: 'ai_blocks',
+    inputsInline: true,
+    tooltip: 'Jeda program sampai objek terlihat kamera.',
+  },
+  {
+    type: 'ai_confidence',
+    message0: '%% keyakinan %1',
+    args0: [{ type: 'field_label_dropdown', name: 'LABEL', label: ANY }],
+    output: 'Number',
+    style: 'ai_blocks',
+    inputsInline: true,
+    tooltip: 'Seberapa yakin (0-100) kamera melihat objek ini.',
+  },
+  {
+    type: 'ai_bbox',
+    message0: 'Bounding Box %1 dari %2',
+    args0: [
+      {
+        type: 'field_dropdown',
+        name: 'PART',
+        options: [
+          ['Center X', 'x'],
+          ['Center Y', 'y'],
+          ['Width', 'w'],
+          ['Height', 'h'],
+        ],
+      },
+      { type: 'field_label_dropdown', name: 'LABEL', label: ANY },
+    ],
+    output: 'Number',
+    style: 'ai_blocks',
+    inputsInline: true,
+    tooltip: 'Posisi/ukuran kotak objek (0-100 dari lebar/tinggi frame).',
+  },
+  {
+    type: 'ai_object_count',
+    message0: 'jumlah %1 terlihat',
+    args0: [{ type: 'field_label_dropdown', name: 'LABEL', label: ANY }],
+    output: 'Number',
+    style: 'ai_blocks',
+    inputsInline: true,
+    tooltip: 'Berapa banyak objek ini yang terlihat.',
+  },
+  {
+    type: 'ai_detected',
+    message0: '%1 terdeteksi?',
+    args0: [{ type: 'field_label_dropdown', name: 'LABEL', label: ANY }],
+    output: 'Boolean',
+    style: 'ai_blocks',
+    inputsInline: true,
+    tooltip: 'Benar jika objek ini terlihat kamera.',
   },
 ]);
 
 // --- Generators -----------------------------------------------------------
-function aiReporter(metric: string, extra: (block: Blockly.Block) => Record<string, unknown> = () => ({})) {
+function aiReporter(
+  metric: string,
+  extra: (block: Blockly.Block) => Record<string, unknown> = () => ({}),
+) {
   return function (block: Blockly.Block): [string, number] {
     const params = { metric, label: block.getFieldValue('LABEL') || ANY, ...extra(block) };
     const json = JSON.stringify({ command: 'GET_AI_DATA', params });
@@ -117,23 +155,39 @@ function aiReporter(metric: string, extra: (block: Blockly.Block) => Record<stri
 
 javascriptGenerator.forBlock['ai_confidence'] = aiReporter('confidence');
 javascriptGenerator.forBlock['ai_object_count'] = aiReporter('count');
-javascriptGenerator.forBlock['ai_bbox'] = aiReporter('bbox', (b) => ({ part: b.getFieldValue('PART') }));
+javascriptGenerator.forBlock['ai_bbox'] = aiReporter('bbox', (b) => ({
+  part: b.getFieldValue('PART'),
+}));
 
 javascriptGenerator.forBlock['ai_detected'] = function (block): [string, number] {
-  const json = JSON.stringify({ command: 'GET_AI_DATA', params: { metric: 'detected', label: block.getFieldValue('LABEL') || ANY } });
+  const json = JSON.stringify({
+    command: 'GET_AI_DATA',
+    params: { metric: 'detected', label: block.getFieldValue('LABEL') || ANY },
+  });
   return [`(getSensorValue(${JSON.stringify(json)}) === 1)`, Order.EQUALITY];
 };
 
 javascriptGenerator.forBlock['ai_camera_on'] = function (block) {
-  return JSON.stringify({ command: 'AI_CAMERA', params: { on: block.getFieldValue('STATE') === 'on' } }) + ';';
+  return (
+    JSON.stringify({
+      command: 'AI_CAMERA',
+      params: { on: block.getFieldValue('STATE') === 'on' },
+    }) + ';'
+  );
 };
 
 javascriptGenerator.forBlock['ai_use_model'] = function (block) {
-  return JSON.stringify({ command: 'AI_SET_MODEL', params: { model: block.getFieldValue('MODEL') } }) + ';';
+  return (
+    JSON.stringify({ command: 'AI_SET_MODEL', params: { model: block.getFieldValue('MODEL') } }) +
+    ';'
+  );
 };
 
 javascriptGenerator.forBlock['ai_wait_until_seen'] = function (block) {
-  const json = JSON.stringify({ command: 'GET_AI_DATA', params: { metric: 'detected', label: block.getFieldValue('LABEL') || ANY } });
+  const json = JSON.stringify({
+    command: 'GET_AI_DATA',
+    params: { metric: 'detected', label: block.getFieldValue('LABEL') || ANY },
+  });
   const condition = `(getSensorValue(${JSON.stringify(json)}) === 1)`;
   return JSON.stringify({ command: 'WAIT_UNTIL', params: { condition } }) + ';';
 };
@@ -142,21 +196,28 @@ javascriptGenerator.forBlock['ai_wait_until_seen'] = function (block) {
 // projects saved before PROMPT E don't break. Not shown in the toolbox.
 defineOnce([
   {
-    "type": "ai_object_detected",
-    "message0": "AI: object %1 detected?",
-    "args0": [{ "type": "field_input", "name": "LABEL", "text": "ball" }],
-    "output": "Boolean", "style": "ai_blocks", "inputsInline": true,
-    "tooltip": "Blok lama — kini setara dengan “terdeteksi?”."
+    type: 'ai_object_detected',
+    message0: 'AI: object %1 detected?',
+    args0: [{ type: 'field_input', name: 'LABEL', text: 'ball' }],
+    output: 'Boolean',
+    style: 'ai_blocks',
+    inputsInline: true,
+    tooltip: 'Blok lama — kini setara dengan “terdeteksi?”.',
   },
   {
-    "type": "ai_capture_frame",
-    "message0": "AI: capture frame",
-    "previousStatement": null, "nextStatement": null, "style": "ai_blocks",
-    "tooltip": "Blok lama — tidak melakukan apa-apa."
+    type: 'ai_capture_frame',
+    message0: 'AI: capture frame',
+    previousStatement: null,
+    nextStatement: null,
+    style: 'ai_blocks',
+    tooltip: 'Blok lama — tidak melakukan apa-apa.',
   },
 ]);
 javascriptGenerator.forBlock['ai_object_detected'] = function (block): [string, number] {
-  const json = JSON.stringify({ command: 'GET_AI_DATA', params: { metric: 'detected', label: block.getFieldValue('LABEL') || ANY } });
+  const json = JSON.stringify({
+    command: 'GET_AI_DATA',
+    params: { metric: 'detected', label: block.getFieldValue('LABEL') || ANY },
+  });
   return [`(getSensorValue(${JSON.stringify(json)}) === 1)`, Order.EQUALITY];
 };
 javascriptGenerator.forBlock['ai_capture_frame'] = function () {

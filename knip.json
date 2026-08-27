@@ -1,0 +1,14 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/pages/**/*.{ts,tsx}",
+    "src/test/**/*.test.{ts,tsx}",
+    "scripts/*.mjs",
+    "next.config.{js,mjs,ts}",
+    "vitest.config.ts"
+  ],
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignore": ["src/types/**"],
+  "ignoreBinaries": ["lftp"],
+  "ignoreDependencies": ["eslint-config-next"]
+}

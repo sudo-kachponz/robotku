@@ -43,11 +43,14 @@
   min-height: 44px;
   border-radius: 50%;
   border: none;
-  background: #1E1B4B;
-  color: #C6CAFF;
+  background: #1e1b4b;
+  color: #c6caff;
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(12, 10, 36, 0.35);
-  transition: transform 0.14s ease, background 0.14s ease, color 0.14s ease;
+  transition:
+    transform 0.14s ease,
+    background 0.14s ease,
+    color 0.14s ease;
   touch-action: manipulation;
 }
 
@@ -56,8 +59,8 @@
 }
 
 .tbBtn:hover:not(:disabled) {
-  background: #2E2A6B;
-  color: #FFFFFF;
+  background: #2e2a6b;
+  color: #ffffff;
   transform: translateY(-2px);
 }
 
@@ -67,8 +70,8 @@
 }
 
 .tbActive {
-  background: #EC2D8F !important;
-  color: #FFFFFF !important;
+  background: #ec2d8f !important;
+  color: #ffffff !important;
   box-shadow: 0 0 16px rgba(236, 45, 143, 0.5) !important;
 }
 
@@ -93,25 +96,29 @@
   box-shadow: 0 0 8px #4ade80;
   animation: tbLivePulse 1.2s infinite;
 }
-@keyframes tbLivePulse { 50% { opacity: 0.4; } }
+@keyframes tbLivePulse {
+  50% {
+    opacity: 0.4;
+  }
+}
 
 .run {
-  background: #16A34A;
+  background: #16a34a;
   color: #ffffff;
 }
 
 .run:hover:not(:disabled) {
-  background: #15803D;
+  background: #15803d;
   filter: brightness(1.1);
 }
 
 .stop {
-  background: #DC2626;
+  background: #dc2626;
   color: #ffffff;
 }
 
 .stop:hover:not(:disabled) {
-  background: #B91C1C;
+  background: #b91c1c;
   filter: brightness(1.1);
 }
 
@@ -131,7 +138,9 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+  transition:
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.25s ease;
 }
 
 .simHidden {
@@ -165,19 +174,19 @@
   gap: 6px;
   font-size: 11.5px;
   font-weight: 700;
-  color: #C6CAFF;
+  color: #c6caff;
   cursor: pointer;
   user-select: none;
 }
 .simSwitch input {
-  accent-color: #EC2D8F;
+  accent-color: #ec2d8f;
   cursor: pointer;
 }
 
 .simToggle {
   border: none;
   background: rgba(255, 255, 255, 0.1);
-  color: #C6CAFF;
+  color: #c6caff;
   font-size: 16px;
   line-height: 1;
   cursor: pointer;
@@ -186,11 +195,13 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .simToggle:hover {
-  background: #EC2D8F;
+  background: #ec2d8f;
   color: #ffffff;
 }
 
@@ -198,7 +209,7 @@
   width: 100%;
   flex: 1;
   min-height: 0;
-  background: #110F2B;
+  background: #110f2b;
 }
 
 .simError {
@@ -206,8 +217,8 @@
   font-size: 13px;
   line-height: 1.5;
   font-weight: 600;
-  color: #C6CAFF;
-  background: #110F2B;
+  color: #c6caff;
+  background: #110f2b;
   text-align: center;
 }
 
@@ -276,7 +287,7 @@
 
 /* --- Blockly Continuous Toolbox Responsive Rules --- */
 .blockly :global(.blocklyToolboxDiv) {
-  background-color: #EEF0FF;
+  background-color: #eef0ff;
   border-right: none;
   box-shadow: 4px 0 24px rgba(20, 16, 60, 0.15);
   width: 320px !important;

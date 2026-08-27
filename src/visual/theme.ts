@@ -6,6 +6,8 @@
 
 import * as Blockly from 'blockly/core';
 
+import { jakarta } from '../theme/fonts';
+
 // --- Helper: lighten/darken a hex colour for secondary/tertiary shades ---
 function adjust(hex: string, amount: number): string {
   const color = Blockly.utils.colour.hexToRgb(hex);
@@ -42,7 +44,9 @@ const DS = {
 // Bigger + heavier than the old 11/500 so the "code" (block text) reads clearly
 // and matches the Robotku DS button typography (Plus Jakarta Sans 600).
 const fontStyle: Blockly.Theme.FontStyle = {
-  family: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
+  // Self-hosted via next/font — SVG text can't read the --font-jakarta CSS var, so
+  // use next/font's generated (hashed) family name directly.
+  family: `${jakarta.style.fontFamily}, system-ui, -apple-system, sans-serif`,
   weight: '600',
   size: 14,
 };
@@ -69,20 +73,20 @@ const lightComponentStyles: Blockly.Theme.ComponentStyle = {
 // built-in loop/logic/math/variable/procedure/text styles are named to match
 // Blockly's own block styles so the reskin covers the standard blocks too.
 const categoryColors: Record<string, string> = {
-  motors: DS.green,      // Movement
-  events: DS.amber,      // Timing (Wait / hat)
-  looks: DS.blue,        // Display (LED Matrix + LCD)
-  audio: DS.orange,      // Audio
-  sensors: DS.purple,    // Sensors & Data
-  control: DS.cyan,      // Program Flow (custom control blocks)
-  loop: DS.cyan,         // Program Flow (built-in loop blocks)
-  logic: DS.teal,        // Logic
-  math: DS.indigo600,    // Math
-  variable: DS.brown,    // Variables
-  procedure: DS.inkSlate,// Functions
-  text: DS.blue,         // text fields used across Display/Audio
-  templates: DS.gold,    // Templates
-  ai: DS.pink500,        // AI (stub)
+  motors: DS.green, // Movement
+  events: DS.amber, // Timing (Wait / hat)
+  looks: DS.blue, // Display (LED Matrix + LCD)
+  audio: DS.orange, // Audio
+  sensors: DS.purple, // Sensors & Data
+  control: DS.cyan, // Program Flow (custom control blocks)
+  loop: DS.cyan, // Program Flow (built-in loop blocks)
+  logic: DS.teal, // Logic
+  math: DS.indigo600, // Math
+  variable: DS.brown, // Variables
+  procedure: DS.inkSlate, // Functions
+  text: DS.blue, // text fields used across Display/Audio
+  templates: DS.gold, // Templates
+  ai: DS.pink500, // AI (stub)
 };
 
 const blockStyles: { [key: string]: Blockly.Theme.BlockStyle } = {};

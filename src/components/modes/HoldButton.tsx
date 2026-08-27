@@ -62,7 +62,6 @@ export default function HoldButton({
       window.removeEventListener('keydown', down);
       window.removeEventListener('keyup', up);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keys?.join(',')]);
 
   return (

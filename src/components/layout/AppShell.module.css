@@ -4,14 +4,14 @@
   height: 100dvh;
   width: 100vw;
   overflow: hidden;
-  background-color: #F8F9FA;
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  background-color: #f8f9fa;
+  font-family: var(--font-jakarta), system-ui, sans-serif;
 }
 
 /* Sidebar */
 .sidebar {
   width: 320px;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   border-right: 1px solid rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
@@ -34,9 +34,10 @@
 }
 
 .brandName {
+  font-family: var(--font-display);
   font-size: 26px;
   font-weight: 800;
-  color: #2B2680;
+  color: #2b2680;
   margin: 0;
   letter-spacing: -0.5px;
 }
@@ -57,9 +58,10 @@
 }
 
 .navGroupTitle {
+  font-family: var(--font-display);
   font-size: 16px;
   font-weight: 800;
-  color: #A0AEC0;
+  color: #a0aec0;
   text-transform: uppercase;
   letter-spacing: 1px;
   padding-left: 16px;
@@ -67,6 +69,7 @@
 }
 
 .navItem {
+  font-family: var(--font-display);
   display: flex;
   align-items: center;
   gap: 16px;
@@ -74,7 +77,7 @@
   border-radius: 16px;
   border: none;
   background: transparent;
-  color: #4A5568;
+  color: #4a5568;
   font-size: 18px;
   font-weight: 700;
   cursor: pointer;
@@ -84,19 +87,19 @@
 
 .navItem:hover {
   background: rgba(79, 70, 229, 0.05);
-  color: #4F46E5;
+  color: #4f46e5;
   transform: translateX(4px);
 }
 
 .navItemActive {
-  background: linear-gradient(135deg, #4F46E5 0%, #352DA0 100%);
-  color: #FFFFFF;
+  background: linear-gradient(135deg, #4f46e5 0%, #352da0 100%);
+  color: #ffffff;
   box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25);
 }
 
 .navItemActive:hover {
-  background: linear-gradient(135deg, #5B54EA 0%, #4F46E5 100%);
-  color: #FFFFFF;
+  background: linear-gradient(135deg, #5b54ea 0%, #4f46e5 100%);
+  color: #ffffff;
   transform: translateY(-2px);
 }
 
@@ -106,7 +109,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: #F3F4FB;
+  background: #f3f4fb;
 }
 
 /* Topbar */
@@ -116,13 +119,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 40px;
-  background: linear-gradient(135deg, #4F46E5 0%, #EC2D8F 100%);
+  background: linear-gradient(135deg, #4f46e5 0%, #ec2d8f 100%);
   box-shadow: 0 4px 20px rgba(79, 70, 229, 0.2);
   z-index: 10;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .topbarTitle {
+  font-family: var(--font-display);
   font-size: 24px;
   font-weight: 800;
   margin: 0;
@@ -155,10 +159,10 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: #FFFFFF;
+  background: #ffffff;
   display: grid;
   place-items: center;
-  color: #4F46E5;
+  color: #4f46e5;
   font-weight: 800;
   font-size: 18px;
 }
@@ -166,7 +170,7 @@
 .userName {
   font-size: 17px;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .userRole {

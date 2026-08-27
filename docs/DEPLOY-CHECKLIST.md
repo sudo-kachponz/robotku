@@ -24,9 +24,28 @@ CI equivalent: `.github/workflows/deploy.yml` on push to `main`.
 - `next.config.mjs`: `output:'export'`, `images.unoptimized`, `trailingSlash:true`
   (→ `control/modes/code/index.html`, not `.html`), `productionBrowserSourceMaps:false`,
   and a build-time guard that fails if `src/pages/api/*` exists.
-- `out/.htaccess` (generated): force HTTPS, `ErrorDocument 404`, immutable caching
-  for hashed assets + `no-cache` for HTML/`version.json`, deflate/brotli, wasm/glb/hdr/webp
-  MIME, `Permissions-Policy: camera=(self), bluetooth=(self)`.
+- `out/.htaccess` (generated): `Options -Indexes`, force HTTPS, `ErrorDocument 404`,
+  immutable caching for hashed assets + `no-cache` for HTML/`version.json`,
+  deflate/brotli, wasm/glb/hdr/webp MIME, `Permissions-Policy: camera=(self),
+  bluetooth=(self), serial=(self)`. **HSTS is opt-in**: emitted only when
+  `ENABLE_HSTS=1` at build time — turn it on only after HTTPS is confirmed in prod
+  (a wrong HSTS header is unrecoverable until `max-age` expires).
+- Fonts are self-hosted via `next/font` (no runtime `fonts.googleapis.com` request).
+- `public/brand/*` is WebP (176 KB total); `public/og-image.png` (1200×630) backs
+  the social share preview.
+
+## Upload strategy (scripts/deploy.sh)
+
+Two passes, both with `--delete` to prune stale files within their tree:
+
+1. `/_next` hashed chunks — `--only-newer` is safe (content-hashed names) and
+   avoids re-uploading megabytes of unchanged JS.
+2. Everything else (HTML, `.htaccess`, `version.json`) — **no** `--only-newer`, so
+   these tiny files are always re-uploaded fresh (shared-host clock drift makes
+   timestamp comparison unreliable and can silently skip a real change).
+
+`SKIP_SIM3D=1` excludes the 26 MB of 3D assets from the launch payload (and from
+`--delete` pruning, so a previously-uploaded `sim3d/` is left intact).
 
 ## Post-deploy verification (tick with evidence)
 
@@ -39,10 +58,36 @@ CI equivalent: `.github/workflows/deploy.yml` on push to `main`.
 - [ ] `/control/modes/code` First Load JS matches PERF-BASELINE.md.
 - [ ] Redeploy once → new `version.json` appears without a manual cache clear.
 
+CI does the last check automatically: after the mirror it polls
+`https://hub.robotku.id/version.json` and fails the job unless `.sha` matches the
+deployed commit (a half-finished FTPS mirror otherwise exits 0 while the site is
+stale).
+
 ## Rollback
 
-Keep the previous `out/` as a dated zip (`out-YYYYMMDD.zip`). Restore by
-re-mirroring that folder with `scripts/deploy.sh`.
+Every CI deploy uploads the exact deployed `out/` as a 30-day artifact named
+`out-<run_number>-<sha>` (sim3d excluded). To roll back to a known-good build:
+
+1. **Get the good `out/`.** Either download that run's artifact
+   (Actions → the run → *Artifacts*) and unzip it into `./out`, or rebuild the
+   good commit locally:
+
+   ```bash
+   git checkout <good-sha>
+   npm ci && npm run build      # regenerates out/ + version.json for that commit
+   ```
+
+2. **Re-mirror it** (the same script CI uses):
+
+   ```bash
+   FTP_HOST=… FTP_USER=… FTP_PASS=… SKIP_SIM3D=1 bash scripts/deploy.sh
+   ```
+
+3. **Confirm** `https://hub.robotku.id/version.json` shows the rolled-back sha and
+   hard-refresh the landing + editor routes.
+
+For a manual local snapshot before a risky deploy:
+`zip -rq "out-$(date +%Y%m%d).zip" out -x 'out/sim3d/*'`.
 
 > NOTE: the CSP is intentionally NOT enforced yet. The Blockly/tfjs stack needs
 > `'wasm-unsafe-eval'` and ProgramRunner's condition sandbox needs `'unsafe-eval'`

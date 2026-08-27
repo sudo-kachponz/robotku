@@ -10,7 +10,10 @@ const beeps = (log: any[]) => log.filter((c) => c.command === 'PLAY_SOUND_EFFECT
 const effects = (log: any[]) => beeps(log).map((c) => c.params.effect);
 
 /** A short-beep body block, tagged with an EFFECT so branches are distinguishable. */
-const beep = (effect = 'short_beep') => ({ type: 'audio_sound_effect', fields: { EFFECT: effect } });
+const beep = (effect = 'short_beep') => ({
+  type: 'audio_sound_effect',
+  fields: { EFFECT: effect },
+});
 
 describe('Parity: Program Flow', () => {
   it('controls_repeat_ext repeats the body exactly N times', async () => {
@@ -21,9 +24,7 @@ describe('Parity: Program Flow', () => {
   });
 
   it('controls_forever loops until stop() halts it', async () => {
-    const run = buildAndStart([
-      { type: 'controls_forever', statements: { DO: [beep()] } },
-    ]);
+    const run = buildAndStart([{ type: 'controls_forever', statements: { DO: [beep()] } }]);
     await sleep(120);
     const midway = beeps(run.log).length;
     run.runner.stop();

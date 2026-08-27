@@ -16,17 +16,33 @@ import { counterGame } from '../templates/builtin/tantangan';
 function collectIds(node: any, out: string[] = []): string[] {
   if (!node || typeof node !== 'object') return out;
   if (typeof node.id === 'string') out.push(node.id);
-  if (node.inputs) for (const v of Object.values<any>(node.inputs)) { collectIds(v.block, out); collectIds(v.shadow, out); }
-  if (node.next) { collectIds(node.next.block, out); collectIds(node.next.shadow, out); }
+  if (node.inputs)
+    for (const v of Object.values<any>(node.inputs)) {
+      collectIds(v.block, out);
+      collectIds(v.shadow, out);
+    }
+  if (node.next) {
+    collectIds(node.next.block, out);
+    collectIds(node.next.shadow, out);
+  }
   return out;
 }
 
 /** Every variable id referenced by a VAR field in the tree. */
 function collectVarRefs(node: any, out: string[] = []): string[] {
   if (!node || typeof node !== 'object') return out;
-  if (node.fields) for (const f of Object.values<any>(node.fields)) if (f && typeof f === 'object' && f.id) out.push(f.id);
-  if (node.inputs) for (const v of Object.values<any>(node.inputs)) { collectVarRefs(v.block, out); collectVarRefs(v.shadow, out); }
-  if (node.next) { collectVarRefs(node.next.block, out); collectVarRefs(node.next.shadow, out); }
+  if (node.fields)
+    for (const f of Object.values<any>(node.fields))
+      if (f && typeof f === 'object' && f.id) out.push(f.id);
+  if (node.inputs)
+    for (const v of Object.values<any>(node.inputs)) {
+      collectVarRefs(v.block, out);
+      collectVarRefs(v.shadow, out);
+    }
+  if (node.next) {
+    collectVarRefs(node.next.block, out);
+    collectVarRefs(node.next.shadow, out);
+  }
   return out;
 }
 

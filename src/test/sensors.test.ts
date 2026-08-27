@@ -30,9 +30,17 @@ const compare = (a: BlockSpec, op: string, b: number): BlockSpec => ({
 
 describe('Parity: Sensors & Data — reporters', () => {
   it('sensor_ultrasonic gates a branch on the live distance reading', async () => {
-    const cond = compare({ type: 'sensor_ultrasonic', fields: { UNIT: 'cm', PORT: 'G1' } }, 'LT', 30);
+    const cond = compare(
+      { type: 'sensor_ultrasonic', fields: { UNIT: 'cm', PORT: 'G1' } },
+      'LT',
+      30,
+    );
     // The emitted condition really queries the ultrasonic sensor.
-    const cmds = buildBlock({ type: 'controls_if', inputs: { IF0: cond }, statements: { DO0: [closeGripper] } } as any);
+    const cmds = buildBlock({
+      type: 'controls_if',
+      inputs: { IF0: cond },
+      statements: { DO0: [closeGripper] },
+    } as any);
     expect(JSON.stringify(cmds)).toContain('ultrasonic');
 
     expect(await branchFired(cond, (s) => s.setUltrasonic(10))).toBe(true);
@@ -89,7 +97,9 @@ describe('Parity: Sensors & Data — reporters', () => {
 
   it('sensor_distance reflects odometry accumulated by driving', async () => {
     const program = (fireCond: BlockSpec, drive: boolean): any[] => [
-      ...(drive ? [{ type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.3 } }] : []),
+      ...(drive
+        ? [{ type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.3 } }]
+        : []),
       { type: 'controls_if', inputs: { IF0: fireCond }, statements: { DO0: [closeGripper] } },
     ];
     const cond = compare({ type: 'sensor_distance', fields: { PORT: 'G1' } }, 'GT', 1);
@@ -122,7 +132,10 @@ describe('Parity: Sensors & Data — statements', () => {
 
   it('sensor_set_digital generates SET_DIGITAL and drives the digital bus', async () => {
     const cmds = buildBlock({ type: 'sensor_set_digital', fields: { PORT: 'G2', VALUE: 'HIGH' } });
-    expect(cmds[0]).toMatchObject({ command: 'SET_DIGITAL', params: { port: 'G2', value: 'HIGH' } });
+    expect(cmds[0]).toMatchObject({
+      command: 'SET_DIGITAL',
+      params: { port: 'G2', value: 'HIGH' },
+    });
 
     const { state } = await buildAndRun([
       { type: 'sensor_set_digital', fields: { PORT: 'G2', VALUE: 'HIGH' } },

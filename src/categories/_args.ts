@@ -63,7 +63,10 @@ export function strArg(
 }
 
 /** A raw generator-string (variables_set VALUE) → literal or `{ $expr }`. */
-export function exprOrLiteral(code: string | null | undefined, fallback: number | string = 0): NumOrExpr | StrOrExpr {
+export function exprOrLiteral(
+  code: string | null | undefined,
+  fallback: number | string = 0,
+): NumOrExpr | StrOrExpr {
   if (code == null || code.trim() === '') return fallback as NumOrExpr;
   const n = Number(code);
   if (Number.isFinite(n)) return n;

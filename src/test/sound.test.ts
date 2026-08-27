@@ -48,9 +48,7 @@ describe('Parity: Sound & Audio', () => {
       params: { value: 80 },
     });
 
-    const { state } = await buildAndRun([
-      { type: 'audio_set_volume', fields: { VALUE: '80' } },
-    ]);
+    const { state } = await buildAndRun([{ type: 'audio_set_volume', fields: { VALUE: '80' } }]);
     expect(state.volume).toBe(80);
   });
 
@@ -100,7 +98,13 @@ describe('Parity: Sound & Audio', () => {
     // At the default 120 BPM, 2 beats = 1000 ms. Run at 4× so the wait is ~250 ms.
     const start = performance.now();
     await buildAndRun(
-      [{ type: 'audio_play_tone_beat', fields: { NOTE: 'C4', WAIT: 'true' }, inputs: { BEATS: 2 } }],
+      [
+        {
+          type: 'audio_play_tone_beat',
+          fields: { NOTE: 'C4', WAIT: 'true' },
+          inputs: { BEATS: 2 },
+        },
+      ],
       { speed: 4 },
     );
     const elapsed = performance.now() - start;

@@ -7,11 +7,7 @@
 import type { BlockSpec } from './authoring';
 
 export type TemplateCollection =
-  | 'gerak-dasar'
-  | 'sensor'
-  | 'ai-kamera'
-  | 'seni-suara'
-  | 'tantangan';
+  'gerak-dasar' | 'sensor' | 'ai-kamera' | 'seni-suara' | 'tantangan';
 
 /** Hardware a template leans on — surfaced as chips and (for kamera) an AI gate. */
 export type TemplateRequirement = 'kamera' | 'ultrasonic' | 'capit';

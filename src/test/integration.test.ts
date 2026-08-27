@@ -31,7 +31,9 @@ const SAMPLE: BlockSpec[] = [
         {
           type: 'controls_if',
           inputs: { IF0: { type: 'logic_compare', fields: { OP: 'GT' }, inputs: { A: 2, B: 1 } } },
-          statements: { DO0: [{ type: 'audio_sound_effect', fields: { EFFECT: 'ding', WAIT: 'false' } }] },
+          statements: {
+            DO0: [{ type: 'audio_sound_effect', fields: { EFFECT: 'ding', WAIT: 'false' } }],
+          },
         },
       ],
     },
@@ -43,7 +45,16 @@ const SAMPLE: BlockSpec[] = [
 const WIRE_FIXTURE = [
   { command: 'META_SET_VAR', params: { name: 'sec', value: 0.5 } },
   { command: 'META_START_LOOP', params: { times: 2 } },
-  { command: 'MOVE_TIMED', params: { direction: 'forward', speed: 70, duration_ms: { $expr: '(sec)*1000' }, left: 'M1', right: 'M2' } },
+  {
+    command: 'MOVE_TIMED',
+    params: {
+      direction: 'forward',
+      speed: 70,
+      duration_ms: { $expr: '(sec)*1000' },
+      left: 'M1',
+      right: 'M2',
+    },
+  },
   { command: 'META_IF', params: { condition: '2 > 1' } },
   { command: 'PLAY_SOUND_EFFECT', params: { effect: 'ding', wait: false } },
   { command: 'META_END_IF', params: {} },
@@ -85,7 +96,9 @@ describe('Integration: TransportSink parity', () => {
     }
 
     // The $expr duration resolved to a real number before hitting the wire.
-    const move = deviceLines.map((l) => JSON.parse(l.slice(0, -1))).find((c) => c.command === 'MOVE_TIMED');
+    const move = deviceLines
+      .map((l) => JSON.parse(l.slice(0, -1)))
+      .find((c) => c.command === 'MOVE_TIMED');
     expect(move.params.duration_ms).toBe(500);
   });
 });
@@ -93,7 +106,12 @@ describe('Integration: TransportSink parity', () => {
 describe('Integration: stop latency', () => {
   it('a forever program halts within 150 ms of stop()', async () => {
     const run = buildAndStart([
-      { type: 'controls_forever', statements: { DO: [{ type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 1 } }] } },
+      {
+        type: 'controls_forever',
+        statements: {
+          DO: [{ type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 1 } }],
+        },
+      },
     ]);
     await sleep(80); // let it get going (mid-drive)
     const t0 = performance.now();
@@ -111,12 +129,20 @@ describe('Integration: no leak', () => {
     const baseline = (sink as any).listeners.size; // 1
     const log: any[] = [];
     const wrapped: RobotSink = {
-      exec: (c) => { log.push(c); return sink.exec(c); },
+      exec: (c) => {
+        log.push(c);
+        return sink.exec(c);
+      },
       getSensorValue: (j) => sink.getSensorValue(j),
       stopAll: () => sink.stopAll(),
     };
     const cmds = buildProgram([
-      { type: 'controls_forever', statements: { DO: [{ type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 1 } }] } },
+      {
+        type: 'controls_forever',
+        statements: {
+          DO: [{ type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 1 } }],
+        },
+      },
     ]);
 
     for (let i = 0; i < 50; i++) {

@@ -28,7 +28,8 @@ export function motionThumb(pathD: string, color = '#4F46E5', dur = 3): string {
 
 /** A single-line motion demo: robot slides forward, a glyph pops, a note rings. */
 export function helloThumb(): string {
-  return frame(`
+  return frame(
+    `
     <g transform="translate(30,50)">${robot('#4F46E5')}
       <animateTransform attributeName="transform" type="translate" values="30,50; 96,50; 96,50" keyTimes="0;0.5;1" dur="3s" repeatCount="indefinite"/>
     </g>
@@ -39,7 +40,9 @@ export function helloThumb(): string {
     </g>
     <g stroke="#F97316" stroke-width="2" fill="none" opacity="0.9">
       <path d="M116 70q6 -6 0 -12"><animate attributeName="opacity" values="0;0;1;0" keyTimes="0;0.7;0.85;1" dur="3s" repeatCount="indefinite"/></path>
-    </g>`, '#F5F3FF');
+    </g>`,
+    '#F5F3FF',
+  );
 }
 
 /** 5x5 LED matrix flickering between frames. */
@@ -72,7 +75,8 @@ export function soundThumb(color = '#F97316'): string {
 
 /** Robot with a sweeping ultrasonic cone meeting an obstacle. */
 export function sensorThumb(color = '#8B5CF6'): string {
-  return frame(`
+  return frame(
+    `
     <g transform="translate(36,50)">${robot(color)}</g>
     <g transform="translate(43,50)">
       <path d="M0 0 L48 -20 L48 20 Z" fill="${color}" opacity="0.18">
@@ -81,12 +85,15 @@ export function sensorThumb(color = '#8B5CF6'): string {
     </g>
     <circle cx="120" cy="50" r="12" fill="#EF4444">
       <animate attributeName="r" values="12;9;12" dur="2.4s" repeatCount="indefinite"/>
-    </circle>`, '#F5F3FF');
+    </circle>`,
+    '#F5F3FF',
+  );
 }
 
 /** Camera body with a scanning line + a bounding box — for AI templates. */
 export function aiThumb(color = '#EC2D8F'): string {
-  return frame(`
+  return frame(
+    `
     <rect x="34" y="28" width="92" height="52" rx="8" fill="#fff" stroke="${color}" stroke-width="3"/>
     <circle cx="80" cy="54" r="15" fill="none" stroke="${color}" stroke-width="3"/>
     <line x1="38" y1="30" x2="38" y2="78" stroke="${color}" stroke-width="3" opacity="0.6">
@@ -95,7 +102,9 @@ export function aiThumb(color = '#EC2D8F'): string {
     </line>
     <rect x="64" y="40" width="30" height="28" rx="4" fill="none" stroke="#22C55E" stroke-width="2.5">
       <animate attributeName="opacity" values="0.2;1;0.2" dur="1.4s" repeatCount="indefinite"/>
-    </rect>`, '#FDF2F8');
+    </rect>`,
+    '#FDF2F8',
+  );
 }
 
 /** Countdown digits for the variables challenge. */
@@ -110,12 +119,15 @@ export function counterThumb(color = '#CA8A04'): string {
 
 /** Looping arrow to convey a reusable function called N times. */
 export function funcThumb(color = '#565386'): string {
-  return frame(`
+  return frame(
+    `
     <g transform="translate(80,50)">
       <path d="M-26 0a26 26 0 1 1 8 18" fill="none" stroke="${color}" stroke-width="5" stroke-linecap="round"/>
       <path d="M-20 24 l2 -14 l13 6 z" fill="${color}"/>
       <text x="0" y="7" text-anchor="middle" font-family="Plus Jakarta Sans, sans-serif" font-size="20" font-weight="800" fill="${color}">4×
         <animate attributeName="opacity" values="0.4;1;0.4" dur="1.6s" repeatCount="indefinite"/>
       </text>
-    </g>`, '#EEEEFB');
+    </g>`,
+    '#EEEEFB',
+  );
 }

@@ -5,13 +5,13 @@
 import 'blockly/blocks';
 
 // Side-effect imports: each module defines its blocks + JS generators.
-import './motors';      // Movement
-import './events';      // Timing + program_start hat
-import './looks';       // Display
-import './audio';       // Audio
-import './sensors';     // Sensors & Data
-import './control';     // Program Flow
-import './operators';   // standard math/logic/text generator overrides
-import './variables';   // Variables generator overrides
-import './templates';   // Templates
-import './ai';          // AI (stub)
+import './motors'; // Movement
+import './events'; // Timing + program_start hat
+import './looks'; // Display
+import './audio'; // Audio
+import './sensors'; // Sensors & Data
+import './control'; // Program Flow
+import './operators'; // standard math/logic/text generator overrides
+import './variables'; // Variables generator overrides
+import './templates'; // Templates
+import './ai'; // AI (stub)

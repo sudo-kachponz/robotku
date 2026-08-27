@@ -3,18 +3,18 @@
 // Single source of truth for category colors & low-saturation flyout tints.
 
 export const CATEGORY_COLORS: Record<string, string> = {
-  Movement: '#16A34A',       // Green
-  Timing: '#E08600',         // Amber
-  Display: '#3B82F6',        // Blue
-  Audio: '#F97316',          // Orange
+  Movement: '#16A34A', // Green
+  Timing: '#E08600', // Amber
+  Display: '#3B82F6', // Blue
+  Audio: '#F97316', // Orange
   'Sensors & Data': '#8B5CF6', // Purple
-  'Program Flow': '#06B6D4',  // Cyan
-  Logic: '#0D9488',          // Teal
-  Math: '#4F46E5',            // Indigo
-  Variables: '#A16207',       // Brown
-  Functions: '#565386',      // Ink Slate
-  Templates: '#CA8A04',      // Gold
-  AI: '#EC2D8F',             // Pink
+  'Program Flow': '#06B6D4', // Cyan
+  Logic: '#0D9488', // Teal
+  Math: '#4F46E5', // Indigo
+  Variables: '#A16207', // Brown
+  Functions: '#565386', // Ink Slate
+  Templates: '#CA8A04', // Gold
+  AI: '#EC2D8F', // Pink
 };
 
 export const CATEGORY_TINTS: Record<string, string> = {

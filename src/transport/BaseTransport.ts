@@ -227,7 +227,10 @@ export abstract class BaseTransport implements RobotTransport {
    */
   private async writeFramed(blob: string): Promise<void> {
     // Group commands so each chunk stays <=MAX_CHUNK and prefers `;` boundaries.
-    const commands = blob.split(';').filter((c) => c.length > 0).map((c) => `${c};`);
+    const commands = blob
+      .split(';')
+      .filter((c) => c.length > 0)
+      .map((c) => `${c};`);
 
     let batch = '';
     for (const cmd of commands) {

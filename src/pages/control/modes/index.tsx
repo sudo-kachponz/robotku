@@ -3,7 +3,7 @@
 // Control Modes carousel — 5 cards with left/right arrows + 5 dots. Order:
 // Base Robot, Port Control, Tank Mode, Joystick, Block Coding.
 
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import ControlLayout from '../../../components/control/ControlLayout';
@@ -17,7 +17,16 @@ import codeSvg from '../../../assets/code.svg';
 // Redefine GearIcon if it's not exported
 function TopGearIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
+    <svg
+      viewBox="0 0 24 24"
+      width="24"
+      height="24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinejoin="round"
+      strokeLinecap="round"
+    >
       <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
@@ -26,7 +35,16 @@ function TopGearIcon() {
 
 function ChevronLeft() {
   return (
-    <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      viewBox="0 0 24 24"
+      width="40"
+      height="40"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M15 18l-6-6 6-6" />
     </svg>
   );
@@ -34,7 +52,16 @@ function ChevronLeft() {
 
 function ChevronRight() {
   return (
-    <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      viewBox="0 0 24 24"
+      width="40"
+      height="40"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M9 18l6-6-6-6" />
     </svg>
   );
@@ -114,8 +141,6 @@ export default function ModesCarousel() {
       }
     >
       <div className={styles.fullScreenWrapper} style={{ backgroundColor: card.accent }}>
-
-
         <div className={styles.stage}>
           <button className={styles.arrow} onClick={prev} aria-label="Sebelumnya">
             <ChevronLeft />
@@ -123,12 +148,22 @@ export default function ModesCarousel() {
 
           <div className={styles.contentRow}>
             <div className={styles.illus}>
-              <Image src={card.image} alt={card.title} width={300} height={300} className={styles.cardImage} />
+              <Image
+                src={card.image}
+                alt={card.title}
+                width={300}
+                height={300}
+                className={styles.cardImage}
+              />
             </div>
             <div className={styles.info}>
               <h2 className={styles.title}>{card.title}</h2>
               <p className={styles.desc}>{card.desc}</p>
-              <button key={`btn-${card.key}`} className={styles.enter} onClick={() => router.push(card.href)}>
+              <button
+                key={`btn-${card.key}`}
+                className={styles.enter}
+                onClick={() => router.push(card.href)}
+              >
                 Select
               </button>
             </div>

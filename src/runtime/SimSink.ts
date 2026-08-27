@@ -68,8 +68,14 @@ export const OBSTACLE_R = 22; // px
 const ROBOT_R = 24; // px
 
 const NOTE_HZ: Record<string, number> = {
-  C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23,
-  G4: 392.0, A4: 440.0, B4: 493.88, C5: 523.25,
+  C4: 261.63,
+  D4: 293.66,
+  E4: 329.63,
+  F4: 349.23,
+  G4: 392.0,
+  A4: 440.0,
+  B4: 493.88,
+  C5: 523.25,
 };
 
 function initialState(): SimState {
@@ -185,7 +191,10 @@ export class SimSink implements RobotSink {
         await this.wait(durMs(params));
         break;
       case 'SET_HEAD_POSITION':
-        this.commit({ headPitch: Number(params.pitch) || 90, headYaw: Number(params.yaw) || 90 }, true);
+        this.commit(
+          { headPitch: Number(params.pitch) || 90, headYaw: Number(params.yaw) || 90 },
+          true,
+        );
         break;
       case 'SET_GRIPPER':
         this.commit({ gripperOpen: params.state === 'open' ? 1 : 0 }, true);
@@ -424,7 +433,14 @@ export class SimSink implements RobotSink {
 
   // --- Status strip (driven by BlockCoding's runner callbacks) -------------
   setRunning(running: boolean): void {
-    this.commit({ running, runStart: running ? performance.now() : this.state.runStart, loopIteration: running ? 0 : this.state.loopIteration }, true);
+    this.commit(
+      {
+        running,
+        runStart: running ? performance.now() : this.state.runStart,
+        loopIteration: running ? 0 : this.state.loopIteration,
+      },
+      true,
+    );
   }
 
   setStatus(currentCommand: string | null): void {
@@ -442,7 +458,10 @@ export class SimSink implements RobotSink {
   }
 
   // --- Kinematics ----------------------------------------------------------
-  private async animateDrive(params: CommandParams, mode: 'move' | 'turn' | 'steer'): Promise<void> {
+  private async animateDrive(
+    params: CommandParams,
+    mode: 'move' | 'turn' | 'steer',
+  ): Promise<void> {
     this.stopRequested = false;
     const duration = (durMs(params) || 0) / this.simSpeed;
     const speed = Number(params.speed) || 70;
@@ -492,7 +511,12 @@ export class SimSink implements RobotSink {
     this.commit({ fwd: 0, turn: 0, portValues: cleared }, true);
   }
 
-  private integrate(dt: number, mode: 'move' | 'turn' | 'steer', params: CommandParams, scale: number): void {
+  private integrate(
+    dt: number,
+    mode: 'move' | 'turn' | 'steer',
+    params: CommandParams,
+    scale: number,
+  ): void {
     const p = { x: this.state.x, y: this.state.y, heading: this.state.headingDeg };
 
     if (mode === 'turn') {
@@ -643,7 +667,9 @@ let sharedAudioCtx: AudioContext | null = null;
 
 function getSharedAudioCtx(): AudioContext | null {
   if (typeof window === 'undefined') return null;
-  const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  const Ctx =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!Ctx) return null;
   if (!sharedAudioCtx) sharedAudioCtx = new Ctx();
   return sharedAudioCtx;

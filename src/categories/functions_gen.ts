@@ -52,9 +52,12 @@ javascriptGenerator.forBlock['procedures_ifreturn'] = function (block, gen) {
   const ret = JSON.stringify({ command: 'META_RETURN', params: {} });
   if (cond) {
     return (
-      JSON.stringify({ command: 'META_IF', params: { condition: cond } }) + ';' +
-      ret + ';' +
-      JSON.stringify({ command: 'META_END_IF', params: {} }) + ';'
+      JSON.stringify({ command: 'META_IF', params: { condition: cond } }) +
+      ';' +
+      ret +
+      ';' +
+      JSON.stringify({ command: 'META_END_IF', params: {} }) +
+      ';'
     );
   }
   return ret + ';';

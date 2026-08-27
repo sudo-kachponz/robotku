@@ -1,7 +1,10 @@
 {
+  "id": "/",
   "name": "Robotku",
   "short_name": "Robotku",
   "description": "Belajar robotika & coding blok untuk anak — jalankan di simulator atau robot ESP32.",
+  "lang": "id",
+  "categories": ["education", "kids", "productivity"],
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

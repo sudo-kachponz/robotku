@@ -3,10 +3,11 @@
 Mengubah tampilan mode **Port Control** agar sama seperti referensi: **ilustrasi board di kiri (besar)** + **8 slider horizontal ditumpuk vertikal di kanan** (nomor 1–8), dengan keterangan arah **Anticlockwise · Neutral · Clockwise** (kiri = anticlockwise, tengah = neutral, kanan = clockwise). Perintah `SET_PORT` yang sudah ada tidak diubah.
 
 > Wajib: terapkan `PROMPT_Robotku_DesignSystem_Reference.md` (Plus Jakarta Sans, token `--rk-*`/DS). File yang disentuh sudah ada — **jangan bikin ulang**:
+>
 > - `src/components/modes/PortMode.tsx` (8 slider −100..100, `setPort` throttled ~20 Hz, Digit1–8 + SHIFT invert, spring ke 0 saat lepas).
 > - `src/styles/ModeControls.module.css` (`.portGrid`, `.portItem`, `.portLabel`, `.portSlider`, `.portValue`).
 > - `src/hooks/useDrive.ts` (`setPort`).
-> Saat ini layout-nya grid 4 kolom tanpa board dan tanpa label arah — ubah ke layout referensi di bawah.
+>   Saat ini layout-nya grid 4 kolom tanpa board dan tanpa label arah — ubah ke layout referensi di bawah.
 
 ---
 
@@ -52,6 +53,7 @@ Show diffs for PortMode.tsx, ModeControls.module.css, and the new port-board.svg
 ---
 
 ## Catatan
+
 - Semantik slider: **kiri = Anticlockwise (−100), tengah = Neutral (0), kanan = Clockwise (+100)**; lepas → balik ke Neutral (servo continuous). Ini sekaligus menjawab "paling kiri ada keterangan anti-clockwise, neutral, clockwise" — labelnya dipasang sebagai header sejajar posisi kiri/tengah/kanan track, plus detent di tengah.
 - Fill **center-out** (dari tengah ke arah thumb) lebih jelas untuk arah putaran daripada fill kiri biasa; tapi kalau kamu mau persis referensi (fill biru dari kiri), tetap tambah tick Neutral + label.
 - Kalau kamu mau board-nya benar-benar mirip PCB Robotku (bukan SVG generik), kirim foto/aset board top-view-nya — saya buatkan SVG-nya dengan id `#port-1..#port-8` yang siap di-highlight.

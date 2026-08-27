@@ -5,11 +5,7 @@
 // notice. Reuses the framework-agnostic connection use-cases.
 
 import { useEffect, useState } from 'react';
-import {
-  isBleSupported,
-  isSerialSupported,
-  type TransportKind,
-} from '../../transport';
+import { isBleSupported, isSerialSupported, type TransportKind } from '../../transport';
 import { connect, disconnect } from '../../app/connection';
 import { useConnection } from '../../hooks/useConnection';
 import UnsupportedBrowserModal from './UnsupportedBrowserModal';
@@ -129,7 +125,16 @@ export default function ConnectPanel({ onClose }: { onClose: () => void }) {
 
 function BluetoothIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
+    <svg
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinejoin="round"
+      strokeLinecap="round"
+    >
       <path d="M7 7l10 10-5 5V2l5 5L7 17" />
     </svg>
   );
@@ -137,7 +142,16 @@ function BluetoothIcon() {
 
 function UsbIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
+    <svg
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinejoin="round"
+      strokeLinecap="round"
+    >
       <circle cx="12" cy="20" r="1.5" />
       <path d="M12 18.5V4" />
       <path d="M9 7l3-3 3 3" />

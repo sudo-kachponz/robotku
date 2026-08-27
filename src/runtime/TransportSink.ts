@@ -8,7 +8,12 @@
 
 import type { RobotSink } from './ProgramRunner';
 import type { RobotTransport } from '../transport';
-import { encodeCommand, type RuntimeCommand, type CommandParams, type RobotCommand } from '../domain/protocol';
+import {
+  encodeCommand,
+  type RuntimeCommand,
+  type CommandParams,
+  type RobotCommand,
+} from '../domain/protocol';
 import { estop } from '../app/connection';
 import { getCachedSensor } from './telemetryCache';
 import { cvStore } from '../ai/cvStore';

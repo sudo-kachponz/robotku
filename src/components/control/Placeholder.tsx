@@ -5,13 +5,7 @@
 
 import ControlLayout from './ControlLayout';
 
-export default function Placeholder({
-  title,
-  note,
-}: {
-  title: string;
-  note: string;
-}) {
+export default function Placeholder({ title, note }: { title: string; note: string }) {
   return (
     <ControlLayout title={title}>
       <div

@@ -62,7 +62,8 @@ function appendTemplate(ws: Blockly.WorkspaceSvg, json: WorkspaceJson): string[]
   // Ensure every variable the template needs exists in the target, by NAME.
   const varMap = new Map<string, string>();
   for (const v of json.variables ?? []) {
-    const existing = ws.getVariableMap().getVariable(v.name) ?? ws.createVariable(v.name, v.type ?? null);
+    const existing =
+      ws.getVariableMap().getVariable(v.name) ?? ws.createVariable(v.name, v.type ?? null);
     varMap.set(v.id, existing.getId());
   }
 
@@ -127,7 +128,11 @@ export function insertTemplate(
 
   // Reveal + flash the freshly inserted stack (no cleanUp — keep the child's layout).
   if (newIds[0] && typeof (ws as any).centerOnBlock === 'function') {
-    try { (ws as any).centerOnBlock(newIds[0]); } catch { /* headless */ }
+    try {
+      (ws as any).centerOnBlock(newIds[0]);
+    } catch {
+      /* headless */
+    }
   }
   flashBlocks(ws, newIds);
   return newIds;

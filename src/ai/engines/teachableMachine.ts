@@ -29,14 +29,17 @@ export class TeachableMachineEngine implements CvEngine {
     try {
       const labels = this.model.getClassLabels?.();
       if (Array.isArray(labels) && labels.length) this.labels = labels;
-    } catch { /* keep registry labels */ }
+    } catch {
+      /* keep registry labels */
+    }
   }
 
   async infer(source: CanvasImageSource): Promise<CvFrameResult> {
     const at = performance.now();
     if (!this.model) return { at, classes: [], boxes: [] };
     try {
-      const preds: Array<{ className: string; probability: number }> = await this.model.predict(source);
+      const preds: Array<{ className: string; probability: number }> =
+        await this.model.predict(source);
       const classes = preds.map((p) => ({ label: p.className, score: Number(p.probability) || 0 }));
       return { at, classes, boxes: [] };
     } catch {
@@ -45,7 +48,11 @@ export class TeachableMachineEngine implements CvEngine {
   }
 
   dispose(): void {
-    try { this.model?.dispose?.(); } catch { /* ignore */ }
+    try {
+      this.model?.dispose?.();
+    } catch {
+      /* ignore */
+    }
     this.model = null;
   }
 }

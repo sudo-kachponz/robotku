@@ -53,7 +53,7 @@ export default function AcademyGate() {
         <div className={styles.gateHeader}>
           <img
             className={styles.gateLogo}
-            src="/brand/Robotku-Mascot-Logo-Horizontal.png"
+            src="/brand/Robotku-Mascot-Logo-Horizontal.webp"
             alt="Robotku Academy"
           />
           <span className={styles.gateWelcome}>SELAMAT DATANG DI ROBOTKU ACADEMY!</span>
@@ -89,11 +89,7 @@ export default function AcademyGate() {
 
                 {error && <p className={styles.gateError}>{error}</p>}
 
-                <button
-                  type="submit"
-                  className={styles.btnPurple}
-                  disabled={busy}
-                >
+                <button type="submit" className={styles.btnPurple} disabled={busy}>
                   {busy ? 'Memeriksa…' : 'Akses Robotku Academy!'}
                 </button>
               </form>
@@ -123,16 +119,14 @@ export default function AcademyGate() {
             <section className={styles.gateColOpen}>
               <h2 className={styles.gateColTitleRight}>Baru di sini?</h2>
               <p className={styles.gateColSub}>
-                Coba 6 pelajaran Robotku Basics tanpa langganan! Untuk seluruh materi, hubungi <strong>{CONTACT_EMAIL}</strong> untuk berlangganan.
+                Coba 6 pelajaran Robotku Basics tanpa langganan! Untuk seluruh materi, hubungi{' '}
+                <strong>{CONTACT_EMAIL}</strong> untuk berlangganan.
               </p>
               <div className={styles.gateActions}>
                 <button className={styles.btnGuest} onClick={continueAsGuest}>
                   Lanjut sebagai Tamu
                 </button>
-                <a
-                  className={styles.btnContact}
-                  href={`mailto:${CONTACT_EMAIL}`}
-                >
+                <a className={styles.btnContact} href={`mailto:${CONTACT_EMAIL}`}>
                   Hubungi Kami
                 </a>
               </div>
@@ -146,7 +140,14 @@ export default function AcademyGate() {
 
 function Eye() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
@@ -155,7 +156,14 @@ function Eye() {
 
 function EyeOff() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
       <path d="M1 1l22 22" />
     </svg>
