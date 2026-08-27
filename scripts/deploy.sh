@@ -6,6 +6,7 @@
 # Optional:
 #   FTP_REMOTE_DIR   (default /public_html)
 #   SKIP_SIM3D=1     exclude public/sim3d/** so a launch upload is a few MB, not 26
+#   FORCE_FULL=1     skip --only-newer on pass 1 (first deploy or clock-drift fix)
 #
 # Usage:  FTP_HOST=… FTP_USER=… FTP_PASS=… ./scripts/deploy.sh
 set -euo pipefail
@@ -20,6 +21,26 @@ if [ ! -d out ]; then
   exit 1
 fi
 
+# ── Preflight ──────────────────────────────────────────────────────────────
+echo "── Menjalankan preflight…"
+node scripts/preflight.mjs
+echo ""
+
+# ── Snapshot rilis (sebelum mirror) ────────────────────────────────────────
+LOCAL_SHA=$(node -e "try{console.log(JSON.parse(require('fs').readFileSync('out/version.json','utf8')).sha)}catch{console.log('unknown')}")
+STAMP=$(date +%Y%m%d-%H%M%S)
+RELEASE_DIR="releases"
+ARCHIVE="${RELEASE_DIR}/out-${LOCAL_SHA}-${STAMP}.tar.gz"
+mkdir -p "$RELEASE_DIR"
+
+TAR_EXCLUDE=""
+if [ "${SKIP_SIM3D:-0}" = "1" ]; then
+  TAR_EXCLUDE="--exclude=out/sim3d"
+fi
+tar czf "$ARCHIVE" $TAR_EXCLUDE out/
+echo "→ Arsip rilis tersimpan: $ARCHIVE ($(du -sh "$ARCHIVE" | cut -f1))"
+
+# ── Upload size ────────────────────────────────────────────────────────────
 EXCLUDES='--exclude-glob .git*'
 DU_EXCLUDE=''
 if [ "${SKIP_SIM3D:-0}" = "1" ]; then
@@ -42,15 +63,43 @@ run_lftp() {
 # Upload order matters on a live site: push hashed static chunks FIRST so a user
 # mid-navigation never requests a chunk that isn't there yet, then HTML last.
 #
-# Timestamp-based --only-newer is SAFE only for /_next: filenames are content
-# hashed, so a changed file is a NEW name (never same-name-newer-mtime). For HTML,
-# .htaccess and version.json it is NOT safe — shared-host clocks drift, so a real
-# change can look "older" and get skipped. Those files are tiny, so pass 2 always
-# re-uploads them. --delete in each pass prunes stale files within that pass's tree.
-echo "→ pass 1: /_next hashed chunks (--only-newer + prune stale)"
-run_lftp "mirror -R --only-newer --delete --parallel=4 $EXCLUDES ./out/_next ${REMOTE_DIR}/_next"
+# FORCE_FULL=1 disables --only-newer for pass 1. Use it on the FIRST deploy
+# (shared-host clocks are often out of sync, and changed files can be skipped)
+# or whenever timestamps look unreliable.
+ONLY_NEWER_FLAG="--only-newer"
+if [ "${FORCE_FULL:-0}" = "1" ]; then
+  ONLY_NEWER_FLAG=""
+  echo "→ FORCE_FULL=1: pass 1 akan mengunggah SEMUA file di _next/ (tanpa --only-newer)"
+fi
+
+echo "→ pass 1: /_next hashed chunks ${ONLY_NEWER_FLAG:+(--only-newer + }prune stale${ONLY_NEWER_FLAG:+)}"
+run_lftp "mirror -R $ONLY_NEWER_FLAG --delete --parallel=4 $EXCLUDES ./out/_next ${REMOTE_DIR}/_next"
 
 echo "→ pass 2: everything else — HTML + .htaccess + version.json, always fresh"
 run_lftp "mirror -R --delete --parallel=4 --exclude-glob _next/* $EXCLUDES ./out ${REMOTE_DIR}"
 
-echo "✓ deployed to ${FTP_HOST}:${REMOTE_DIR}"
+# ── Post-deploy smoke check ───────────────────────────────────────────────
+echo ""
+echo "── Smoke check…"
+SITE_URL="${DEPLOY_URL:-https://hub.robotku.id}"
+REMOTE_VERSION=$(curl -sSf "${SITE_URL}/version.json" 2>/dev/null || echo '{}')
+REMOTE_SHA=$(echo "$REMOTE_VERSION" | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{console.log(JSON.parse(d).sha||'?')}catch{console.log('?')}})")
+
+if [ "$REMOTE_SHA" = "$LOCAL_SHA" ]; then
+  echo "✓ version.json cocok: $REMOTE_SHA == $LOCAL_SHA (build lokal)"
+else
+  echo "⚠ version.json TIDAK COCOK!"
+  echo "  Server: $REMOTE_SHA"
+  echo "  Lokal:  $LOCAL_SHA"
+  echo "  Mirror mungkin belum selesai, atau CDN cache masih lama."
+  echo "  Coba hard refresh atau tunggu beberapa menit."
+fi
+
+echo ""
+echo "✓ Deployed ke ${FTP_HOST}:${REMOTE_DIR}"
+echo ""
+echo "════════════════════════════════════════════════════════════════"
+echo "  Kirim ke penguji:"
+echo "  ${SITE_URL}/cek/"
+echo "════════════════════════════════════════════════════════════════"
+echo ""
