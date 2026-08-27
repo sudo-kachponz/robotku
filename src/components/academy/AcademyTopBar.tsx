@@ -31,7 +31,7 @@ export function AcademyTopBar({
         </Link>
         <img
           className={styles.topbarLogo}
-          src="/brand/Robotku-Mascot-Logo-Horizontal.png"
+          src="/brand/Robotku-Mascot-Logo-Horizontal.webp"
           alt="Robotku Academy"
         />
         <span className={styles.topbarTitle}>Robotku Academy</span>

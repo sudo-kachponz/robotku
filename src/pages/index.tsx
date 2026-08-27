@@ -17,7 +17,7 @@ export default function Home() {
           <div className={styles.barInner}>
             <img
               className={styles.logo}
-              src="/brand/Robotku-Mascot-Logo-Horizontal.png"
+              src="/brand/Robotku-Mascot-Logo-Horizontal.webp"
               alt="Robotku School"
               onError={(e) => {
                 (e.target as HTMLElement).style.display = 'none';
@@ -60,7 +60,7 @@ export default function Home() {
             <div className={styles.overlayHeader}>
               <img
                 className={styles.logo}
-                src="/brand/Robotku-Mascot-Logo-Horizontal.png"
+                src="/brand/Robotku-Mascot-Logo-Horizontal.webp"
                 alt="Robotku School"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = 'none';
@@ -145,7 +145,7 @@ export default function Home() {
               <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
             </svg>
 
-            <img className={styles.mascot} src="/brand/Pose1.png" alt="Maskot Robotku" />
+            <img className={styles.mascot} src="/brand/Pose1.webp" alt="Maskot Robotku" />
 
             {/* Emojis floating around mascot */}
             <span className={`${styles.floatingEmoji} ${styles.e1}`}>🧩</span>

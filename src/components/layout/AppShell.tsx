@@ -60,7 +60,7 @@ export default function AppShell({
         <div className={styles.sidebarHeader}>
           {/* Use Robotku mascot logo if available, otherwise text */}
           <img
-            src="/brand/Robotku-Mascot-Logo-Horizontal.png"
+            src="/brand/Robotku-Mascot-Logo-Horizontal.webp"
             alt="Robotku Logo"
             className={styles.logo}
             onError={(e) => {

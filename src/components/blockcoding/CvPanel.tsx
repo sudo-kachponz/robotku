@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { cvStore } from '../../ai/cvStore';
 import { CV_MODELS, probeAll, registerModel, type CvModelEntry } from '../../ai/registry';
+import { promptDialog } from '../../ui/dialog';
 import styles from './CvPanel.module.css';
 
 const TM_LINK = 'https://teachablemachine.withgoogle.com/train/image';
@@ -93,8 +94,10 @@ export default function CvPanel({ open, onClose }: { open: boolean; onClose: () 
     void cvStore.setModel(id);
   }, []);
 
-  const loadFromUrl = useCallback(() => {
-    const url = window.prompt('URL folder model (berisi model.json):');
+  const loadFromUrl = useCallback(async () => {
+    const url = await promptDialog('URL folder model (berisi model.json):', {
+      title: 'Muat model dari URL',
+    });
     if (!url) return;
     const id = `custom_${Date.now()}`;
     const entry: CvModelEntry = {

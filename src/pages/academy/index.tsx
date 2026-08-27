@@ -53,7 +53,7 @@ export default function AcademyGate() {
         <div className={styles.gateHeader}>
           <img
             className={styles.gateLogo}
-            src="/brand/Robotku-Mascot-Logo-Horizontal.png"
+            src="/brand/Robotku-Mascot-Logo-Horizontal.webp"
             alt="Robotku Academy"
           />
           <span className={styles.gateWelcome}>SELAMAT DATANG DI ROBOTKU ACADEMY!</span>

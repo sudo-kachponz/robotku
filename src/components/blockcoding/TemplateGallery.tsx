@@ -22,6 +22,7 @@ import {
   type UserTemplateRecord,
 } from '../../app/persistence';
 import { showToast } from '../../ui/toast';
+import { promptDialog } from '../../ui/dialog';
 import styles from './TemplateGallery.module.css';
 
 interface Props {
@@ -136,9 +137,12 @@ export default function TemplateGallery({ open, onClose, onUse, onTry, aiEnabled
 
   const renameUser = useCallback(
     async (rec: UserTemplateRecord) => {
-      const name = window.prompt('Nama baru:', rec.name);
+      const name = await promptDialog('Nama baru:', {
+        title: 'Ubah nama template',
+        defaultValue: rec.name,
+      });
       if (!name) return;
-      const next = userTemplates.map((u) => (u.id === rec.id ? { ...u, name: name.trim() } : u));
+      const next = userTemplates.map((u) => (u.id === rec.id ? { ...u, name } : u));
       setUserTemplates(next);
       await persistUserTemplates(next);
     },

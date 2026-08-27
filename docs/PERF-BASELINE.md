@@ -65,3 +65,23 @@ Shared JS: **112 kB** (framework 59.8 kB + main 37.4 kB + other 14.6 kB)
 ## R1 Remaining: Asset Diet
 
 3D assets (~20.3 MB) still in `public/` root. Target: move to `public/sim3d/` and exclude from FTP deploy.
+
+## Slice 7b — Brand asset compression (deploy.md, DONE 2026-08-27)
+
+`public/brand/` was **3.7 MB** of 2000×2000 PNGs. Converted the used images to
+WebP (resized to real display size) and deleted orphans. Folder now **176 KB**
+(target was < 700 KB).
+
+| File                                    | Before  | After            | Action                          |
+| --------------------------------------- | ------- | ---------------- | ------------------------------- |
+| `Pose2.png`                             | 1.1 MB  | —                | deleted (no tracked refs)       |
+| `Mascot-Robotku-School.png`             | 851 KB  | —                | deleted (no tracked refs)       |
+| `Pose1.png` → `Pose1.webp`              | 920 KB  | **60 KB**        | WebP q80, 960px (mascot ≤480px) |
+| `…-Logo-Horizontal.png` → `.webp`       | 220 KB  | **26 KB**        | WebP q82, 800px wide            |
+| `Robotku-Mascot-Logo.png` → `.webp`     | 648 KB  | **78 KB**        | WebP q90, 1024px (icon source)  |
+| **`public/brand/` total**               | 3.7 MB  | **176 KB**       | −95%                            |
+| `public/vite.svg`                       | 1.5 KB  | —                | deleted (Vite scaffolding)      |
+| `public/og-image.png` (new)             | —       | 80 KB            | 1200×630 social card (< 200 KB) |
+
+Refs updated `.png` → `.webp` across `src/` (7 files) and `scripts/gen-icons.mjs`
+(icon-generation source).

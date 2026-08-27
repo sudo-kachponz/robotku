@@ -14,7 +14,7 @@ import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ROOT = process.cwd();
-const SRC = join(ROOT, 'public/brand/Robotku-Mascot-Logo.png');
+const SRC = join(ROOT, 'public/brand/Robotku-Mascot-Logo.webp');
 const ICONS = join(ROOT, 'public/icons');
 const BG = { r: 0x1e, g: 0x1b, b: 0x4b, alpha: 1 }; // manifest background_color #1E1B4B
 

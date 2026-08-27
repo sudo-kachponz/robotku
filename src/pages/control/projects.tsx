@@ -19,6 +19,7 @@ import { setPendingWorkspace } from '../../app/editorBridge';
 import { getSettings, setSettings } from '../../app/settingsStore';
 import { cloneSettings } from '../../domain/settings';
 import { showToast } from '../../ui/toast';
+import { confirmDialog, promptDialog } from '../../ui/dialog';
 import styles from '../../styles/Projects.module.css';
 
 export default function ProjectsPage() {
@@ -45,10 +46,10 @@ export default function ProjectsPage() {
     setPendingWorkspace(p.workspace);
     router.push('/control/modes/code');
   };
-  const renameProject = (p: RbkProject) => {
-    const name = window.prompt('Nama baru:', p.name);
+  const renameProject = async (p: RbkProject) => {
+    const name = await promptDialog('Nama baru:', { title: 'Ubah nama project', defaultValue: p.name });
     if (!name) return;
-    saveProjects(projects.map((x) => (x.id === p.id ? { ...x, name: name.trim() } : x)));
+    saveProjects(projects.map((x) => (x.id === p.id ? { ...x, name } : x)));
   };
   const duplicateProject = (p: RbkProject) => {
     saveProjects([
@@ -56,8 +57,8 @@ export default function ProjectsPage() {
       ...projects,
     ]);
   };
-  const deleteProject = (p: RbkProject) => {
-    if (!window.confirm(`Hapus "${p.name}"?`)) return;
+  const deleteProject = async (p: RbkProject) => {
+    if (!(await confirmDialog(`Hapus "${p.name}"?`, { title: 'Hapus project', danger: true }))) return;
     saveProjects(projects.filter((x) => x.id !== p.id));
   };
 
@@ -79,13 +80,16 @@ export default function ProjectsPage() {
     }
   };
 
-  const savePreset = () => {
-    const name = window.prompt('Nama preset settings:', 'Preset 1');
+  const savePreset = async () => {
+    const name = await promptDialog('Nama preset settings:', {
+      title: 'Simpan preset',
+      defaultValue: 'Preset 1',
+    });
     if (!name) return;
     savePresets([
       {
         id: `s_${Date.now()}`,
-        name: name.trim(),
+        name,
         settings: cloneSettings(getSettings()),
         savedAt: Date.now(),
       },
@@ -97,8 +101,9 @@ export default function ProjectsPage() {
     setSettings(cloneSettings(p.settings));
     showToast(`Preset "${p.name}" diterapkan.`, 'info');
   };
-  const deletePreset = (p: SettingsPreset) => {
-    if (!window.confirm(`Hapus preset "${p.name}"?`)) return;
+  const deletePreset = async (p: SettingsPreset) => {
+    if (!(await confirmDialog(`Hapus preset "${p.name}"?`, { title: 'Hapus preset', danger: true })))
+      return;
     savePresets(presets.filter((x) => x.id !== p.id));
   };
 

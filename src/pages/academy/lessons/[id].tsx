@@ -114,7 +114,7 @@ export default function LessonDetail() {
               ←
             </button>
             <img
-              src="/brand/Robotku-Mascot-Logo-Horizontal.png"
+              src="/brand/Robotku-Mascot-Logo-Horizontal.webp"
               alt="Robotku School"
               className={styles.pptLogo}
             />

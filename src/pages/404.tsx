@@ -18,7 +18,7 @@ export default function Custom404() {
       }}
     >
       <img
-        src="/brand/Robotku-Mascot-Logo-Horizontal.png"
+        src="/brand/Robotku-Mascot-Logo-Horizontal.webp"
         alt="Robotku Logo"
         style={{ height: '64px', marginBottom: '24px', objectFit: 'contain' }}
         onError={(e) => {
