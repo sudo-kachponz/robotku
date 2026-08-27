@@ -29,8 +29,8 @@
   gap: 12px;
   padding: 10px 22px;
   border-radius: 14px;
-  background: #6D28D9;
-  color: #FFFFFF;
+  background: #6d28d9;
+  color: #ffffff;
   font-family: var(--font-display);
   font-size: 15px;
   font-weight: 600;
@@ -60,14 +60,14 @@
 }
 
 .promptClose:hover {
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 /* Top Header Bar */
 .pptHeader {
   height: 60px;
-  background: #F3F4F6;
-  border-bottom: 1px solid #E5E7EB;
+  background: #f3f4f6;
+  border-bottom: 1px solid #e5e7eb;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -99,7 +99,7 @@
 }
 
 .backBtn:hover {
-  background: #E5E7EB;
+  background: #e5e7eb;
 }
 
 .pptLogo {
@@ -112,7 +112,7 @@
   font-family: var(--font-display);
   font-size: 15px;
   font-weight: 700;
-  color: #1F2937;
+  color: #1f2937;
   letter-spacing: 0.01em;
 }
 
@@ -126,7 +126,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #E5E7EB;
+  background: #e5e7eb;
   padding: 4px;
   border-radius: 999px;
 }
@@ -136,7 +136,7 @@
   border-radius: 999px;
   border: none;
   background: transparent;
-  color: #4B5563;
+  color: #4b5563;
   font-family: var(--font-display);
   font-size: 13px;
   font-weight: 600;
@@ -146,14 +146,14 @@
 }
 
 .modeTabActive {
-  background: #FFFFFF;
+  background: #ffffff;
   color: #111827;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .modeTabPink {
-  background: #EC2D8F;
-  color: #FFFFFF !important;
+  background: #ec2d8f;
+  color: #ffffff !important;
   font-weight: 700;
 }
 
@@ -162,8 +162,8 @@
   height: 36px;
   border-radius: 50%;
   border: none;
-  background: #E5E7EB;
-  color: #4B5563;
+  background: #e5e7eb;
+  color: #4b5563;
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
@@ -173,7 +173,7 @@
 }
 
 .closeFullscreenBtn:hover {
-  background: #D1D5DB;
+  background: #d1d5db;
   color: #111827;
 }
 
@@ -182,7 +182,7 @@
   flex: 1;
   width: 100%;
   height: 100%;
-  background: #0D0E15;
+  background: #0d0e15;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -211,14 +211,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #EFEFEF;
+  background: #efefef;
   padding: 24px;
 }
 
 .slideSlideCover {
   width: min(920px, 90vw);
   height: min(540px, 75vh);
-  background: #FFFFFF;
+  background: #ffffff;
   border-radius: 16px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
   display: flex;
@@ -227,7 +227,7 @@
   justify-content: center;
   padding: 40px;
   text-align: center;
-  border: 1px solid #E2E8F0;
+  border: 1px solid #e2e8f0;
   position: relative;
 }
 
@@ -235,7 +235,7 @@
   font-family: var(--font-display);
   font-size: 20px;
   font-weight: 600;
-  color: #64748B;
+  color: #64748b;
   margin: 0 0 12px;
   text-transform: uppercase;
 }
@@ -244,7 +244,7 @@
   font-family: var(--font-display);
   font-size: clamp(32px, 5vw, 54px);
   font-weight: 700;
-  color: #DC2626;
+  color: #dc2626;
   margin: 0 0 12px;
   letter-spacing: -0.01em;
 }
@@ -263,7 +263,7 @@
 
 .slideNotice {
   font-size: 14px;
-  color: #94A3B8;
+  color: #94a3b8;
   margin: 0;
 }
 
@@ -271,12 +271,12 @@
 .pptControlBar {
   height: 48px;
   background: #111827;
-  border-top: 1px solid #1F2937;
+  border-top: 1px solid #1f2937;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
-  color: #9CA3AF;
+  color: #9ca3af;
   font-size: 13px;
   z-index: 10;
   flex-shrink: 0;
@@ -291,7 +291,7 @@
 .navArrowBtn {
   background: transparent;
   border: none;
-  color: #D1D5DB;
+  color: #d1d5db;
   font-size: 14px;
   cursor: pointer;
   padding: 4px 8px;
@@ -300,7 +300,7 @@
 
 .navArrowBtn:hover:not(:disabled) {
   background: #374151;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .navArrowBtn:disabled {
@@ -311,7 +311,7 @@
 .navCounter {
   font-family: monospace;
   font-size: 13px;
-  color: #E5E7EB;
+  color: #e5e7eb;
   font-weight: 600;
 }
 
@@ -323,7 +323,7 @@
 
 .googleSlidesBrand {
   font-size: 12px;
-  color: #9CA3AF;
+  color: #9ca3af;
   font-weight: 600;
 }
 
@@ -342,16 +342,20 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .tutorialModalCard {
   width: min(820px, 94vw);
-  background: #FFFFFF;
+  background: #ffffff;
   border-radius: 24px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
-  border: 2px solid #E2E8F0;
+  border: 2px solid #e2e8f0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -365,7 +369,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #F1F5F9;
+  background: #f1f5f9;
   border: none;
   font-size: 16px;
   font-weight: 700;
@@ -378,8 +382,8 @@
 }
 
 .tutorialCloseBtn:hover {
-  background: #EC2D8F;
-  color: #FFFFFF;
+  background: #ec2d8f;
+  color: #ffffff;
 }
 
 .tutorialStage {
@@ -388,7 +392,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
 }
 
 .tutorialSlideContent {
@@ -432,8 +436,8 @@
   display: inline-block;
   padding: 4px 14px;
   border-radius: 999px;
-  background: #EC2D8F;
-  color: #FFFFFF;
+  background: #ec2d8f;
+  color: #ffffff;
   font-family: var(--font-display);
   font-size: 12px;
   font-weight: 700;
@@ -450,7 +454,7 @@
   font-family: var(--font-display);
   font-size: clamp(22px, 3.2vw, 30px);
   font-weight: 700;
-  color: #1E1B4B;
+  color: #1e1b4b;
   margin: 0;
   letter-spacing: -0.01em;
 }
@@ -472,8 +476,8 @@
 }
 
 .diagramBox {
-  background: #FFFFFF;
-  border: 1.5px solid #E2E8F0;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
   border-radius: 16px;
   padding: 16px 20px;
   text-align: left;
@@ -484,13 +488,13 @@
   margin: 8px 0 4px;
   font-family: var(--font-display);
   font-size: 16px;
-  color: #1E1B4B;
+  color: #1e1b4b;
 }
 
 .diagramBox p {
   margin: 0;
   font-size: 13px;
-  color: #64748B;
+  color: #64748b;
 }
 
 .diagramBadge {
@@ -498,8 +502,8 @@
   font-weight: 800;
   padding: 3px 8px;
   border-radius: 999px;
-  background: #4F46E5;
-  color: #FFFFFF;
+  background: #4f46e5;
+  color: #ffffff;
 }
 
 .subjectPillsRow {
@@ -513,9 +517,9 @@
 .subPill {
   padding: 8px 18px;
   border-radius: 999px;
-  background: #FFFFFF;
-  border: 1.5px solid #CBD5E1;
-  color: #1E293B;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  color: #1e293b;
   font-weight: 700;
   font-size: 13.5px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
@@ -536,8 +540,8 @@
   align-items: center;
   gap: 6px;
   padding: 12px 14px;
-  background: #FFFFFF;
-  border: 1.5px solid #E2E8F0;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
   border-radius: 14px;
   font-size: 12.5px;
   font-weight: 700;
@@ -549,8 +553,8 @@
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: #EC2D8F;
-  color: #FFFFFF;
+  background: #ec2d8f;
+  color: #ffffff;
   font-weight: 800;
   display: grid;
   place-items: center;
@@ -559,18 +563,18 @@
 
 .segArrow {
   font-size: 18px;
-  color: #94A3B8;
+  color: #94a3b8;
   font-weight: 700;
 }
 
 .tutorialFooterBar {
   height: 48px;
-  background: #0F172A;
+  background: #0f172a;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
-  color: #94A3B8;
+  color: #94a3b8;
   font-size: 13px;
 }
 
@@ -583,7 +587,7 @@
 .tutorialNavBtn {
   background: transparent;
   border: none;
-  color: #F1F5F9;
+  color: #f1f5f9;
   font-size: 14px;
   cursor: pointer;
   padding: 4px 8px;
@@ -592,7 +596,7 @@
 
 .tutorialNavBtn:hover:not(:disabled) {
   background: #334155;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .tutorialNavBtn:disabled {
@@ -603,12 +607,12 @@
 .tutorialCounter {
   font-family: monospace;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .tutorialBrandText {
   font-weight: 600;
-  color: #94A3B8;
+  color: #94a3b8;
 }
 
 /* Standard Detail Shell fallbacks */

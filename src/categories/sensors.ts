@@ -11,101 +11,158 @@ import { javascriptGenerator, Order } from 'blockly/javascript';
 import { astroidV2 } from '../robotProfiles';
 
 const PORTS: [string, string][] = [
-  ['G1', 'G1'], ['G2', 'G2'], ['G3', 'G3'], ['G4', 'G4'],
-  ['G5', 'G5'], ['G6', 'G6'], ['G7', 'G7'], ['G8', 'G8'],
+  ['G1', 'G1'],
+  ['G2', 'G2'],
+  ['G3', 'G3'],
+  ['G4', 'G4'],
+  ['G5', 'G5'],
+  ['G6', 'G6'],
+  ['G7', 'G7'],
+  ['G8', 'G8'],
 ];
-const UNITS: [string, string][] = [['cm', 'cm'], ['inch', 'inch']];
+const UNITS: [string, string][] = [
+  ['cm', 'cm'],
+  ['inch', 'inch'],
+];
 
 defineOnce([
   // --- Boolean sensors ---
-  { "type": "sensor_button1", "message0": "Touch Button 1 is pressed", "output": "Boolean", "style": "sensors_blocks" },
-  { "type": "sensor_button2", "message0": "Touch Button 2 is pressed", "output": "Boolean", "style": "sensors_blocks" },
-  { "type": "sensor_is_recording", "message0": "Is Recording?", "output": "Boolean", "style": "sensors_blocks" },
+  {
+    type: 'sensor_button1',
+    message0: 'Touch Button 1 is pressed',
+    output: 'Boolean',
+    style: 'sensors_blocks',
+  },
+  {
+    type: 'sensor_button2',
+    message0: 'Touch Button 2 is pressed',
+    output: 'Boolean',
+    style: 'sensors_blocks',
+  },
+  {
+    type: 'sensor_is_recording',
+    message0: 'Is Recording?',
+    output: 'Boolean',
+    style: 'sensors_blocks',
+  },
 
   // --- Pin I/O (statements + reporters) ---
   {
-    "type": "sensor_set_analog",
-    "message0": "Set Analog Pin on Port %1 to %2",
-    "args0": [
-      { "type": "field_dropdown", "name": "PORT", "options": PORTS },
-      { "type": "field_slider", "name": "VALUE", "value": 0, "min": 0, "max": 255 }
+    type: 'sensor_set_analog',
+    message0: 'Set Analog Pin on Port %1 to %2',
+    args0: [
+      { type: 'field_dropdown', name: 'PORT', options: PORTS },
+      { type: 'field_slider', name: 'VALUE', value: 0, min: 0, max: 255 },
     ],
-    "previousStatement": null, "nextStatement": null, "style": "sensors_blocks", "inputsInline": true,
+    previousStatement: null,
+    nextStatement: null,
+    style: 'sensors_blocks',
+    inputsInline: true,
   },
   {
-    "type": "sensor_get_analog",
-    "message0": "Get Analog Pin on Port %1",
-    "args0": [{ "type": "field_dropdown", "name": "PORT", "options": PORTS }],
-    "output": "Number", "style": "sensors_blocks",
+    type: 'sensor_get_analog',
+    message0: 'Get Analog Pin on Port %1',
+    args0: [{ type: 'field_dropdown', name: 'PORT', options: PORTS }],
+    output: 'Number',
+    style: 'sensors_blocks',
   },
   {
-    "type": "sensor_set_digital",
-    "message0": "Set Digital Pin on Port %1 to %2",
-    "args0": [
-      { "type": "field_dropdown", "name": "PORT", "options": PORTS },
-      { "type": "field_dropdown", "name": "VALUE", "options": [["HIGH", "HIGH"], ["LOW", "LOW"]] }
+    type: 'sensor_set_digital',
+    message0: 'Set Digital Pin on Port %1 to %2',
+    args0: [
+      { type: 'field_dropdown', name: 'PORT', options: PORTS },
+      {
+        type: 'field_dropdown',
+        name: 'VALUE',
+        options: [
+          ['HIGH', 'HIGH'],
+          ['LOW', 'LOW'],
+        ],
+      },
     ],
-    "previousStatement": null, "nextStatement": null, "style": "sensors_blocks", "inputsInline": true,
+    previousStatement: null,
+    nextStatement: null,
+    style: 'sensors_blocks',
+    inputsInline: true,
   },
   {
-    "type": "sensor_get_digital",
-    "message0": "Get Digital Pin on Port %1",
-    "args0": [{ "type": "field_dropdown", "name": "PORT", "options": PORTS }],
-    "output": "Number", "style": "sensors_blocks",
+    type: 'sensor_get_digital',
+    message0: 'Get Digital Pin on Port %1',
+    args0: [{ type: 'field_dropdown', name: 'PORT', options: PORTS }],
+    output: 'Number',
+    style: 'sensors_blocks',
   },
 
   // --- Distance / environment reporters ---
   {
-    "type": "sensor_ultrasonic",
-    "message0": "Ultrasonic Sensor Value in %1 on Port %2",
-    "args0": [
-      { "type": "field_dropdown", "name": "UNIT", "options": UNITS },
-      { "type": "field_dropdown", "name": "PORT", "options": PORTS }
+    type: 'sensor_ultrasonic',
+    message0: 'Ultrasonic Sensor Value in %1 on Port %2',
+    args0: [
+      { type: 'field_dropdown', name: 'UNIT', options: UNITS },
+      { type: 'field_dropdown', name: 'PORT', options: PORTS },
     ],
-    "output": "Number", "style": "sensors_blocks", "inputsInline": true,
+    output: 'Number',
+    style: 'sensors_blocks',
+    inputsInline: true,
   },
   {
-    "type": "sensor_temperature",
-    "message0": "Temperature Sensor Value (°C) on Port %1",
-    "args0": [{ "type": "field_dropdown", "name": "PORT", "options": PORTS }],
-    "output": "Number", "style": "sensors_blocks", "inputsInline": true,
+    type: 'sensor_temperature',
+    message0: 'Temperature Sensor Value (°C) on Port %1',
+    args0: [{ type: 'field_dropdown', name: 'PORT', options: PORTS }],
+    output: 'Number',
+    style: 'sensors_blocks',
+    inputsInline: true,
   },
   {
-    "type": "sensor_humidity",
-    "message0": "Humidity Sensor Value (%%) on Port %1",
-    "args0": [{ "type": "field_dropdown", "name": "PORT", "options": PORTS }],
-    "output": "Number", "style": "sensors_blocks", "inputsInline": true,
+    type: 'sensor_humidity',
+    message0: 'Humidity Sensor Value (%%) on Port %1',
+    args0: [{ type: 'field_dropdown', name: 'PORT', options: PORTS }],
+    output: 'Number',
+    style: 'sensors_blocks',
+    inputsInline: true,
   },
   {
-    "type": "sensor_light",
-    "message0": "Light Sensor Value (lux) on Port %1",
-    "args0": [{ "type": "field_dropdown", "name": "PORT", "options": PORTS }],
-    "output": "Number", "style": "sensors_blocks", "inputsInline": true,
+    type: 'sensor_light',
+    message0: 'Light Sensor Value (lux) on Port %1',
+    args0: [{ type: 'field_dropdown', name: 'PORT', options: PORTS }],
+    output: 'Number',
+    style: 'sensors_blocks',
+    inputsInline: true,
   },
   {
-    "type": "sensor_distance",
-    "message0": "Distance Travelled (cm) on Port %1",
-    "args0": [{ "type": "field_dropdown", "name": "PORT", "options": PORTS }],
-    "output": "Number", "style": "sensors_blocks", "inputsInline": true,
+    type: 'sensor_distance',
+    message0: 'Distance Travelled (cm) on Port %1',
+    args0: [{ type: 'field_dropdown', name: 'PORT', options: PORTS }],
+    output: 'Number',
+    style: 'sensors_blocks',
+    inputsInline: true,
   },
   {
-    "type": "sensor_reset_distance",
-    "message0": "Reset Distance Travelled on Port %1",
-    "args0": [{ "type": "field_dropdown", "name": "PORT", "options": PORTS }],
-    "previousStatement": null, "nextStatement": null, "style": "sensors_blocks", "inputsInline": true,
+    type: 'sensor_reset_distance',
+    message0: 'Reset Distance Travelled on Port %1',
+    args0: [{ type: 'field_dropdown', name: 'PORT', options: PORTS }],
+    previousStatement: null,
+    nextStatement: null,
+    style: 'sensors_blocks',
+    inputsInline: true,
   },
   {
-    "type": "sensor_heading",
-    "message0": "Heading Value (deg) on Port %1",
-    "args0": [{ "type": "field_dropdown", "name": "PORT", "options": PORTS }],
-    "output": "Number", "style": "sensors_blocks", "inputsInline": true,
+    type: 'sensor_heading',
+    message0: 'Heading Value (deg) on Port %1',
+    args0: [{ type: 'field_dropdown', name: 'PORT', options: PORTS }],
+    output: 'Number',
+    style: 'sensors_blocks',
+    inputsInline: true,
   },
   {
-    "type": "sensor_reset_heading",
-    "message0": "Reset Heading Value on Port %1",
-    "args0": [{ "type": "field_dropdown", "name": "PORT", "options": PORTS }],
-    "previousStatement": null, "nextStatement": null, "style": "sensors_blocks", "inputsInline": true,
-  }
+    type: 'sensor_reset_heading',
+    message0: 'Reset Heading Value on Port %1',
+    args0: [{ type: 'field_dropdown', name: 'PORT', options: PORTS }],
+    previousStatement: null,
+    nextStatement: null,
+    style: 'sensors_blocks',
+    inputsInline: true,
+  },
 ]);
 
 // --- Reporter helper: emit a getSensorValue("<GET_SENSOR_DATA json>") call ---
@@ -141,16 +198,39 @@ javascriptGenerator.forBlock['sensor_distance'] = reporter('distance');
 javascriptGenerator.forBlock['sensor_heading'] = reporter('heading');
 
 javascriptGenerator.forBlock['sensor_set_analog'] = function (block) {
-  return JSON.stringify({ command: astroidV2.commands.setAnalog, params: { port: block.getFieldValue('PORT'), value: parseInt(block.getFieldValue('VALUE'), 10) } }) + ';';
+  return (
+    JSON.stringify({
+      command: astroidV2.commands.setAnalog,
+      params: {
+        port: block.getFieldValue('PORT'),
+        value: parseInt(block.getFieldValue('VALUE'), 10),
+      },
+    }) + ';'
+  );
 };
 javascriptGenerator.forBlock['sensor_set_digital'] = function (block) {
-  return JSON.stringify({ command: astroidV2.commands.setDigital, params: { port: block.getFieldValue('PORT'), value: block.getFieldValue('VALUE') } }) + ';';
+  return (
+    JSON.stringify({
+      command: astroidV2.commands.setDigital,
+      params: { port: block.getFieldValue('PORT'), value: block.getFieldValue('VALUE') },
+    }) + ';'
+  );
 };
 javascriptGenerator.forBlock['sensor_reset_distance'] = function (block) {
-  return JSON.stringify({ command: astroidV2.commands.resetDistance, params: { port: block.getFieldValue('PORT') } }) + ';';
+  return (
+    JSON.stringify({
+      command: astroidV2.commands.resetDistance,
+      params: { port: block.getFieldValue('PORT') },
+    }) + ';'
+  );
 };
 javascriptGenerator.forBlock['sensor_reset_heading'] = function (block) {
-  return JSON.stringify({ command: astroidV2.commands.resetHeading, params: { port: block.getFieldValue('PORT') } }) + ';';
+  return (
+    JSON.stringify({
+      command: astroidV2.commands.resetHeading,
+      params: { port: block.getFieldValue('PORT') },
+    }) + ';'
+  );
 };
 
 export const sensorsCategory = {

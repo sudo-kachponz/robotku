@@ -15,7 +15,9 @@ const conditionalForward: BlockSpec[] = [
   {
     type: 'controls_if',
     inputs: { IF0: { type: 'logic_compare', fields: { OP: 'GT' }, inputs: { A: 5, B: 3 } } },
-    statements: { DO0: [{ type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.1 } }] },
+    statements: {
+      DO0: [{ type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.1 } }],
+    },
   },
 ];
 
@@ -29,10 +31,9 @@ describe('R3: ProgramRunner leaves nothing behind', () => {
   });
 
   it('clears everything after a forever program is stopped mid-flight', async () => {
-    const run = startRun(
-      [{ type: 'controls_forever', statements: { DO: conditionalForward } }],
-      { speed: 8 },
-    );
+    const run = startRun([{ type: 'controls_forever', statements: { DO: conditionalForward } }], {
+      speed: 8,
+    });
     await sleep(60);
     run.runner.stop();
     await run.done;

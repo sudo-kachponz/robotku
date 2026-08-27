@@ -43,7 +43,13 @@ describe('AI: statement generators', () => {
 
 describe('AI: reporter generators (inside a condition)', () => {
   const ifReporter = (cond: BlockSpec): BlockSpec[] => [
-    { type: 'controls_if', inputs: { IF0: cond }, statements: { DO0: [{ type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.2 } }] } },
+    {
+      type: 'controls_if',
+      inputs: { IF0: cond },
+      statements: {
+        DO0: [{ type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.2 } }],
+      },
+    },
   ];
 
   it('ai_detected emits a GET_AI_DATA detected reporter', () => {
@@ -54,28 +60,37 @@ describe('AI: reporter generators (inside a condition)', () => {
   });
 
   it('ai_confidence emits a confidence reporter', () => {
-    const json = jsonOf(ifReporter({
-      type: 'logic_compare', fields: { OP: 'GT' },
-      inputs: { A: { type: 'ai_confidence', fields: { LABEL: 'open_palm' } }, B: 60 },
-    }));
+    const json = jsonOf(
+      ifReporter({
+        type: 'logic_compare',
+        fields: { OP: 'GT' },
+        inputs: { A: { type: 'ai_confidence', fields: { LABEL: 'open_palm' } }, B: 60 },
+      }),
+    );
     expect(json).toContain('confidence');
     expect(json).toContain('open_palm');
   });
 
   it('ai_bbox carries the selected part', () => {
-    const json = jsonOf(ifReporter({
-      type: 'logic_compare', fields: { OP: 'GT' },
-      inputs: { A: { type: 'ai_bbox', fields: { PART: 'x', LABEL: 'balloon' } }, B: 50 },
-    }));
+    const json = jsonOf(
+      ifReporter({
+        type: 'logic_compare',
+        fields: { OP: 'GT' },
+        inputs: { A: { type: 'ai_bbox', fields: { PART: 'x', LABEL: 'balloon' } }, B: 50 },
+      }),
+    );
     expect(json).toContain('bbox');
     expect(json).toContain('part'); // (JSON-escaped inside the condition string)
   });
 
   it('ai_object_count emits a count reporter', () => {
-    const json = jsonOf(ifReporter({
-      type: 'logic_compare', fields: { OP: 'GT' },
-      inputs: { A: { type: 'ai_object_count', fields: { LABEL: 'balloon' } }, B: 0 },
-    }));
+    const json = jsonOf(
+      ifReporter({
+        type: 'logic_compare',
+        fields: { OP: 'GT' },
+        inputs: { A: { type: 'ai_object_count', fields: { LABEL: 'balloon' } }, B: 0 },
+      }),
+    );
     expect(json).toContain('count');
   });
 });
@@ -83,8 +98,18 @@ describe('AI: reporter generators (inside a condition)', () => {
 describe('AI: safe defaults when the camera is off', () => {
   it('SimSink routes GET_AI_DATA to cvStore and returns a number', () => {
     const sink = new SimSink();
-    const detected = sink.getSensorValue(JSON.stringify({ command: 'GET_AI_DATA', params: { metric: 'detected', label: 'open_palm' } }));
-    const conf = sink.getSensorValue(JSON.stringify({ command: 'GET_AI_DATA', params: { metric: 'confidence', label: 'open_palm' } }));
+    const detected = sink.getSensorValue(
+      JSON.stringify({
+        command: 'GET_AI_DATA',
+        params: { metric: 'detected', label: 'open_palm' },
+      }),
+    );
+    const conf = sink.getSensorValue(
+      JSON.stringify({
+        command: 'GET_AI_DATA',
+        params: { metric: 'confidence', label: 'open_palm' },
+      }),
+    );
     expect(detected).toBe(0); // nothing seen
     expect(conf).toBe(0);
   });
@@ -103,30 +128,43 @@ describe('AI: safe defaults when the camera is off', () => {
         type: 'controls_if',
         inputs: {
           IF0: {
-            type: 'logic_compare', fields: { OP: 'GT' },
+            type: 'logic_compare',
+            fields: { OP: 'GT' },
             inputs: { A: { type: 'ai_confidence', fields: { LABEL: 'open_palm' } }, B: 60 },
           },
         },
-        statements: { DO0: [{ type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.2 } }] },
+        statements: {
+          DO0: [{ type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.2 } }],
+        },
       },
     ]);
     expect(state.y).toBe(0); // never moved — AI saw nothing
   });
 
   it('ai_camera_on runs without throwing when there is no camera (jsdom)', async () => {
-    await expect(buildAndRun([{ type: 'ai_camera_on', fields: { STATE: 'on' } }])).resolves.toBeTruthy();
+    await expect(
+      buildAndRun([{ type: 'ai_camera_on', fields: { STATE: 'on' } }]),
+    ).resolves.toBeTruthy();
   });
 });
 
 describe('AI: migration of old blocks', () => {
   it('ai_object_detected still loads and behaves like ai_detected', () => {
-    const json = JSON.stringify(stripBids(buildProgram([
-      {
-        type: 'controls_if',
-        inputs: { IF0: { type: 'ai_object_detected', fields: { LABEL: 'ball' } } },
-        statements: { DO0: [{ type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.2 } }] },
-      },
-    ])));
+    const json = JSON.stringify(
+      stripBids(
+        buildProgram([
+          {
+            type: 'controls_if',
+            inputs: { IF0: { type: 'ai_object_detected', fields: { LABEL: 'ball' } } },
+            statements: {
+              DO0: [
+                { type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.2 } },
+              ],
+            },
+          },
+        ]),
+      ),
+    );
     expect(json).toContain('GET_AI_DATA');
     expect(json).toContain('detected');
     expect(json).toContain('ball');

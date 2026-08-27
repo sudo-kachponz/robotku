@@ -13,12 +13,12 @@ export default function Custom404() {
         padding: '24px',
         textAlign: 'center',
         backgroundColor: '#F3F4FB',
-        fontFamily: "'Plus Jakarta Sans', sans-serif",
+        fontFamily: 'var(--font-jakarta), sans-serif',
         color: '#1E1B4B',
       }}
     >
       <img
-        src="/brand/Robotku-Mascot-Logo-Horizontal.png"
+        src="/brand/Robotku-Mascot-Logo-Horizontal.webp"
         alt="Robotku Logo"
         style={{ height: '64px', marginBottom: '24px', objectFit: 'contain' }}
         onError={(e) => {

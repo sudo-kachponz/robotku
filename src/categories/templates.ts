@@ -12,13 +12,15 @@ import { openTemplateGallery } from '../templates/galleryBridge';
 
 defineOnce([
   {
-    "type": "templates_comment",
-    "message0": "note %1",
-    "args0": [{ "type": "field_input", "name": "TEXT", "text": "a comment" }],
-    "previousStatement": null, "nextStatement": null, "style": "templates_blocks",
-    "inputsInline": true,
-    "tooltip": "A comment for humans — does nothing on the robot."
-  }
+    type: 'templates_comment',
+    message0: 'note %1',
+    args0: [{ type: 'field_input', name: 'TEXT', text: 'a comment' }],
+    previousStatement: null,
+    nextStatement: null,
+    style: 'templates_blocks',
+    inputsInline: true,
+    tooltip: 'A comment for humans — does nothing on the robot.',
+  },
 ]);
 
 // Comments emit no command.

@@ -56,7 +56,9 @@ export class MediapipeGestureEngine implements CvEngine {
     }
     // Best gesture (if any) → a score for the matching label; the rest score 0.
     const top = result?.gestures?.[0]?.[0];
-    const topLabel = top ? GESTURE_MAP[top.categoryName] ?? top.categoryName?.toLowerCase() : null;
+    const topLabel = top
+      ? (GESTURE_MAP[top.categoryName] ?? top.categoryName?.toLowerCase())
+      : null;
     const classes = this.labels.map((label) => ({
       label,
       score: label === topLabel ? Number(top.score) || 0 : 0,
@@ -65,7 +67,11 @@ export class MediapipeGestureEngine implements CvEngine {
   }
 
   dispose(): void {
-    try { this.recognizer?.close?.(); } catch { /* ignore */ }
+    try {
+      this.recognizer?.close?.();
+    } catch {
+      /* ignore */
+    }
     this.recognizer = null;
   }
 }

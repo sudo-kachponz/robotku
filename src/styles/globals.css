@@ -49,8 +49,17 @@ a {
   text-decoration: none;
 }
 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+}
+
 button {
-  font-family: inherit;
+  font-family: var(--font-display);
   touch-action: manipulation;
 }
 
@@ -83,7 +92,9 @@ button {
   box-shadow: var(--shadow-md);
   opacity: 0;
   transform: translateY(8px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
   max-width: 90vw;
 }
 .rk-toast--in {
@@ -112,15 +123,17 @@ button {
   height: auto;
   min-height: 54px;
   padding: 12px 16px;
-  border-left: 8px solid var(--cat-color, #4F46E5);
+  border-left: 8px solid var(--cat-color, #4f46e5);
   margin-bottom: 8px;
   border-radius: 0;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .robotkuToolboxCategory.selected {
-  background-color: var(--cat-color, #4F46E5);
+  background-color: var(--cat-color, #4f46e5);
 }
 
 .robotkuToolboxContent {
@@ -133,10 +146,10 @@ button {
 }
 
 .robotkuCategoryLabel {
-  color: var(--cat-color, #4F46E5);
+  color: var(--cat-color, #4f46e5);
   font-size: clamp(16px, 3.5vw, 26px);
   font-weight: 800;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: var(--font-display);
   margin: 0;
   text-align: left;
   line-height: 1.2;
@@ -156,7 +169,7 @@ button {
   height: 32px;
   margin: 0 12px 0 0;
   flex-shrink: 0;
-  color: var(--cat-color, #4F46E5);
+  color: var(--cat-color, #4f46e5);
 }
 
 .robotkuToolboxCategory.selected .robotkuCategoryIcon {

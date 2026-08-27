@@ -30,13 +30,25 @@ jobs:
 
       - name: Lint
         run: npm run lint
-        continue-on-error: true # remove once R2's lint config lands green
 
       - name: Test
         run: npm test
 
       - name: Build (emits out/.htaccess + version.json)
         run: npm run build
+
+      # Rollback snapshot: keep the exact out/ we're about to deploy as a dated
+      # artifact. To roll back, download it and re-mirror with scripts/deploy.sh.
+      # sim3d (26 MB, rarely changes, uploaded separately) is excluded to stay small.
+      - name: Snapshot out/ for rollback
+        uses: actions/upload-artifact@v4
+        with:
+          name: out-${{ github.run_number }}-${{ github.sha }}
+          path: |
+            out
+            !out/sim3d
+          retention-days: 30
+          if-no-files-found: error
 
       # Safety: never deploy with missing/old credentials. Fails loudly if the
       # Secrets have not been set (rotate the leaked FTP creds first).
@@ -61,3 +73,19 @@ jobs:
           FTP_PASS: ${{ secrets.FTP_PASS }}
           SKIP_SIM3D: '1' # launch payload excludes the 26 MB of 3D assets
         run: bash scripts/deploy.sh
+
+      # A half-finished FTPS mirror can exit 0 while the live site is stale. Fetch
+      # the just-deployed version.json (htaccess serves it no-cache) and confirm its
+      # sha matches this commit before declaring the deploy healthy.
+      - name: Smoke check deployed version
+        run: |
+          EXPECT="${GITHUB_SHA:0:7}"
+          URL="https://hub.robotku.id/version.json"
+          for attempt in 1 2 3 4 5; do
+            DEPLOYED="$(curl -fsSL --max-time 20 "$URL" | jq -r '.sha' 2>/dev/null || true)"
+            echo "attempt $attempt: deployed sha='${DEPLOYED}' expected='${EXPECT}'"
+            [ "$DEPLOYED" = "$EXPECT" ] && { echo "✓ live site is on ${EXPECT}"; exit 0; }
+            sleep 10
+          done
+          echo "::error::Deployed version.json sha did not match ${EXPECT} after retries — the mirror may be incomplete. Investigate before trusting this deploy." >&2
+          exit 1

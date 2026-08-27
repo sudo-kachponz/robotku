@@ -22,8 +22,13 @@ export interface BlockSpec {
   extraState?: Record<string, unknown>;
 }
 
-function ensureVariable(ws: Blockly.Workspace, name: string): Blockly.IVariableModel<Blockly.IVariableState> {
-  const existing = ws.getAllVariables().find((v) => v.getName?.() === name || (v as any).name === name);
+function ensureVariable(
+  ws: Blockly.Workspace,
+  name: string,
+): Blockly.IVariableModel<Blockly.IVariableState> {
+  const existing = ws
+    .getAllVariables()
+    .find((v) => v.getName?.() === name || (v as any).name === name);
   return existing ?? ws.createVariable(name);
 }
 

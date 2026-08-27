@@ -4,12 +4,7 @@
 // store, the command_runner and telemetry. UI never touches a concrete transport
 // directly — only this controller and the RobotTransport interface.
 
-import {
-  createTransport,
-  type ConnState,
-  type RobotInfo,
-  type TransportKind,
-} from '../transport';
+import { createTransport, type ConnState, type RobotInfo, type TransportKind } from '../transport';
 import {
   setActiveTransport as storeSetTransport,
   setConnState,

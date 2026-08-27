@@ -41,21 +41,13 @@ export default function RobotSprite({
     }`;
 
   return (
-    <svg
-      className={styles.svg}
-      viewBox="0 0 200 240"
-      role="img"
-      aria-label="Ilustrasi robot Base"
-    >
+    <svg className={styles.svg} viewBox="0 0 200 240" role="img" aria-label="Ilustrasi robot Base">
       {/* soft ground shadow */}
       <ellipse cx="100" cy="150" rx="70" ry="78" className={styles.shadow} />
 
       {/* ---- Gripper (front / top) ---- */}
       <g className={gripArm('l')}>
-        <path
-          d="M78 78 L78 44 Q78 30 64 30 L52 30 Q60 42 66 52 L70 78 Z"
-          className={styles.claw}
-        />
+        <path d="M78 78 L78 44 Q78 30 64 30 L52 30 Q60 42 66 52 L70 78 Z" className={styles.claw} />
       </g>
       <g className={gripArm('r')}>
         <path

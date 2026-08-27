@@ -45,11 +45,20 @@ export default function TankMode() {
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       switch (e.key.toLowerCase()) {
-        case 'w': applyLeft(leftRef.current + 20); break;
-        case 's': applyLeft(leftRef.current - 20); break;
-        case 'e': applyRight(rightRef.current + 20); break;
-        case 'd': applyRight(rightRef.current - 20); break;
-        default: return;
+        case 'w':
+          applyLeft(leftRef.current + 20);
+          break;
+        case 's':
+          applyLeft(leftRef.current - 20);
+          break;
+        case 'e':
+          applyRight(rightRef.current + 20);
+          break;
+        case 'd':
+          applyRight(rightRef.current - 20);
+          break;
+        default:
+          return;
       }
       e.preventDefault();
     };
@@ -57,9 +66,18 @@ export default function TankMode() {
     return () => window.removeEventListener('keydown', down);
   }, [applyLeft, applyRight]);
 
-  const turnLeft = () => { driveGroup(left, -100); driveGroup(right, 100); };
-  const turnRight = () => { driveGroup(left, 100); driveGroup(right, -100); };
-  const restore = () => { driveGroup(left, leftRef.current); driveGroup(right, rightRef.current); };
+  const turnLeft = () => {
+    driveGroup(left, -100);
+    driveGroup(right, 100);
+  };
+  const turnRight = () => {
+    driveGroup(left, 100);
+    driveGroup(right, -100);
+  };
+  const restore = () => {
+    driveGroup(left, leftRef.current);
+    driveGroup(right, rightRef.current);
+  };
 
   return (
     <ControlLayout title="Tank Mode">
@@ -68,7 +86,10 @@ export default function TankMode() {
           <div className={styles.throttle}>
             <input
               className={styles.throttleSlider}
-              type="range" min={-100} max={100} value={leftT}
+              type="range"
+              min={-100}
+              max={100}
+              value={leftT}
               onChange={(e) => applyLeft(Number(e.target.value))}
             />
             <span className={styles.throttleLabel}>Kiri (W/S)</span>
@@ -117,7 +138,10 @@ export default function TankMode() {
           <div className={styles.throttle}>
             <input
               className={styles.throttleSlider}
-              type="range" min={-100} max={100} value={rightT}
+              type="range"
+              min={-100}
+              max={100}
+              value={rightT}
               onChange={(e) => applyRight(Number(e.target.value))}
             />
             <span className={styles.throttleLabel}>Kanan (E/D)</span>

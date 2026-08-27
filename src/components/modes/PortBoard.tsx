@@ -65,9 +65,15 @@ export default function PortBoard({ active }: { active: boolean[] }) {
 
   const legend = (bx: number) => (
     <g fill="#9499B8" fontSize={11} fontWeight={700} textAnchor="middle">
-      <text x={bx} y={174}>S</text>
-      <text x={bx} y={193}>V</text>
-      <text x={bx} y={212}>G</text>
+      <text x={bx} y={174}>
+        S
+      </text>
+      <text x={bx} y={193}>
+        V
+      </text>
+      <text x={bx} y={212}>
+        G
+      </text>
     </g>
   );
 
@@ -79,7 +85,16 @@ export default function PortBoard({ active }: { active: boolean[] }) {
       aria-label="Papan Robotku dengan port 1–8"
     >
       {/* PCB */}
-      <rect x={10} y={14} width={420} height={296} rx={20} fill="#FFFFFF" stroke="#E7E9F2" strokeWidth={2} />
+      <rect
+        x={10}
+        y={14}
+        width={420}
+        height={296}
+        rx={20}
+        fill="#FFFFFF"
+        stroke="#E7E9F2"
+        strokeWidth={2}
+      />
 
       {/* mounting holes */}
       <circle cx={28} cy={32} r={5} fill="#EDEEF6" />
@@ -93,10 +108,14 @@ export default function PortBoard({ active }: { active: boolean[] }) {
       {/* ESP32 module */}
       <rect x={150} y={34} width={140} height={78} rx={10} fill="#272350" />
       <rect x={158} y={42} width={124} height={30} rx={5} fill="#3A3470" />
-      <text x={220} y={98} textAnchor="middle" fontSize={16} fontWeight={800} fill="#FFFFFF">ESP32</text>
+      <text x={220} y={98} textAnchor="middle" fontSize={16} fontWeight={800} fill="#FFFFFF">
+        ESP32
+      </text>
 
       {/* "21" board marker */}
-      <text x={402} y={58} textAnchor="middle" fontSize={16} fontWeight={800} fill="#C2C6DB">21</text>
+      <text x={402} y={58} textAnchor="middle" fontSize={16} fontWeight={800} fill="#C2C6DB">
+        21
+      </text>
 
       {/* Port headers — block A (1–4) */}
       {legend(30)}
@@ -115,9 +134,27 @@ export default function PortBoard({ active }: { active: boolean[] }) {
       {/* SW1–SW4 tactile buttons */}
       {[0, 1, 2, 3].map((i) => (
         <g key={i}>
-          <rect x={46 + i * 52} y={250} width={30} height={30} rx={7} fill="#EEF0FF" stroke="#C6CAFF" strokeWidth={2} />
+          <rect
+            x={46 + i * 52}
+            y={250}
+            width={30}
+            height={30}
+            rx={7}
+            fill="#EEF0FF"
+            stroke="#C6CAFF"
+            strokeWidth={2}
+          />
           <circle cx={61 + i * 52} cy={265} r={7} fill="#A3A8FB" />
-          <text x={61 + i * 52} y={300} textAnchor="middle" fontSize={10} fontWeight={700} fill="#9499B8">SW{i + 1}</text>
+          <text
+            x={61 + i * 52}
+            y={300}
+            textAnchor="middle"
+            fontSize={10}
+            fontWeight={700}
+            fill="#9499B8"
+          >
+            SW{i + 1}
+          </text>
         </g>
       ))}
     </svg>

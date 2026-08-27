@@ -16,7 +16,7 @@
   padding-top: var(--safe-t);
   padding-left: calc(16px + var(--safe-l));
   padding-right: calc(16px + var(--safe-r));
-  background-color: var(--rk-header, #2B2680);
+  background-color: var(--rk-header, #2b2680);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   position: relative;
   z-index: 40;
@@ -40,7 +40,7 @@
   font-family: var(--font-display);
   font-size: clamp(18px, 4vw, 26px);
   font-weight: 700;
-  color: #FFFFFF;
+  color: #ffffff;
   margin: 0;
   letter-spacing: 0.03em;
   text-transform: uppercase;
@@ -94,7 +94,9 @@
   color: var(--rk-on);
   cursor: pointer;
   box-shadow: var(--rk-shadow);
-  transition: background 0.14s ease, transform 0.12s ease;
+  transition:
+    background 0.14s ease,
+    transform 0.12s ease;
   z-index: 1;
   touch-action: manipulation;
 }
@@ -137,7 +139,9 @@
   text-transform: uppercase;
   letter-spacing: 0.03em;
   cursor: pointer;
-  transition: background 0.14s ease, color 0.14s ease;
+  transition:
+    background 0.14s ease,
+    color 0.14s ease;
   touch-action: manipulation;
 }
 .dockBtn:hover {
@@ -164,7 +168,9 @@
   color: var(--rk-on);
   cursor: pointer;
   box-shadow: var(--rk-shadow);
-  transition: transform 0.12s ease, background 0.16s ease;
+  transition:
+    transform 0.12s ease,
+    background 0.16s ease;
   touch-action: manipulation;
 }
 .cornerBtn:hover {
@@ -185,7 +191,9 @@
 .connectBtnOn {
   color: var(--rk-on);
   background: var(--rk-success);
-  box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.3), var(--rk-shadow);
+  box-shadow:
+    0 0 0 4px rgba(22, 163, 74, 0.3),
+    var(--rk-shadow);
 }
 .connectBtnOn:hover {
   background: var(--rk-success);

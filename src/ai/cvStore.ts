@@ -10,7 +10,7 @@
 
 import type { CvEngine, CvFrameResult, CvBox } from './types';
 import { EMPTY_FRAME } from './types';
-import { getModel, type CvModelEntry } from './registry';
+import { getModel } from './registry';
 import { createEngine } from './engines';
 
 const ANY = 'any'; // the "apa saja" label
@@ -114,7 +114,9 @@ class CvStore {
     this.commit({ status: 'starting', source: 'webcam', error: null });
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: deviceId ? { deviceId: { exact: deviceId }, width: 640, height: 480 } : { width: 640, height: 480 },
+        video: deviceId
+          ? { deviceId: { exact: deviceId }, width: 640, height: 480 }
+          : { width: 640, height: 480 },
         audio: false,
       });
       this.stream = stream;
@@ -154,7 +156,10 @@ class CvStore {
       if (this.state.status !== 'live') this.commit({ status: 'live', source: 'esp32' });
     };
     img.onerror = () =>
-      this.commit({ status: 'error', error: 'Tidak bisa membaca stream ESP32-Cam. Cek URL & jaringan.' });
+      this.commit({
+        status: 'error',
+        error: 'Tidak bisa membaca stream ESP32-Cam. Cek URL & jaringan.',
+      });
     // Cache-bust so the browser fetches a fresh JPEG each tick.
     img.src = espUrl + (espUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
     this.startLoop();
@@ -183,13 +188,27 @@ class CvStore {
     if (!entry) return;
     const token = ++this.modelToken;
     // Dispose the previous engine.
-    try { this.engine?.dispose(); } catch { /* ignore */ }
+    try {
+      this.engine?.dispose();
+    } catch {
+      /* ignore */
+    }
     this.engine = null;
-    this.commit({ modelId: id, modelName: entry.name, kind: entry.kind, labels: entry.labels, smooth: {}, boxes: [] });
+    this.commit({
+      modelId: id,
+      modelName: entry.name,
+      kind: entry.kind,
+      labels: entry.labels,
+      smooth: {},
+      boxes: [],
+    });
     try {
       const engine = await createEngine(entry);
       await engine.load();
-      if (token !== this.modelToken) { engine.dispose(); return; } // superseded
+      if (token !== this.modelToken) {
+        engine.dispose();
+        return;
+      } // superseded
       this.engine = engine;
       this.commit({ labels: engine.labels, error: null });
     } catch {
@@ -222,7 +241,9 @@ class CvStore {
         .infer(source)
         .then((f) => this.ingest(f))
         .catch(() => {})
-        .finally(() => { this.busy = false; });
+        .finally(() => {
+          this.busy = false;
+        });
     };
     this.rafId = requestAnimationFrame(tick);
   }
@@ -287,7 +308,8 @@ class CvStore {
   }
 
   getBox(label: string): CvBox | null {
-    const matches = label === ANY ? this.state.boxes : this.state.boxes.filter((b) => b.label === label);
+    const matches =
+      label === ANY ? this.state.boxes : this.state.boxes.filter((b) => b.label === label);
     if (!matches.length) return null;
     return matches.reduce((best, b) => (b.score > best.score ? b : best));
   }
@@ -304,7 +326,9 @@ class CvStore {
 
   getObjectCount(label: string): number {
     if (!this.state.boxes.length) return 0;
-    return label === ANY ? this.state.boxes.length : this.state.boxes.filter((b) => b.label === label).length;
+    return label === ANY
+      ? this.state.boxes.length
+      : this.state.boxes.filter((b) => b.label === label).length;
   }
 
   getTopLabel(): string | null {
@@ -312,7 +336,12 @@ class CvStore {
   }
 
   /** Single entry point the sinks use to answer a GET_AI_DATA request. */
-  getAiValue(params: { metric?: string; label?: string; part?: string; threshold?: number }): number | null {
+  getAiValue(params: {
+    metric?: string;
+    label?: string;
+    part?: string;
+    threshold?: number;
+  }): number | null {
     const label = params.label || ANY;
     switch (params.metric) {
       case 'confidence':
@@ -324,7 +353,14 @@ class CvStore {
       case 'bbox': {
         const box = this.getBox(label);
         if (!box) return 0;
-        const v = params.part === 'y' ? box.y : params.part === 'w' ? box.w : params.part === 'h' ? box.h : box.x;
+        const v =
+          params.part === 'y'
+            ? box.y
+            : params.part === 'w'
+              ? box.w
+              : params.part === 'h'
+                ? box.h
+                : box.x;
         return Math.round(v * 100);
       }
       default:

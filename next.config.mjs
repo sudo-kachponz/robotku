@@ -6,7 +6,9 @@ import { join } from 'node:path';
 function assertStaticExportSafe() {
   const apiDir = join(process.cwd(), 'src', 'pages', 'api');
   if (existsSync(apiDir) && readdirSync(apiDir).length > 0) {
-    throw new Error('[static-export] src/pages/api/* exists — API routes cannot be exported. Remove them.');
+    throw new Error(
+      '[static-export] src/pages/api/* exists — API routes cannot be exported. Remove them.',
+    );
   }
 }
 assertStaticExportSafe();

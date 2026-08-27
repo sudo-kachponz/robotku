@@ -3,11 +3,12 @@
 Menyempurnakan mode **Base Robot** versi kita agar: ada **ilustrasi robot 2D** yang **ikut bergerak sesuai tombol** (klik/hold kiri → belok kiri, kanan → belok kanan, atas → maju, bawah → mundur, Grab/Release → animasi capit), **seukuran & sejelas referensi**. Perintah hardware yang sudah ada TIDAK diubah — simulasi hanya lapisan visual di atasnya.
 
 > Wajib: terapkan `PROMPT_Robotku_DesignSystem_Reference.md` (Plus Jakarta Sans, token `--rk-*`/DS). File yang disentuh sudah ada di repo — **jangan bikin ulang dari nol**:
+>
 > - `src/components/modes/BaseMode.tsx` (D-pad + Grab/Release, pakai `useDrive` → `driveGroup/stopGroup/setGripper`; keybind W/A/S/D + panah + Q/E).
 > - `src/components/modes/HoldButton.tsx` (press-and-hold: `onStart`/`onStop` saat ditekan/dilepas, `activeClassName`).
 > - `src/styles/ModeControls.module.css` (`.wrap`, `.dpad` grid 3×3 76px, `.ctrlBtn`, `.armRow`).
 > - `src/components/control/ControlLayout.tsx` (chrome: judul, badge, Connect, fullscreen, dock).
-> Saat ini BaseMode BELUM punya ilustrasi robot (hanya label "BASE") dan BELUM ada animasi.
+>   Saat ini BaseMode BELUM punya ilustrasi robot (hanya label "BASE") dan BELUM ada animasi.
 
 ---
 
@@ -74,6 +75,7 @@ Show diffs for BaseMode.tsx, ModeControls.module.css, and the new base-robot.svg
 ---
 
 ## Catatan
+
 - Simulasi ini **kinematik sederhana** (heading + posisi, di-clamp dalam stage) — cukup untuk “gambar mengikuti gerak tombol” tanpa perlu WebGL/3D (jadi tidak kena masalah WebGL context yang kemarin).
 - Perintah asli (`driveGroup/stopGroup/setGripper`) tetap jalan, jadi begitu robot tersambung, **animasi & robot fisik bergerak bareng**.
 - Kalau kamu mau ilustrasi robotnya benar-benar mirip kit Robotku (bukan SVG generik), kirim gambar/aset robot top-down-nya; nanti saya bisa bikinkan SVG-nya dengan grup `#wheelL/#wheelR/#gripper` yang siap dianimasikan.

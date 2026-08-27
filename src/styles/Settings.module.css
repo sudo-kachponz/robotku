@@ -36,8 +36,8 @@
 }
 
 .tabActive {
-  background: #EC2D8F;
-  color: #FFFFFF;
+  background: #ec2d8f;
+  color: #ffffff;
   box-shadow: 0 4px 16px rgba(236, 45, 143, 0.45);
 }
 
@@ -109,8 +109,8 @@
 }
 
 .chipOn {
-  background: #EC2D8F;
-  color: #FFFFFF;
+  background: #ec2d8f;
+  color: #ffffff;
 }
 
 /* Speed & direction table */
@@ -152,8 +152,8 @@
 }
 
 .segOn {
-  background: #EC2D8F;
-  color: #FFFFFF;
+  background: #ec2d8f;
+  color: #ffffff;
   box-shadow: 0 4px 12px rgba(236, 45, 143, 0.35);
 }
 
@@ -169,8 +169,8 @@
 }
 
 .invertOn {
-  background: #EC2D8F;
-  color: #FFFFFF;
+  background: #ec2d8f;
+  color: #ffffff;
 }
 
 /* Keybind table */
@@ -200,11 +200,11 @@
   padding: 2px 8px;
   margin-left: 6px;
   border-radius: var(--rk-r-sm);
-  background: #EC2D8F;
+  background: #ec2d8f;
   border: none;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 12px;
-  color: #FFFFFF;
+  color: #ffffff;
   font-weight: 600;
 }
 
@@ -223,7 +223,7 @@
 }
 
 .footMeta a {
-  color: #EC2D8F;
+  color: #ec2d8f;
   font-weight: 600;
 }
 
@@ -266,8 +266,8 @@
 .guideBannerBadge {
   padding: 5px 16px;
   border-radius: 999px;
-  background: #EC2D8F;
-  color: #FFFFFF;
+  background: #ec2d8f;
+  color: #ffffff;
   font-family: var(--font-display);
   font-size: 12px;
   font-weight: 700;
@@ -281,7 +281,7 @@
   font-family: var(--font-display);
   font-size: clamp(24px, 3.8vw, 32px);
   font-weight: 700;
-  color: #FFFFFF;
+  color: #ffffff;
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
@@ -294,7 +294,7 @@
 
 /* High-Contrast Elevated White Cards for Guide Steps */
 .guideCard {
-  background: #FFFFFF;
+  background: #ffffff;
   border: 2px solid rgba(236, 45, 143, 0.25);
   border-radius: 24px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16);
@@ -304,11 +304,14 @@
   align-items: center;
   text-align: center;
   gap: 16px;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .guideCard:hover {
-  border-color: #EC2D8F;
+  border-color: #ec2d8f;
   transform: translateY(-3px);
   box-shadow: 0 20px 48px rgba(236, 45, 143, 0.2);
 }
@@ -323,8 +326,8 @@
 .stepBadge {
   padding: 6px 20px;
   border-radius: 999px;
-  background: #EC2D8F;
-  color: #FFFFFF;
+  background: #ec2d8f;
+  color: #ffffff;
   font-family: var(--font-display);
   font-size: 13px;
   font-weight: 700;
@@ -340,7 +343,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.02em;
-  color: #1E1B4B;
+  color: #1e1b4b;
 }
 
 .guideDesc {
@@ -358,8 +361,8 @@
   max-width: 620px;
   padding: 16px;
   border-radius: 20px;
-  background: #F8FAFC;
-  border: 1.5px solid #E2E8F0;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
   margin-top: 8px;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
 }
@@ -391,43 +394,43 @@
 }
 
 .pinYellow {
-  background: #FEF3C7;
-  color: #92400E;
-  border: 1.5px solid #FCD34D;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1.5px solid #fcd34d;
 }
 
 .pinDotYellow {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #F59E0B;
+  background: #f59e0b;
   box-shadow: 0 0 6px rgba(245, 158, 11, 0.5);
 }
 
 .pinRed {
-  background: #FEE2E2;
-  color: #991B1B;
-  border: 1.5px solid #FCA5A5;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1.5px solid #fca5a5;
 }
 
 .pinDotRed {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #EF4444;
+  background: #ef4444;
   box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
 }
 
 .pinBrown {
-  background: #F3E8FF;
-  color: #6B21A8;
-  border: 1.5px solid #D8B4FE;
+  background: #f3e8ff;
+  color: #6b21a8;
+  border: 1.5px solid #d8b4fe;
 }
 
 .pinDotBrown {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #9333EA;
+  background: #9333ea;
   box-shadow: 0 0 6px rgba(147, 51, 234, 0.5);
 }

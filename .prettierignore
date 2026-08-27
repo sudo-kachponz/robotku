@@ -1,0 +1,14 @@
+# Build output & deps
+.next/
+out/
+build/
+coverage/
+node_modules/
+
+# Generated
+next-env.d.ts
+public/
+package-lock.json
+
+# Large vendored/reference docs
+docs/*.html

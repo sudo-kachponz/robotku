@@ -12,10 +12,9 @@ describe('Parity: Timing', () => {
     expect(cmds[0]).toMatchObject({ command: 'WAIT', params: { duration_ms: 100 } });
 
     const start = performance.now();
-    const { state } = await buildAndRun(
-      [{ type: 'timing_wait', inputs: { DURATION: 0.1 } }],
-      { speed: 1 },
-    );
+    const { state } = await buildAndRun([{ type: 'timing_wait', inputs: { DURATION: 0.1 } }], {
+      speed: 1,
+    });
     expect(performance.now() - start).toBeGreaterThanOrEqual(80);
     // Pose is untouched by a wait.
     expect(state.x).toBe(0);

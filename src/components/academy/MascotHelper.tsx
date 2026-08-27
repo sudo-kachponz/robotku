@@ -6,13 +6,7 @@
 import refreshImg from '../../assets/refresh.png';
 import styles from '../../styles/Academy.module.css';
 
-export function MascotHelper({
-  onDismiss,
-  onTour,
-}: {
-  onDismiss: () => void;
-  onTour: () => void;
-}) {
+export function MascotHelper({ onDismiss, onTour }: { onDismiss: () => void; onTour: () => void }) {
   return (
     <div className={styles.helper}>
       <div className={styles.helperBubble} onClick={onTour} role="button" tabIndex={0}>

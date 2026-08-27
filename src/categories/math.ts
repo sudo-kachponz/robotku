@@ -13,14 +13,16 @@ export const mathCategory = {
     { kind: 'label', text: 'Math' },
     { kind: 'block', type: 'math_number', fields: { NUM: 0 } },
     {
-      kind: 'block', type: 'math_arithmetic',
+      kind: 'block',
+      type: 'math_arithmetic',
       inputs: {
         A: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
         B: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
       },
     },
     {
-      kind: 'block', type: 'math_modulo',
+      kind: 'block',
+      type: 'math_modulo',
       inputs: {
         DIVIDEND: { shadow: { type: 'math_number', fields: { NUM: 64 } } },
         DIVISOR: { shadow: { type: 'math_number', fields: { NUM: 10 } } },
@@ -28,15 +30,18 @@ export const mathCategory = {
     },
     { kind: 'block', type: 'math_constant' },
     {
-      kind: 'block', type: 'math_single',
+      kind: 'block',
+      type: 'math_single',
       inputs: { NUM: { shadow: { type: 'math_number', fields: { NUM: 9 } } } },
     },
     {
-      kind: 'block', type: 'math_round',
+      kind: 'block',
+      type: 'math_round',
       inputs: { NUM: { shadow: { type: 'math_number', fields: { NUM: 3.1 } } } },
     },
     {
-      kind: 'block', type: 'math_random_int',
+      kind: 'block',
+      type: 'math_random_int',
       inputs: {
         FROM: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
         TO: { shadow: { type: 'math_number', fields: { NUM: 100 } } },

@@ -22,7 +22,7 @@
   font-family: var(--font-display);
   font-size: 22px;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #ffffff;
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
@@ -37,7 +37,7 @@
   border-radius: var(--r-full);
   border: 1px solid rgba(198, 202, 255, 0.3);
   background: rgba(255, 255, 255, 0.12);
-  color: #FFFFFF;
+  color: #ffffff;
   font-weight: 700;
   font-size: 13.5px;
   cursor: pointer;
@@ -46,22 +46,22 @@
 }
 
 .btn:hover {
-  border-color: #EC2D8F;
+  border-color: #ec2d8f;
   background: rgba(236, 45, 143, 0.25);
-  color: #FFFFFF;
+  color: #ffffff;
   transform: translateY(-1px);
 }
 
 .btnPrimary {
-  background: #EC2D8F;
-  border-color: #EC2D8F;
-  color: #FFFFFF;
+  background: #ec2d8f;
+  border-color: #ec2d8f;
+  color: #ffffff;
   box-shadow: 0 4px 14px rgba(236, 45, 143, 0.4);
 }
 
 .btnPrimary:hover {
-  background: #D81B7E;
-  border-color: #D81B7E;
+  background: #d81b7e;
+  border-color: #d81b7e;
 }
 
 .list {
@@ -95,7 +95,7 @@
 .itemName {
   font-size: 15.5px;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -103,7 +103,7 @@
 
 .itemMeta {
   font-size: 12.5px;
-  color: #C6CAFF;
+  color: #c6caff;
   margin-top: 2px;
 }
 
@@ -118,7 +118,7 @@
   border-radius: var(--r-full);
   border: 1px solid rgba(198, 202, 255, 0.3);
   background: rgba(255, 255, 255, 0.1);
-  color: #FFFFFF;
+  color: #ffffff;
   font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
@@ -126,26 +126,26 @@
 }
 
 .iBtn:hover {
-  border-color: #EC2D8F;
+  border-color: #ec2d8f;
   background: rgba(236, 45, 143, 0.25);
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .iOpen {
-  background: #16A34A;
-  border-color: #16A34A;
-  color: #FFFFFF;
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #ffffff;
 }
 
 .iOpen:hover {
-  background: #15803D;
-  border-color: #15803D;
+  background: #15803d;
+  border-color: #15803d;
 }
 
 .iDanger:hover {
-  border-color: #EF4444;
+  border-color: #ef4444;
   background: rgba(239, 68, 68, 0.25);
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .empty {
@@ -163,7 +163,7 @@
   font-family: var(--font-display);
   font-size: 18px;
   font-weight: 700;
-  color: #E0E3FF;
+  color: #e0e3ff;
   margin-top: 12px;
   letter-spacing: 0.02em;
   text-transform: uppercase;

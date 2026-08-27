@@ -61,9 +61,17 @@ export const dance: BuiltinTemplate = {
       statements: {
         DO: [
           { type: 'move_left', fields: { SPEED: 'fast' }, inputs: { DURATION: 0.4 } },
-          { type: 'audio_play_tone_beat', fields: { NOTE: 'E4', WAIT: 'false' }, inputs: { BEATS: 1 } },
+          {
+            type: 'audio_play_tone_beat',
+            fields: { NOTE: 'E4', WAIT: 'false' },
+            inputs: { BEATS: 1 },
+          },
           { type: 'move_right', fields: { SPEED: 'fast' }, inputs: { DURATION: 0.4 } },
-          { type: 'audio_play_tone_beat', fields: { NOTE: 'G4', WAIT: 'true' }, inputs: { BEATS: 1 } },
+          {
+            type: 'audio_play_tone_beat',
+            fields: { NOTE: 'G4', WAIT: 'true' },
+            inputs: { BEATS: 1 },
+          },
           { type: 'display_matrix', fields: { PATTERN: HEART }, inputs: { DURATION: 0.2 } },
         ],
       },

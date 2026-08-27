@@ -4,11 +4,7 @@
 // consumed by every mode. Task 5 wires IndexedDB (localforage) load/save into
 // the hooks below — the shape here stays stable.
 
-import {
-  DEFAULT_SETTINGS,
-  cloneSettings,
-  type RobotSettings,
-} from '../domain/settings';
+import { DEFAULT_SETTINGS, cloneSettings, type RobotSettings } from '../domain/settings';
 
 let current: RobotSettings = cloneSettings(DEFAULT_SETTINGS);
 const listeners = new Set<(s: RobotSettings) => void>();

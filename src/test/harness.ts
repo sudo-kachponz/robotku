@@ -43,8 +43,13 @@ function textBlock(ws: Blockly.Workspace, s: string): Blockly.Block {
 }
 
 /** Find or create a variable model by name (variables_set / variables_get). */
-function ensureVariable(ws: Blockly.Workspace, name: string): Blockly.IVariableModel<Blockly.IVariableState> {
-  const existing = ws.getAllVariables().find((v) => v.getName?.() === name || (v as any).name === name);
+function ensureVariable(
+  ws: Blockly.Workspace,
+  name: string,
+): Blockly.IVariableModel<Blockly.IVariableState> {
+  const existing = ws
+    .getAllVariables()
+    .find((v) => v.getName?.() === name || (v as any).name === name);
   return existing ?? ws.createVariable(name);
 }
 
@@ -175,7 +180,12 @@ export function buildAndStart(specs: BlockSpec[], opts: RunOpts = {}): PendingRu
 export async function runInSim(commands: any[], opts: RunOpts = {}): Promise<RunResult> {
   const pending = startRun(commands, opts);
   await pending.done;
-  return { state: pending.sink.getState(), log: pending.log, sink: pending.sink, runner: pending.runner };
+  return {
+    state: pending.sink.getState(),
+    log: pending.log,
+    sink: pending.sink,
+    runner: pending.runner,
+  };
 }
 
 /** Build + run in one step. */

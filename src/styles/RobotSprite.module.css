@@ -17,21 +17,21 @@
 
 /* ---- Chassis ---- */
 .chassis {
-  fill: #C2C6DB;
-  stroke: #9499B8;
+  fill: #c2c6db;
+  stroke: #9499b8;
   stroke-width: 2;
 }
 .bumper {
-  fill: var(--indigo-600, #4F46E5);
+  fill: var(--indigo-600, #4f46e5);
 }
 .battery {
-  fill: #352DA0;
+  fill: #352da0;
 }
 .batteryStripe {
-  fill: #A3A8FB;
+  fill: #a3a8fb;
 }
 .light {
-  fill: var(--pink-500, #EC2D8F);
+  fill: var(--pink-500, #ec2d8f);
 }
 
 /* ---- Wheels ---- */
@@ -40,17 +40,17 @@
   /* transform-origin set inline per wheel (SVG user units) */
 }
 .tire {
-  fill: #1B1840;
-  stroke: #403C6B;
+  fill: #1b1840;
+  stroke: #403c6b;
   stroke-width: 2;
 }
 .spoke {
-  stroke: #6B7194;
+  stroke: #6b7194;
   stroke-width: 3;
   stroke-linecap: round;
 }
 .hub {
-  fill: var(--indigo-400, #8085F4);
+  fill: var(--indigo-400, #8085f4);
 }
 .spinFwd {
   animation: rk-spin 0.7s linear infinite;
@@ -66,8 +66,8 @@
 
 /* ---- Gripper ---- */
 .claw {
-  fill: #5B54EA;
-  stroke: #A3A8FB;
+  fill: #5b54ea;
+  stroke: #a3a8fb;
   stroke-width: 2;
   stroke-linejoin: round;
 }

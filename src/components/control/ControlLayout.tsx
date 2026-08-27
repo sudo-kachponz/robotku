@@ -70,9 +70,7 @@ export default function ControlLayout({
           {title && <h1 className={styles.screenTitle}>{title}</h1>}
         </div>
 
-        <div className={styles.topRight}>
-          {topRightAction}
-        </div>
+        <div className={styles.topRight}>{topRightAction}</div>
       </header>
 
       <div className={styles.connectionBadgeContainer}>
@@ -156,7 +154,16 @@ function DockButton({
 /* ---- icons ---- */
 function HomeIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" strokeLinecap="round">
+    <svg
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinejoin="round"
+      strokeLinecap="round"
+    >
       <path d="M3 11l9-7 9 7" />
       <path d="M5 10v9h14v-9" />
     </svg>
@@ -164,7 +171,15 @@ function HomeIcon() {
 }
 function PowerIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+    <svg
+      viewBox="0 0 24 24"
+      width="24"
+      height="24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+    >
       <path d="M12 3v9" />
       <path d="M7 6a8 8 0 1 0 10 0" />
     </svg>
@@ -172,28 +187,63 @@ function PowerIcon() {
 }
 function FullscreenIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      viewBox="0 0 24 24"
+      width="19"
+      height="19"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
     </svg>
   );
 }
 function ExitFullscreenIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      viewBox="0 0 24 24"
+      width="19"
+      height="19"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
     </svg>
   );
 }
 function FolderIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+    <svg
+      viewBox="0 0 24 24"
+      width="21"
+      height="21"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+    >
       <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
     </svg>
   );
 }
 function CommunityIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round">
+    <svg
+      viewBox="0 0 24 24"
+      width="21"
+      height="21"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+      strokeLinecap="round"
+    >
       <circle cx="9" cy="9" r="3" />
       <path d="M3 20a6 6 0 0 1 12 0" />
       <path d="M16 6a3 3 0 0 1 0 6" />
@@ -203,7 +253,16 @@ function CommunityIcon() {
 }
 function GearIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round">
+    <svg
+      viewBox="0 0 24 24"
+      width="21"
+      height="21"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+      strokeLinecap="round"
+    >
       <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
       <circle cx="12" cy="12" r="3" />
     </svg>

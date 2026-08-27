@@ -129,10 +129,18 @@ describe('Parity: Motion & Actuators', () => {
     });
 
     const right = await buildAndRun([
-      { type: 'move_steer', fields: { STEERING: '100', SPEED: 'medium' }, inputs: { DURATION: 0.3 } },
+      {
+        type: 'move_steer',
+        fields: { STEERING: '100', SPEED: 'medium' },
+        inputs: { DURATION: 0.3 },
+      },
     ]);
     const left = await buildAndRun([
-      { type: 'move_steer', fields: { STEERING: '-100', SPEED: 'medium' }, inputs: { DURATION: 0.3 } },
+      {
+        type: 'move_steer',
+        fields: { STEERING: '-100', SPEED: 'medium' },
+        inputs: { DURATION: 0.3 },
+      },
     ]);
     expect(right.state.headingDeg).toBeGreaterThan(0);
     expect(left.state.headingDeg).toBeLessThan(0);
@@ -164,10 +172,14 @@ describe('Parity: Motion & Actuators', () => {
     const cmds = buildBlock({ type: 'mechanism_set_gripper', fields: { STATE: 'open' } });
     expect(cmds[0]).toMatchObject({ command: 'SET_GRIPPER', params: { state: 'open' } });
 
-    const opened = await buildAndRun([{ type: 'mechanism_set_gripper', fields: { STATE: 'open' } }]);
+    const opened = await buildAndRun([
+      { type: 'mechanism_set_gripper', fields: { STATE: 'open' } },
+    ]);
     expect(opened.state.gripperOpen).toBe(1);
 
-    const closed = await buildAndRun([{ type: 'mechanism_set_gripper', fields: { STATE: 'closed' } }]);
+    const closed = await buildAndRun([
+      { type: 'mechanism_set_gripper', fields: { STATE: 'closed' } },
+    ]);
     expect(closed.state.gripperOpen).toBe(0);
   });
 });

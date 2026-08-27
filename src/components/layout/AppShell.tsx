@@ -60,7 +60,7 @@ export default function AppShell({
         <div className={styles.sidebarHeader}>
           {/* Use Robotku mascot logo if available, otherwise text */}
           <img
-            src="/brand/Robotku-Mascot-Logo-Horizontal.png"
+            src="/brand/Robotku-Mascot-Logo-Horizontal.webp"
             alt="Robotku Logo"
             className={styles.logo}
             onError={(e) => {
@@ -96,24 +96,20 @@ export default function AppShell({
         {/* Topbar */}
         <header className={styles.topbar}>
           <h1 className={styles.topbarTitle}>{pageTitle}</h1>
-          
+
           <div className={styles.topbarRight}>
             <div className={styles.profileInfo}>
               <div className={styles.userText}>
                 <span className={styles.userName}>{userName}</span>
                 <span className={styles.userRole}>{userRole}</span>
               </div>
-              <div className={styles.avatar}>
-                {userName.charAt(0).toUpperCase()}
-              </div>
+              <div className={styles.avatar}>{userName.charAt(0).toUpperCase()}</div>
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className={styles.contentWrapper}>
-          {children}
-        </main>
+        <main className={styles.contentWrapper}>{children}</main>
       </div>
     </div>
   );

@@ -17,7 +17,11 @@ export const avoidObstacle: BuiltinTemplate = {
   tags: ['sensor', 'ultrasonic', 'perulangan'],
   requires: ['ultrasonic'],
   difficulty: 2,
-  learn: ['Membaca sensor ultrasonic', 'Blok Jika/Selain itu (if/else)', 'Loop selamanya (forever)'],
+  learn: [
+    'Membaca sensor ultrasonic',
+    'Blok Jika/Selain itu (if/else)',
+    'Loop selamanya (forever)',
+  ],
   thumbnail: sensorThumb(),
   program: [
     {
@@ -33,7 +37,9 @@ export const avoidObstacle: BuiltinTemplate = {
                 { type: 'move_reverse', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.5 } },
                 { type: 'move_right', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.5 } },
               ],
-              ELSE: [{ type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.3 } }],
+              ELSE: [
+                { type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.3 } },
+              ],
             },
           },
         ],
@@ -70,8 +76,20 @@ export const lineFollow: BuiltinTemplate = {
               },
             },
             statements: {
-              DO0: [{ type: 'move_steer', fields: { STEERING: '-40', SPEED: 'medium' }, inputs: { DURATION: 0.2 } }],
-              ELSE: [{ type: 'move_steer', fields: { STEERING: '40', SPEED: 'medium' }, inputs: { DURATION: 0.2 } }],
+              DO0: [
+                {
+                  type: 'move_steer',
+                  fields: { STEERING: '-40', SPEED: 'medium' },
+                  inputs: { DURATION: 0.2 },
+                },
+              ],
+              ELSE: [
+                {
+                  type: 'move_steer',
+                  fields: { STEERING: '40', SPEED: 'medium' },
+                  inputs: { DURATION: 0.2 },
+                },
+              ],
             },
           },
         ],
@@ -87,7 +105,11 @@ export const buttonRace: BuiltinTemplate = {
   collection: 'sensor',
   tags: ['sensor', 'tombol', 'jarak'],
   difficulty: 2,
-  learn: ['Blok Tunggu sampai (wait until)', 'Reset & baca jarak tempuh', 'Keluar loop dengan Break'],
+  learn: [
+    'Blok Tunggu sampai (wait until)',
+    'Reset & baca jarak tempuh',
+    'Keluar loop dengan Break',
+  ],
   thumbnail: motionThumb('M24 50 h112', '#8B5CF6', 2.4),
   program: [
     { type: 'timing_wait_until', inputs: { CONDITION: { type: 'sensor_button1' } } },

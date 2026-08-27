@@ -92,10 +92,7 @@ export function useBlocklyWorkspace(blocklyDivRef: React.RefObject<HTMLDivElemen
     registerTemplatesFlyout(workspace);
 
     const pending = takePendingWorkspace();
-    Blockly.serialization.workspaces.load(
-      (pending as object) ?? INITIAL_WORKSPACE_JSON,
-      workspace,
-    );
+    Blockly.serialization.workspaces.load((pending as object) ?? INITIAL_WORKSPACE_JSON, workspace);
 
     workspace.addChangeListener((event: Blockly.Events.Abstract) => {
       if (event.type !== Blockly.Events.TOOLBOX_ITEM_SELECT) return;

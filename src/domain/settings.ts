@@ -58,8 +58,16 @@ export const DEFAULT_SETTINGS: RobotSettings = {
 export function cloneSettings(s: RobotSettings): RobotSettings {
   return {
     mapping: {
-      base: { left: [...s.mapping.base.left], right: [...s.mapping.base.right], arms: [...s.mapping.base.arms] },
-      tank: { left: [...s.mapping.tank.left], right: [...s.mapping.tank.right], turret: [...s.mapping.tank.turret] },
+      base: {
+        left: [...s.mapping.base.left],
+        right: [...s.mapping.base.right],
+        arms: [...s.mapping.base.arms],
+      },
+      tank: {
+        left: [...s.mapping.tank.left],
+        right: [...s.mapping.tank.right],
+        turret: [...s.mapping.tank.turret],
+      },
       joystick: {
         left: [...s.mapping.joystick.left],
         right: [...s.mapping.joystick.right],

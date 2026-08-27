@@ -89,7 +89,11 @@ export class GraphDetectorEngine implements CvEngine {
   }
 
   dispose(): void {
-    try { this.model?.dispose?.(); } catch { /* ignore */ }
+    try {
+      this.model?.dispose?.();
+    } catch {
+      /* ignore */
+    }
     this.model = null;
   }
 }
@@ -105,8 +109,14 @@ function nms(boxes: CvBox[], iouThreshold: number): CvBox[] {
 }
 
 function iou(a: CvBox, b: CvBox): number {
-  const ax1 = a.x - a.w / 2, ay1 = a.y - a.h / 2, ax2 = a.x + a.w / 2, ay2 = a.y + a.h / 2;
-  const bx1 = b.x - b.w / 2, by1 = b.y - b.h / 2, bx2 = b.x + b.w / 2, by2 = b.y + b.h / 2;
+  const ax1 = a.x - a.w / 2,
+    ay1 = a.y - a.h / 2,
+    ax2 = a.x + a.w / 2,
+    ay2 = a.y + a.h / 2;
+  const bx1 = b.x - b.w / 2,
+    by1 = b.y - b.h / 2,
+    bx2 = b.x + b.w / 2,
+    by2 = b.y + b.h / 2;
   const ix = Math.max(0, Math.min(ax2, bx2) - Math.max(ax1, bx1));
   const iy = Math.max(0, Math.min(ay2, by2) - Math.max(ay1, by1));
   const inter = ix * iy;

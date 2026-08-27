@@ -49,9 +49,7 @@ export function LessonTile({
         <div className={styles.tileMetaRow}>
           <StatusChip status={lesson.status} />
         </div>
-        <span className={styles.publicLink}>
-          {lesson.status === 'live' ? 'Public Link ↗' : ''}
-        </span>
+        <span className={styles.publicLink}>{lesson.status === 'live' ? 'Public Link ↗' : ''}</span>
       </div>
     </div>
   );

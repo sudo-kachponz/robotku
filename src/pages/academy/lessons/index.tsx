@@ -8,12 +8,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import styles from '../../../styles/Academy.module.css';
-import {
-  getGroups,
-  getLessons,
-  type Group,
-  type Lesson,
-} from '../../../data/lessons';
+import { getGroups, getLessons, type Group, type Lesson } from '../../../data/lessons';
 import {
   loadSession,
   loadFolderState,
@@ -81,7 +76,6 @@ export default function AllLessons() {
     return () => {
       alive = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Client-side filtered view of the already-loaded (access-scoped) lessons.
@@ -188,31 +182,19 @@ export default function AllLessons() {
             <div className={styles.gridWrap}>
               {filtered.map((l) => {
                 const g = groups.find((gr) => gr.id === l.group);
-                return (
-                  <LessonCard key={l.id} lesson={l} emoji={g?.emoji} onLocked={setLocked} />
-                );
+                return <LessonCard key={l.id} lesson={l} emoji={g?.emoji} onLocked={setLocked} />;
               })}
             </div>
           )}
         </div>
 
         {showHelper && (
-          <MascotHelper
-            onDismiss={dismissHelper}
-            onTour={() => setShowTutorialModal(true)}
-          />
+          <MascotHelper onDismiss={dismissHelper} onTour={() => setShowTutorialModal(true)} />
         )}
 
-        {showTutorialModal && (
-          <QuickTutorialModal onClose={() => setShowTutorialModal(false)} />
-        )}
+        {showTutorialModal && <QuickTutorialModal onClose={() => setShowTutorialModal(false)} />}
 
-        {locked && (
-          <SubscribeModal
-            lesson={locked}
-            onClose={() => setLocked(null)}
-          />
-        )}
+        {locked && <SubscribeModal lesson={locked} onClose={() => setLocked(null)} />}
       </div>
     </>
   );

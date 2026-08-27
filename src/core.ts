@@ -71,7 +71,7 @@ export function initializeAstroidEditor(): void {
   for (const blockType in styleMap) {
     if (Blockly.Blocks[blockType]) {
       const originalInit = Blockly.Blocks[blockType].init;
-      Blockly.Blocks[blockType].init = function(this: Blockly.Block) {
+      Blockly.Blocks[blockType].init = function (this: Blockly.Block) {
         if (originalInit) {
           originalInit.call(this);
         }
@@ -86,7 +86,6 @@ export function initializeAstroidEditor(): void {
   stampBlockIdsIntoCommands();
 
   isInitialized = true;
-  console.log("Astroid Blockly Core Initialized.");
 }
 
 /**
@@ -103,7 +102,11 @@ function stampBlockIdsIntoCommands(): void {
   for (const type of Object.keys(forBlock)) {
     const original = forBlock[type];
     if (typeof original !== 'function') continue;
-    forBlock[type] = function (this: unknown, block: Blockly.Block, generator: typeof javascriptGenerator) {
+    forBlock[type] = function (
+      this: unknown,
+      block: Blockly.Block,
+      generator: typeof javascriptGenerator,
+    ) {
       const code = (original as any).call(this, block, generator);
       if (typeof code !== 'string' || code.indexOf('"command"') === -1) return code;
       return code

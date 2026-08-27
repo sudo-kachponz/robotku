@@ -17,7 +17,7 @@ export default function Home() {
           <div className={styles.barInner}>
             <img
               className={styles.logo}
-              src="/brand/Robotku-Mascot-Logo-Horizontal.png"
+              src="/brand/Robotku-Mascot-Logo-Horizontal.webp"
               alt="Robotku School"
               onError={(e) => {
                 (e.target as HTMLElement).style.display = 'none';
@@ -41,7 +41,15 @@ export default function Home() {
               onClick={() => setMobileMenuOpen(true)}
               aria-label="Open menu"
             >
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <svg
+                viewBox="0 0 24 24"
+                width="24"
+                height="24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              >
                 <path d="M4 7h16M4 12h16M4 17h16" />
               </svg>
             </button>
@@ -52,7 +60,7 @@ export default function Home() {
             <div className={styles.overlayHeader}>
               <img
                 className={styles.logo}
-                src="/brand/Robotku-Mascot-Logo-Horizontal.png"
+                src="/brand/Robotku-Mascot-Logo-Horizontal.webp"
                 alt="Robotku School"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = 'none';
@@ -63,7 +71,15 @@ export default function Home() {
                 onClick={() => setMobileMenuOpen(false)}
                 aria-label="Close menu"
               >
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="24"
+                  height="24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                >
                   <path d="M18 6L6 18M6 6l12 12" />
                 </svg>
               </button>
@@ -89,8 +105,10 @@ export default function Home() {
         <section className={styles.heroCard}>
           <div className={styles.heroText}>
             <h1 className={styles.title}>
-              SELAMAT DATANG<br />
-              DI ROBOTKU<br />
+              SELAMAT DATANG
+              <br />
+              DI ROBOTKU
+              <br />
               PLAYGROUND
             </h1>
 
@@ -112,18 +130,22 @@ export default function Home() {
           {/* Mascot Right Column with Sparkles and Floating Emojis */}
           <div className={styles.mascotContainer}>
             {/* Yellow Star Sparkle Accents */}
-            <svg className={`${styles.starSparkle} ${styles.star1}`} viewBox="0 0 24 24" fill="currentColor">
+            <svg
+              className={`${styles.starSparkle} ${styles.star1}`}
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
               <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
             </svg>
-            <svg className={`${styles.starSparkle} ${styles.star2}`} viewBox="0 0 24 24" fill="currentColor">
+            <svg
+              className={`${styles.starSparkle} ${styles.star2}`}
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
               <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
             </svg>
 
-            <img
-              className={styles.mascot}
-              src="/brand/Pose1.png"
-              alt="Maskot Robotku"
-            />
+            <img className={styles.mascot} src="/brand/Pose1.webp" alt="Maskot Robotku" />
 
             {/* Emojis floating around mascot */}
             <span className={`${styles.floatingEmoji} ${styles.e1}`}>🧩</span>
