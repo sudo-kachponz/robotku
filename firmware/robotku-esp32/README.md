@@ -17,10 +17,16 @@ Both wire shapes are accepted: flat `{"command":"SET_PORT","port":1,"value":80};
 
 ## Files
 
-- `robotku-esp32.ino` — the interpreter (parser, drive model, BLE, watchdog, OLED).
-- `config.h` — **all** pins, the port→GPIO table, servo calibration, and timing.
+- `src/main.cpp` — the interpreter (parser, drive model, BLE, watchdog, OLED).
+- `src/config.h` — **all** pins, the port→GPIO table, servo calibration, and timing.
   Change wiring here, nowhere else.
 - `platformio.ini` — board + pinned library versions.
+- `robotku-esp32.ino` — **empty stub**, Arduino IDE entry point only (see Build).
+
+The code lives in `src/` because that is PlatformIO's default `src_dir` and it
+matches the ESP32 RoboSchool-Controller project layout, so the two are drop-in
+compatible. The Arduino IDE also compiles a sketch's `src/` tree recursively, so
+both toolchains build the same files — see **Build** below.
 
 ## Hardware / wiring (proven on bench test1)
 
@@ -29,12 +35,28 @@ Both wire shapes are accepted: flat `{"command":"SET_PORT","port":1,"value":80};
 | OLED SSD1306 128×64 | SDA **21**, SCL **22**, I²C `0x3C` | splash + status |
 | Passive buzzer | **26** | `tone()` / `noTone()` |
 | Left drive servo (SG90 continuous) | **33** | proven |
-| Right drive servo (SG90 continuous) | **25** | **confirm free before soldering** |
+| Right drive servo (SG90 continuous) | **25** | **not wired yet** — see `HAS_SERVO_R` |
 
 **Second servo is a prerequisite, not optional.** With one servo the robot can only
 spin in place — turning left/right (block test D3) and two-axis Joystick can't be
 proven. Confirm GPIO25 is free on your board; if the PCB already uses it, pick
-another safe output pin and update `PIN_SERVO_R` in `config.h`.
+another safe output pin and update `PIN_SERVO_R` in `src/config.h`.
+
+### `HAS_SERVO_R` — the one switch for the second servo
+
+`src/config.h` ships with `#define HAS_SERVO_R 0` (the current bench build: one
+servo on GPIO33). Everything else follows from that flag — do not hardcode port 2
+anywhere:
+
+| `HAS_SERVO_R` | `PORT_CHANNEL[2]` | `HELLO_ACK` | `SET_PORT` port 2 | `TURN_TIMED` |
+| --- | --- | --- | --- | --- |
+| `0` | `-1` | `ports:[1]`, no `TURN_TIMED` cap | `UNSUPPORTED` | `UNSUPPORTED` |
+| `1` | `1` | `ports:[1,2]` + `TURN_TIMED` cap | drives right servo | turns |
+
+Why it matters: a board that claims `ports:[1,2]` it doesn't have makes the right
+joystick axis go dead **silently**, and a tester reads that as "the web app is
+broken". Reporting `ports:[1]` lets the web app show the real reason. Flip the flag
+to `1` only once the second servo is soldered *and* tested, then reflash.
 
 **ESP32 GPIO rules** (documented in `config.h`): avoid 6–11 (flash), 34–39
 (input-only, no PWM/output), and 0/2/12/15 (strapping) for outputs.
@@ -45,15 +67,34 @@ on both sides.
 
 ## Build
 
-**PlatformIO:** `pio run -t upload` from this folder.
+Both toolchains build the same `src/` tree — neither is second-class.
 
-**Arduino IDE / arduino-cli:** install the libraries at the versions in
-`platformio.ini`, select an ESP32 Dev Module on **ESP32 core 2.0.x**, and upload.
-Verified with:
+**PlatformIO** (default `src_dir = src`, nothing to configure):
+
+```
+pio run              # compile
+pio run -t upload    # compile + flash
+pio device monitor    # 115200
+```
+
+**Arduino IDE / arduino-cli:** the IDE requires a sketch file named after its
+folder, so `robotku-esp32.ino` exists as an intentionally **empty stub**; the IDE
+compiles `src/main.cpp` and `src/config.h` from the sketch's `src/` subdirectory.
+Install the libraries at the versions in `platformio.ini`, select an ESP32 Dev
+Module on **ESP32 core 2.0.x**, open `robotku-esp32.ino`, and upload. Verified with:
 
 ```
 arduino-cli compile --fqbn esp32:esp32:esp32 .
 ```
+
+Do **not** move code into the `.ino`: the IDE concatenates `.ino` files into its
+own translation unit, so a `setup()`/`loop()` there would clash with the real ones
+in `src/main.cpp`.
+
+`upload_speed` is **115200** — the same rate as the RoboSchool-Controller project
+and safe on any cable. Raise it only once a faster upload is proven on your board;
+a link that can't hold 921600 fails with a confusing transfer error rather than an
+obvious speed complaint.
 
 ### Pinned versions (why they matter)
 
@@ -85,8 +126,37 @@ arduino-cli compile --fqbn esp32:esp32:esp32 .
    (default MTU is 23). `setMTU(247)` requests a larger one.
 6. **Watchdog** — arms only after the first `HELLO` (a bare bench board idles),
    disarms on disconnect, 2000 ms timeout, emits `FAILSAFE` + an OLED cue.
-7. **Honest `HELLO_ACK`** — advertises only the 6 opcodes that compile, plus
-   `ports:[1,2]`, `driveMode:"servo"`, `hasBuzzer`, `hasOled`.
+7. **Honest `HELLO_ACK`** — advertises only the opcodes that compile, and the ports
+   that are **really wired**: the `ports` array is built by scanning
+   `PORT_CHANNEL`, so it follows `HAS_SERVO_R` instead of being hardcoded. Plus
+   `driveMode:"servo"`, `hasBuzzer`, `hasOled`.
+
+## Text commands (bench debugging, USB Serial)
+
+The web app only ever speaks JSON, but typing JSON by hand is miserable. A line
+that does **not** start with `{` is treated as a text command — the same
+vocabulary as the RoboSchool-Controller sketch:
+
+| Type | Does |
+| --- | --- |
+| `cw 2000` | spin 2 s in the `+` direction, then stop by itself |
+| `ccw` | spin the other way until `stop` (no duration = no deadline) |
+| `stop` | stop everything, cancel any deadline |
+| `137` | write that raw angle (0–180) — how you find a continuous servo's neutral |
+| `help` | print the list |
+
+Replies use `[OK]` / `[ERROR]` prefixes. This path reuses `driveChannel()` and the
+**same** non-blocking `motionEndsAtMs` deadline as the JSON path — there is no
+second timer. The JSON path is untouched, and the web's telemetry parser silently
+drops these non-JSON lines.
+
+## OLED status
+
+The display shows the link (`BLE` / `USB` / `Terputus`), a headline status, and the
+**real servo position + direction** per channel (`L135 CW   R  --` when the right
+servo isn't wired). `display()` is pushed at most every
+`OLED_MIN_PUSH_INTERVAL_MS` (50 ms): an SSD1306 refresh costs ~30 ms of I2C, so
+rendering per command would throttle the command stream itself.
 
 ## Verification (do IN ORDER — don't skip to Bluetooth)
 
@@ -94,7 +164,7 @@ arduino-cli compile --fqbn esp32:esp32:esp32 .
 The single most decisive test is A3:
 
 ```
-{"command":"HELLO","protocol":"robotku-v1"};                                  -> HELLO_ACK, 6 caps, ports:[1,2]
+{"command":"HELLO","protocol":"robotku-v1"};                                  -> HELLO_ACK, ports:[1] (HAS_SERVO_R=0)
 {"command":"SET_PORT","port":1,"value":80};                                   -> left servo spins
 {"command":"SET_PORT","port":1,"value":0};                                    -> left servo STOPS (tune trim)
 {"command":"MOVE_TIMED","params":{"direction":"backward","speed":40,"duration_ms":2000}};
@@ -102,6 +172,16 @@ The single most decisive test is A3:
 {"command":"PLAY_TONE","params":{"frequency":440,"duration_ms":500}};         -> buzzer beeps
 {"command":"STOP_ALL"};                    (mid-move)                          -> stops at once
 {"command":"DISPLAY_MATRIX"};                                                 -> UNSUPPORTED
+{"command":"SET_PORT","port":2,"value":80};   (with HAS_SERVO_R=0)             -> UNSUPPORTED
+```
+
+Then the text path, same Serial Monitor:
+
+```
+help        -> the command list
+cw 2000     -> servo spins 2 s, stops by itself, OLED shows CW then Selesai
+stop        -> [OK] stop
+90          -> [OK] sudut 90
 ```
 
 If A fails, stop — don't blame Bluetooth.
