@@ -34,6 +34,7 @@
 }
 
 .brandName {
+  font-family: var(--font-display);
   font-size: 26px;
   font-weight: 800;
   color: #2b2680;
@@ -57,6 +58,7 @@
 }
 
 .navGroupTitle {
+  font-family: var(--font-display);
   font-size: 16px;
   font-weight: 800;
   color: #a0aec0;
@@ -67,6 +69,7 @@
 }
 
 .navItem {
+  font-family: var(--font-display);
   display: flex;
   align-items: center;
   gap: 16px;
@@ -123,6 +126,7 @@
 }
 
 .topbarTitle {
+  font-family: var(--font-display);
   font-size: 24px;
   font-weight: 800;
   margin: 0;

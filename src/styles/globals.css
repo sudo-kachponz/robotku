@@ -49,8 +49,17 @@ a {
   text-decoration: none;
 }
 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+}
+
 button {
-  font-family: inherit;
+  font-family: var(--font-display);
   touch-action: manipulation;
 }
 
@@ -140,7 +149,7 @@ button {
   color: var(--cat-color, #4f46e5);
   font-size: clamp(16px, 3.5vw, 26px);
   font-weight: 800;
-  font-family: var(--font);
+  font-family: var(--font-display);
   margin: 0;
   text-align: left;
   line-height: 1.2;

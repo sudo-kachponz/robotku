@@ -113,6 +113,6 @@
 
   /* Type */
   --font: var(--font-jakarta), system-ui, -apple-system, sans-serif;
-  --font-heading: var(--font-jakarta), system-ui, -apple-system, sans-serif;
+  --font-heading: var(--font-fredoka), var(--font-jakarta), system-ui, -apple-system, sans-serif;
   --font-display: var(--font-fredoka), var(--font-jakarta), system-ui, -apple-system, sans-serif;
 }
