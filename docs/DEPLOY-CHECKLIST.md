@@ -65,31 +65,73 @@ stale).
 
 ## Rollback
 
-Every CI deploy uploads the exact deployed `out/` as a 30-day artifact named
-`out-<run_number>-<sha>` (sim3d excluded). To roll back to a known-good build:
+`scripts/deploy.sh` saves a snapshot of `out/` as
+`releases/out-<sha>-<timestamp>.tar.gz` **before** every mirror. To roll back:
 
-1. **Get the good `out/`.** Either download that run's artifact
-   (Actions → the run → *Artifacts*) and unzip it into `./out`, or rebuild the
-   good commit locally:
+1. **Pick the good archive:**
 
    ```bash
-   git checkout <good-sha>
-   npm ci && npm run build      # regenerates out/ + version.json for that commit
+   bash scripts/rollback.sh           # lists available releases
    ```
 
-2. **Re-mirror it** (the same script CI uses):
+2. **Restore and re-mirror:**
 
    ```bash
-   FTP_HOST=… FTP_USER=… FTP_PASS=… SKIP_SIM3D=1 bash scripts/deploy.sh
+   FTP_HOST=… FTP_USER=… FTP_PASS=… bash scripts/rollback.sh releases/out-abc1234-20260827-143000.tar.gz
    ```
 
-3. **Confirm** `https://hub.robotku.id/version.json` shows the rolled-back sha and
-   hard-refresh the landing + editor routes.
+   This extracts the archive into `out/` and runs a full mirror (no `--only-newer`).
 
-For a manual local snapshot before a risky deploy:
-`zip -rq "out-$(date +%Y%m%d).zip" out -x 'out/sim3d/*'`.
+3. **Confirm** `https://hub.robotku.id/version.json` shows the rolled-back sha.
+
+Alternative: rebuild from a known-good commit:
+```bash
+git checkout <good-sha>
+npm ci && npm run build
+FTP_HOST=… FTP_USER=… FTP_PASS=… FORCE_FULL=1 SKIP_SIM3D=1 bash scripts/deploy.sh
+```
+
+## Emergency: .htaccess locks the site
+
+If a bad `.htaccess` makes the site completely inaccessible (infinite redirect loop,
+500 errors, etc.) and you only have FTP access — **no hPanel** — the fix is to upload
+a minimal `.htaccess` via any FTP client (FileZilla, command-line `lftp`, etc.).
+
+**Copy-paste this entire file** as `.htaccess` in the `public_html` root:
+
+```apache
+# EMERGENCY .htaccess — replaces the broken one.
+# Upload this via FTP to restore basic site access.
+# Then rebuild and redeploy properly.
+
+Options -Indexes
+
+ErrorDocument 404 /404/index.html
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json
+</IfModule>
+
+<IfModule mod_mime.c>
+  AddType application/wasm .wasm
+  AddType image/webp .webp
+</IfModule>
+```
+
+This deliberately has **no** HTTPS redirect, **no** HSTS, **no** aggressive caching —
+just enough to serve the static files and stop the bleeding. Once the site is
+accessible again, do a proper rebuild with the correct flags and redeploy.
+
+Quick FTP upload from command line:
+```bash
+echo 'Options -Indexes
+ErrorDocument 404 /404/index.html' > /tmp/htaccess-emergency
+lftp -c "set ftp:ssl-force true; open -u \"$FTP_USER\",\"$FTP_PASS\" \"$FTP_HOST\"; \
+         put /tmp/htaccess-emergency -o /public_html/.htaccess"
+```
 
 > NOTE: the CSP is intentionally NOT enforced yet. The Blockly/tfjs stack needs
 > `'wasm-unsafe-eval'` and ProgramRunner's condition sandbox needs `'unsafe-eval'`
 > (`new Function`). Start in Report-Only, tune, then enforce — do not remove
 > `unsafe-eval` or every sensor block stops evaluating.
+

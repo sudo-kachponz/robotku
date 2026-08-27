@@ -34,3 +34,7 @@ tsconfig.tsbuildinfo
 coverage/
 .env*
 !.env.example
+!.env.deploy.example
+
+# Deploy release archives (local snapshots, can be large)
+releases/
