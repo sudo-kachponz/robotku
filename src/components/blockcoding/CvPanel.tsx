@@ -52,7 +52,9 @@ export default function CvPanel({ open, onClose }: { open: boolean; onClose: () 
     ctx.lineWidth = 2;
     ctx.strokeStyle = '#22c55e';
     ctx.fillStyle = 'rgba(34,197,94,0.85)';
-    ctx.font = '12px Plus Jakarta Sans, sans-serif';
+    // Self-hosted font has a hashed family name — read it from the CSS variable.
+    const family = getComputedStyle(document.body).getPropertyValue('--font-jakarta').trim();
+    ctx.font = `12px ${family || 'system-ui'}, sans-serif`;
     for (const b of state.boxes) {
       const x = (b.x - b.w / 2) * c.width;
       const y = (b.y - b.h / 2) * c.height;

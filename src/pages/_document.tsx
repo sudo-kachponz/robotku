@@ -1,6 +1,8 @@
 // src/pages/_document.tsx
 //
-// Custom document with PWA meta tags and Google Fonts preconnect.
+// Custom document with PWA meta tags. Fonts are self-hosted via next/font and
+// wired in _app.tsx (next/font is not supported in _document) — no external font
+// requests, so no preconnect needed.
 
 import { Html, Head, Main, NextScript } from 'next/document';
 
@@ -8,8 +10,6 @@ export default function Document() {
   return (
     <Html lang="id">
       <Head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link rel="manifest" href="/manifest.webmanifest" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />

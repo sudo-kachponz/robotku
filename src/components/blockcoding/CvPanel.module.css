@@ -8,7 +8,7 @@
   background: #fff;
   border-radius: 20px;
   box-shadow: 0 20px 50px rgba(30, 27, 75, 0.35);
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-family: var(--font-jakarta), system-ui, sans-serif;
   overflow: hidden;
   border: 1px solid #fbcfe8;
 }

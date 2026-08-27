@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import '../styles/globals.css';
+import { fredoka, jakarta } from '../theme/fonts';
 import { setSettings, subscribeSettings } from '../app/settingsStore';
 import { loadSettings, persistSettings } from '../app/persistence';
 
@@ -34,7 +35,9 @@ export default function App({ Component, pageProps }: AppProps) {
         <title>Robotku Playground</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
       </Head>
-      <Component {...pageProps} />
+      <div className={`${fredoka.variable} ${jakarta.variable}`}>
+        <Component {...pageProps} />
+      </div>
     </>
   );
 }

@@ -40,7 +40,7 @@ export class ErrorBoundary extends Component<Props, State> {
             borderRadius: '16px',
             margin: '20px auto',
             maxWidth: '480px',
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            fontFamily: 'var(--font-jakarta), sans-serif',
             color: '#1E1B4B',
           }}
         >

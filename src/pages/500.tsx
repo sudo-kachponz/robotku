@@ -13,7 +13,7 @@ export default function Custom500() {
         padding: '24px',
         textAlign: 'center',
         backgroundColor: '#F3F4FB',
-        fontFamily: "'Plus Jakarta Sans', sans-serif",
+        fontFamily: 'var(--font-jakarta), sans-serif',
         color: '#1E1B4B',
       }}
     >

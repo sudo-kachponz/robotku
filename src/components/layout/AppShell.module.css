@@ -5,7 +5,7 @@
   width: 100vw;
   overflow: hidden;
   background-color: #f8f9fa;
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-family: var(--font-jakarta), system-ui, sans-serif;
 }
 
 /* Sidebar */

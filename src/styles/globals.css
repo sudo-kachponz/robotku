@@ -140,7 +140,7 @@ button {
   color: var(--cat-color, #4f46e5);
   font-size: clamp(16px, 3.5vw, 26px);
   font-weight: 800;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: var(--font);
   margin: 0;
   text-align: left;
   line-height: 1.2;

@@ -2,9 +2,10 @@
  *
  * Robotku Design System tokens — mirrored EXACTLY from "Robotku Design System.html".
  * Single source of truth for colour, radius, shadow, ring and type across the app.
+ *
+ * Fonts are self-hosted via next/font (see src/theme/fonts.ts); the --font-jakarta
+ * / --font-fredoka variables it exposes are consumed below.
  */
-
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800&display=swap');
 
 :root {
   /* Brand — indigo */
@@ -111,7 +112,7 @@
   --rk-shadow: 0 12px 30px rgba(20, 16, 60, 0.35);
 
   /* Type */
-  --font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-heading: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-display: 'Fredoka', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font: var(--font-jakarta), system-ui, -apple-system, sans-serif;
+  --font-heading: var(--font-jakarta), system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-fredoka), var(--font-jakarta), system-ui, -apple-system, sans-serif;
 }

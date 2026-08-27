@@ -6,6 +6,8 @@
 
 import * as Blockly from 'blockly/core';
 
+import { jakarta } from '../theme/fonts';
+
 // --- Helper: lighten/darken a hex colour for secondary/tertiary shades ---
 function adjust(hex: string, amount: number): string {
   const color = Blockly.utils.colour.hexToRgb(hex);
@@ -42,7 +44,9 @@ const DS = {
 // Bigger + heavier than the old 11/500 so the "code" (block text) reads clearly
 // and matches the Robotku DS button typography (Plus Jakarta Sans 600).
 const fontStyle: Blockly.Theme.FontStyle = {
-  family: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
+  // Self-hosted via next/font — SVG text can't read the --font-jakarta CSS var, so
+  // use next/font's generated (hashed) family name directly.
+  family: `${jakarta.style.fontFamily}, system-ui, -apple-system, sans-serif`,
   weight: '600',
   size: 14,
 };

@@ -31,7 +31,7 @@
   border-radius: 24px;
   overflow: hidden;
   box-shadow: 0 24px 60px rgba(30, 27, 75, 0.35);
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-family: var(--font-jakarta), system-ui, sans-serif;
 }
 
 /* --- left rail --- */
