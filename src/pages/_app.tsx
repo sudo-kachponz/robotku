@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import '../styles/globals.css';
+import { fredoka, jakarta } from '../theme/fonts';
 import { DialogHost } from '../ui/dialog';
 import { setSettings, subscribeSettings } from '../app/settingsStore';
 import { loadSettings, persistSettings } from '../app/persistence';
@@ -65,8 +66,16 @@ export default function App({ Component, pageProps }: AppProps) {
         />
         <meta name="twitter:image" content="https://hub.robotku.id/og-image.png" />
       </Head>
-      <Component {...pageProps} />
-      <DialogHost />
+      {/* jakarta.className sets the base font-family directly on this wrapper (so
+          every descendant inherits Plus Jakarta Sans regardless of :root/body
+          variable scope); the .variable classes expose --font-jakarta /
+          --font-fredoka for the Fredoka display headings and the CSS modules.
+          Importing the fonts here (in _app) is what links their @font-face CSS on
+          every page. */}
+      <div className={`${jakarta.className} ${jakarta.variable} ${fredoka.variable}`}>
+        <Component {...pageProps} />
+        <DialogHost />
+      </div>
     </>
   );
 }

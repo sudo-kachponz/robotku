@@ -1,18 +1,16 @@
 // src/pages/_document.tsx
 //
-// Custom document with PWA meta tags. Fonts are self-hosted via next/font; their
-// CSS-variable classes go on <html> here (NOT on a wrapper div) so that the
-// variables exist at :root — tokens.css sets `--font: var(--font-jakarta)` on
-// :root and globals.css applies it on `body`, both of which resolve the variable
-// at html/body scope. A wrapper div (child of body) would leave body itself on
-// the system font and every inherited element with it. No external font requests.
+// Custom document with PWA meta tags. Fonts are self-hosted via next/font and
+// wired in _app.tsx — next/font only injects its stylesheet (@font-face + the
+// variable classes) on routes whose JS bundle imports the font module, so the
+// import must live in _app (loaded by every page), NOT here. No external font
+// requests, so no preconnect needed.
 
 import { Html, Head, Main, NextScript } from 'next/document';
-import { fredoka, jakarta } from '../theme/fonts';
 
 export default function Document() {
   return (
-    <Html lang="id" className={`${fredoka.variable} ${jakarta.variable}`}>
+    <Html lang="id">
       <Head>
         <link rel="manifest" href="/manifest.webmanifest" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
