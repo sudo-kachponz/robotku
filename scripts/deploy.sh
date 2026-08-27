@@ -54,29 +54,28 @@ fi
 TOTAL=$(du -sh $DU_EXCLUDE ./out 2>/dev/null | cut -f1)
 echo "→ uploading ~${TOTAL} to ${FTP_HOST}:${REMOTE_DIR} (this can take a while over FTPS)"
 
-run_lftp() {
-  lftp -c "set ftp:ssl-force true; set ssl:verify-certificate true; \
-           open -u \"$FTP_USER\",\"$FTP_PASS\" \"$FTP_HOST\"; \
-           $1"
-}
+if command -v lftp >/dev/null 2>&1; then
+  run_lftp() {
+    lftp -c "set ftp:ssl-force true; set ssl:verify-certificate true; \
+             open -u \"$FTP_USER\",\"$FTP_PASS\" \"$FTP_HOST\"; \
+             $1"
+  }
 
-# Upload order matters on a live site: push hashed static chunks FIRST so a user
-# mid-navigation never requests a chunk that isn't there yet, then HTML last.
-#
-# FORCE_FULL=1 disables --only-newer for pass 1. Use it on the FIRST deploy
-# (shared-host clocks are often out of sync, and changed files can be skipped)
-# or whenever timestamps look unreliable.
-ONLY_NEWER_FLAG="--only-newer"
-if [ "${FORCE_FULL:-0}" = "1" ]; then
-  ONLY_NEWER_FLAG=""
-  echo "→ FORCE_FULL=1: pass 1 akan mengunggah SEMUA file di _next/ (tanpa --only-newer)"
+  ONLY_NEWER_FLAG="--only-newer"
+  if [ "${FORCE_FULL:-0}" = "1" ]; then
+    ONLY_NEWER_FLAG=""
+    echo "→ FORCE_FULL=1: pass 1 akan mengunggah SEMUA file di _next/ (tanpa --only-newer)"
+  fi
+
+  echo "→ pass 1: /_next hashed chunks ${ONLY_NEWER_FLAG:+(--only-newer + }prune stale${ONLY_NEWER_FLAG:+)}"
+  run_lftp "mirror -R $ONLY_NEWER_FLAG --delete --parallel=4 $EXCLUDES ./out/_next ${REMOTE_DIR}/_next"
+
+  echo "→ pass 2: everything else — HTML + .htaccess + version.json, always fresh"
+  run_lftp "mirror -R --delete --parallel=4 --exclude-glob _next/* $EXCLUDES ./out ${REMOTE_DIR}"
+else
+  echo "→ lftp tidak terinstall, menggunakan fallback unggah via python3..."
+  FTP_HOST="$FTP_HOST" FTP_USER="$FTP_USER" FTP_PASS="$FTP_PASS" python3 scripts/clean_upload.py
 fi
-
-echo "→ pass 1: /_next hashed chunks ${ONLY_NEWER_FLAG:+(--only-newer + }prune stale${ONLY_NEWER_FLAG:+)}"
-run_lftp "mirror -R $ONLY_NEWER_FLAG --delete --parallel=4 $EXCLUDES ./out/_next ${REMOTE_DIR}/_next"
-
-echo "→ pass 2: everything else — HTML + .htaccess + version.json, always fresh"
-run_lftp "mirror -R --delete --parallel=4 --exclude-glob _next/* $EXCLUDES ./out ${REMOTE_DIR}"
 
 # ── Post-deploy smoke check ───────────────────────────────────────────────
 echo ""
