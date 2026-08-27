@@ -66,11 +66,18 @@ ErrorDocument 404 /404/index.html
   AddOutputFilterByType BROTLI_COMPRESS text/html text/css application/javascript application/json image/svg+xml
 </IfModule>
 
-# --- Caching: hashed static assets are immutable for a year; HTML must revalidate ---
+# --- Caching ---
+# Only /_next/ files are content-hashed (a change is a NEW filename), so only they
+# are safe to freeze as immutable. Stable-named assets (sim3d/, brand/, og-image,
+# favicon) get a short TTL + stale-while-revalidate — otherwise a bad or updated
+# upload gets pinned at the CDN for a year and re-uploading the origin does nothing.
 <IfModule mod_headers.c>
-  <FilesMatch "\\.(js|css|woff2|webp|png|jpg|glb|hdr|wasm)$">
+  <If "%{REQUEST_URI} =~ m#^/_next/#">
     Header set Cache-Control "public, max-age=31536000, immutable"
-  </FilesMatch>
+  </If>
+  <ElseIf "%{REQUEST_URI} =~ m#\\.(js|css|woff2|webp|png|jpe?g|glb|hdr|wasm|ico)$#">
+    Header set Cache-Control "public, max-age=86400, stale-while-revalidate=604800"
+  </ElseIf>
   <FilesMatch "\\.html$">
     Header set Cache-Control "no-cache"
   </FilesMatch>
