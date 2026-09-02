@@ -6,6 +6,7 @@ import {
   portIsWired,
   profileFromHello,
 } from '../domain/boardProfile';
+import { SimSink } from '../runtime/SimSink';
 
 describe('BoardProfile (P0)', () => {
   it('supports real hardware opcodes, rejects ghost ones', () => {
@@ -44,5 +45,16 @@ describe('BoardProfile (P0)', () => {
     const same = profileFromHello(undefined, undefined);
     expect(same.opcodes).toBe(robotkuEsp32V3.opcodes);
     expect(same.ports).toBe(robotkuEsp32V3.ports);
+  });
+
+  it('SimSink.setProfile adopts a connected board live (mirror mode)', async () => {
+    const sink = new SimSink(); // static V3: turning works
+    await sink.exec({ command: 'TURN_TIMED', params: { direction: 'left', speed: 60, duration_ms: 100 } });
+    expect(sink.getState().simConsole).toHaveLength(0);
+
+    // A one-servo bench board connects → turning is no longer runnable.
+    sink.setProfile(profileFromHello(['SET_PORT', 'STOP_ALL', 'MOVE_TIMED'], [1]));
+    await sink.exec({ command: 'TURN_TIMED', params: { direction: 'left', speed: 60, duration_ms: 100 } });
+    expect(sink.getState().simConsole.some((m) => m.includes('TURN_TIMED'))).toBe(true);
   });
 });

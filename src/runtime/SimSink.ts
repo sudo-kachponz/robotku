@@ -134,6 +134,15 @@ export class SimSink implements RobotSink {
 
   getProfile = (): BoardProfile => this.profile;
 
+  // Swap the board profile at runtime (mirror mode: adopt a connected robot's real
+  // capabilities from HELLO_ACK; revert to the static default on disconnect). Forces
+  // a re-render so SimStage re-reads which panels to show.
+  setProfile(profile: BoardProfile): void {
+    if (profile === this.profile) return;
+    this.profile = profile;
+    this.commit({}, true);
+  }
+
   private state: SimState = initialState();
   private listeners = new Set<() => void>();
   private wakers = new Set<() => void>();
