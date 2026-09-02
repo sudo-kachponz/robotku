@@ -13,6 +13,9 @@ import { onTelemetry } from '../../../app/connection';
 import { ingestTelemetry } from '../../../runtime/telemetryCache';
 import { getCategoryTint } from '../../../visual/categoryColors';
 import { registerTemplatesFlyout } from '../../../categories/templates';
+import { subscribe } from '../../../app/store';
+import { profileFromHello, robotkuEsp32V3 } from '../../../domain/boardProfile';
+import type { RobotInfo } from '../../../transport';
 
 const INITIAL_WORKSPACE_JSON = {
   blocks: {
@@ -101,6 +104,18 @@ export function useBlocklyWorkspace(blocklyDivRef: React.RefObject<HTMLDivElemen
       document.documentElement.style.setProperty('--flyout-bg-color', tint);
     });
 
+    // P1 live guard: when a robot connects, rebuild the toolbox from its
+    // HELLO_ACK capabilities/ports; on disconnect, fall back to the static V3 profile.
+    let lastRobotInfo: RobotInfo | null = null;
+    const unsubStore = subscribe((s) => {
+      if (s.robotInfo === lastRobotInfo) return;
+      lastRobotInfo = s.robotInfo;
+      const profile = s.robotInfo
+        ? profileFromHello(s.robotInfo.capabilities, s.robotInfo.ports)
+        : robotkuEsp32V3;
+      workspace.updateToolbox(getAstroidToolbox(profile));
+    });
+
     const unsubTelemetry = onTelemetry((msg) => {
       ingestTelemetry(msg);
       const line = typeof msg === 'string' ? msg : JSON.stringify(msg);
@@ -136,6 +151,7 @@ export function useBlocklyWorkspace(blocklyDivRef: React.RefObject<HTMLDivElemen
         window.visualViewport.removeEventListener('resize', onResize);
       }
       cancelAnimationFrame(raf);
+      unsubStore();
       unsubTelemetry();
       workspace.dispose();
       workspaceRef.current = null;

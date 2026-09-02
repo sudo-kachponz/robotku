@@ -21,7 +21,8 @@
 
 // ----------------------------------------------------------------- Buzzer
 // Passive buzzer driven with tone()/noTone(). tone() is async on ESP32.
-#define PIN_BUZZER     26
+// FW-02: schematic net BUZZ is GPIO13, not 26 (26 is PWM3 aux header). Was wrong.
+#define PIN_BUZZER     13
 
 // ------------------------------------------------------------------ Servos
 // SG90 CONTINUOUS rotation servos (ESP32Servo):

@@ -26,7 +26,7 @@
  *           "speed":40,"duration_ms":2000}};
  *
  * Hardware is proven on bench test1 — see config.h. Drive is TWO continuous SG90
- * servos (tank style), NOT an H-bridge; buzzer on GPIO26; SSD1306 OLED on I2C.
+ * servos (tank style), NOT an H-bridge; buzzer on GPIO13; SSD1306 OLED on I2C.
  *
  * Pinned libraries (see platformio.ini / README):
  *   NimBLE-Arduino, ArduinoJson 7, ESP32Servo, Adafruit_SSD1306, Adafruit_GFX.
