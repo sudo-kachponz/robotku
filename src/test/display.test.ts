@@ -5,7 +5,8 @@ import { describe, it, expect } from 'vitest';
 import { buildBlock, buildAndRun } from './harness';
 
 describe('Parity: Display & LED', () => {
-  it('display_matrix generates DISPLAY_MATRIX and turns on matrix LEDs', async () => {
+  // No LED matrix on Robotku V3 (P2): block emits the opcode, sim leaves it dark.
+  it('display_matrix emits DISPLAY_MATRIX but the sim ignores it (no matrix)', async () => {
     const cmds = buildBlock({
       type: 'display_matrix',
       fields: { PATTERN: '1111110001100011000111111' },
@@ -22,7 +23,8 @@ describe('Parity: Display & LED', () => {
         inputs: { DURATION: 0.1 },
       },
     ]);
-    expect(state.matrix.some((on) => on)).toBe(true);
+    expect(state.matrix.some((on) => on)).toBe(false); // inert — stays dark
+    expect(state.simConsole.some((m) => m.includes('DISPLAY_MATRIX'))).toBe(true);
   });
 
   it('display_text generates DISPLAY_TEXT and sets state displayText', async () => {
@@ -53,7 +55,8 @@ describe('Parity: Display & LED', () => {
     expect(state.matrix.every((on) => !on)).toBe(true);
   });
 
-  it('lcd_text generates LCD_TEXT and sets state lcdText', async () => {
+  // No graphic LCD on Robotku V3 (P2): opcode emitted, sim ignores it.
+  it('lcd_text emits LCD_TEXT but the sim ignores it (no LCD)', async () => {
     const cmds = buildBlock({
       type: 'lcd_text',
       fields: { TEXT: 'TEST LCD' },
@@ -67,10 +70,11 @@ describe('Parity: Display & LED', () => {
     const { state } = await buildAndRun([
       { type: 'lcd_text', fields: { TEXT: 'TEST LCD' }, inputs: { DURATION: 0.1 } },
     ]);
-    expect(state.lcdText).toBe('TEST LCD');
+    expect(state.lcdText).toBe(''); // inert
+    expect(state.simConsole.some((m) => m.includes('LCD_TEXT'))).toBe(true);
   });
 
-  it('lcd_shape generates LCD_SHAPE and sets state lcdShape', async () => {
+  it('lcd_shape emits LCD_SHAPE but the sim ignores it (no LCD)', async () => {
     const cmds = buildBlock({
       type: 'lcd_shape',
       fields: { SHAPE: 'heart' },
@@ -84,7 +88,8 @@ describe('Parity: Display & LED', () => {
     const { state } = await buildAndRun([
       { type: 'lcd_shape', fields: { SHAPE: 'heart' }, inputs: { DURATION: 0.1 } },
     ]);
-    expect(state.lcdShape).toBe('heart');
+    expect(state.lcdShape).toBeNull(); // inert
+    expect(state.simConsole.some((m) => m.includes('LCD_SHAPE'))).toBe(true);
   });
 
   it('display_set_brightness generates SET_LED_BRIGHTNESS and sets state brightness', async () => {
