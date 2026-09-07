@@ -17,7 +17,6 @@ let warnedLegacy = false;
 function warnLegacyOnce(from: string, to: string): void {
   if (warnedLegacy) return;
   warnedLegacy = true;
-  // eslint-disable-next-line no-console
   console.warn(
     `[ports] Legacy port name "${from}" migrated to "${to}". This board has ` +
       `5 PWM (P1..P5) + 5 I2C (I1..I5) ports, not M1..M4 / G1..G8.`,

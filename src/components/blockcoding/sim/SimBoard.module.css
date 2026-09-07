@@ -1,0 +1,99 @@
+/* Animations for the simulator board visuals (4.md). CSS-only, no JS timers.
+   prefers-reduced-motion disables all motion — values stay visible, just static. */
+
+.wave {
+  transform-origin: center;
+  animation: buzzRing 1s ease-out infinite;
+}
+.wave2 {
+  animation-delay: 0.33s;
+}
+.wave3 {
+  animation-delay: 0.66s;
+}
+@keyframes buzzRing {
+  0% {
+    r: 6px;
+    opacity: 0.55;
+  }
+  100% {
+    r: 30px;
+    opacity: 0;
+  }
+}
+
+.bleBlink {
+  animation: bleBlink 1.2s ease-in-out infinite;
+}
+@keyframes bleBlink {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.portClick {
+  cursor: pointer;
+}
+.portClick:focus-visible {
+  outline: 2px solid #8085f4;
+  outline-offset: 2px;
+}
+
+/* OLED marquee for text longer than the screen. */
+.marqueeWrap {
+  overflow: hidden;
+  white-space: nowrap;
+}
+.marquee {
+  display: inline-block;
+  padding-left: 100%;
+  animation: marquee 6s linear infinite;
+}
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-200%);
+  }
+}
+
+/* OLED long-text scroll (SVG <text>). */
+.oledMarquee {
+  animation: oledScroll 5s linear infinite;
+}
+@keyframes oledScroll {
+  from {
+    transform: translateX(70px);
+  }
+  to {
+    transform: translateX(-140px);
+  }
+}
+
+.servoHornSpin {
+  transform-origin: center;
+  animation: hornSpin var(--spin-dur, 1s) linear infinite;
+}
+@keyframes hornSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wave,
+  .bleBlink,
+  .marquee,
+  .oledMarquee,
+  .servoHornSpin {
+    animation: none !important;
+  }
+}

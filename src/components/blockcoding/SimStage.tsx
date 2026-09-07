@@ -13,6 +13,7 @@ import PortBoard, { fillBg } from '../modes/PortBoard';
 import { portLabel } from '../../domain/ports';
 import { SIM_STAGE, OBSTACLE_R, type SimSink, type SimState } from '../../runtime/SimSink';
 import { isSupported } from '../../domain/boardProfile';
+import BoardPanel from './sim/BoardPanel';
 import { cvStore } from '../../ai/cvStore';
 import styles from './SimStage.module.css';
 
@@ -55,6 +56,7 @@ export default function SimStage(props: SimStageProps) {
         <ArenaSection sink={sink} state={state} reduced={reduced} showCone={hw.ultrasonic} />
         <OutputPanelSection state={state} reduced={reduced} hw={hw} />
       </div>
+      <BoardPanel state={state} />
       <PortStripSection portValues={state.portValues} ledColor={state.ledColor} />
       {hw.sensors && <SensorRack sink={sink} state={state} />}
       <SimConsole lines={state.simConsole} />

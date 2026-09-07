@@ -58,6 +58,15 @@ export function persistPresets(list: SettingsPreset[]): Promise<void> {
   return safeSet(PRESETS_KEY, list);
 }
 
+/* ---- Simulator module layout (port id -> plugged module) ---- */
+export type SimModules = Record<string, 'servo' | 'oled'>;
+export function loadSimModules(): Promise<SimModules> {
+  return safeGet<SimModules>('sim-modules', {});
+}
+export function persistSimModules(m: SimModules): Promise<void> {
+  return safeSet('sim-modules', m);
+}
+
 /* ---- Block Coding projects (.rbk) ---- */
 export interface RbkProject {
   id: string;
