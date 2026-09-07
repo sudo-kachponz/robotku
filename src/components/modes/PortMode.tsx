@@ -14,14 +14,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import ControlLayout from '../control/ControlLayout';
 import { useDrive } from '../../hooks/useDrive';
 import PortBoard, { fillBg } from './PortBoard';
+import { NUM_PWM_PORTS } from '../../domain/ports';
 import styles from '../../styles/ModeControls.module.css';
 
 const THROTTLE_MS = 50; // ~20 Hz
 
 export default function PortMode() {
   const { setPort } = useDrive();
-  const [values, setValues] = useState<number[]>(() => Array(8).fill(0));
-  const lastSent = useRef<number[]>(Array(8).fill(0));
+  const [values, setValues] = useState<number[]>(() => Array(NUM_PWM_PORTS).fill(0));
+  const lastSent = useRef<number[]>(Array(NUM_PWM_PORTS).fill(0));
 
   const sendThrottled = useCallback(
     (port: number, value: number) => {
@@ -47,17 +48,17 @@ export default function PortMode() {
     [setPort, sendThrottled],
   );
 
-  // Digit1..8 keybinds: drive full CLOCKWISE (+100); SHIFT = ANTICLOCKWISE (-100).
+  // Digit1..5 keybinds: drive full CLOCKWISE (+100); SHIFT = ANTICLOCKWISE (-100).
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      const m = /^Digit([1-8])$/.exec(e.code);
+      const m = /^Digit([1-5])$/.exec(e.code);
       if (!m || e.repeat) return;
       e.preventDefault();
       const port = Number(m[1]);
       setValue(port, e.shiftKey ? -100 : 100, true);
     };
     const up = (e: KeyboardEvent) => {
-      const m = /^Digit([1-8])$/.exec(e.code);
+      const m = /^Digit([1-5])$/.exec(e.code);
       if (!m) return;
       e.preventDefault();
       setValue(Number(m[1]), 0, true); // release → Neutral
@@ -78,7 +79,7 @@ export default function PortMode() {
           <PortBoard active={values.map((v) => v !== 0)} />
         </div>
 
-        {/* RIGHT — 8 direction sliders */}
+        {/* RIGHT — one direction slider per PWM/servo port (P1..P5) */}
         <div className={styles.portRows}>
           <div className={styles.portHeader}>
             <span />
@@ -89,12 +90,12 @@ export default function PortMode() {
             </div>
           </div>
 
-          {Array.from({ length: 8 }, (_, i) => {
+          {Array.from({ length: NUM_PWM_PORTS }, (_, i) => {
             const port = i + 1;
             const v = values[i];
             return (
               <div key={port} className={styles.portRow}>
-                <span className={styles.portNum}>{port}</span>
+                <span className={styles.portNum}>{`P${port}`}</span>
                 <div className={styles.portTrackWrap}>
                   <input
                     className={styles.portSlider}
@@ -102,7 +103,7 @@ export default function PortMode() {
                     min={-100}
                     max={100}
                     value={v}
-                    aria-label={`Port ${port} (kiri = anticlockwise, kanan = clockwise)`}
+                    aria-label={`Port P${port} (kiri = anticlockwise, kanan = clockwise)`}
                     style={{ background: fillBg(v) }}
                     onChange={(e) => setValue(port, Number(e.target.value))}
                     onPointerUp={() => setValue(port, 0, true)}

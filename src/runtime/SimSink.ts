@@ -31,7 +31,7 @@ export interface SimState {
   // trail of recent poses (SimStage draws a fading polyline)
   trail: Array<{ x: number; y: number }>;
   // ports
-  portValues: number[]; // 8, signed -100..100
+  portValues: number[]; // 5 PWM ports (P1..P5), signed -100..100
   // gripper 0 (closed) .. 1 (open)
   gripperOpen: number;
   // head servos (Parts / mechanisms)
@@ -89,7 +89,7 @@ function initialState(): SimState {
     fwd: 0,
     turn: 0,
     trail: [],
-    portValues: Array(8).fill(0),
+    portValues: Array(NUM_PORTS).fill(0),
     gripperOpen: 1,
     headPitch: 90,
     headYaw: 90,

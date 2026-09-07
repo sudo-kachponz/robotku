@@ -1,33 +1,85 @@
 // src/domain/ports.ts
 //
-// The ONE port-mapping table. Movement blocks name motor ports M1..M4, Sensor
-// blocks name bus ports G1..G8, and the virtual robot keeps 8 signed port slots
-// (index 0..7). This maps every block-facing name to a 0-based slot so nothing in
-// the runtime uses magic 0/1 indices. Imported by SimSink, TransportSink and the
-// UI (SimStage / PortMode) so the strip labels tell the truth.
+// Port-name -> slot mapping for the Robotku Controller V3: 5 PWM (drive/servo)
+// ports P1..P5 and 5 I2C (module) ports I1..I5. Replaces the old fake 8-slot
+// M1..M4 / G1..G8 model — this board has no motor driver and no generic bus (see
+// sim.md / hardware.ts). Legacy names from saved projects are migrated to P/I
+// with a one-time console warning so old classroom projects still open.
 
-/** Motor ports M1..M4 occupy the first four slots (1..4 → index 0..3). */
-/** Sensor/bus ports G1..G8 occupy all eight slots (1..8 → index 0..7). */
+import { PWM_PORTS, I2C_PORTS, type PortKind } from './hardware';
+
+export const NUM_PWM_PORTS = PWM_PORTS.length; // 5
+export const NUM_I2C_PORTS = I2C_PORTS.length; // 5
+// Back-compat alias: "ports" in the drive runtime means the PWM ports.
+export const NUM_PORTS = NUM_PWM_PORTS;
+
+let warnedLegacy = false;
+function warnLegacyOnce(from: string, to: string): void {
+  if (warnedLegacy) return;
+  warnedLegacy = true;
+  // eslint-disable-next-line no-console
+  console.warn(
+    `[ports] Legacy port name "${from}" migrated to "${to}". This board has ` +
+      `5 PWM (P1..P5) + 5 I2C (I1..I5) ports, not M1..M4 / G1..G8.`,
+  );
+}
+
+/**
+ * PWM/drive port -> 0-based slot (0..4). Accepts 'P1'..'P5', a bare 1..5, and
+ * legacy 'M1'..'M4' (migrated with a warning). Returns null for anything else
+ * (including old G6..G8, which have no equivalent on this board).
+ */
 export function portIndex(name: string | number | null | undefined): number | null {
   if (name == null) return null;
   if (typeof name === 'number') {
-    return name >= 1 && name <= 8 ? name - 1 : null;
+    return name >= 1 && name <= NUM_PWM_PORTS ? name - 1 : null;
   }
-  const m = /^([MG])\s*([0-9]+)$/i.exec(name.trim());
+  const s = name.trim();
+  const p = /^P\s*([1-9])$/i.exec(s);
+  if (p) {
+    const n = parseInt(p[1], 10);
+    return n <= NUM_PWM_PORTS ? n - 1 : null;
+  }
+  const m = /^M\s*([1-9])$/i.exec(s); // legacy motor port
   if (m) {
-    const n = parseInt(m[2], 10);
-    if (m[1].toUpperCase() === 'M') return n >= 1 && n <= 4 ? n - 1 : null;
-    return n >= 1 && n <= 8 ? n - 1 : null;
+    const n = parseInt(m[1], 10);
+    if (n <= NUM_PWM_PORTS) {
+      warnLegacyOnce(`M${n}`, `P${n}`);
+      return n - 1;
+    }
+    return null;
   }
-  const n = parseInt(name, 10);
-  if (Number.isFinite(n) && n >= 1 && n <= 8) return n - 1;
+  const n = parseInt(s, 10);
+  if (Number.isFinite(n) && n >= 1 && n <= NUM_PWM_PORTS) return n - 1;
   return null;
 }
 
-/** Human label for the strip: "1/M1", "2/M2", … "8/G8". */
-export function portLabel(index0: number): string {
-  const port = index0 + 1;
-  return index0 < 4 ? `${port}/M${port}` : `${port}/G${port}`;
+/**
+ * I2C/module port -> 0-based slot (0..4). Accepts 'I1'..'I5' and legacy
+ * 'G1'..'G5' (migrated). 'G6'..'G8' return null — no equivalent on this board.
+ */
+export function i2cIndex(name: string | number | null | undefined): number | null {
+  if (name == null) return null;
+  const s = String(name).trim();
+  const i = /^I\s*([1-9])$/i.exec(s);
+  if (i) {
+    const n = parseInt(i[1], 10);
+    return n <= NUM_I2C_PORTS ? n - 1 : null;
+  }
+  const g = /^G\s*([1-9])$/i.exec(s); // legacy bus port
+  if (g) {
+    const n = parseInt(g[1], 10);
+    if (n <= NUM_I2C_PORTS) {
+      warnLegacyOnce(`G${n}`, `I${n}`);
+      return n - 1;
+    }
+    return null;
+  }
+  return null;
 }
 
-export const NUM_PORTS = 8;
+/** Strip label: 'P1 · PWM' (kind 'pwm', default) or 'I1 · I2C' (kind 'i2c'). */
+export function portLabel(index0: number, kind: PortKind = 'pwm'): string {
+  const n = index0 + 1;
+  return kind === 'pwm' ? `P${n} · PWM` : `I${n} · I2C`;
+}

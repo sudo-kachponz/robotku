@@ -17,11 +17,21 @@ const SPEED_OPTIONS: [string, string][] = [
   ['Medium', 'medium'],
   ['Fast', 'fast'],
 ];
+// Drive ports are the PWM/servo ports P1..P5 (this board has no motor ports).
+// LEFT defaults to P1, RIGHT to P2 — the two drive servos verified on hardware.
 const MOTOR_PORTS: [string, string][] = [
-  ['M1', 'M1'],
-  ['M2', 'M2'],
-  ['M3', 'M3'],
-  ['M4', 'M4'],
+  ['P1', 'P1'],
+  ['P2', 'P2'],
+  ['P3', 'P3'],
+  ['P4', 'P4'],
+  ['P5', 'P5'],
+];
+const MOTOR_PORTS_R: [string, string][] = [
+  ['P2', 'P2'],
+  ['P1', 'P1'],
+  ['P3', 'P3'],
+  ['P4', 'P4'],
+  ['P5', 'P5'],
 ];
 
 // --- Block Definitions ---
@@ -33,16 +43,7 @@ defineOnce([
       { type: 'input_value', name: 'DURATION', check: 'Number' },
       { type: 'field_dropdown', name: 'SPEED', options: SPEED_OPTIONS },
       { type: 'field_dropdown', name: 'LEFT', options: MOTOR_PORTS },
-      {
-        type: 'field_dropdown',
-        name: 'RIGHT',
-        options: [
-          ['M2', 'M2'],
-          ['M1', 'M1'],
-          ['M3', 'M3'],
-          ['M4', 'M4'],
-        ],
-      },
+      { type: 'field_dropdown', name: 'RIGHT', options: MOTOR_PORTS_R },
     ],
     previousStatement: null,
     nextStatement: null,
@@ -56,16 +57,7 @@ defineOnce([
       { type: 'input_value', name: 'DURATION', check: 'Number' },
       { type: 'field_dropdown', name: 'SPEED', options: SPEED_OPTIONS },
       { type: 'field_dropdown', name: 'LEFT', options: MOTOR_PORTS },
-      {
-        type: 'field_dropdown',
-        name: 'RIGHT',
-        options: [
-          ['M2', 'M2'],
-          ['M1', 'M1'],
-          ['M3', 'M3'],
-          ['M4', 'M4'],
-        ],
-      },
+      { type: 'field_dropdown', name: 'RIGHT', options: MOTOR_PORTS_R },
     ],
     previousStatement: null,
     nextStatement: null,
@@ -79,16 +71,7 @@ defineOnce([
       { type: 'input_value', name: 'DURATION', check: 'Number' },
       { type: 'field_dropdown', name: 'SPEED', options: SPEED_OPTIONS },
       { type: 'field_dropdown', name: 'LEFT', options: MOTOR_PORTS },
-      {
-        type: 'field_dropdown',
-        name: 'RIGHT',
-        options: [
-          ['M2', 'M2'],
-          ['M1', 'M1'],
-          ['M3', 'M3'],
-          ['M4', 'M4'],
-        ],
-      },
+      { type: 'field_dropdown', name: 'RIGHT', options: MOTOR_PORTS_R },
     ],
     previousStatement: null,
     nextStatement: null,
@@ -102,16 +85,7 @@ defineOnce([
       { type: 'input_value', name: 'DURATION', check: 'Number' },
       { type: 'field_dropdown', name: 'SPEED', options: SPEED_OPTIONS },
       { type: 'field_dropdown', name: 'LEFT', options: MOTOR_PORTS },
-      {
-        type: 'field_dropdown',
-        name: 'RIGHT',
-        options: [
-          ['M2', 'M2'],
-          ['M1', 'M1'],
-          ['M3', 'M3'],
-          ['M4', 'M4'],
-        ],
-      },
+      { type: 'field_dropdown', name: 'RIGHT', options: MOTOR_PORTS_R },
     ],
     previousStatement: null,
     nextStatement: null,
@@ -126,16 +100,7 @@ defineOnce([
       { type: 'field_slider', name: 'STEERING', value: 0, min: -100, max: 100 },
       { type: 'field_dropdown', name: 'SPEED', options: SPEED_OPTIONS },
       { type: 'field_dropdown', name: 'LEFT', options: MOTOR_PORTS },
-      {
-        type: 'field_dropdown',
-        name: 'RIGHT',
-        options: [
-          ['M2', 'M2'],
-          ['M1', 'M1'],
-          ['M3', 'M3'],
-          ['M4', 'M4'],
-        ],
-      },
+      { type: 'field_dropdown', name: 'RIGHT', options: MOTOR_PORTS_R },
     ],
     previousStatement: null,
     nextStatement: null,
@@ -176,16 +141,7 @@ defineOnce([
         ],
       },
       { type: 'field_dropdown', name: 'LEFT', options: MOTOR_PORTS },
-      {
-        type: 'field_dropdown',
-        name: 'RIGHT',
-        options: [
-          ['M2', 'M2'],
-          ['M1', 'M1'],
-          ['M3', 'M3'],
-          ['M4', 'M4'],
-        ],
-      },
+      { type: 'field_dropdown', name: 'RIGHT', options: MOTOR_PORTS_R },
     ],
     previousStatement: null,
     nextStatement: null,

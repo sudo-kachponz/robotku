@@ -25,7 +25,7 @@ const SAMPLE: BlockSpec[] = [
       DO: [
         {
           type: 'move_forward',
-          fields: { SPEED: 'medium', LEFT: 'M1', RIGHT: 'M2' },
+          fields: { SPEED: 'medium', LEFT: 'P1', RIGHT: 'P2' },
           inputs: { DURATION: { type: 'variables_get', fields: { VAR: 'sec' } } },
         },
         {
@@ -51,8 +51,8 @@ const WIRE_FIXTURE = [
       direction: 'forward',
       speed: 70,
       duration_ms: { $expr: '(sec)*1000' },
-      left: 'M1',
-      right: 'M2',
+      left: 'P1',
+      right: 'P2',
     },
   },
   { command: 'META_IF', params: { condition: '2 > 1' } },

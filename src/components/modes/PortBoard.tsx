@@ -1,162 +1,120 @@
 // src/components/modes/PortBoard.tsx
 //
-// Clean top-view of the Robotku kit board — ESP32 module, USB, the S/V/G port
-// headers for ports 1–4 and 5–8 (yellow/red/black), SW1–SW4 buttons and the "21"
-// label. When active[port-1] is true, that port column glows. Extracted from
-// PortMode.tsx so both Port Control and the Block Coding 2D SimStage share ONE
-// copy (no duplication).
+// Top-view of the Robotku Controller V3 board, drawn to match the real PCB (see
+// sim.md): 5 I2C ports (4-pin GND/VCC/SCL/SDA) up top, ESP32 + RGB LED + buzzer in
+// the middle, and 5 PWM/servo ports (3-pin PWM/5V/GND) along the bottom. Header
+// colors come from hardware.ts so the SVG and the physical board can't drift.
+// When active[i] is true, PWM port i glows. Shared by Port Control + the Block
+// Coding SimStage (one copy, no duplication).
 
+import { PWM_PORTS, I2C_PORTS } from '../../domain/hardware';
 import styles from '../../styles/ModeControls.module.css';
 
-// Center-out fill colours (bright enough for the immersive indigo background).
 export const CW = '#8085F4'; // clockwise → indigo
 export const CCW = '#F265AE'; // anticlockwise → pink
 const TRACK = 'rgba(255,255,255,0.18)';
 
-/**
- * Build a center-out track background: coloured from the middle detent toward the
- * thumb, tinted by direction; the rest of the track stays light/gray.
- */
+/** Center-out track background, tinted by direction (used by the sliders). */
 export function fillBg(v: number): string {
-  const pct = 50 + v / 2; // -100→0%, 0→50%, +100→100%
+  const pct = 50 + v / 2;
   const a = Math.min(50, pct);
   const b = Math.max(50, pct);
   const color = v >= 0 ? CW : CCW;
   return `linear-gradient(to right, ${TRACK} 0 ${a}%, ${color} ${a}% ${b}%, ${TRACK} ${b}% 100%)`;
 }
 
-export default function PortBoard({ active }: { active: boolean[] }) {
-  const S = '#E0B000'; // signal (yellow)
-  const V = '#E5484D'; // voltage (red)
-  const G = '#1B1840'; // ground (black)
+const PWM_X0 = 40;
+const PWM_DX = 78;
+const I2C_X0 = 46;
+const I2C_DX = 78;
 
-  const column = (port: number, x: number) => {
-    const on = active[port - 1];
+export default function PortBoard({ active, ledColor }: { active: boolean[]; ledColor?: string | null }) {
+  // One PWM/servo port column (3 pins, board-edge -> inner: PWM yellow, 5V red, GND black).
+  const pwmColumn = (port: (typeof PWM_PORTS)[number], i: number) => {
+    const x = PWM_X0 + i * PWM_DX;
+    const on = !!active[i];
+    const [gnd, v5, pwm] = port.colors; // hardware order: GND,5V,PWM
     return (
-      <g key={port} id={`port-${port}`}>
+      <g key={port.id} id={`port-${port.id}`}>
         <rect
           x={x - 6}
-          y={155}
-          width={40}
-          height={74}
+          y={247}
+          width={44}
+          height={62}
           rx={9}
           fill={on ? 'rgba(129,133,244,0.28)' : 'transparent'}
           stroke={on ? CW : 'transparent'}
           strokeWidth={2}
           style={{ transition: 'fill .15s ease, stroke .15s ease' }}
         />
-        <text
-          x={x + 14}
-          y={149}
-          textAnchor="middle"
-          fontSize={13}
-          fontWeight={800}
-          fill={on ? CW : '#565386'}
-          style={{ transition: 'fill .15s ease' }}
-        >
-          {port}
+        <text x={x + 16} y={243} textAnchor="middle" fontSize={12} fontWeight={800}
+          fill={on ? CW : port.verified ? '#565386' : '#B9410088'}>
+          {port.id}
         </text>
-        <rect x={x} y={162} width={28} height={15} rx={4} fill={S} />
-        <rect x={x} y={181} width={28} height={15} rx={4} fill={V} />
-        <rect x={x} y={200} width={28} height={15} rx={4} fill={G} />
+        <rect x={x} y={254} width={32} height={14} rx={4} fill={pwm} />
+        <rect x={x} y={272} width={32} height={14} rx={4} fill={v5} />
+        <rect x={x} y={290} width={32} height={14} rx={4} fill={gnd} />
       </g>
     );
   };
 
-  const legend = (bx: number) => (
-    <g fill="#9499B8" fontSize={11} fontWeight={700} textAnchor="middle">
-      <text x={bx} y={174}>
-        S
-      </text>
-      <text x={bx} y={193}>
-        V
-      </text>
-      <text x={bx} y={212}>
-        G
-      </text>
-    </g>
-  );
+  // One I2C port column (4 pins: GND black, VCC red, SCL green, SDA yellow).
+  const i2cColumn = (port: (typeof I2C_PORTS)[number], i: number) => {
+    const x = I2C_X0 + i * I2C_DX;
+    return (
+      <g key={port.id} id={`port-${port.id}`}>
+        <text x={x + 14} y={40} textAnchor="middle" fontSize={12} fontWeight={800} fill="#565386">
+          {port.id}
+        </text>
+        {port.colors.map((c, r) => (
+          <rect key={r} x={x} y={46 + r * 18} width={28} height={14} rx={4} fill={c} />
+        ))}
+      </g>
+    );
+  };
 
   return (
     <svg
       className={styles.portBoardSvg}
-      viewBox="0 0 440 320"
+      viewBox="0 0 440 330"
       role="img"
-      aria-label="Papan Robotku dengan port 1–8"
+      aria-label="Papan Robotku Controller V3 — 5 port PWM dan 5 port I2C"
     >
       {/* PCB */}
-      <rect
-        x={10}
-        y={14}
-        width={420}
-        height={296}
-        rx={20}
-        fill="#FFFFFF"
-        stroke="#E7E9F2"
-        strokeWidth={2}
-      />
-
-      {/* mounting holes */}
+      <rect x={10} y={14} width={420} height={302} rx={20} fill="#FFFFFF" stroke="#E7E9F2" strokeWidth={2} />
       <circle cx={28} cy={32} r={5} fill="#EDEEF6" />
       <circle cx={412} cy={32} r={5} fill="#EDEEF6" />
-      <circle cx={28} cy={292} r={5} fill="#EDEEF6" />
-      <circle cx={412} cy={292} r={5} fill="#EDEEF6" />
+      <circle cx={28} cy={298} r={5} fill="#EDEEF6" />
+      <circle cx={412} cy={298} r={5} fill="#EDEEF6" />
 
-      {/* USB */}
-      <rect x={205} y={6} width={30} height={16} rx={3} fill="#C2C6DB" />
+      {/* I2C header block (top) + legend */}
+      <text x={18} y={40} fontSize={10} fontWeight={700} fill="#9499B8">I2C</text>
+      {I2C_PORTS.map((p, i) => i2cColumn(p, i))}
 
       {/* ESP32 module */}
-      <rect x={150} y={34} width={140} height={78} rx={10} fill="#272350" />
-      <rect x={158} y={42} width={124} height={30} rx={5} fill="#3A3470" />
-      <text x={220} y={98} textAnchor="middle" fontSize={16} fontWeight={800} fill="#FFFFFF">
-        ESP32
-      </text>
+      <rect x={150} y={120} width={140} height={64} rx={10} fill="#272350" />
+      <rect x={158} y={128} width={90} height={24} rx={5} fill="#3A3470" />
+      <text x={220} y={172} textAnchor="middle" fontSize={15} fontWeight={800} fill="#FFFFFF">ESP32</text>
 
-      {/* "21" board marker */}
-      <text x={402} y={58} textAnchor="middle" fontSize={16} fontWeight={800} fill="#C2C6DB">
-        21
-      </text>
+      {/* USB (right edge) */}
+      <rect x={414} y={150} width={16} height={28} rx={3} fill="#C2C6DB" />
 
-      {/* Port headers — block A (1–4) */}
-      {legend(30)}
-      {column(1, 46)}
-      {column(2, 88)}
-      {column(3, 130)}
-      {column(4, 172)}
+      {/* RGB LED — lit by ledColor */}
+      <circle cx={110} cy={150} r={11} fill={ledColor || 'rgba(60,64,120,0.18)'}
+        style={{ filter: ledColor ? `drop-shadow(0 0 8px ${ledColor})` : 'none', transition: 'fill .2s ease' }} />
+      <text x={110} y={182} textAnchor="middle" fontSize={9} fontWeight={700} fill="#9499B8">RGB</text>
 
-      {/* Port headers — block B (5–8) */}
-      {legend(236)}
-      {column(5, 252)}
-      {column(6, 294)}
-      {column(7, 336)}
-      {column(8, 378)}
+      {/* Buzzer */}
+      <circle cx={330} cy={150} r={13} fill="#1B1840" />
+      <circle cx={330} cy={150} r={3} fill="#3A3470" />
+      <text x={330} y={182} textAnchor="middle" fontSize={9} fontWeight={700} fill="#9499B8">BUZZ</text>
 
-      {/* SW1–SW4 tactile buttons */}
-      {[0, 1, 2, 3].map((i) => (
-        <g key={i}>
-          <rect
-            x={46 + i * 52}
-            y={250}
-            width={30}
-            height={30}
-            rx={7}
-            fill="#EEF0FF"
-            stroke="#C6CAFF"
-            strokeWidth={2}
-          />
-          <circle cx={61 + i * 52} cy={265} r={7} fill="#A3A8FB" />
-          <text
-            x={61 + i * 52}
-            y={300}
-            textAnchor="middle"
-            fontSize={10}
-            fontWeight={700}
-            fill="#9499B8"
-          >
-            SW{i + 1}
-          </text>
-        </g>
-      ))}
+      {/* silkscreen */}
+      <text x={402} y={118} textAnchor="end" fontSize={11} fontWeight={800} fill="#C2C6DB">ROBOTKU</text>
+
+      {/* PWM header block (bottom) + legend */}
+      <text x={18} y={272} fontSize={10} fontWeight={700} fill="#9499B8">PWM</text>
+      {PWM_PORTS.map((p, i) => pwmColumn(p, i))}
     </svg>
   );
 }

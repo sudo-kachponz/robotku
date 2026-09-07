@@ -55,7 +55,7 @@ export default function SimStage(props: SimStageProps) {
         <ArenaSection sink={sink} state={state} reduced={reduced} showCone={hw.ultrasonic} />
         <OutputPanelSection state={state} reduced={reduced} hw={hw} />
       </div>
-      <PortStripSection portValues={state.portValues} />
+      <PortStripSection portValues={state.portValues} ledColor={state.ledColor} />
       {hw.sensors && <SensorRack sink={sink} state={state} />}
       <SimConsole lines={state.simConsole} />
       <VariablesWatch scope={scope} />
@@ -335,10 +335,10 @@ function ArenaSection({
 }
 
 /* ----------------------------------------------------------------- port strip */
-function PortStripSection({ portValues }: { portValues: number[] }) {
+function PortStripSection({ portValues, ledColor }: { portValues: number[]; ledColor?: string | null }) {
   return (
     <div className={styles.section}>
-      <PortBoard active={portValues.map((v) => v !== 0)} />
+      <PortBoard active={portValues.map((v) => v !== 0)} ledColor={ledColor} />
       <div className={styles.bars}>
         {portValues.map((v, i) => (
           <div key={i} className={styles.barRow}>
