@@ -12,6 +12,7 @@ import RobotSprite from '../modes/RobotSprite';
 import PortBoard, { fillBg } from '../modes/PortBoard';
 import { portLabel } from '../../domain/ports';
 import { SIM_STAGE, OBSTACLE_R, type SimSink, type SimState } from '../../runtime/SimSink';
+import { isSupported } from '../../domain/boardProfile';
 import { cvStore } from '../../ai/cvStore';
 import styles from './SimStage.module.css';
 
@@ -35,22 +36,51 @@ export default function SimStage(props: SimStageProps) {
   const { sink, reduced, running, paused, speed, scope } = props;
   const state = useSyncExternalStore(sink.subscribe, sink.getState, sink.getState);
 
+  // P2: the sim shows only hardware the active board actually has. Everything
+  // gated here is inert in SimSink too, so panel and behaviour never disagree.
+  const profile = sink.getProfile();
+  const hw = {
+    matrix: isSupported('DISPLAY_MATRIX', profile),
+    lcd: isSupported('LCD_TEXT', profile),
+    audioExtras: isSupported('SET_VOLUME', profile), // volume / bpm / mic
+    ultrasonic: profile.sensors.ultrasonic,
+    sensors: Object.values(profile.sensors).some(Boolean),
+  };
+
   return (
     <div className={styles.stack}>
       <RunControls {...props} />
       <StatusStrip state={state} running={running} paused={paused} />
       <div className={styles.topGrid}>
-        <ArenaSection sink={sink} state={state} reduced={reduced} />
-        <OutputPanelSection state={state} reduced={reduced} />
+        <ArenaSection sink={sink} state={state} reduced={reduced} showCone={hw.ultrasonic} />
+        <OutputPanelSection state={state} reduced={reduced} hw={hw} />
       </div>
       <PortStripSection portValues={state.portValues} />
-      <SensorRack sink={sink} state={state} />
+      {hw.sensors && <SensorRack sink={sink} state={state} />}
+      <SimConsole lines={state.simConsole} />
       <VariablesWatch scope={scope} />
       {speed !== 1 && (
         <div className={styles.speedNote} aria-hidden="true">
           Kecepatan simulasi ×{speed}
         </div>
       )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ sim console */
+// Shows opcodes the board ignored ("ghost hardware"), so a program that targets
+// missing hardware fails loud in the sim instead of silently doing nothing.
+function SimConsole({ lines }: { lines: string[] }) {
+  if (lines.length === 0) return null;
+  return (
+    <div className={styles.rack} role="log" aria-label="Konsol simulator">
+      <div className={styles.rackTitle}>Konsol</div>
+      {lines.slice(-5).map((l, i) => (
+        <div key={i} className={styles.watchEmpty}>
+          {l}
+        </div>
+      ))}
     </div>
   );
 }
@@ -152,10 +182,12 @@ function ArenaSection({
   sink,
   state,
   reduced,
+  showCone,
 }: {
   sink: SimSink;
   state: SimState;
   reduced: boolean;
+  showCone: boolean;
 }) {
   const half = SIM_STAGE / 2;
   const arenaRef = useRef<HTMLDivElement | null>(null);
@@ -201,13 +233,15 @@ function ArenaSection({
           strokeWidth={2}
           strokeDasharray="3 3"
         />
-        {/* ultrasonic cone */}
-        <polygon
-          points={`${cx},${cy} ${p1[0]},${p1[1]} ${p2[0]},${p2[1]}`}
-          fill="rgba(59,130,246,0.10)"
-          stroke="rgba(59,130,246,0.25)"
-          strokeWidth={1}
-        />
+        {/* ultrasonic cone — only when the board has a distance sensor */}
+        {showCone && (
+          <polygon
+            points={`${cx},${cy} ${p1[0]},${p1[1]} ${p2[0]},${p2[1]}`}
+            fill="rgba(59,130,246,0.10)"
+            stroke="rgba(59,130,246,0.25)"
+            strokeWidth={1}
+          />
+        )}
         {/* trail */}
         {state.trail.length > 1 && (
           <polyline
@@ -319,24 +353,35 @@ function PortStripSection({ portValues }: { portValues: number[] }) {
 }
 
 /* --------------------------------------------------------------- output panel */
-function OutputPanelSection({ state, reduced }: { state: SimState; reduced: boolean }) {
+function OutputPanelSection({
+  state,
+  reduced,
+  hw,
+}: {
+  state: SimState;
+  reduced: boolean;
+  hw: { matrix: boolean; lcd: boolean; audioExtras: boolean };
+}) {
   const buzzing = performance.now() - state.buzzerPulse < 260;
   const noteName = hzToNote(state.buzzerHz);
   return (
     <div className={styles.output}>
       <div className={styles.matrixWrap}>
-        <div className={styles.matrix} role="img" aria-label="Pratinjau LED Matrix">
-          {state.matrix.map((on, i) => (
-            <span
-              key={i}
-              className={styles.dot}
-              style={{
-                background: on ? MATRIX_ON : 'rgba(60,64,120,0.18)',
-                opacity: on ? Math.max(0.35, state.brightness / 100) : 1,
-              }}
-            />
-          ))}
-        </div>
+        {hw.matrix && (
+          <div className={styles.matrix} role="img" aria-label="Pratinjau LED Matrix">
+            {state.matrix.map((on, i) => (
+              <span
+                key={i}
+                className={styles.dot}
+                style={{
+                  background: on ? MATRIX_ON : 'rgba(60,64,120,0.18)',
+                  opacity: on ? Math.max(0.35, state.brightness / 100) : 1,
+                }}
+              />
+            ))}
+          </div>
+        )}
+        {/* OLED status text — real hardware, always shown */}
         {state.displayText && (
           <div className={styles.marqueeWrap} aria-label={`Teks berjalan: ${state.displayText}`}>
             <span className={reduced ? '' : styles.marquee}>{state.displayText}</span>
@@ -345,7 +390,7 @@ function OutputPanelSection({ state, reduced }: { state: SimState; reduced: bool
       </div>
 
       <div className={styles.outputRight}>
-        <LcdWidget shape={state.lcdShape} text={state.lcdText || state.displayText} />
+        {hw.lcd && <LcdWidget shape={state.lcdShape} text={state.lcdText || state.displayText} />}
         <div className={styles.outputRow}>
           <span
             className={styles.ledDot}
@@ -369,29 +414,33 @@ function OutputPanelSection({ state, reduced }: { state: SimState; reduced: bool
             {buzzing ? `${noteName} ${Math.round(state.buzzerHz)}Hz` : '—'}
           </span>
         </div>
-        <div className={styles.outputRow}>
-          <span className={styles.metricLabel}>Vol</span>
-          <div className={styles.volBar}>
-            <div style={{ width: `${state.volume}%` }} />
-          </div>
-          <span className={styles.chip}>BPM {state.bpm}</span>
-        </div>
-        {/* Microphone: recording lamp + 8 clip slots */}
-        <div className={styles.micRow}>
-          <span
-            className={`${styles.recLamp} ${state.recording ? styles.recOn : ''}`}
-            aria-label={state.recording ? 'Sedang merekam' : 'Mikrofon siap'}
-          />
-          {state.clips.map((len, i) => (
-            <span
-              key={i}
-              className={`${styles.clip} ${len > 0 ? styles.clipFull : ''}`}
-              title={`Slot ${i + 1}`}
-            >
-              {i + 1}
-            </span>
-          ))}
-        </div>
+        {/* Volume / BPM / microphone — no hardware on Robotku V3, shown only if present */}
+        {hw.audioExtras && (
+          <>
+            <div className={styles.outputRow}>
+              <span className={styles.metricLabel}>Vol</span>
+              <div className={styles.volBar}>
+                <div style={{ width: `${state.volume}%` }} />
+              </div>
+              <span className={styles.chip}>BPM {state.bpm}</span>
+            </div>
+            <div className={styles.micRow}>
+              <span
+                className={`${styles.recLamp} ${state.recording ? styles.recOn : ''}`}
+                aria-label={state.recording ? 'Sedang merekam' : 'Mikrofon siap'}
+              />
+              {state.clips.map((len, i) => (
+                <span
+                  key={i}
+                  className={`${styles.clip} ${len > 0 ? styles.clipFull : ''}`}
+                  title={`Slot ${i + 1}`}
+                >
+                  {i + 1}
+                </span>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

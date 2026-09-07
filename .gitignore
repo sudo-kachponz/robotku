@@ -41,3 +41,6 @@ releases/
 
 # PlatformIO firmware build output (firmware/robotku-esp32/.pio)
 .pio/
+
+# large distribution artifact — not source
+hub-robotku.zip

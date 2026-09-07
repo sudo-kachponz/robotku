@@ -2,9 +2,7 @@
 // Parity test suite for TIMING — Wait and Wait-Until.
 
 import { describe, it, expect } from 'vitest';
-import { buildBlock, buildAndRun, buildAndStart } from './harness';
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+import { buildBlock, buildAndRun } from './harness';
 
 describe('Parity: Timing', () => {
   it('timing_wait generates WAIT and blocks for the duration', async () => {
@@ -21,8 +19,11 @@ describe('Parity: Timing', () => {
     expect(state.y).toBe(0);
   });
 
-  it('timing_wait_until generates WAIT_UNTIL and resolves when the sensor crosses the threshold', async () => {
-    const cmds = buildBlock({
+  // With no sensors on Robotku V3 (P2) a sensor read is inert (null → 0), so a
+  // sensor-gated WAIT_UNTIL is satisfied immediately and the next block runs. The
+  // opcode is still generated; only the sim's evaluation reflects the missing hw.
+  it('timing_wait_until generates WAIT_UNTIL; a sensor-gated wait resolves at once (no sensor hw)', async () => {
+    const condBlock = {
       type: 'timing_wait_until',
       inputs: {
         CONDITION: {
@@ -31,31 +32,15 @@ describe('Parity: Timing', () => {
           inputs: { A: { type: 'sensor_ultrasonic', fields: { UNIT: 'cm', PORT: 'G1' } }, B: 30 },
         },
       },
-    });
+    };
+    const cmds = buildBlock(condBlock as any);
     expect(cmds[0]).toMatchObject({ command: 'WAIT_UNTIL' });
     expect(typeof cmds[0].params.condition).toBe('string');
 
-    // Program: wait until ultrasonic < 30, then Forward. Start far (200 → blocks),
-    // then drop the reading below the threshold; the Forward must fire.
-    const program = [
-      {
-        type: 'timing_wait_until',
-        inputs: {
-          CONDITION: {
-            type: 'logic_compare',
-            fields: { OP: 'LT' },
-            inputs: { A: { type: 'sensor_ultrasonic', fields: { UNIT: 'cm', PORT: 'G1' } }, B: 30 },
-          },
-        },
-      },
-      { type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.2 } },
-    ];
-
-    const run = buildAndStart(program as any, { speed: 4 });
-    await sleep(60);
-    expect(run.sink.getState().y).toBe(0); // still waiting — hasn't moved
-    run.sink.setUltrasonic(10); // sensor crosses threshold
-    await run.done;
-    expect(run.sink.getState().y).toBeLessThan(0); // Forward ran after the wait resolved
+    const { state } = await buildAndRun(
+      [condBlock as any, { type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.2 } }],
+      { speed: 4 },
+    );
+    expect(state.y).toBeLessThan(0); // wait resolved immediately, Forward ran
   });
 });

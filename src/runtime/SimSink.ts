@@ -9,6 +9,7 @@
 import type { RobotSink } from './ProgramRunner';
 import type { RuntimeCommand, CommandParams } from '../domain/protocol';
 import { portIndex, NUM_PORTS } from '../domain/ports';
+import { isSupported, robotkuEsp32V3, type BoardProfile } from '../domain/boardProfile';
 import { cvStore } from '../ai/cvStore';
 
 // Virtual arena — pose is kept in px inside a square stage, clamped to ±42% of the
@@ -62,6 +63,8 @@ export interface SimState {
   currentCommand: string | null;
   loopIteration: number;
   runStart: number;
+  // P2: opcodes ignored because the active board has no hardware for them.
+  simConsole: string[];
 }
 
 export const OBSTACLE_R = 22; // px
@@ -120,10 +123,26 @@ function initialState(): SimState {
     currentCommand: null,
     loopIteration: 0,
     runStart: 0,
+    simConsole: [],
   };
 }
 
 export class SimSink implements RobotSink {
+  // Same BoardProfile the toolbox guard uses (P1), so the sim and the editor agree
+  // on what this board can do. Defaults to the static Robotku V3.
+  constructor(private profile: BoardProfile = robotkuEsp32V3) {}
+
+  getProfile = (): BoardProfile => this.profile;
+
+  // Swap the board profile at runtime (mirror mode: adopt a connected robot's real
+  // capabilities from HELLO_ACK; revert to the static default on disconnect). Forces
+  // a re-render so SimStage re-reads which panels to show.
+  setProfile(profile: BoardProfile): void {
+    if (profile === this.profile) return;
+    this.profile = profile;
+    this.commit({}, true);
+  }
+
   private state: SimState = initialState();
   private listeners = new Set<() => void>();
   private wakers = new Set<() => void>();
@@ -157,10 +176,22 @@ export class SimSink implements RobotSink {
     for (const cb of this.listeners) cb();
   }
 
+  // Ghost hardware: an opcode the active board can't run. Don't fake it — log it
+  // to the sim console (mirrors the firmware's UNSUPPORTED reply) and change nothing.
+  private ignore(op: string): void {
+    const msg = `diabaikan: ${op} — tidak ada di board ${this.profile.name}`;
+    this.commit({ simConsole: [...this.state.simConsole.slice(-19), msg] }, true);
+  }
+
   // --- RobotSink -----------------------------------------------------------
   async exec(cmd: RuntimeCommand): Promise<void> {
     const { command } = cmd;
     const params: CommandParams = cmd.params ?? {};
+    // P2 fidelity: opcodes with no hardware on this board are inert (not faked).
+    if (!isSupported(command, this.profile)) {
+      this.ignore(command);
+      return;
+    }
     switch (command) {
       case 'MOVE_TIMED':
         await this.animateDrive(params, 'move');
@@ -342,6 +373,8 @@ export class SimSink implements RobotSink {
       const parsed = JSON.parse(getSensorDataJson);
       // AI reporters resolve from cvStore's latest inference (safe defaults off).
       if (parsed?.command === 'GET_AI_DATA') return cvStore.getAiValue(parsed.params ?? {});
+      // No physical sensors on this board — reporters read inert (null → safe 0/false).
+      if (!isSupported('GET_SENSOR_DATA', this.profile)) return null;
       sensor = parsed?.params?.sensor;
       port = parsed?.params?.port;
     } catch {

@@ -4,10 +4,14 @@
 // The 5x5 matrix uses a 25-char on/off pattern string (row-major, '1'=on).
 
 import * as Blockly from 'blockly/core';
+import { registerFieldColour } from '@blockly/field-colour';
 import { defineOnce } from './_defineOnce';
 import { javascriptGenerator } from 'blockly/javascript';
 import { astroidV2 } from '../robotProfiles';
 import { numArg, type NumOrExpr } from './_args';
+
+// Register the color-wheel field (field_colour) once, before any block uses it.
+registerFieldColour();
 
 const DEFAULT_MATRIX = '0110010010111110100010001'; // a friendly heart-ish glyph
 
@@ -50,6 +54,20 @@ defineOnce([
     previousStatement: null,
     nextStatement: null,
     style: 'looks_blocks',
+  },
+  // --- RGB LED (Robotku FW-06): color wheel + duration ---
+  {
+    type: 'set_led_color',
+    message0: 'Set LED %1 for %2 sec',
+    args0: [
+      { type: 'field_colour', name: 'COLOR', colour: '#ff0000' },
+      { type: 'input_value', name: 'DURATION', check: 'Number' },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    style: 'looks_blocks',
+    inputsInline: true,
+    tooltip: 'Light the RGB LED any color (color wheel), held for N seconds.',
   },
   // --- LCD Screen ---
   {
@@ -136,6 +154,19 @@ javascriptGenerator.forBlock['display_clear_matrix'] = function () {
   return JSON.stringify({ command: astroidV2.commands.clearMatrix, params: {} }) + ';';
 };
 
+javascriptGenerator.forBlock['set_led_color'] = function (block, gen) {
+  const hex = String(block.getFieldValue('COLOR') || '#000000');
+  const r = parseInt(hex.slice(1, 3), 16) || 0;
+  const g = parseInt(hex.slice(3, 5), 16) || 0;
+  const b = parseInt(hex.slice(5, 7), 16) || 0;
+  return (
+    JSON.stringify({
+      command: astroidV2.commands.setLedColor,
+      params: { r, g, b, secs: secs(block, gen) },
+    }) + ';'
+  );
+};
+
 javascriptGenerator.forBlock['lcd_shape'] = function (block, gen) {
   return (
     JSON.stringify({
@@ -172,6 +203,8 @@ export const looksCategory = {
     { kind: 'block', type: 'display_text' },
     { kind: 'block', type: 'display_set_brightness' },
     { kind: 'block', type: 'display_clear_matrix' },
+    { kind: 'label', text: 'RGB LED' },
+    { kind: 'block', type: 'set_led_color', inputs: durShadow },
     { kind: 'label', text: 'LCD Screen' },
     { kind: 'block', type: 'lcd_shape', inputs: durShadow },
     { kind: 'block', type: 'lcd_text', inputs: durShadow },
