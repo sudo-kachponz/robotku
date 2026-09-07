@@ -9,6 +9,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import BoardSvg, { type PortVisual } from './BoardSvg';
 import OledModule from './OledModule';
 import ServoModule from './ServoModule';
+import PixelEditor, { type Bitmap } from './PixelEditor';
+import { useDrive } from '../../../hooks/useDrive';
 import { PWM_PORTS, I2C_PORTS } from '../../../domain/hardware';
 import { loadSimModules, persistSimModules, type SimModules } from '../../../app/persistence';
 import type { SimState } from '../../../runtime/SimSink';
@@ -30,10 +32,12 @@ const box: React.CSSProperties = {
 };
 
 export default function BoardPanel({ state }: { state: SimState }) {
+  const { sendCommand } = useDrive();
   const [modules, setModules] = useState<SimModules>({});
   const [pending, setPending] = useState<'servo' | 'oled' | null>(null);
   const [manualRgb, setManualRgb] = useState<string | null>(null);
   const [manualText, setManualText] = useState<string | null>(null);
+  const [bitmap, setBitmap] = useState<Bitmap | null>(null);
   const [buzzPulse, setBuzzPulse] = useState(false);
   const buzzTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -107,7 +111,12 @@ export default function BoardPanel({ state }: { state: SimState }) {
             <div key={id} style={{ ...box, padding: 8 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#9DB0C9', marginBottom: 4 }}>→ {id}</div>
               {kind === 'oled' ? (
-                <OledModule text={oledText} shape={state.lcdShape} matrix={matrixOn ? state.matrix.map(Boolean) : undefined} />
+                <OledModule
+                  text={oledText}
+                  shape={state.lcdShape}
+                  matrix={matrixOn ? state.matrix.map(Boolean) : undefined}
+                  bitmap={bitmap}
+                />
               ) : (
                 <ServoModule speed={state.portValues[PWM_PORTS.findIndex((p) => p.id === id)] ?? 0} />
               )}
@@ -132,10 +141,6 @@ export default function BoardPanel({ state }: { state: SimState }) {
         <span style={{ fontSize: 12, fontWeight: 700, color: '#cdd6e6' }}>
           Coba langsung <em style={{ color: '#9DB0C9', fontWeight: 400 }}>(hanya simulator)</em>:
         </span>
-        <label style={{ fontSize: 12, color: '#cdd6e6', display: 'flex', gap: 4, alignItems: 'center' }}>
-          LED
-          <input type="color" aria-label="Warna LED simulator" onChange={(e) => setManualRgb(e.target.value)} />
-        </label>
         <input
           type="text"
           placeholder="Teks OLED…"
@@ -146,6 +151,33 @@ export default function BoardPanel({ state }: { state: SimState }) {
         <button onClick={pressBuzz} style={btn(false)}>
           Bunyi buzzer
         </button>
+      </div>
+
+      {/* Warna LED — real hex color wheel that drives the RGB LED on the robot */}
+      <div style={{ ...box, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#cdd6e6' }}>Warna LED (RGB):</span>
+        <input
+          type="color"
+          defaultValue="#ff0000"
+          aria-label="Pilih warna LED (roda warna, hex)"
+          onChange={(e) => {
+            const hex = e.target.value;
+            setManualRgb(hex);
+            const { r, g, b } = hexToRgb(hex);
+            sendCommand('SET_LED_COLOR', { r, g, b });
+          }}
+          style={{ width: 48, height: 32, border: 'none', background: 'transparent', cursor: 'pointer' }}
+        />
+        <span style={{ fontSize: 12, color: '#9DB0C9', fontFamily: 'monospace' }}>{manualRgb ?? '#ff0000'}</span>
+        <em style={{ fontSize: 11, color: '#9DB0C9' }}>roda warna + hex, langsung ke LED asli</em>
+      </div>
+
+      {/* Gambar pixel -> OLED (draw, then send to the real screen) */}
+      <div style={{ ...box, display: 'grid', gap: 8 }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#cdd6e6' }}>
+          Gambar pixel (OLED) <em style={{ color: '#9DB0C9', fontWeight: 400 }}>— gambar, lalu Kirim ke OLED</em>
+        </span>
+        <PixelEditor onSend={setBitmap} />
       </div>
     </div>
   );

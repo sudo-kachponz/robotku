@@ -108,6 +108,14 @@ String oledLine2 = "USB / Bluetooth";
 bool oledDirty = false;
 unsigned long lastOledPushMs = 0;
 
+// DISPLAY_BITMAP: a coarse pixel-art grid (from the web editor) scaled to fill the
+// 128x64 panel. Stored as a '0'/'1' string, row-major, w*h chars. bitmapMode routes
+// oledRender() to draw pixels instead of the status layout; any status change clears it.
+String oledBmp = "";
+int oledBmpW = 0;
+int oledBmpH = 0;
+bool oledBitmapMode = false;
+
 // ============================================================ ACTUATOR API
 // Where "stopped" actually is for a channel, once trim is applied.
 int servoNeutralDeg(int ch) {
@@ -161,9 +169,8 @@ void stopAllActuators() {
   motionEndsAtMs = 0;
 }
 
-// RGB LED (FW-06). Common cathode: HIGH = lit. Driven ON/OFF (8 colors: any mix of
-// R/G/B) — PWM here corrupted servo 2's timing, so digital keeps the LEDC timers
-// free for the servos/tone(). r/g/b are the 0..255 the web sends; >127 = "on".
+// RGB LED (FW-06). Digital 8-color (any mix of R/G/B) — PWM stutters servo 2 on this
+// board, so on/off keeps both servos smooth. r/g/b are 0..255; >127 = "on".
 void setLedColor(int r, int g, int b) {
 #if HAS_RGB
   digitalWrite(PIN_LED_R, r > 127 ? HIGH : LOW);
@@ -186,6 +193,19 @@ const char* connLabel() {
 void oledRender() {
   oled.clearDisplay();
   oled.setTextColor(SSD1306_WHITE);
+
+  // Pixel-art bitmap mode: scale the w x h grid to fill the panel and bail early.
+  if (oledBitmapMode && oledBmpW > 0 && oledBmpH > 0) {
+    int cw = OLED_WIDTH / oledBmpW;
+    int ch = OLED_HEIGHT / oledBmpH;
+    for (int r = 0; r < oledBmpH; r++) {
+      for (int c = 0; c < oledBmpW; c++) {
+        if (oledBmp[r * oledBmpW + c] == '1') oled.fillRect(c * cw, r * ch, cw, ch, SSD1306_WHITE);
+      }
+    }
+    oled.display();
+    return;
+  }
 
   // Row 1: brand + which link we are on.
   oled.setTextSize(1);
@@ -235,6 +255,7 @@ void oledPushIfDue() {
 void oledStatus(const String& line1, const String& line2) {
   oledLine1 = line1;
   oledLine2 = line2;
+  oledBitmapMode = false; // a status update takes the panel back from bitmap mode
   oledDirty = true;
   oledPushIfDue();
 }
@@ -361,6 +382,7 @@ void handleCommand(const String& jsonLine) {
     caps.add("SET_LED_COLOR");   // FW-06 RGB LED (GPIO16/17/5)
 #endif
     if (oledOk) caps.add("DISPLAY_TEXT");   // OLED text — only if the panel answered
+    if (oledOk) caps.add("DISPLAY_BITMAP"); // OLED pixel-art
     // Report the ports that are REALLY wired by scanning the config.h table —
     // never a hardcoded list. A board claiming port 2 it doesn't have makes the
     // right joystick axis die silently, which reads as "the web app is broken".
@@ -478,6 +500,23 @@ void handleCommand(const String& jsonLine) {
       oledStatus(p["text"] | "", "");   // headline line; reuses the throttled render
     } else {
       sendUnsupported("DISPLAY_TEXT");   // OLED not detected (FIX 4)
+    }
+    return;
+  }
+
+  // --- OLED pixel-art bitmap (from the web pixel editor) -------------------
+  if (strcmp(cmd, "DISPLAY_BITMAP") == 0) {
+    if (!oledOk) { sendUnsupported("DISPLAY_BITMAP"); return; }
+    int w = p["w"] | 0;
+    int h = p["h"] | 0;
+    const char* px = p["pixels"] | "";
+    if (w > 0 && h > 0 && w <= OLED_WIDTH && h <= OLED_HEIGHT && (int)strlen(px) >= w * h) {
+      oledBmpW = w;
+      oledBmpH = h;
+      oledBmp = px;
+      oledBitmapMode = true;
+      oledDirty = true;
+      oledPushIfDue();
     }
     return;
   }

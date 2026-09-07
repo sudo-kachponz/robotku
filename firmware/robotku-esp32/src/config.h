@@ -26,12 +26,10 @@
 
 // ----------------------------------------------------------------- RGB LED
 // FW-06: common-cathode RGB LED via 100Ω, schematic nets LED1/LED2/LED3.
-// Driven ON/OFF (8 colors) — NOT PWM. PWM was tried but its LEDC timers corrupted
-// the 2nd servo's 50 Hz signal (servo 2 stuttered); digital keeps all LEDC timers
-// free for the two ESP32Servo drives + tone(). The web color wheel snaps to the
-// nearest of 8. GPIO5 is a strapping pin but only sampled at boot.
-// ponytail: digital 8-color to protect servo timing; a dedicated-timer PWM split
-// could restore 24-bit color but risks the servos again — only if truly needed.
+// Driven ON/OFF (8 colors) — NOT PWM. PROVEN on hardware: any PWM/LEDC approach
+// (raw ledc AND the ESP32PWM-coordinated allocator) stutters servo 2 and/or leaves
+// the LED dark — two servos + PWM RGB can't share this chip's timers. Digital keeps
+// both servos smooth; the web color wheel picks any hex, snapping to nearest-8 here.
 #define PIN_LED_R      16
 #define PIN_LED_G      17
 #define PIN_LED_B      5

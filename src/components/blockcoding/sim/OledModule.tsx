@@ -9,9 +9,9 @@ import styles from './SimBoard.module.css';
 const C = {
   frame: '#2FC49A',
   pcb: '#123C7A',
-  screen: '#050505',
-  on: '#EAF6FF',
-  off: 'rgba(255,255,255,0.08)',
+  screen: '#040608',
+  on: '#3BE8F5', // blue-cyan — matches the real SSD1306 pixels on black
+  off: 'rgba(59,232,245,0.08)',
   screw: '#C9CDD4',
   pin: '#C9CDD4',
 } as const;
@@ -21,6 +21,7 @@ interface Props {
   line2?: string;
   matrix?: boolean[]; // 25 cells, row-major
   shape?: string | null;
+  bitmap?: { w: number; h: number; pixels: string } | null; // pixel-art grid ('0'/'1')
   dimmed?: boolean;
 }
 
@@ -56,7 +57,7 @@ function Shape({ shape }: { shape: string }) {
   }
 }
 
-export default function OledModule({ text, line2, matrix, shape, dimmed }: Props) {
+export default function OledModule({ text, line2, matrix, shape, bitmap, dimmed }: Props) {
   const longText = (text?.length ?? 0) > 10;
   return (
     <svg viewBox="0 0 150 110" role="img" aria-label="Modul layar OLED" style={{ width: '100%', height: 'auto', opacity: dimmed ? 0.5 : 1 }}>
@@ -82,7 +83,20 @@ export default function OledModule({ text, line2, matrix, shape, dimmed }: Props
       {/* screen */}
       <rect x={26} y={40} width={98} height={46} rx={2} fill={C.screen} stroke="#0d1b30" />
       <svg x={26} y={40} width={98} height={46} viewBox="0 0 128 64">
-        {matrix ? (
+        {bitmap && bitmap.w > 0 && bitmap.h > 0 ? (
+          Array.from({ length: bitmap.w * bitmap.h }, (_, i) =>
+            bitmap.pixels[i] === '1' ? (
+              <rect
+                key={i}
+                x={(i % bitmap.w) * (128 / bitmap.w)}
+                y={Math.floor(i / bitmap.w) * (64 / bitmap.h)}
+                width={128 / bitmap.w}
+                height={64 / bitmap.h}
+                fill={C.on}
+              />
+            ) : null,
+          )
+        ) : matrix ? (
           Array.from({ length: 25 }, (_, i) => (
             <rect
               key={i}

@@ -34,6 +34,8 @@ export interface DriveApi {
   setLed: (color: string) => void;
   /** Zero a group of ports. */
   stopGroup: (ports: number[]) => void;
+  /** Send an arbitrary command to the board (e.g. DISPLAY_BITMAP). No-op if offline. */
+  sendCommand: (command: string, params?: Record<string, unknown>) => void;
 }
 
 export function useDrive(): DriveApi {
@@ -70,5 +72,9 @@ export function useDrive(): DriveApi {
     sendLine(encodeCommand({ command: OPCODES.setLedColor, color }));
   }, []);
 
-  return { setPort, driveGroup, driveDirect, setGripper, setLed, stopGroup };
+  const sendCommand = useCallback((command: string, params: Record<string, unknown> = {}) => {
+    sendLine(encodeCommand({ command, ...params } as Parameters<typeof encodeCommand>[0]));
+  }, []);
+
+  return { setPort, driveGroup, driveDirect, setGripper, setLed, stopGroup, sendCommand };
 }
