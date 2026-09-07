@@ -56,6 +56,9 @@
 // =============================================================== HARDWARE
 Servo servoL;
 Servo servoR;
+ESP32PWM buzzerPwm;   // buzzer via the SAME allocator as the servos -> its own timer
+                      // (Arduino tone() stole a servo's timer, making the servo "sing")
+unsigned long buzzerOffMs = 0;   // 0 = silent; else stop the tone at this millis()
 Adafruit_SSD1306 oled(OLED_WIDTH, OLED_HEIGHT, &Wire, -1);
 bool oledOk = false;
 
@@ -278,11 +281,23 @@ void oledSplash() {
 }
 
 // Startup chirp — happens in setup(), so delay() here is fine (not the cmd path).
+// Buzzer via ESP32PWM (own timer, coordinated with servos). ms<=0 = play until the
+// next call; else loop() silences it at the deadline. Replaces Arduino tone(), whose
+// LEDC channel clashed with a servo timer (servo hummed the melody).
+void buzzerTone(int freq, long ms) {
+  buzzerPwm.writeTone(freq);
+  buzzerOffMs = (ms > 0) ? (millis() + ms) : 0;
+}
+void buzzerOff() {
+  buzzerPwm.write(0);   // duty 0 = silent
+  buzzerOffMs = 0;
+}
+
 void startupTone() {
-  tone(PIN_BUZZER, 880, 120);  delay(140);
-  tone(PIN_BUZZER, 1175, 120); delay(140);
-  tone(PIN_BUZZER, 1568, 160); delay(180);
-  noTone(PIN_BUZZER);
+  buzzerTone(880, 0);  delay(140);
+  buzzerTone(1175, 0); delay(140);
+  buzzerTone(1568, 0); delay(180);
+  buzzerOff();
 }
 
 // =============================================================== TELEMETRY
@@ -479,7 +494,7 @@ void handleCommand(const String& jsonLine) {
     else                           freq = 440;
     long ms = readDurationMs(p);
     if (ms <= 0) ms = 300;
-    tone(PIN_BUZZER, freq, ms);   // async on ESP32 — non-blocking (FIX 3)
+    buzzerTone(freq, ms);   // non-blocking; loop() silences at the deadline
     lastStatus = "Nada";
     return;
   }
@@ -718,6 +733,13 @@ void setupBle() {
 void setup() {
   Serial.begin(115200);
 
+  // One coordinated allocator for servos + buzzer so no two share a timer (2 servos
+  // + 1 buzzer = 3 of the 4 LEDC timers — fits; this is what stops the servo "singing").
+  ESP32PWM::allocateTimer(0);
+  ESP32PWM::allocateTimer(1);
+  ESP32PWM::allocateTimer(2);
+  ESP32PWM::allocateTimer(3);
+
   // Servos (ESP32Servo): 50 Hz, calibrated pulse range for SG90.
   servoL.setPeriodHertz(50);
   servoL.attach(PIN_SERVO_L, SERVO_MIN_US, SERVO_MAX_US);
@@ -727,7 +749,8 @@ void setup() {
   }
   stopAllActuators();
 
-  pinMode(PIN_BUZZER, OUTPUT);
+  buzzerPwm.attachPin(PIN_BUZZER, 2000, 10);   // own LEDC timer via the allocator
+  buzzerOff();
 
 #if HAS_RGB
   pinMode(PIN_LED_R, OUTPUT);
@@ -759,6 +782,9 @@ void loop() {
     lastStatus = "Selesai";
     oledStatus("Selesai", "menunggu perintah");
   }
+
+  // 2b) Non-blocking buzzer deadline: silence the tone when its duration expires.
+  if (buzzerOffMs != 0 && (long)(millis() - buzzerOffMs) >= 0) buzzerOff();
 
   // 3) Heartbeat watchdog (FIX 6): only after HELLO; trip once when link quiet.
   if (watchdogArmed && !failsafeEngaged &&
