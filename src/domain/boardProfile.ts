@@ -77,11 +77,10 @@ export const HOST_ONLY: ReadonlySet<string> = new Set<string>([
 // schematic capability line: tank drive (2 servos) + SET_PORT + buzzer tone +
 // RGB LED + OLED text. Everything NOT here is UNSUPPORTED on this board.
 //
-// TODO(firmware): SET_LED_COLOR / SET_LED_BRIGHTNESS / DISPLAY_TEXT are wired in
-// hardware (RGB on GPIO16/17/5, OLED on I2C) but have no handler in main.cpp yet
-// (see FW-06). They belong in the profile — the board CAN do them — but until the
-// firmware lands they'll answer UNSUPPORTED. Gripper stays OFF until a servo/port
-// is configured for it.
+// FW-06 landed: SET_LED_COLOR (RGB on GPIO16/17/5, digital on/off) and DISPLAY_TEXT
+// (OLED) now have handlers in main.cpp and are advertised in HELLO_ACK, so the live
+// profile enables their blocks. SET_LED_BRIGHTNESS stays listed but is a no-op on the
+// digital LED. Gripper stays OFF until a servo/port is configured for it.
 const ROBOTKU_V3_OPCODES: ReadonlySet<string> = new Set<string>([
   // Drive — tank, two continuous servos
   OP.driveDirect,

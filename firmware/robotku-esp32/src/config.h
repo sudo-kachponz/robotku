@@ -24,6 +24,19 @@
 // FW-02: schematic net BUZZ is GPIO13, not 26 (26 is PWM3 aux header). Was wrong.
 #define PIN_BUZZER     13
 
+// ----------------------------------------------------------------- RGB LED
+// FW-06: common-cathode RGB LED via 100Ω, schematic nets LED1/LED2/LED3.
+// Driven ON/OFF (8 colors) — NOT PWM. PWM was tried but its LEDC timers corrupted
+// the 2nd servo's 50 Hz signal (servo 2 stuttered); digital keeps all LEDC timers
+// free for the two ESP32Servo drives + tone(). The web color wheel snaps to the
+// nearest of 8. GPIO5 is a strapping pin but only sampled at boot.
+// ponytail: digital 8-color to protect servo timing; a dedicated-timer PWM split
+// could restore 24-bit color but risks the servos again — only if truly needed.
+#define PIN_LED_R      16
+#define PIN_LED_G      17
+#define PIN_LED_B      5
+#define HAS_RGB        1       // 0 = no RGB LED -> firmware answers UNSUPPORTED
+
 // ------------------------------------------------------------------ Servos
 // SG90 CONTINUOUS rotation servos (ESP32Servo):
 //   setPeriodHertz(50), attach(pin, SERVO_MIN_US, SERVO_MAX_US)
@@ -39,7 +52,7 @@
 //     instead of just going quiet — which reads to a tester as "the web is broken".
 // 1 = second servo really attached & verified. Flip this, reflash, done: the
 //     port table and HELLO_ACK both follow from here, nothing else to edit.
-#define HAS_SERVO_R    0
+#define HAS_SERVO_R    1
 
 #define SERVO_MIN_US   500
 #define SERVO_MAX_US   2400

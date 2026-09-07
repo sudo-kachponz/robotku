@@ -17,7 +17,7 @@
 | `CLAW_TIMED` | unsupported-by-profile | move_claw |
 | `CLEAR_MATRIX` | unsupported-by-profile | display_clear_matrix |
 | `DISPLAY_MATRIX` | unsupported-by-profile | display_matrix |
-| `DISPLAY_TEXT` | fw-todo | display_text |
+| `DISPLAY_TEXT` | handled | display_text |
 | `GET_SENSOR_DATA` | unsupported-by-profile | sensor_button1, sensor_button2, sensor_is_recording, sensor_get_analog, sensor_get_digital, sensor_ultrasonic, sensor_temperature, sensor_humidity, sensor_light, sensor_distance, sensor_heading |
 | `LCD_CLEAR` | unsupported-by-profile | lcd_clear |
 | `LCD_SHAPE` | unsupported-by-profile | lcd_shape |
@@ -25,7 +25,7 @@
 | `MOVE_TIMED` | handled | move_forward, move_reverse |
 | `PLAY_RECORDING` | unsupported-by-profile | audio_play_recording |
 | `PLAY_SOUND_EFFECT` | unsupported-by-profile | audio_sound_effect |
-| `PLAY_TONE` | handled | audio_play_tone_sec, audio_play_tone_beat |
+| `PLAY_TONE` | handled | audio_play_tone_sec, audio_play_tone_beat, audio_play_melody |
 | `RECORD_AUDIO` | unsupported-by-profile | audio_record |
 | `RESET_DISTANCE` | unsupported-by-profile | sensor_reset_distance |
 | `RESET_HEADING` | unsupported-by-profile | sensor_reset_heading |
@@ -35,6 +35,7 @@
 | `SET_GRIPPER` | unsupported-by-profile | mechanism_set_gripper |
 | `SET_HEAD_POSITION` | unsupported-by-profile | mechanism_set_head |
 | `SET_LED_BRIGHTNESS` | fw-todo | display_set_brightness |
+| `SET_LED_COLOR` | handled | set_led_color |
 | `SET_VOLUME` | unsupported-by-profile | audio_set_volume |
 | `STEER_TIMED` | fw-todo | move_steer |
 | `STOP` | fw-todo | move_stop |

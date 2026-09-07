@@ -23,6 +23,24 @@ const NOTE_OPTIONS: [string, string][] = [
   ['C5', 'C5'],
 ];
 
+// Preset songs for the melody block: [noteName, seconds]. Notes must be ones the
+// firmware's noteToFreq() knows (C4..A5). A melody is just a paced PLAY_TONE
+// sequence — no new firmware opcode needed.
+const SONGS: Record<string, [string, number][]> = {
+  twinkle: [
+    ['C4', 0.4], ['C4', 0.4], ['G4', 0.4], ['G4', 0.4], ['A4', 0.4], ['A4', 0.4], ['G4', 0.8],
+    ['F4', 0.4], ['F4', 0.4], ['E4', 0.4], ['E4', 0.4], ['D4', 0.4], ['D4', 0.4], ['C4', 0.8],
+  ],
+  birthday: [
+    ['C4', 0.3], ['C4', 0.2], ['D4', 0.5], ['C4', 0.5], ['F4', 0.5], ['E4', 1.0],
+    ['C4', 0.3], ['C4', 0.2], ['D4', 0.5], ['C4', 0.5], ['G4', 0.5], ['F4', 1.0],
+  ],
+  scale: [
+    ['C4', 0.3], ['D4', 0.3], ['E4', 0.3], ['F4', 0.3], ['G4', 0.3], ['A4', 0.3], ['B4', 0.3], ['C5', 0.5],
+    ['C5', 0.3], ['B4', 0.3], ['A4', 0.3], ['G4', 0.3], ['F4', 0.3], ['E4', 0.3], ['D4', 0.3], ['C4', 0.5],
+  ],
+};
+
 defineOnce([
   // --- Microphone ---
   {
@@ -105,6 +123,26 @@ defineOnce([
     nextStatement: null,
     style: 'audio_blocks',
     inputsInline: true,
+  },
+  {
+    type: 'audio_play_melody',
+    message0: 'Play melody %1',
+    args0: [
+      {
+        type: 'field_dropdown',
+        name: 'SONG',
+        options: [
+          ['Twinkle Twinkle', 'twinkle'],
+          ['Happy Birthday', 'birthday'],
+          ['Do-Re-Mi Scale', 'scale'],
+        ],
+      },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    style: 'audio_blocks',
+    inputsInline: true,
+    tooltip: 'Play a preset song on the buzzer (a paced note sequence).',
   },
   // --- Volume ---
   {
@@ -195,6 +233,20 @@ javascriptGenerator.forBlock['audio_play_tone_beat'] = function (block, gen) {
     }) + ';'
   );
 };
+javascriptGenerator.forBlock['audio_play_melody'] = function (block) {
+  const song = SONGS[block.getFieldValue('SONG')] ?? [];
+  // Emit one PLAY_TONE per note; duration_ms both sets the tone length on the
+  // firmware AND paces the runtime to the next note (TransportSink waits it).
+  return song
+    .map(
+      ([note, s]) =>
+        JSON.stringify({
+          command: astroidV2.commands.playTone,
+          params: { note, duration_ms: Math.round(s * 1000) },
+        }) + ';',
+    )
+    .join('');
+};
 javascriptGenerator.forBlock['audio_set_volume'] = function (block) {
   return (
     JSON.stringify({
@@ -232,6 +284,7 @@ export const audioCategory = {
     { kind: 'block', type: 'audio_sound_effect' },
     { kind: 'block', type: 'audio_play_tone_sec', inputs: durShadow },
     { kind: 'block', type: 'audio_play_tone_beat', inputs: beatShadow },
+    { kind: 'block', type: 'audio_play_melody' },
     { kind: 'label', text: 'Volume' },
     { kind: 'block', type: 'audio_set_volume' },
     { kind: 'block', type: 'audio_stop_sounds' },

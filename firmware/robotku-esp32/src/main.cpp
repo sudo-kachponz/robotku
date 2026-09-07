@@ -161,6 +161,19 @@ void stopAllActuators() {
   motionEndsAtMs = 0;
 }
 
+// RGB LED (FW-06). Common cathode: HIGH = lit. Driven ON/OFF (8 colors: any mix of
+// R/G/B) — PWM here corrupted servo 2's timing, so digital keeps the LEDC timers
+// free for the servos/tone(). r/g/b are the 0..255 the web sends; >127 = "on".
+void setLedColor(int r, int g, int b) {
+#if HAS_RGB
+  digitalWrite(PIN_LED_R, r > 127 ? HIGH : LOW);
+  digitalWrite(PIN_LED_G, g > 127 ? HIGH : LOW);
+  digitalWrite(PIN_LED_B, b > 127 ? HIGH : LOW);
+#else
+  (void)r; (void)g; (void)b;
+#endif
+}
+
 // =============================================================== OLED
 // "BLE" | "USB" | "Terputus" — what the board is actually talking to.
 const char* connLabel() {
@@ -344,6 +357,10 @@ void handleCommand(const String& jsonLine) {
     if (HAS_SERVO_R) caps.add("TURN_TIMED");
     caps.add("WAIT");
     caps.add("PLAY_TONE");
+#if HAS_RGB
+    caps.add("SET_LED_COLOR");   // FW-06 RGB LED (GPIO16/17/5)
+#endif
+    if (oledOk) caps.add("DISPLAY_TEXT");   // OLED text — only if the panel answered
     // Report the ports that are REALLY wired by scanning the config.h table —
     // never a hardcoded list. A board claiming port 2 it doesn't have makes the
     // right joystick axis die silently, which reads as "the web app is broken".
@@ -435,6 +452,26 @@ void handleCommand(const String& jsonLine) {
     if (ms <= 0) ms = 300;
     tone(PIN_BUZZER, freq, ms);   // async on ESP32 — non-blocking (FIX 3)
     lastStatus = "Nada";
+    return;
+  }
+
+  // --- Block: RGB LED color (FW-06) ---------------------------------------
+  if (strcmp(cmd, "SET_LED_COLOR") == 0) {
+#if HAS_RGB
+    setLedColor(p["r"] | 0, p["g"] | 0, p["b"] | 0);
+#else
+    sendUnsupported("SET_LED_COLOR");   // no RGB LED on this board (FIX 4)
+#endif
+    return;
+  }
+
+  // --- Block: OLED text — give the screen a name/words --------------------
+  if (strcmp(cmd, "DISPLAY_TEXT") == 0) {
+    if (oledOk) {
+      oledStatus(p["text"] | "", "");   // headline line; reuses the throttled render
+    } else {
+      sendUnsupported("DISPLAY_TEXT");   // OLED not detected (FIX 4)
+    }
     return;
   }
 
@@ -645,6 +682,13 @@ void setup() {
   stopAllActuators();
 
   pinMode(PIN_BUZZER, OUTPUT);
+
+#if HAS_RGB
+  pinMode(PIN_LED_R, OUTPUT);
+  pinMode(PIN_LED_G, OUTPUT);
+  pinMode(PIN_LED_B, OUTPUT);
+  setLedColor(0, 0, 0);   // start dark
+#endif
 
   // OLED
   Wire.begin(PIN_OLED_SDA, PIN_OLED_SCL);

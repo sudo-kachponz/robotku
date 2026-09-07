@@ -124,6 +124,23 @@ describe('Parity: Sound & Audio', () => {
     expect(state.simConsole.some((m) => m.includes('SET_BPM'))).toBe(true);
   });
 
+  it('audio_play_melody expands to a paced PLAY_TONE sequence', async () => {
+    const cmds = buildBlock({ type: 'audio_play_melody', fields: { SONG: 'twinkle' } });
+    expect(cmds).toHaveLength(14); // Twinkle Twinkle = 14 notes
+    expect(cmds[0]).toMatchObject({
+      command: 'PLAY_TONE',
+      params: { note: 'C4', duration_ms: 400 },
+    });
+    expect(cmds[2]).toMatchObject({ command: 'PLAY_TONE', params: { note: 'G4' } });
+
+    // Runs on the sim without error (buzzer fires per note); 8× so it's quick.
+    const { state } = await buildAndRun(
+      [{ type: 'audio_play_melody', fields: { SONG: 'twinkle' } }],
+      { speed: 8 },
+    );
+    expect(state).toBeDefined();
+  });
+
   it('audio_stop_sounds generates STOP_SOUNDS and silences the buzzer', async () => {
     const cmds = buildBlock({ type: 'audio_stop_sounds' });
     expect(cmds[0]).toMatchObject({ command: 'STOP_SOUNDS' });

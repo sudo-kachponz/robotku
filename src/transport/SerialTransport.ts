@@ -21,8 +21,21 @@ export class SerialTransport extends BaseTransport {
       throw new Error('Web Serial is not available in this browser.');
     }
 
-    this.port = await navigator.serial.requestPort();
-    await this.port.open({ baudRate: BAUD_RATE });
+    // Reuse a port the user already granted so Chrome's native picker (the plain
+    // "USB ttyUSB…" popup) only appears the FIRST time. getPorts() needs no user
+    // gesture. If the remembered port is gone (unplugged/replaced), fall back to
+    // the picker.
+    const remembered = (await navigator.serial.getPorts())[0] ?? null;
+    let port = remembered;
+    try {
+      if (!port) port = await navigator.serial.requestPort();
+      await port.open({ baudRate: BAUD_RATE });
+    } catch (err) {
+      if (!remembered) throw err; // picker cancelled or genuinely failed
+      port = await navigator.serial.requestPort(); // remembered port dead → pick
+      await port.open({ baudRate: BAUD_RATE });
+    }
+    this.port = port;
 
     if (!this.port.writable || !this.port.readable) {
       throw new Error('Serial port has no readable/writable stream.');

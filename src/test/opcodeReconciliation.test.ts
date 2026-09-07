@@ -29,9 +29,7 @@ function firmwareHandlers(): Set<string> {
 const FW_TODO = new Set<string>([
   'STOP', // move_stop — trivial (= stopAllActuators), not yet wired
   'STEER_TIMED', // move_steer — differential steer on tank drive, not yet wired
-  'SET_LED_COLOR', // RGB LED GPIO16/17/5 (FW-06)
-  'SET_LED_BRIGHTNESS', // RGB brightness (FW-06)
-  'DISPLAY_TEXT', // OLED text
+  'SET_LED_BRIGHTNESS', // RGB brightness — no-op on the digital LED (FW-06 handled color only)
 ]);
 
 type Status = 'handled' | 'unsupported-by-profile' | 'fw-todo' | 'DANGLING';
