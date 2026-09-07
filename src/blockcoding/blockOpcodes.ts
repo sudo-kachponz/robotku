@@ -27,6 +27,7 @@ export const BLOCK_OPCODE: Readonly<Record<string, string>> = {
   // Display
   display_matrix: C.displayMatrix,
   display_text: C.displayText,
+  display_kaomoji: C.displayText,
   display_set_brightness: C.setLedBrightness,
   display_clear_matrix: C.clearMatrix,
   set_led_color: C.setLedColor,

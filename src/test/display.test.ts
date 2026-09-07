@@ -43,6 +43,14 @@ describe('Parity: Display & LED', () => {
     expect(state.displayText).toBe('HALO ROBOTKU');
   });
 
+  it('display_kaomoji sends the chosen face as DISPLAY_TEXT to the OLED', async () => {
+    const cmds = buildBlock({ type: 'display_kaomoji', fields: { FACE: '(^_^)' } });
+    expect(cmds[0]).toMatchObject({ command: 'DISPLAY_TEXT', params: { text: '(^_^)' } });
+
+    const { state } = await buildAndRun([{ type: 'display_kaomoji', fields: { FACE: '(>_<)' } }]);
+    expect(state.displayText).toBe('(>_<)');
+  });
+
   it('display_clear_matrix generates CLEAR_MATRIX and clears matrix LEDs', async () => {
     const { state } = await buildAndRun([
       {

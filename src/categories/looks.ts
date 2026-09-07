@@ -35,6 +35,35 @@ defineOnce([
     style: 'looks_blocks',
     inputsInline: true,
   },
+  // Kaomoji templates — ASCII faces the OLED font (CP437) renders as-is via
+  // DISPLAY_TEXT. Kid-friendly "pixel-art" faces without typing.
+  {
+    type: 'display_kaomoji',
+    message0: 'Display face %1',
+    args0: [
+      {
+        type: 'field_dropdown',
+        name: 'FACE',
+        options: [
+          ['(^_^) happy', '(^_^)'],
+          ['\\(^o^)/ yay', '\\(^o^)/'],
+          ['(T_T) cry', '(T_T)'],
+          ['(>_<) ouch', '(>_<)'],
+          ['(o_O) huh', '(o_O)'],
+          ['(^_-) wink', '(^_-)'],
+          ['(=^.^=) cat', '(=^.^=)'],
+          ['(*_*) wow', '(*_*)'],
+          ['(-_-) meh', '(-_-)'],
+          ['(u_u)zzz sleepy', '(u_u)zzz'],
+        ],
+      },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    style: 'looks_blocks',
+    inputsInline: true,
+    tooltip: 'Show a kaomoji face on the OLED (sent as text).',
+  },
   {
     type: 'display_set_brightness',
     message0: 'Set LED Brightness %1',
@@ -152,6 +181,15 @@ javascriptGenerator.forBlock['display_text'] = function (block) {
   );
 };
 
+javascriptGenerator.forBlock['display_kaomoji'] = function (block) {
+  return (
+    JSON.stringify({
+      command: astroidV2.commands.displayText,
+      params: { text: block.getFieldValue('FACE') },
+    }) + ';'
+  );
+};
+
 javascriptGenerator.forBlock['display_set_brightness'] = function (block) {
   return (
     JSON.stringify({
@@ -211,6 +249,7 @@ export const looksCategory = {
     { kind: 'label', text: 'LED Matrix' },
     { kind: 'block', type: 'display_matrix', inputs: durShadow },
     { kind: 'block', type: 'display_text' },
+    { kind: 'block', type: 'display_kaomoji' },
     { kind: 'block', type: 'display_set_brightness' },
     { kind: 'block', type: 'display_clear_matrix' },
     { kind: 'label', text: 'RGB LED' },
