@@ -370,7 +370,14 @@ void handleCommand(const String& jsonLine) {
     }
     ack["driveMode"] = "servo";
     ack["hasBuzzer"] = true;
-    ack["hasOled"]   = true;
+    ack["hasOled"]   = oledOk;                  // real I2C detection (0x3C), not a claim
+    ack["hasRgbLed"] = (bool)HAS_RGB;
+    ack["boardId"]   = "esp32-controller-v3";
+    // Modules actually detected on the bus so the web can enable their blocks.
+    if (oledOk) {
+      JsonArray periph = ack["peripherals"].to<JsonArray>();
+      periph.add("oled-ssd1306");
+    }
     sendJson(ack);
     watchdogArmed = true;         // the link is live from here on
     lastStatus = "Terhubung";
