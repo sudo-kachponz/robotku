@@ -17,6 +17,7 @@ import type { SimulatorSequencer } from '../../simulator_sequencer';
 import SimStage from './SimStage';
 import { ProgramRunner, type RobotSink } from '../../runtime/ProgramRunner';
 import { SimSink, closeSharedAudio } from '../../runtime/SimSink';
+import { profileFromHello, robotkuEsp32V3 } from '../../domain/boardProfile';
 import { TransportSink } from '../../runtime/TransportSink';
 import { FanOutSink } from '../../runtime/FanOutSink';
 import { useConnection } from '../../hooks/useConnection';
@@ -63,6 +64,16 @@ function BlockCodingInner() {
   const runnerRef = useRef<ProgramRunner | null>(null);
   if (!runnerRef.current) runnerRef.current = new ProgramRunner(simSinkRef.current);
   const runningBlockIdRef = useRef<string | null>(null);
+
+  // Mirror mode: the on-screen robot adopts the connected board's real capabilities
+  // (a 1-servo bench board mirrors as 1-servo), reverting to the static V3 offline.
+  useEffect(() => {
+    simSinkRef.current?.setProfile(
+      connected && robotInfo
+        ? profileFromHello(robotInfo.capabilities, robotInfo.ports)
+        : robotkuEsp32V3,
+    );
+  }, [connected, robotInfo]);
 
   const [running, setRunning] = useState(false);
   const [paused, setPaused] = useState(false);

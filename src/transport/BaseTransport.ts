@@ -155,6 +155,7 @@ export abstract class BaseTransport implements RobotTransport {
         board: String((msg as any).board ?? 'Robotku'),
         protocol: String((msg as any).protocol ?? 'robotku-v1'),
         capabilities: Array.isArray((msg as any).capabilities) ? (msg as any).capabilities : [],
+        ports: Array.isArray((msg as any).ports) ? (msg as any).ports : [],
       };
       this.helloResolve(info);
       this.helloResolve = null;

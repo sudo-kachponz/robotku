@@ -14,6 +14,7 @@ import { buildTemplateWorkspace } from '../templates/authoring';
 import { generateProgram } from '../blockcoding/generateProgram';
 import { SimSink, type SimState } from '../runtime/SimSink';
 import { BUILTIN_TEMPLATES } from '../templates/builtin';
+import { unsupportedOpcodesInProgram } from '../blockcoding/blockOpcodes';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -67,6 +68,11 @@ describe('Templates: built-in catalogue', () => {
       live.dispose();
       expect(commands.length, `${tpl.id} generated no commands`).toBeGreaterThan(0);
 
+      // A template that targets hardware the board lacks (matrix, sensors, …) can't
+      // be required to actuate on Robotku V3 (P2) — like AI templates, it only has
+      // to build + generate + run without throwing.
+      const usesAbsentHw = unsupportedOpcodesInProgram(commands).length > 0;
+
       // (c) Run up to ~1 simulated second (speed 8, capped wall time), priming a
       // button so wait-until templates proceed, then compare the fingerprint.
       const run = startRun(commands, { speed: 8, before: (s) => s.holdButton(1, true) });
@@ -75,9 +81,8 @@ describe('Templates: built-in catalogue', () => {
       await run.done;
 
       const changed = fingerprint(run.sink.getState()) !== IDLE_FINGERPRINT;
-      if (needsAi) {
-        // AI-gated: the stub sensor sees nothing, so we only require it to run
-        // without throwing. (Some AI templates still act via their else-branch.)
+      if (needsAi || usesAbsentHw) {
+        // AI-gated or targets absent hardware: only require it to run without throwing.
         expect(typeof changed).toBe('boolean');
       } else {
         expect(changed, `${tpl.id} produced no observable state change`).toBe(true);

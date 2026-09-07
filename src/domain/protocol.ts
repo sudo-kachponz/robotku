@@ -100,6 +100,8 @@ export interface RobotInfo {
   board: string;
   protocol: string;
   capabilities: string[];
+  /** Physical ports (1-based) the firmware reports as really wired. */
+  ports: number[];
 }
 
 /** Turn a command object into a single `;`-terminated wire line. */

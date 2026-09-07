@@ -83,7 +83,9 @@ describe('Parity: Motion & Actuators', () => {
     expect(state.turn).toBe(0);
   });
 
-  it('mechanism_set_head generates SET_HEAD_POSITION and updates head state', async () => {
+  // Head servo has no hardware on Robotku V3 (P2): the block still emits the opcode,
+  // but the sim leaves head state at neutral and logs the ignore.
+  it('mechanism_set_head emits SET_HEAD_POSITION but the sim ignores it (no head hardware)', async () => {
     const cmds = buildBlock({
       type: 'mechanism_set_head',
       fields: { PITCH: '85', YAW: '95' },
@@ -96,11 +98,12 @@ describe('Parity: Motion & Actuators', () => {
     const { state } = await buildAndRun([
       { type: 'mechanism_set_head', fields: { PITCH: '85', YAW: '95' } },
     ]);
-    expect(state.headPitch).toBe(85);
-    expect(state.headYaw).toBe(95);
+    expect(state.headPitch).toBe(90); // unchanged — inert
+    expect(state.headYaw).toBe(90);
+    expect(state.simConsole.some((m) => m.includes('SET_HEAD_POSITION'))).toBe(true);
   });
 
-  it('move_claw generates CLAW_TIMED and updates gripper position', async () => {
+  it('move_claw emits CLAW_TIMED but the sim ignores it (no gripper wired)', async () => {
     const cmds = buildBlock({
       type: 'move_claw',
       fields: { DIRECTION: 'clockwise' },
@@ -114,7 +117,8 @@ describe('Parity: Motion & Actuators', () => {
     const { state } = await buildAndRun([
       { type: 'move_claw', fields: { DIRECTION: 'clockwise' }, inputs: { DURATION: 0.2 } },
     ]);
-    expect(state.gripperOpen).toBeLessThan(0.5);
+    expect(state.gripperOpen).toBe(1); // unchanged — inert
+    expect(state.simConsole.some((m) => m.includes('CLAW_TIMED'))).toBe(true);
   });
 
   it('move_steer generates STEER_TIMED; ±100 steering mirror the heading', async () => {
@@ -168,18 +172,14 @@ describe('Parity: Motion & Actuators', () => {
     expect(state.portValues[1]).toBe(0); // M2
   });
 
-  it('mechanism_set_gripper generates SET_GRIPPER and toggles gripperOpen', async () => {
+  it('mechanism_set_gripper emits SET_GRIPPER but the sim ignores it (no gripper wired)', async () => {
     const cmds = buildBlock({ type: 'mechanism_set_gripper', fields: { STATE: 'open' } });
     expect(cmds[0]).toMatchObject({ command: 'SET_GRIPPER', params: { state: 'open' } });
-
-    const opened = await buildAndRun([
-      { type: 'mechanism_set_gripper', fields: { STATE: 'open' } },
-    ]);
-    expect(opened.state.gripperOpen).toBe(1);
 
     const closed = await buildAndRun([
       { type: 'mechanism_set_gripper', fields: { STATE: 'closed' } },
     ]);
-    expect(closed.state.gripperOpen).toBe(0);
+    expect(closed.state.gripperOpen).toBe(1); // unchanged — inert (stays at initial open)
+    expect(closed.state.simConsole.some((m) => m.includes('SET_GRIPPER'))).toBe(true);
   });
 });

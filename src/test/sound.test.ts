@@ -22,7 +22,8 @@ describe('Parity: Sound & Audio', () => {
     expect(state.buzzerHz).toBe(440);
   });
 
-  it('audio_sound_effect generates PLAY_SOUND_EFFECT', async () => {
+  // Passive buzzer does tone only (P2): sound effects have no hardware → inert.
+  it('audio_sound_effect emits PLAY_SOUND_EFFECT but the sim ignores it', async () => {
     const cmds = buildBlock({
       type: 'audio_sound_effect',
       fields: { EFFECT: 'short_beep' },
@@ -35,7 +36,8 @@ describe('Parity: Sound & Audio', () => {
     const { state } = await buildAndRun([
       { type: 'audio_sound_effect', fields: { EFFECT: 'short_beep' } },
     ]);
-    expect(state.buzzerHz).toBeGreaterThan(0);
+    expect(state.buzzerHz).toBe(0); // inert
+    expect(state.simConsole.some((m) => m.includes('PLAY_SOUND_EFFECT'))).toBe(true);
   });
 
   it('audio_set_volume generates SET_VOLUME and updates state volume', async () => {
@@ -52,7 +54,8 @@ describe('Parity: Sound & Audio', () => {
     expect(state.volume).toBe(80);
   });
 
-  it('audio_record generates RECORD_AUDIO and stores clip length', async () => {
+  // No microphone on Robotku V3 (P2): record/playback are inert.
+  it('audio_record emits RECORD_AUDIO but the sim ignores it (no mic)', async () => {
     const cmds = buildBlock({
       type: 'audio_record',
       fields: { SLOT: '1' },
@@ -66,22 +69,23 @@ describe('Parity: Sound & Audio', () => {
     const { state } = await buildAndRun([
       { type: 'audio_record', fields: { SLOT: '1' }, inputs: { DURATION: 0.2 } },
     ]);
-    expect(state.clips[0]).toBeGreaterThan(0);
+    expect(state.clips[0]).toBe(0); // inert
+    expect(state.simConsole.some((m) => m.includes('RECORD_AUDIO'))).toBe(true);
   });
 
-  it('audio_play_recording generates PLAY_RECORDING and plays back a recorded slot', async () => {
+  it('audio_play_recording emits PLAY_RECORDING but the sim ignores it (no mic)', async () => {
     const cmds = buildBlock({ type: 'audio_play_recording', fields: { SLOT: '2', WAIT: 'false' } });
     expect(cmds[0]).toMatchObject({
       command: 'PLAY_RECORDING',
       params: { slot: 2 },
     });
 
-    // Record into slot 2 first, then play it back → the buzzer pulses on playback.
     const { state } = await buildAndRun([
       { type: 'audio_record', fields: { SLOT: '2' }, inputs: { DURATION: 0.1 } },
       { type: 'audio_play_recording', fields: { SLOT: '2', WAIT: 'false' } },
     ]);
-    expect(state.buzzerHz).toBeGreaterThan(0);
+    expect(state.buzzerHz).toBe(0); // inert
+    expect(state.simConsole.some((m) => m.includes('PLAY_RECORDING'))).toBe(true);
   });
 
   it('audio_play_tone_beat honours the BPM math: 2 beats @120bpm == 1000 ms', async () => {
@@ -111,12 +115,30 @@ describe('Parity: Sound & Audio', () => {
     expect(elapsed).toBeGreaterThanOrEqual(180); // ~1000ms / 4×, with slack
   });
 
-  it('audio_set_bpm generates SET_BPM and updates state bpm', async () => {
+  it('audio_set_bpm emits SET_BPM but the sim ignores it (no board tempo engine)', async () => {
     const cmds = buildBlock({ type: 'audio_set_bpm', fields: { BPM: '200' } });
     expect(cmds[0]).toMatchObject({ command: 'SET_BPM', params: { bpm: 200 } });
 
     const { state } = await buildAndRun([{ type: 'audio_set_bpm', fields: { BPM: '200' } }]);
-    expect(state.bpm).toBe(200);
+    expect(state.bpm).toBe(120); // inert — stays at default
+    expect(state.simConsole.some((m) => m.includes('SET_BPM'))).toBe(true);
+  });
+
+  it('audio_play_melody expands to a paced PLAY_TONE sequence', async () => {
+    const cmds = buildBlock({ type: 'audio_play_melody', fields: { SONG: 'twinkle' } });
+    expect(cmds).toHaveLength(14); // Twinkle Twinkle = 14 notes
+    expect(cmds[0]).toMatchObject({
+      command: 'PLAY_TONE',
+      params: { note: 'C4', duration_ms: 400 },
+    });
+    expect(cmds[2]).toMatchObject({ command: 'PLAY_TONE', params: { note: 'G4' } });
+
+    // Runs on the sim without error (buzzer fires per note); 8× so it's quick.
+    const { state } = await buildAndRun(
+      [{ type: 'audio_play_melody', fields: { SONG: 'twinkle' } }],
+      { speed: 8 },
+    );
+    expect(state).toBeDefined();
   });
 
   it('audio_stop_sounds generates STOP_SOUNDS and silences the buzzer', async () => {
