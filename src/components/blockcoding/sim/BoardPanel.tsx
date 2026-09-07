@@ -151,6 +151,18 @@ export default function BoardPanel({ state }: { state: SimState }) {
         <button onClick={pressBuzz} style={btn(false)}>
           Bunyi buzzer
         </button>
+        <button
+          onClick={() => {
+            if (typeof window === 'undefined' || !window.speechSynthesis) return;
+            const u = new SpeechSynthesisUtterance(manualText || 'Hello');
+            u.lang = 'id-ID';
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(u);
+          }}
+          style={btn(false)}
+        >
+          🔊 Bicara
+        </button>
       </div>
 
       {/* Warna LED — real hex color wheel that drives the RGB LED on the robot */}
