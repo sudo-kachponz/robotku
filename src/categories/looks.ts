@@ -4,14 +4,10 @@
 // The 5x5 matrix uses a 25-char on/off pattern string (row-major, '1'=on).
 
 import * as Blockly from 'blockly/core';
-import { registerFieldColour } from '@blockly/field-colour';
 import { defineOnce } from './_defineOnce';
 import { javascriptGenerator } from 'blockly/javascript';
 import { astroidV2 } from '../robotProfiles';
 import { numArg, type NumOrExpr } from './_args';
-
-// Register the color-wheel field (field_colour) once, before any block uses it.
-registerFieldColour();
 
 const DEFAULT_MATRIX = '0110010010111110100010001'; // a friendly heart-ish glyph
 
@@ -55,19 +51,34 @@ defineOnce([
     nextStatement: null,
     style: 'looks_blocks',
   },
-  // --- RGB LED (Robotku FW-06): color wheel + duration ---
+  // --- RGB LED (Robotku FW-06): 8-color pick + duration ---
+  // Digital LED = 8 colors (any mix of R/G/B), so a dropdown matches the hardware
+  // exactly and needs no field_colour plugin (which requires Blockly 13; we're on 12).
   {
     type: 'set_led_color',
     message0: 'Set LED %1 for %2 sec',
     args0: [
-      { type: 'field_colour', name: 'COLOR', colour: '#ff0000' },
+      {
+        type: 'field_dropdown',
+        name: 'COLOR',
+        options: [
+          ['Red', '255,0,0'],
+          ['Green', '0,255,0'],
+          ['Blue', '0,0,255'],
+          ['Yellow', '255,255,0'],
+          ['Cyan', '0,255,255'],
+          ['Pink', '255,0,255'],
+          ['White', '255,255,255'],
+          ['Off', '0,0,0'],
+        ],
+      },
       { type: 'input_value', name: 'DURATION', check: 'Number' },
     ],
     previousStatement: null,
     nextStatement: null,
     style: 'looks_blocks',
     inputsInline: true,
-    tooltip: 'Light the RGB LED any color (color wheel), held for N seconds.',
+    tooltip: 'Light the RGB LED a color, held for N seconds.',
   },
   // --- LCD Screen ---
   {
@@ -155,10 +166,9 @@ javascriptGenerator.forBlock['display_clear_matrix'] = function () {
 };
 
 javascriptGenerator.forBlock['set_led_color'] = function (block, gen) {
-  const hex = String(block.getFieldValue('COLOR') || '#000000');
-  const r = parseInt(hex.slice(1, 3), 16) || 0;
-  const g = parseInt(hex.slice(3, 5), 16) || 0;
-  const b = parseInt(hex.slice(5, 7), 16) || 0;
+  const [r, g, b] = String(block.getFieldValue('COLOR'))
+    .split(',')
+    .map((n) => parseInt(n, 10) || 0);
   return (
     JSON.stringify({
       command: astroidV2.commands.setLedColor,

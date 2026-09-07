@@ -105,10 +105,10 @@ describe('Parity: Display & LED', () => {
     expect(state.brightness).toBe(40);
   });
 
-  it('set_led_color (color wheel) generates SET_LED_COLOR and lights the sim RGB LED', async () => {
+  it('set_led_color generates SET_LED_COLOR and lights the sim RGB LED', async () => {
     const cmds = buildBlock({
       type: 'set_led_color',
-      fields: { COLOR: '#00ff00' },
+      fields: { COLOR: '0,255,0' },
       inputs: { DURATION: 2 },
     });
     expect(cmds[0]).toMatchObject({
@@ -117,7 +117,7 @@ describe('Parity: Display & LED', () => {
     });
 
     const { state } = await buildAndRun([
-      { type: 'set_led_color', fields: { COLOR: '#00ff00' }, inputs: { DURATION: 0.1 } },
+      { type: 'set_led_color', fields: { COLOR: '0,255,0' }, inputs: { DURATION: 0.1 } },
     ]);
     expect(state.ledColor).toBe('rgb(0, 255, 0)');
   });
