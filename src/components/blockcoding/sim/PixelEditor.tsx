@@ -7,9 +7,19 @@
 import { useRef, useState } from 'react';
 import { useDrive } from '../../../hooks/useDrive';
 
-const W = 16;
-const H = 8;
+const W = 32; // editor grid width  (each cell = 4x4 OLED px; 128/32)
+const H = 16; // editor grid height (64/16) -> 4x the detail of the old 16x8
 const ON = '#3BE8F5'; // blue-cyan, same as the real OLED pixels
+
+// Nearest-neighbor scale a source grid string ('0'/'1') to dw x dh.
+function scaleTo(src: string, sw: number, sh: number, dw: number, dh: number): string {
+  let out = '';
+  for (let r = 0; r < dh; r++) {
+    const sr = Math.floor((r * sh) / dh);
+    for (let c = 0; c < dw; c++) out += src[sr * sw + Math.floor((c * sw) / dw)] ?? '0';
+  }
+  return out;
+}
 
 export interface Bitmap {
   w: number;
@@ -92,7 +102,8 @@ export default function PixelEditor({ onSend }: { onSend?: (b: Bitmap) => void }
 
   const loadTemplate = (name: string) => {
     const t = TEMPLATES[name];
-    if (t && t.length === W * H) setCells(t.split('').map((c) => c === '1'));
+    // templates are authored at 16x8 -> scale up to the current grid
+    if (t && t.length === 16 * 8) setCells(scaleTo(t, 16, 8, W, H).split('').map((c) => c === '1'));
     else setCells(Array(W * H).fill(false)); // placeholder / bad length -> clear
   };
 

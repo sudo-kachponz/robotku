@@ -24,6 +24,48 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   return { r: parseInt(hex.slice(1, 3), 16), g: parseInt(hex.slice(3, 5), 16), b: parseInt(hex.slice(5, 7), 16) };
 }
 
+// --- Web Audio: real in-browser sound, no OS TTS/voice deps. AudioContext is
+// created lazily on the first click (browsers require a user gesture). ---
+let audioCtx: AudioContext | null = null;
+function ac(): AudioContext | null {
+  if (typeof window === 'undefined') return null;
+  const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AC) return null;
+  audioCtx ??= new AC();
+  if (audioCtx.state === 'suspended') void audioCtx.resume();
+  return audioCtx;
+}
+function beep(freq: number, ms: number, when = 0): void {
+  const ctx = ac();
+  if (!ctx) return;
+  const t0 = ctx.currentTime + when;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'square';
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.exponentialRampToValueAtTime(0.22, t0 + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + ms / 1000);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(t0);
+  osc.stop(t0 + ms / 1000 + 0.02);
+}
+// Speak via the OS voice if one exists; otherwise a retro beep-per-character so
+// there's always audible feedback (the "TTS lewat buzzer" fallback).
+function speak(text: string): void {
+  const synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
+  if (synth && synth.getVoices().length > 0) {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'id-ID';
+    synth.cancel();
+    synth.speak(u);
+    return;
+  }
+  [...text].slice(0, 28).forEach((ch, i) => {
+    if (ch.trim()) beep(480 + (ch.charCodeAt(0) % 12) * 45, 70, i * 0.09);
+  });
+}
+
 const box: React.CSSProperties = {
   background: 'rgba(255,255,255,0.04)',
   border: '1px solid rgba(255,255,255,0.08)',
@@ -84,7 +126,8 @@ export default function BoardPanel({ state }: { state: SimState }) {
   const plugged = Object.entries(modules);
 
   const pressBuzz = () => {
-    setBuzzPulse(true);
+    beep(880, 220); // real sound
+    setBuzzPulse(true); // + the visual wave on the board
     if (buzzTimer.current) clearTimeout(buzzTimer.current);
     buzzTimer.current = setTimeout(() => setBuzzPulse(false), 900);
   };
@@ -151,16 +194,7 @@ export default function BoardPanel({ state }: { state: SimState }) {
         <button onClick={pressBuzz} style={btn(false)}>
           Bunyi buzzer
         </button>
-        <button
-          onClick={() => {
-            if (typeof window === 'undefined' || !window.speechSynthesis) return;
-            const u = new SpeechSynthesisUtterance(manualText || 'Hello');
-            u.lang = 'id-ID';
-            window.speechSynthesis.cancel();
-            window.speechSynthesis.speak(u);
-          }}
-          style={btn(false)}
-        >
+        <button onClick={() => speak(manualText || 'Hello')} style={btn(false)}>
           🔊 Bicara
         </button>
       </div>
