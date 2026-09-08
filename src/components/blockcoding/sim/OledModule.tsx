@@ -7,15 +7,21 @@
 import { useMemo } from 'react';
 import styles from './SimBoard.module.css';
 
+// Colors matched to the real 0.96" I2C OLED module photo.
 const C = {
-  frame: '#2FC49A',
-  pcb: '#123C7A',
-  screen: '#040608',
-  on: '#3BE8F5', // blue-cyan — matches the real SSD1306 pixels on black
-  off: 'rgba(59,232,245,0.08)',
-  screw: '#C9CDD4',
-  pin: '#C9CDD4',
+  pcb: '#1E63B0', // module blue
+  pcbEdge: '#12406F',
+  screen: '#050608', // black (off) glass
+  on: '#3BE8F5', // blue-cyan lit pixels
+  off: 'rgba(59,232,245,0.05)',
+  hole: '#D7DBE2', // silver mounting-hole ring
+  holeIn: '#7C828C',
+  pin: '#E7C24A', // gold header pin
+  label: '#EAF1FF',
+  connector: '#0E0E0E',
+  wires: ['#E23B2E', '#3A3A3A', '#2FA84F', '#2E6BE0'], // GND, VCC, SCL, SDA
 } as const;
+const PINS = ['GND', 'VCC', 'SCL', 'SDA'];
 
 interface Props {
   text?: string;
@@ -81,29 +87,34 @@ export default function OledModule({ text, line2, matrix, shape, bitmap, dimmed 
     return cv.toDataURL();
   }, [bitmap]);
   return (
-    <svg viewBox="0 0 150 110" role="img" aria-label="Modul layar OLED" style={{ width: '100%', height: 'auto', opacity: dimmed ? 0.5 : 1 }}>
-      {/* toska frame + screws */}
-      <rect x={2} y={2} width={146} height={106} rx={10} fill={C.frame} />
-      {[[12, 12], [138, 12], [12, 98], [138, 98]].map(([cx, cy], i) => (
-        <circle key={i} cx={cx} cy={cy} r={3.5} fill={C.screw} />
+    <svg viewBox="0 0 150 116" role="img" aria-label="Modul layar OLED 0.96 inci" style={{ width: '100%', height: 'auto', opacity: dimmed ? 0.5 : 1 }}>
+      {/* jumper wires into the header: GND red, VCC dark, SCL green, SDA blue */}
+      {PINS.map((_, i) => (
+        <line key={`w${i}`} x1={59 + i * 13} y1={0} x2={59 + i * 13} y2={15} stroke={C.wires[i]} strokeWidth={3} strokeLinecap="round" />
       ))}
-      {/* PCB */}
-      <rect x={16} y={16} width={118} height={78} rx={5} fill={C.pcb} />
-      {/* pins GND VDD SCK SDA (left→right, per photo) */}
-      {['GND', 'VDD', 'SCK', 'SDA'].map((label, i) => (
+      {/* blue PCB */}
+      <rect x={6} y={12} width={138} height={98} rx={6} fill={C.pcb} stroke={C.pcbEdge} strokeWidth={1.5} />
+      {/* 4 corner mounting holes */}
+      {[[20, 26], [130, 26], [20, 96], [130, 96]].map(([cx, cy], i) => (
+        <g key={`h${i}`}>
+          <circle cx={cx} cy={cy} r={6} fill={C.hole} />
+          <circle cx={cx} cy={cy} r={3} fill={C.holeIn} />
+        </g>
+      ))}
+      {/* gold header pins + white labels */}
+      {PINS.map((label, i) => (
         <g key={label}>
-          <rect x={28 + i * 24} y={20} width={8} height={6} rx={1.5} fill={C.pin} />
-          <text x={32 + i * 24} y={34} textAnchor="middle" fontSize={5.5} fontWeight={700} fill="#cdd6e6">
+          <rect x={56 + i * 13} y={12} width={6} height={7} rx={1.5} fill={C.pin} />
+          <text x={59 + i * 13} y={30} textAnchor="middle" fontSize={5.5} fontWeight={800} fill={C.label}>
             {label}
           </text>
         </g>
       ))}
-      <text x={20} y={26} fontSize={5} fill="#9fb0cc">1</text>
-      <text x={128} y={26} fontSize={5} fill="#9fb0cc">4</text>
-
-      {/* screen */}
-      <rect x={26} y={40} width={98} height={46} rx={2} fill={C.screen} stroke="#0d1b30" />
-      <svg x={26} y={40} width={98} height={46} viewBox="0 0 128 64">
+      {/* black screen glass */}
+      <rect x={20} y={36} width={110} height={54} rx={2} fill={C.screen} stroke="#0b1420" />
+      {/* bottom connector tab */}
+      <rect x={60} y={102} width={30} height={7} rx={1.5} fill={C.connector} />
+      <svg x={20} y={36} width={110} height={54} viewBox="0 0 128 64">
         {bmpUrl ? (
           <image href={bmpUrl} x={0} y={0} width={128} height={64} style={{ imageRendering: 'pixelated' }} />
         ) : matrix ? (
