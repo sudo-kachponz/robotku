@@ -156,6 +156,21 @@ defineOnce([
     colour: '#DC2626',
     tooltip: 'Halts every motor immediately.',
   },
+  {
+    // Test ONE servo at a time (the drive blocks always move L+R together).
+    type: 'servo_single',
+    message0: 'Uji servo %1  kecepatan %2  selama %3 dtk',
+    args0: [
+      { type: 'field_dropdown', name: 'PORT', options: MOTOR_PORTS },
+      { type: 'field_slider', name: 'SPEED', value: 100, min: -100, max: 100 },
+      { type: 'input_value', name: 'DURATION', check: 'Number' },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    style: 'motors_blocks',
+    inputsInline: true,
+    tooltip: 'Putar SATU servo (uji tiap servo sendiri-sendiri). Berhenti otomatis setelah durasinya.',
+  },
 ]);
 
 // --- Block Generators ---
@@ -228,6 +243,20 @@ javascriptGenerator.forBlock['move_stop_all'] = function () {
   return JSON.stringify({ command: astroidV2.commands.stopAll, params: {} }) + ';';
 };
 
+javascriptGenerator.forBlock['servo_single'] = function (block, gen) {
+  const port = parseInt(block.getFieldValue('PORT').slice(1), 10); // 'P1' -> 1
+  const speed = parseInt(block.getFieldValue('SPEED'), 10);
+  const durationMs = mulNum(numArg(block, gen, 'DURATION', 1), 1000);
+  // Drive one port for the duration (SET_PORT is continuous), then stop it. The
+  // firmware maps P1->left, P2->right servo; unwired ports report unsupported.
+  return (
+    JSON.stringify({ command: 'SET_PORT', params: { port, value: speed, duration_ms: durationMs } }) +
+    ';' +
+    JSON.stringify({ command: 'SET_PORT', params: { port, value: 0 } }) +
+    ';'
+  );
+};
+
 // --- Toolbox Definition ---
 const durationShadow = { DURATION: { shadow: { type: 'math_number', fields: { NUM: 1 } } } };
 
@@ -244,6 +273,8 @@ export const motorsCategory = {
     { kind: 'block', type: 'move_right', inputs: durationShadow },
     { kind: 'block', type: 'move_steer', inputs: durationShadow },
     { kind: 'block', type: 'move_claw', inputs: durationShadow },
+    { kind: 'label', text: 'Uji Servo Satu-Satu' },
+    { kind: 'block', type: 'servo_single', inputs: durationShadow },
     { kind: 'block', type: 'move_stop' },
     { kind: 'block', type: 'move_stop_all' },
   ],

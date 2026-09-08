@@ -182,4 +182,16 @@ describe('Parity: Motion & Actuators', () => {
     expect(closed.state.gripperOpen).toBe(1); // unchanged — inert (stays at initial open)
     expect(closed.state.simConsole.some((m) => m.includes('SET_GRIPPER'))).toBe(true);
   });
+
+  it('servo_single drives one port then auto-stops (test servos one by one)', async () => {
+    const cmds = buildBlock({ type: 'servo_single', fields: { PORT: 'P2', SPEED: 80 }, inputs: { DURATION: 0.2 } });
+    expect(cmds[0]).toMatchObject({ command: 'SET_PORT', params: { port: 2, value: 80, duration_ms: 200 } });
+    expect(cmds[1]).toMatchObject({ command: 'SET_PORT', params: { port: 2, value: 0 } });
+
+    const { state } = await buildAndRun([
+      { type: 'servo_single', fields: { PORT: 'P2', SPEED: 80 }, inputs: { DURATION: 0.2 } },
+    ]);
+    expect(state.portValues[1]).toBe(0); // ends stopped; only P2 was touched
+    expect(state.portValues[0]).toBe(0); // P1 (the other servo) untouched
+  });
 });

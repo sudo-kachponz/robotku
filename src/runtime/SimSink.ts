@@ -237,6 +237,9 @@ export class SimSink implements RobotSink {
           next[port - 1] = clampPort(params.value);
           this.commit({ portValues: next }, true);
         }
+        // Hold the value for its duration so a single-servo test visibly spins
+        // (the follow-up SET_PORT value:0 then stops it).
+        if (durMs(params) > 0) await this.sleep(durMs(params));
         break;
       }
       case 'DISPLAY_MATRIX': {
