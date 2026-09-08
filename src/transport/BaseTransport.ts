@@ -101,9 +101,9 @@ export abstract class BaseTransport implements RobotTransport {
   }
 
   async estop(): Promise<void> {
-    // Bypass every queue: write straight to the wire, immediately.
+    // Bypass the write queue: write straight to the wire, immediately.
     try {
-      await this.writeFramed(estopLines());
+      await this.writeFramedRaw(estopLines());
     } catch (err) {
       console.warn('[transport] estop write failed', err);
     }
@@ -232,7 +232,19 @@ export abstract class BaseTransport implements RobotTransport {
    * when it fits in a chunk. Each command goes out `;\n`-terminated — see the
    * comment inside for why the newline is not optional.
    */
-  private async writeFramed(blob: string): Promise<void> {
+  // Serialize outbound writes: a streaming animation frame must not start writing
+  // while a bitmap send is mid-flight, or their 180-byte chunks interleave on the
+  // wire and the firmware parses garbage. ponytail: single global chain, fine because
+  // callers already throttle; add per-priority lanes only if a fast command must
+  // jump a slow bitmap. estop bypasses via writeFramedRaw (safety > ordering).
+  private writeChain: Promise<void> = Promise.resolve();
+  private writeFramed(blob: string): Promise<void> {
+    const run = this.writeChain.then(() => this.writeFramedRaw(blob));
+    this.writeChain = run.catch(() => {}); // one failure must not wedge the chain
+    return run;
+  }
+
+  private async writeFramedRaw(blob: string): Promise<void> {
     // Group commands so each chunk stays <=MAX_CHUNK and prefers `;` boundaries.
     // Every command leaves as `...;\n`. The trailing newline matters: firmware
     // that reads with Serial.readStringUntil('\n') (the ControllerV1 sketch)

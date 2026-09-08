@@ -68,8 +68,8 @@ function speak(text: string): void {
 }
 
 const box: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: '#fafafe',
+  border: '1px solid #e7e9f2',
   borderRadius: 12,
   padding: 12,
 };
@@ -126,6 +126,10 @@ export default function BoardPanel({ state }: { state: SimState }) {
   }, [modules, state.portValues]);
 
   const plugged = Object.entries(modules);
+  const servoPortEntry = plugged.find(([_, kind]) => kind === 'servo');
+  const servoPortId = servoPortEntry?.[0];
+  const servoIdx = servoPortId ? PWM_PORTS.findIndex((p) => p.id === servoPortId) : -1;
+  const servoSpeed = servoIdx >= 0 ? (state.portValues[servoIdx] ?? 0) : 0;
 
   const pressBuzz = () => {
     beep(880, 220); // real sound
@@ -135,26 +139,223 @@ export default function BoardPanel({ state }: { state: SimState }) {
   };
 
   return (
-    <div style={{ ...box, display: 'grid', gap: 12 }} aria-label="Papan simulator Robotku">
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 1.4fr) 1fr', gap: 12, alignItems: 'start' }}>
-        {/* board */}
-        <div>
-          <BoardSvg rgb={rgb} buzzerActive={buzzerActive} linkState="off" ports={ports} onPortClick={attach} showWires={showWires} />
-          {pending && (
-            <div style={{ fontSize: 12, color: '#F5C518', marginTop: 4 }}>
-              Klik kolom port {pending === 'servo' ? 'PWM (bawah)' : 'I2C (atas)'} untuk memasang {pending === 'servo' ? 'Servo' : 'OLED'}.
-            </div>
-          )}
+    <div style={{ ...box, display: 'grid', gap: 14 }} aria-label="Papan simulator Robotku">
+      {/* ── Toolbar Pasang Modul & Kabel ── */}
+      <div
+        style={{
+          ...box,
+          display: 'flex',
+          gap: 10,
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          background: '#ffffff',
+          boxShadow: '0 1px 3px rgba(27,24,64,0.04)',
+        }}
+      >
+        <span style={{ fontSize: 13, fontWeight: 800, color: '#1b1840' }}>🔌 Pasang Modul:</span>
+        <button
+          onClick={() => setPending(pending === 'servo' ? null : 'servo')}
+          aria-pressed={pending === 'servo'}
+          style={btn(pending === 'servo')}
+        >
+          {pending === 'servo' ? '👉 Pilih Port P1-P5...' : '+ Servo SG90'}
+        </button>
+        <button
+          onClick={() => setPending(pending === 'oled' ? null : 'oled')}
+          aria-pressed={pending === 'oled'}
+          style={btn(pending === 'oled')}
+        >
+          {pending === 'oled' ? '👉 Pilih Port I1-I5...' : '+ Layar OLED'}
+        </button>
+
+        <label
+          style={{
+            fontSize: 12,
+            fontWeight: 600,
+            color: '#403c6b',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            marginLeft: 'auto',
+            cursor: 'pointer',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={showWires}
+            onChange={(e) => setShowWires(e.target.checked)}
+            aria-label="Tampilkan kabel schematics"
+            style={{ cursor: 'pointer' }}
+          />
+          ⚡ Tampilkan Kabel Skematik
+        </label>
+      </div>
+
+      {pending && (
+        <div
+          style={{
+            padding: '8px 12px',
+            borderRadius: 8,
+            background: '#fffbeb',
+            border: '1px solid #fef3c7',
+            color: '#92400e',
+            fontSize: 12,
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <span>💡</span>
+          <span>
+            Klik pin header <strong>{pending === 'servo' ? 'PWM (Bawah: P1 - P5)' : 'I2C (Atas: I1 - I5)'}</strong> di
+            papan untuk menancapkan kabel {pending === 'servo' ? 'Servo SG90' : 'Layar OLED SSD1306'}.
+          </span>
+        </div>
+      )}
+
+      {/* ── Interactive Fritzing Schematic Board Canvas ── */}
+      <div
+        style={{
+          background: 'linear-gradient(180deg, #ffffff 0%, #f8faff 100%)',
+          border: '1px solid #dbe1f5',
+          borderRadius: 14,
+          padding: 12,
+          boxShadow: '0 2px 8px rgba(27,24,64,0.06)',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 8,
+            borderBottom: '1px solid #edf0fa',
+            paddingBottom: 6,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 13, fontWeight: 800, color: '#1b1840' }}>📐 Skema Rangkaian Interaktif</span>
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                padding: '2px 6px',
+                borderRadius: 4,
+                background: '#eef0ff',
+                color: '#4338ca',
+              }}
+            >
+              Fritzing Live View
+            </span>
+          </div>
+          <span style={{ fontSize: 11, color: '#6b7194' }}>Klik port untuk pasang / cabut modul</span>
         </div>
 
-        {/* attached modules */}
-        <div style={{ display: 'grid', gap: 10 }}>
-          {plugged.length === 0 && (
-            <div style={{ fontSize: 12, color: '#9DB0C9' }}>Belum ada modul. Pasang Servo atau OLED di bawah.</div>
-          )}
+        <BoardSvg
+          rgb={rgb}
+          buzzerActive={buzzerActive}
+          linkState="off"
+          ports={ports}
+          onPortClick={attach}
+          showWires={showWires}
+          oledText={oledText ?? undefined}
+          oledShape={state.lcdShape}
+          oledMatrix={matrixOn ? state.matrix.map(Boolean) : undefined}
+          oledBitmap={bitmap}
+          servoSpeed={servoSpeed}
+        />
+      </div>
+
+      {/* ── Kamus Pinout & Jalur Kabel (Skema Edukasi Anak) ── */}
+      <div
+        style={{
+          ...box,
+          background: '#ffffff',
+          padding: '12px 14px',
+          boxShadow: '0 1px 3px rgba(27,24,64,0.04)',
+        }}
+      >
+        <div style={{ fontSize: 12, fontWeight: 800, color: '#1b1840', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span>📚</span>
+          <span>Kamus Jalur Kabel & Pinout (Biar Anak Paham Port):</span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
+          {/* I2C Column */}
+          <div style={{ background: '#f8fafc', padding: 10, borderRadius: 8, border: '1px solid #e2e8f0' }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#0f172a', marginBottom: 6, borderBottom: '1px solid #cbd5e1', paddingBottom: 3 }}>
+              🟦 Port I2C (I1 - I5) ➔ Layar OLED 0.96&quot;
+            </div>
+            <div style={{ display: 'grid', gap: 5, fontSize: 11, color: '#334155' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#2563EB', flexShrink: 0 }} />
+                <span><strong>GND</strong> (Biru/Hitam): Ground / 0V (Kutub Negatif)</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#16A34A', flexShrink: 0 }} />
+                <span><strong>VCC/VDD</strong> (Hijau/Merah): Daya Listrik Positif (3.3V)</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#EAB308', flexShrink: 0 }} />
+                <span><strong>SCL/SCK</strong> (Kuning): Clock Pengatur Tempo I2C</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#EA580C', flexShrink: 0 }} />
+                <span><strong>SDA</strong> (Oranye): Jalur Data Teks & Gambar</span>
+              </div>
+            </div>
+          </div>
+
+          {/* PWM Column */}
+          <div style={{ background: '#f8fafc', padding: 10, borderRadius: 8, border: '1px solid #e2e8f0' }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#0f172a', marginBottom: 6, borderBottom: '1px solid #cbd5e1', paddingBottom: 3 }}>
+              🟧 Port PWM (P1 - P5) ➔ Motor Servo SG90
+            </div>
+            <div style={{ display: 'grid', gap: 5, fontSize: 11, color: '#334155' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#F59E0B', flexShrink: 0 }} />
+                <span><strong>PWM</strong> (Kuning/Oranye): Sinyal Pulsa Sudut Putaran</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#DC2626', flexShrink: 0 }} />
+                <span><strong>5V</strong> (Merah): Sumber Listrik Positif 5 Volt</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#78350F', flexShrink: 0 }} />
+                <span><strong>GND</strong> (Cokelat/Hitam): Ground / Kutub Negatif</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Detail zoom modul jika terpasang */}
+      {plugged.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
           {plugged.map(([id, kind]) => (
-            <div key={id} style={{ ...box, padding: 8 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#9DB0C9', marginBottom: 4 }}>→ {id}</div>
+            <div key={id} style={{ ...box, padding: 10, background: '#ffffff', boxShadow: '0 1px 3px rgba(27,24,64,0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 800, color: '#1b1840' }}>
+                  {kind === 'oled' ? '📺 Layar OLED 0.96"' : '⚙️ Servo SG90'} ({id})
+                </span>
+                <button
+                  onClick={() => attach(id)}
+                  style={{
+                    fontSize: 10,
+                    padding: '2px 6px',
+                    borderRadius: 4,
+                    border: '1px solid #fecaca',
+                    background: '#fef2f2',
+                    color: '#b91c1c',
+                    cursor: 'pointer',
+                  }}
+                  title="Cabut modul ini"
+                >
+                  Cabut
+                </button>
+              </div>
               {kind === 'oled' ? (
                 <OledModule
                   text={oledText}
@@ -168,34 +369,19 @@ export default function BoardPanel({ state }: { state: SimState }) {
             </div>
           ))}
         </div>
-      </div>
+      )}
 
-      {/* Pasang modul */}
-      <div style={{ ...box, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: '#cdd6e6' }}>Pasang modul:</span>
-        <button onClick={() => setPending('servo')} aria-pressed={pending === 'servo'} style={btn(pending === 'servo')}>
-          Servo SG90
-        </button>
-        <button onClick={() => setPending('oled')} aria-pressed={pending === 'oled'} style={btn(pending === 'oled')}>
-          Layar OLED
-        </button>
-        <label style={{ fontSize: 12, color: '#cdd6e6', display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto', cursor: 'pointer' }}>
-          <input type="checkbox" checked={showWires} onChange={(e) => setShowWires(e.target.checked)} aria-label="Tampilkan kabel" />
-          Tampilkan kabel
-        </label>
-      </div>
-
-      {/* Coba langsung (simulator only) */}
-      <div style={{ ...box, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: '#cdd6e6' }}>
-          Coba langsung <em style={{ color: '#9DB0C9', fontWeight: 400 }}>(hanya simulator)</em>:
+      {/* ── Coba langsung (simulator only) ── */}
+      <div style={{ ...box, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', background: '#ffffff' }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#1b1840' }}>
+          Coba langsung <em style={{ color: '#6b7194', fontWeight: 400 }}>(hanya simulator)</em>:
         </span>
         <input
           type="text"
           placeholder="Teks OLED…"
           aria-label="Teks OLED simulator"
           onChange={(e) => setManualText(e.target.value || null)}
-          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid #ffffff22', background: '#0d1b30', color: '#eaf6ff' }}
+          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid #c6caff', background: '#ffffff', color: '#1b1840' }}
         />
         <button onClick={pressBuzz} style={btn(false)}>
           Bunyi buzzer
@@ -205,9 +391,9 @@ export default function BoardPanel({ state }: { state: SimState }) {
         </button>
       </div>
 
-      {/* Warna LED — real hex color wheel that drives the RGB LED on the robot */}
-      <div style={{ ...box, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: '#cdd6e6' }}>Warna LED (RGB):</span>
+      {/* ── Warna LED — real hex color wheel ── */}
+      <div style={{ ...box, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: '#ffffff' }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#1b1840' }}>Warna LED (RGB):</span>
         <input
           type="color"
           defaultValue="#ff0000"
@@ -220,20 +406,20 @@ export default function BoardPanel({ state }: { state: SimState }) {
           }}
           style={{ width: 48, height: 32, border: 'none', background: 'transparent', cursor: 'pointer' }}
         />
-        <span style={{ fontSize: 12, color: '#9DB0C9', fontFamily: 'monospace' }}>{manualRgb ?? '#ff0000'}</span>
-        <em style={{ fontSize: 11, color: '#9DB0C9' }}>roda warna + hex, langsung ke LED asli</em>
+        <span style={{ fontSize: 12, color: '#6b7194', fontFamily: 'monospace' }}>{manualRgb ?? '#ff0000'}</span>
+        <em style={{ fontSize: 11, color: '#6b7194' }}>roda warna + hex, langsung ke LED asli</em>
       </div>
 
-      {/* Gambar pixel -> OLED (draw, then send to the real screen) */}
-      <div style={{ ...box, display: 'grid', gap: 8 }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: '#cdd6e6' }}>
-          Gambar pixel (OLED) <em style={{ color: '#9DB0C9', fontWeight: 400 }}>— gambar, lalu Kirim ke OLED</em>
+      {/* ── Gambar pixel -> OLED ── */}
+      <div style={{ ...box, display: 'grid', gap: 8, background: '#ffffff' }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#1b1840' }}>
+          Gambar pixel (OLED) <em style={{ color: '#6b7194', fontWeight: 400 }}>— gambar, lalu Kirim ke OLED</em>
         </span>
-        <PixelEditor onSend={setBitmap} />
+        <PixelEditor onSend={setBitmap} onPreview={setBitmap} />
       </div>
 
-      {/* Wokwi-style OLED animator: pick a card -> plays on sim + robot */}
-      <div style={{ ...box, display: 'grid', gap: 8 }}>
+      {/* ── Wokwi-style OLED animator ── */}
+      <div style={{ ...box, display: 'grid', gap: 8, background: '#ffffff' }}>
         <OledAnimator onFrame={setBitmap} />
       </div>
     </div>
@@ -246,9 +432,10 @@ function btn(active: boolean): React.CSSProperties {
     fontWeight: 700,
     padding: '5px 10px',
     borderRadius: 8,
-    border: `1px solid ${active ? '#8085F4' : '#ffffff22'}`,
-    background: active ? 'rgba(129,133,244,0.22)' : 'rgba(255,255,255,0.04)',
-    color: '#eaf6ff',
+    border: `1px solid ${active ? '#6366e8' : '#e0e3ff'}`,
+    background: active ? '#eef0ff' : '#ffffff',
+    color: active ? '#4338ca' : '#403c6b',
     cursor: 'pointer',
+    boxShadow: '0 1px 3px rgba(27,24,64,0.05)',
   };
 }

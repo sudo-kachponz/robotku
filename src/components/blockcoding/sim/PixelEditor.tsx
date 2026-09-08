@@ -104,7 +104,9 @@ const TEMPLATES: Record<string, () => Uint8Array> = {
   '🎤 Hatsune Miku': () => fromBraille(MIKU_BRAILLE),
 };
 
-export default function PixelEditor({ onSend }: { onSend?: (b: Bitmap) => void }) {
+// onSend = pushed to the real robot (Kirim ke OLED); onPreview = live sim mirror as
+// you draw, so an attached OLED module shows the art in real time (no dead duplicate).
+export default function PixelEditor({ onSend, onPreview }: { onSend?: (b: Bitmap) => void; onPreview?: (b: Bitmap) => void }) {
   const { sendCommand } = useDrive();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const grid = useRef<Uint8Array>(new Uint8Array(W * H));
@@ -143,11 +145,17 @@ export default function PixelEditor({ onSend }: { onSend?: (b: Bitmap) => void }
     }
   };
 
-  const send = () => {
+  const snapshot = (): Bitmap => {
     let s = '';
     for (let i = 0; i < W * H; i++) s += grid.current[i] ? '1' : '0';
-    const b = { w: W, h: H, pixels: s };
-    sendCommand('DISPLAY_BITMAP', { ...b });
+    return { w: W, h: H, pixels: s };
+  };
+  // Mirror to the sim OLED. Fires on stroke-end / template / clear (not per pixel) so
+  // the 8192-px canvas re-encode stays cheap during a drag.
+  const preview = () => onPreview?.(snapshot());
+  const send = () => {
+    const b = snapshot();
+    sendCommand('DISPLAY_BITMAP', { ...b }); // to the real robot
     onSend?.(b);
   };
 
@@ -159,8 +167,9 @@ export default function PixelEditor({ onSend }: { onSend?: (b: Bitmap) => void }
         onChange={(e) => {
           grid.current = (TEMPLATES[e.target.value] ?? blank)();
           redraw();
+          preview();
         }}
-        style={{ fontSize: 12, fontWeight: 700, padding: '4px 8px', marginBottom: 8, borderRadius: 6, border: '1px solid #ffffff22', background: '#0d1b30', color: '#eaf6ff', cursor: 'pointer' }}
+        style={{ fontSize: 12, fontWeight: 700, padding: '5px 10px', marginBottom: 8, borderRadius: 6, border: '1px solid #c6caff', background: '#ffffff', color: '#1b1840', cursor: 'pointer' }}
       >
         {Object.keys(TEMPLATES).map((name) => (
           <option key={name} value={name}>
@@ -182,9 +191,15 @@ export default function PixelEditor({ onSend }: { onSend?: (b: Bitmap) => void }
           paint(e);
         }}
         onPointerMove={(e) => painting.current && paint(e)}
-        onPointerUp={() => (painting.current = false)}
-        onPointerLeave={() => (painting.current = false)}
-        style={{ width: '100%', maxWidth: 512, height: 'auto', imageRendering: 'pixelated', background: OFF, borderRadius: 6, touchAction: 'none', cursor: 'crosshair', display: 'block' }}
+        onPointerUp={() => {
+          if (painting.current) preview();
+          painting.current = false;
+        }}
+        onPointerLeave={() => {
+          if (painting.current) preview();
+          painting.current = false;
+        }}
+        style={{ width: '100%', maxWidth: 512, height: 'auto', imageRendering: 'pixelated', background: OFF, borderRadius: 6, border: '1px solid #c6caff', touchAction: 'none', cursor: 'crosshair', display: 'block' }}
       />
       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
         <button onClick={send} style={btn(true)}>
@@ -194,6 +209,7 @@ export default function PixelEditor({ onSend }: { onSend?: (b: Bitmap) => void }
           onClick={() => {
             grid.current = new Uint8Array(W * H);
             redraw();
+            preview();
           }}
           style={btn(false)}
         >
@@ -210,9 +226,10 @@ function btn(primary: boolean): React.CSSProperties {
     fontWeight: 700,
     padding: '5px 12px',
     borderRadius: 8,
-    border: `1px solid ${primary ? '#3BE8F5' : '#ffffff22'}`,
-    background: primary ? 'rgba(59,232,245,0.18)' : 'rgba(255,255,255,0.04)',
-    color: '#eaf6ff',
+    border: `1px solid ${primary ? '#4f46e5' : '#e0e3ff'}`,
+    background: primary ? '#4f46e5' : '#ffffff',
+    color: primary ? '#ffffff' : '#403c6b',
     cursor: 'pointer',
+    boxShadow: '0 1px 3px rgba(27,24,64,0.06)',
   };
 }

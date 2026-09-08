@@ -42,15 +42,17 @@
   min-width: 44px;
   min-height: 44px;
   border-radius: 50%;
-  border: none;
-  background: #1e1b4b;
-  color: #c6caff;
+  border: 1px solid #e7e9f2;
+  background: #ffffff;
+  color: #403c6b;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(12, 10, 36, 0.35);
+  box-shadow: 0 4px 14px rgba(27, 24, 64, 0.08);
   transition:
     transform 0.14s ease,
     background 0.14s ease,
-    color 0.14s ease;
+    color 0.14s ease,
+    border-color 0.14s ease,
+    box-shadow 0.14s ease;
   touch-action: manipulation;
 }
 
@@ -59,9 +61,11 @@
 }
 
 .tbBtn:hover:not(:disabled) {
-  background: #2e2a6b;
-  color: #ffffff;
+  background: #eef0ff;
+  color: #4338ca;
+  border-color: #c6caff;
   transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.15);
 }
 
 .tbBtn:disabled {
@@ -72,7 +76,8 @@
 .tbActive {
   background: #ec2d8f !important;
   color: #ffffff !important;
-  box-shadow: 0 0 16px rgba(236, 45, 143, 0.5) !important;
+  border-color: #ec2d8f !important;
+  box-shadow: 0 0 16px rgba(236, 45, 143, 0.4) !important;
 }
 
 .tbDiv {
@@ -91,9 +96,9 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #4ade80;
-  border: 2px solid #1e1b4b;
-  box-shadow: 0 0 8px #4ade80;
+  background: #16a34a;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 8px #16a34a;
   animation: tbLivePulse 1.2s infinite;
 }
 @keyframes tbLivePulse {
@@ -105,21 +110,25 @@
 .run {
   background: #16a34a;
   color: #ffffff;
+  border-color: #16a34a;
 }
 
 .run:hover:not(:disabled) {
   background: #15803d;
-  filter: brightness(1.1);
+  color: #ffffff;
+  filter: brightness(1.05);
 }
 
 .stop {
   background: #dc2626;
   color: #ffffff;
+  border-color: #dc2626;
 }
 
 .stop:hover:not(:disabled) {
   background: #b91c1c;
-  filter: brightness(1.1);
+  color: #ffffff;
+  filter: brightness(1.05);
 }
 
 /* Simulator card — desktop drawer, mobile bottom sheet */
@@ -129,18 +138,25 @@
   top: calc(20px + var(--safe-t));
   bottom: calc(20px + var(--safe-b));
   z-index: 25;
-  width: 480px;
-  max-width: calc(100vw - 150px);
-  background: #151333;
-  border: 1px solid rgba(198, 202, 255, 0.2);
+  width: 680px;
+  max-width: min(780px, calc(100vw - 90px));
+  background: #ffffff;
+  border: 1px solid #e7e9f2;
   border-radius: 20px;
-  box-shadow: 0 16px 44px rgba(10, 8, 30, 0.45);
+  box-shadow: 0 16px 44px rgba(27, 24, 64, 0.12);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   transition:
     transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
     opacity 0.25s ease;
+}
+
+@media (min-width: 1440px) {
+  .simCard {
+    width: 760px;
+    max-width: calc(100vw - 90px);
+  }
 }
 
 .simHidden {
@@ -156,9 +172,9 @@
   padding: 12px 18px;
   font-size: 13.5px;
   font-weight: 700;
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.05);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #1b1840;
+  background: #fafafe;
+  border-bottom: 1px solid #e7e9f2;
   flex-shrink: 0;
 }
 
@@ -174,7 +190,7 @@
   gap: 6px;
   font-size: 11.5px;
   font-weight: 700;
-  color: #c6caff;
+  color: #403c6b;
   cursor: pointer;
   user-select: none;
 }
@@ -184,9 +200,9 @@
 }
 
 .simToggle {
-  border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: #c6caff;
+  border: 1px solid #e7e9f2;
+  background: #eef0ff;
+  color: #4338ca;
   font-size: 16px;
   line-height: 1;
   cursor: pointer;
@@ -197,11 +213,13 @@
   place-items: center;
   transition:
     background 0.15s ease,
+    border-color 0.15s ease,
     color 0.15s ease;
 }
 
 .simToggle:hover {
   background: #ec2d8f;
+  border-color: #ec2d8f;
   color: #ffffff;
 }
 
@@ -209,7 +227,7 @@
   width: 100%;
   flex: 1;
   min-height: 0;
-  background: #110f2b;
+  background: #fafafe;
 }
 
 .simError {
@@ -217,8 +235,8 @@
   font-size: 13px;
   line-height: 1.5;
   font-weight: 600;
-  color: #c6caff;
-  background: #110f2b;
+  color: #403c6b;
+  background: #fafafe;
   text-align: center;
 }
 
@@ -240,10 +258,10 @@
   z-index: 50;
   width: 400px;
   max-width: calc(100vw - 400px);
-  background: #151333;
-  border: 1px solid rgba(198, 202, 255, 0.3);
+  background: #ffffff;
+  border: 1px solid #e7e9f2;
   border-radius: 16px;
-  box-shadow: 0 16px 40px rgba(10, 8, 30, 0.6);
+  box-shadow: 0 16px 40px rgba(27, 24, 64, 0.14);
   overflow: hidden;
 }
 
@@ -254,19 +272,26 @@
   padding: 10px 14px;
   font-size: 13px;
   font-weight: 700;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.06);
+  color: #1b1840;
+  background: #fafafe;
+  border-bottom: 1px solid #e7e9f2;
 }
 
 .monitorHead button {
-  border: none;
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  border: 1px solid #e0e3ff;
+  background: #eef0ff;
+  color: #4338ca;
   font-size: 11px;
+  font-weight: 700;
   padding: 6px 14px;
   border-radius: 999px;
   cursor: pointer;
   min-height: 32px;
+  transition: background 0.15s ease;
+}
+
+.monitorHead button:hover {
+  background: #e0e3ff;
 }
 
 .monitorBody {
@@ -276,13 +301,14 @@
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 11.5px;
   line-height: 1.6;
-  color: #b9f5cf;
+  background: #ffffff;
+  color: #166534;
   white-space: pre-wrap;
   word-break: break-all;
 }
 
 .monitorEmpty {
-  color: rgba(255, 255, 255, 0.4);
+  color: #9499b8;
 }
 
 /* --- Blockly Continuous Toolbox Responsive Rules --- */
@@ -333,10 +359,11 @@
     max-width: calc(100vw - 16px);
     overflow-x: auto;
     padding: 4px;
-    background: rgba(15, 12, 42, 0.7);
+    background: rgba(255, 255, 255, 0.88);
     backdrop-filter: blur(12px);
+    border: 1px solid #e7e9f2;
     border-radius: 999px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 20px rgba(27, 24, 64, 0.12);
   }
 
   .tbBtn {
@@ -359,7 +386,8 @@
     bottom: calc(10px + var(--safe-b));
     width: auto;
     max-width: none;
-    height: 50vh;
+    height: 65vh;
+    max-height: 85vh;
     z-index: 40;
     border-radius: 20px;
   }

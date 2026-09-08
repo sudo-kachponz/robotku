@@ -12,7 +12,7 @@ import styles from '../../styles/ModeControls.module.css';
 
 export const CW = '#8085F4'; // clockwise → indigo
 export const CCW = '#F265AE'; // anticlockwise → pink
-const TRACK = 'rgba(255,255,255,0.18)';
+const TRACK = '#e7e9f2';
 
 /** Center-out track background, tinted by direction (used by the sliders). */
 export function fillBg(v: number): string {

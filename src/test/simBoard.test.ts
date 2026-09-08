@@ -24,8 +24,8 @@ describe('Sim board renders (4.md)', () => {
     expect(html).toMatch(/>P5</);
     expect(html).toMatch(/>I1</);
     expect(html).toMatch(/>I5</);
-    expect(html).toContain('#D42E2E'); // red header row (VCC / 5V)
-    expect(html).toContain('#2FA84F'); // green SCL row (I2C)
+    expect(html).toContain('#DC2626'); // red header row (VCC / 5V)
+    expect(html).toContain('#16A34A'); // green SCL row (I2C)
     expect(html).toContain('ROBOTKU');
   });
 
