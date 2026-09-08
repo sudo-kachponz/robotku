@@ -7,6 +7,17 @@ import { BaseTransport } from './BaseTransport';
 
 const BAUD_RATE = 115200;
 
+// Pre-filter Chrome's port picker to the USB-serial chips used on our ESP32 board so
+// the user sees ~one obvious device instead of a confusing list. CH340 (our CH340C),
+// plus CP210x / FTDI / PL2303 so board revisions still show up. Filters only limit
+// which devices appear; picking is still a required first-time user gesture.
+const SERIAL_FILTERS: SerialPortFilter[] = [
+  { usbVendorId: 0x1a86 }, // WCH CH340 / CH341 / CH9102 (Robotku's chip)
+  { usbVendorId: 0x10c4 }, // Silicon Labs CP210x
+  { usbVendorId: 0x0403 }, // FTDI
+  { usbVendorId: 0x067b }, // Prolific PL2303
+];
+
 export class SerialTransport extends BaseTransport {
   readonly kind = 'serial' as const;
 
@@ -28,7 +39,7 @@ export class SerialTransport extends BaseTransport {
     const remembered = (await navigator.serial.getPorts())[0] ?? null;
     let port = remembered;
     try {
-      if (!port) port = await navigator.serial.requestPort();
+      if (!port) port = await navigator.serial.requestPort({ filters: SERIAL_FILTERS });
       // A remembered port may still be OPEN from a prior/failed attempt (its
       // close() can fail). Reuse it instead of re-opening — closeTransport already
       // releases the stream locks, so its readable/writable are usable. Only open()
@@ -38,7 +49,7 @@ export class SerialTransport extends BaseTransport {
       }
     } catch (err) {
       if (!remembered) throw err; // picker cancelled or genuinely failed
-      port = await navigator.serial.requestPort(); // remembered port dead → pick
+      port = await navigator.serial.requestPort({ filters: SERIAL_FILTERS }); // remembered port dead → pick
       if (!port.readable && !port.writable) await port.open({ baudRate: BAUD_RATE });
     }
     this.port = port;
