@@ -57,6 +57,20 @@ export default function ControlLayout({
     }
   }, []);
 
+  const handleBack = useCallback(() => {
+    if (router.pathname.startsWith('/control/modes/')) {
+      void router.push('/control/modes');
+    } else if (router.pathname === '/control/modes') {
+      void router.push('/control');
+    } else if (router.pathname === '/control/projects' || router.pathname === '/control/settings') {
+      void router.push('/control');
+    } else if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+    } else {
+      void router.push('/control');
+    }
+  }, [router]);
+
   return (
     <div className={styles.shell}>
       {/* Top Navbar */}
@@ -69,6 +83,14 @@ export default function ControlLayout({
             title="Beranda"
           >
             <HomeIcon />
+          </button>
+          <button
+            className={styles.iconBtn}
+            onClick={handleBack}
+            aria-label="Kembali"
+            title="Kembali ke kontrol sebelumnya"
+          >
+            <BackIcon />
           </button>
         </div>
 
@@ -303,6 +325,23 @@ function DockShowIcon() {
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
       <rect x="3" y="16" width="18" height="5" rx="1.5" />
       <path d="M7 14l5-4 5 4" />
+    </svg>
+  );
+}
+
+function BackIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M19 12H5M12 19l-7-7 7-7" />
     </svg>
   );
 }
