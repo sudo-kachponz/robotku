@@ -3,6 +3,7 @@
 import * as Blockly from 'blockly';
 import { javascriptGenerator } from 'blockly/javascript';
 import { FieldSlider } from '@blockly/field-slider';
+import { registerFieldColour } from '@blockly/field-colour';
 
 import './categories/motors';
 import './categories/mechanisms';
@@ -67,6 +68,7 @@ export function initializeAstroidEditor(): void {
   if (isInitialized) return;
 
   Blockly.fieldRegistry.register('field_slider', FieldSlider);
+  registerFieldColour();
 
   for (const blockType in styleMap) {
     if (Blockly.Blocks[blockType]) {

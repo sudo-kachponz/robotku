@@ -40,50 +40,33 @@ export interface LedColorOption {
   name: string;
   hex: string;
   rgb: { r: number; g: number; b: number };
-  codeValue: string;
 }
 
 export const LED_PALETTE: LedColorOption[] = [
   // Baris 1 (10 warna)
-  { name: 'Hitam (Off)', hex: '#000000', rgb: { r: 0, g: 0, b: 0 }, codeValue: '0,0,0' },
-  { name: 'Abu-abu', hex: '#6B7280', rgb: { r: 107, g: 114, b: 128 }, codeValue: '107,114,128' },
-  { name: 'Merah Tua', hex: '#881337', rgb: { r: 136, g: 19, b: 55 }, codeValue: '136,19,55' },
-  { name: 'Merah', hex: '#EF4444', rgb: { r: 255, g: 0, b: 0 }, codeValue: '255,0,0' },
-  { name: 'Oranye', hex: '#F97316', rgb: { r: 255, g: 127, b: 0 }, codeValue: '255,127,0' },
-  { name: 'Kuning', hex: '#FACC15', rgb: { r: 255, g: 255, b: 0 }, codeValue: '255,255,0' },
-  { name: 'Hijau', hex: '#22C55E', rgb: { r: 0, g: 255, b: 0 }, codeValue: '0,255,0' },
-  { name: 'Biru Langit', hex: '#0EA5E9', rgb: { r: 0, g: 255, b: 255 }, codeValue: '0,255,255' },
-  { name: 'Biru', hex: '#3B82F6', rgb: { r: 0, g: 0, b: 255 }, codeValue: '0,0,255' },
-  { name: 'Ungu', hex: '#8B5CF6', rgb: { r: 128, g: 0, b: 128 }, codeValue: '128,0,128' },
+  { name: 'Hitam (Off)', hex: '#000000', rgb: { r: 0, g: 0, b: 0 } },
+  { name: 'Abu-abu', hex: '#6B7280', rgb: { r: 107, g: 114, b: 128 } },
+  { name: 'Merah Tua', hex: '#881337', rgb: { r: 136, g: 19, b: 55 } },
+  { name: 'Merah', hex: '#EF4444', rgb: { r: 255, g: 0, b: 0 } },
+  { name: 'Oranye', hex: '#F97316', rgb: { r: 255, g: 127, b: 0 } },
+  { name: 'Kuning', hex: '#FACC15', rgb: { r: 255, g: 255, b: 0 } },
+  { name: 'Hijau', hex: '#22C55E', rgb: { r: 0, g: 255, b: 0 } },
+  { name: 'Biru Langit', hex: '#0EA5E9', rgb: { r: 0, g: 255, b: 255 } },
+  { name: 'Biru', hex: '#3B82F6', rgb: { r: 0, g: 0, b: 255 } },
+  { name: 'Ungu', hex: '#8B5CF6', rgb: { r: 128, g: 0, b: 128 } },
 
   // Baris 2 (10 warna)
-  { name: 'Putih', hex: '#FFFFFF', rgb: { r: 255, g: 255, b: 255 }, codeValue: '255,255,255' },
-  { name: 'Abu Terang', hex: '#D1D5DB', rgb: { r: 195, g: 195, b: 195 }, codeValue: '195,195,195' },
-  { name: 'Cokelat', hex: '#92400E', rgb: { r: 185, g: 122, b: 87 }, codeValue: '185,122,87' },
-  { name: 'Pink', hex: '#F472B6', rgb: { r: 255, g: 0, b: 255 }, codeValue: '255,0,255' },
-  { name: 'Emas', hex: '#EAB308', rgb: { r: 255, g: 201, b: 14 }, codeValue: '255,201,14' },
-  { name: 'Kuning Pasir', hex: '#FEF08A', rgb: { r: 239, g: 228, b: 176 }, codeValue: '239,228,176' },
-  { name: 'Hijau Muda / Lime', hex: '#84CC16', rgb: { r: 181, g: 230, b: 29 }, codeValue: '181,230,29' },
-  { name: 'Biru Muda', hex: '#7DD3FC', rgb: { r: 153, g: 217, b: 234 }, codeValue: '153,217,234' },
-  { name: 'Abu Kebiruan', hex: '#64748B', rgb: { r: 112, g: 146, b: 190 }, codeValue: '112,146,190' },
-  { name: 'Lavender', hex: '#C4B5FD', rgb: { r: 200, g: 191, b: 231 }, codeValue: '200,191,231' },
+  { name: 'Putih', hex: '#FFFFFF', rgb: { r: 255, g: 255, b: 255 } },
+  { name: 'Abu Terang', hex: '#D1D5DB', rgb: { r: 195, g: 195, b: 195 } },
+  { name: 'Cokelat', hex: '#92400E', rgb: { r: 185, g: 122, b: 87 } },
+  { name: 'Pink', hex: '#F472B6', rgb: { r: 255, g: 0, b: 255 } },
+  { name: 'Emas', hex: '#EAB308', rgb: { r: 255, g: 201, b: 14 } },
+  { name: 'Kuning Pasir', hex: '#FEF08A', rgb: { r: 239, g: 228, b: 176 } },
+  { name: 'Hijau Muda / Lime', hex: '#84CC16', rgb: { r: 181, g: 230, b: 29 } },
+  { name: 'Biru Muda', hex: '#7DD3FC', rgb: { r: 153, g: 217, b: 234 } },
+  { name: 'Abu Kebiruan', hex: '#64748B', rgb: { r: 112, g: 146, b: 190 } },
+  { name: 'Lavender', hex: '#C4B5FD', rgb: { r: 200, g: 191, b: 231 } },
 ];
-
-function findClosestColorValue(r: number, g: number, b: number): string {
-  let closest = '255,0,0';
-  let minDistance = Infinity;
-  for (const item of LED_PALETTE) {
-    const dr = r - item.rgb.r;
-    const dg = g - item.rgb.g;
-    const db = b - item.rgb.b;
-    const dist = dr * dr + dg * dg + db * db;
-    if (dist < minDistance) {
-      minDistance = dist;
-      closest = item.codeValue;
-    }
-  }
-  return closest;
-}
 
 const box: React.CSSProperties = {
   background: '#fafafe',
@@ -199,14 +182,12 @@ export default function BoardPanel({ state }: { state: SimState }) {
   };
 
   const handleInsertBlock = () => {
-    const { r, g, b } = hexToRgb(selectedHex);
     const dur = duration > 0 ? duration : 1;
-    const colorCode = findClosestColorValue(r, g, b);
     insertLcdBlock(
       [
         {
           type: 'set_led_color',
-          fields: { COLOR: colorCode },
+          fields: { COLOR: selectedHex },
           inputs: { DURATION: dur },
         },
       ],

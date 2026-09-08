@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@blockly/continuous-toolbox": "^7.0.3",
+    "@blockly/field-colour": "^6.0.12",
     "@blockly/field-slider": "^8.0.3",
     "@mediapipe/tasks-vision": "1.0.1",
     "@teachablemachine/image": "0.8.5",
