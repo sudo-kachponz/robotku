@@ -9,8 +9,6 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import RobotSprite from '../modes/RobotSprite';
-import PortBoard, { fillBg } from '../modes/PortBoard';
-import { portLabel } from '../../domain/ports';
 import { SIM_STAGE, OBSTACLE_R, type SimSink, type SimState } from '../../runtime/SimSink';
 import { isSupported } from '../../domain/boardProfile';
 import BoardPanel from './sim/BoardPanel';
@@ -57,7 +55,6 @@ export default function SimStage(props: SimStageProps) {
         <OutputPanelSection state={state} reduced={reduced} hw={hw} />
       </div>
       <BoardPanel state={state} />
-      <PortStripSection portValues={state.portValues} ledColor={state.ledColor} />
       {hw.sensors && <SensorRack sink={sink} state={state} />}
       <SimConsole lines={state.simConsole} />
       <VariablesWatch scope={scope} />
@@ -332,24 +329,6 @@ function ArenaSection({
       >
         {state.obstacle ? 'Hapus rintangan' : 'Taruh rintangan'}
       </button>
-    </div>
-  );
-}
-
-/* ----------------------------------------------------------------- port strip */
-function PortStripSection({ portValues, ledColor }: { portValues: number[]; ledColor?: string | null }) {
-  return (
-    <div className={styles.section}>
-      <PortBoard active={portValues.map((v) => v !== 0)} ledColor={ledColor} />
-      <div className={styles.bars}>
-        {portValues.map((v, i) => (
-          <div key={i} className={styles.barRow}>
-            <span className={styles.barNum}>{portLabel(i)}</span>
-            <div className={styles.bar} style={{ background: fillBg(v) }} />
-            <span className={styles.barVal}>{v}</span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
