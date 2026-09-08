@@ -142,23 +142,30 @@ const TEMPLATES: Record<string, () => Uint8Array> = {
   '🎤 Hatsune Miku': () => fromBraille(MIKU_BRAILLE),
 };
 
+const BLANK_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
 function toPreviewUrl(pixels: string, w = AW, h = AH): string {
-  if (typeof document === 'undefined') return '';
-  const cv = document.createElement('canvas');
-  cv.width = w;
-  cv.height = h;
-  const cx = cv.getContext('2d');
-  if (!cx) return '';
-  const img = cx.createImageData(w, h);
-  for (let i = 0; i < w * h; i++) {
-    const o = i * 4;
-    img.data[o] = 56;
-    img.data[o + 1] = 189;
-    img.data[o + 2] = 248;
-    img.data[o + 3] = pixels[i] === '1' ? 255 : 0;
+  if (typeof document === 'undefined') return BLANK_PIXEL;
+  try {
+    const cv = document.createElement('canvas');
+    if (!cv || typeof cv.getContext !== 'function') return BLANK_PIXEL;
+    const cx = cv.getContext('2d');
+    if (!cx) return BLANK_PIXEL;
+    cv.width = w;
+    cv.height = h;
+    const img = cx.createImageData(w, h);
+    for (let i = 0; i < w * h; i++) {
+      const o = i * 4;
+      img.data[o] = 56;
+      img.data[o + 1] = 189;
+      img.data[o + 2] = 248;
+      img.data[o + 3] = pixels[i] === '1' ? 255 : 0;
+    }
+    cx.putImageData(img, 0, 0);
+    return cv.toDataURL();
+  } catch {
+    return BLANK_PIXEL;
   }
-  cx.putImageData(img, 0, 0);
-  return cv.toDataURL();
 }
 
 interface Props {
@@ -656,7 +663,7 @@ export default function OledModule({
                     }}
                   >
                     <img
-                      src={animThumbnails[anim.id]}
+                      src={animThumbnails[anim.id] || BLANK_PIXEL}
                       width={44}
                       height={22}
                       alt={anim.name}
