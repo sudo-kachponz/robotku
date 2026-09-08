@@ -4,6 +4,7 @@
 // pins, black screen. The screen renders REAL content (text / 5x5 matrix / shape),
 // not a placeholder, so DISPLAY_TEXT etc. look alive in the sim.
 
+import { useMemo } from 'react';
 import styles from './SimBoard.module.css';
 
 const C = {
@@ -59,6 +60,26 @@ function Shape({ shape }: { shape: string }) {
 
 export default function OledModule({ text, line2, matrix, shape, bitmap, dimmed }: Props) {
   const longText = (text?.length ?? 0) > 10;
+  // Render an arbitrary WxH bitmap efficiently as one image (a 128x64 grid = 8192
+  // pixels; SVG rects would freeze) via an offscreen canvas -> data URL.
+  const bmpUrl = useMemo(() => {
+    if (!bitmap || bitmap.w <= 0 || bitmap.h <= 0 || typeof document === 'undefined') return null;
+    const cv = document.createElement('canvas');
+    cv.width = bitmap.w;
+    cv.height = bitmap.h;
+    const cx = cv.getContext('2d');
+    if (!cx) return null;
+    const img = cx.createImageData(bitmap.w, bitmap.h);
+    for (let i = 0; i < bitmap.w * bitmap.h; i++) {
+      const o = i * 4;
+      img.data[o] = 59; // #3BE8F5
+      img.data[o + 1] = 232;
+      img.data[o + 2] = 245;
+      img.data[o + 3] = bitmap.pixels[i] === '1' ? 255 : 0;
+    }
+    cx.putImageData(img, 0, 0);
+    return cv.toDataURL();
+  }, [bitmap]);
   return (
     <svg viewBox="0 0 150 110" role="img" aria-label="Modul layar OLED" style={{ width: '100%', height: 'auto', opacity: dimmed ? 0.5 : 1 }}>
       {/* toska frame + screws */}
@@ -83,19 +104,8 @@ export default function OledModule({ text, line2, matrix, shape, bitmap, dimmed 
       {/* screen */}
       <rect x={26} y={40} width={98} height={46} rx={2} fill={C.screen} stroke="#0d1b30" />
       <svg x={26} y={40} width={98} height={46} viewBox="0 0 128 64">
-        {bitmap && bitmap.w > 0 && bitmap.h > 0 ? (
-          Array.from({ length: bitmap.w * bitmap.h }, (_, i) =>
-            bitmap.pixels[i] === '1' ? (
-              <rect
-                key={i}
-                x={(i % bitmap.w) * (128 / bitmap.w)}
-                y={Math.floor(i / bitmap.w) * (64 / bitmap.h)}
-                width={128 / bitmap.w}
-                height={64 / bitmap.h}
-                fill={C.on}
-              />
-            ) : null,
-          )
+        {bmpUrl ? (
+          <image href={bmpUrl} x={0} y={0} width={128} height={64} style={{ imageRendering: 'pixelated' }} />
         ) : matrix ? (
           Array.from({ length: 25 }, (_, i) => (
             <rect
