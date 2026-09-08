@@ -508,6 +508,25 @@ void handleCommand(const String& jsonLine) {
     return;
   }
 
+  // --- Schematic pasang / cabut -------------------------------------------
+  // The web's virtual schematic can detach a module; the hardware must then go
+  // truly silent on that pin (no creeping continuous servo) and STAY silent until
+  // it is re-attached. Channel via {"channel":0|1|2} or {"port":N} (config table).
+  if (strcmp(cmd, "ATTACH") == 0 || strcmp(cmd, "DETACH") == 0) {
+    bool attach = (cmd[0] == 'A');
+    int ch;
+    if (!p["channel"].isNull()) ch = p["channel"].as<int>();
+    else { int port = p["port"] | 0; ch = (port >= 1 && port <= 8) ? PORT_CHANNEL[port] : -1; }
+    if (ch < 0 || ch > 2 || !servoChannelWired(ch)) { sendUnsupported(cmd); return; }
+    servoModulePresent[ch] = attach;
+    if (!attach) {                 // cut now; a later drive re-attaches lazily
+      servoSetAttached(ch, false);
+      servoAngle[ch] = servoNeutralDeg(ch);
+      oledDirty = true;
+    }
+    return;
+  }
+
 // --- Joystick ------------------------------------------------------------
   // SET_PORT is LIVE control: no deadline (the joystick keeps sending; the
   // watchdog is the safety net). Map the port through the config.h table.
@@ -519,6 +538,15 @@ void handleCommand(const String& jsonLine) {
       return;
     }
     driveChannel(PORT_CHANNEL[port], value);
+    return;
+  }
+
+  // --- Accessory servo: absolute angle (the schematic's servo slider) ------
+  if (strcmp(cmd, "SET_HEAD_POSITION") == 0 || strcmp(cmd, "SET_SERVO") == 0) {
+    if (!HAS_SERVO_AUX) { sendUnsupported(cmd); return; }   // no aux servo wired
+    int angle = p["angle"] | (p["position"] | 90);
+    servoWriteAngle(SERVO_AUX_CH, angle);   // positional: holds until changed
+    lastStatus = "Servo";
     return;
   }
 
@@ -856,14 +884,14 @@ void setup() {
   ESP32PWM::allocateTimer(2);
   ESP32PWM::allocateTimer(3);
 
-  // Servos (ESP32Servo): 50 Hz, calibrated pulse range for SG90.
-  servoL.setPeriodHertz(50);
-  servoL.attach(PIN_SERVO_L, SERVO_MIN_US, SERVO_MAX_US);
-  if (HAS_SERVO_R) {             // don't claim a timer for a servo that isn't there
-    servoR.setPeriodHertz(50);
-    servoR.attach(PIN_SERVO_R, SERVO_MIN_US, SERVO_MAX_US);
-  }
-  stopAllActuators();
+  // Servos (ESP32Servo): 50 Hz SG90. We do NOT attach here — a channel attaches
+  // lazily on its first real drive and detaches at idle / on "cabut", so a bench
+  // board and a released joystick emit NO servo signal and cannot creep. Park the
+  // pins LOW now so they don't float (and twitch a servo) before the first drive.
+  pinMode(PIN_SERVO_L, OUTPUT); digitalWrite(PIN_SERVO_L, LOW);
+  if (HAS_SERVO_R)   { pinMode(PIN_SERVO_R, OUTPUT);   digitalWrite(PIN_SERVO_R, LOW); }
+  if (HAS_SERVO_AUX) { pinMode(PIN_SERVO_AUX, OUTPUT); digitalWrite(PIN_SERVO_AUX, LOW); }
+  stopAllActuators();   // clears any deadline; channels already detached
 
   buzzerPwm.attachPin(PIN_BUZZER, 2000, 10);   // own LEDC timer via the allocator
   buzzerOff();
