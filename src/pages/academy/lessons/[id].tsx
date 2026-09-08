@@ -3,24 +3,25 @@
 // ROUTE /academy/lessons/:id — Full Screen Presentation (PPT) Mode matching reference benchmark.
 // Fullscreen slide canvas, floating swipe prompt, bottom slide navigation, and quick access tabs.
 
+import type { GetStaticPaths, GetStaticProps } from 'next';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import page from '../../../styles/Academy.module.css';
 import styles from '../../../styles/AcademyDetail.module.css';
-import { getLesson, type Lesson } from '../../../data/lessons';
+import { getLesson, getLessons, type Lesson } from '../../../data/lessons';
 import {
   loadLessonProgress,
   saveLessonProgress,
   type LessonProgress,
 } from '../../../academy/store';
 
-export default function LessonDetail() {
+export default function LessonDetail({ initialLesson }: { initialLesson?: Lesson | null }) {
   const router = useRouter();
   const { id } = router.query;
 
-  const [lesson, setLesson] = useState<Lesson | null | undefined>(undefined);
+  const [lesson, setLesson] = useState<Lesson | null | undefined>(initialLesson);
   const [progress, setProgress] = useState<LessonProgress>({});
   const [slideIndex, setSlideIndex] = useState(0);
   const [showPrompt, setShowPrompt] = useState(true);
@@ -235,3 +236,23 @@ export default function LessonDetail() {
     </>
   );
 }
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const allLessons = await getLessons();
+  const paths = allLessons.map((l) => ({ params: { id: l.id } }));
+  return {
+    paths,
+    fallback: false,
+  };
+};
+
+export const getStaticProps: GetStaticProps<{ initialLesson: Lesson | null }, { id: string }> = async (context) => {
+  const id = context.params?.id;
+  const initialLesson = id ? (await getLesson(id)) ?? null : null;
+  return {
+    props: {
+      initialLesson,
+    },
+  };
+};
+

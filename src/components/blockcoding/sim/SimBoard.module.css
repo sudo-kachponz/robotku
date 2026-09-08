@@ -129,6 +129,25 @@
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
 }
 
+.dragItem {
+  cursor: grab;
+  touch-action: none;
+  transition: filter 0.15s ease;
+}
+.dragItem:hover {
+  filter: drop-shadow(0 4px 10px rgba(30, 27, 75, 0.12));
+}
+.dragging {
+  cursor: grabbing !important;
+  filter: drop-shadow(0 10px 22px rgba(30, 27, 75, 0.28)) brightness(1.03) !important;
+}
+.dragHandle {
+  cursor: grab;
+}
+.dragHandle:hover {
+  opacity: 0.95;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .wave,
   .bleBlink,

@@ -38,62 +38,47 @@ export default function UnsupportedBrowserModal({ isOpen, onClose }: Props) {
         <div className={styles.modalContent}>
           <div className={styles.textContent}>
             {!caps?.secureContext && (
-              <div
-                style={{
-                  padding: '10px 14px',
-                  background: '#FEF2F2',
-                  border: '1px solid #FCA5A5',
-                  borderRadius: '10px',
-                  color: '#991B1B',
-                  fontSize: '13px',
-                  marginBottom: '12px',
-                  fontWeight: 600,
-                }}
-              >
-                ⚠️ <strong>Peringatan HTTP:</strong> Aplikasi dibuka tanpa HTTPS (non-secure
-                context). Browser memblokir fitur Bluetooth & Serial demi keamanan.
+              <div className={styles.warningBox}>
+                ⚠️ <strong>Peringatan HTTP:</strong> Aplikasi dibuka tanpa HTTPS (non-secure context). Browser memblokir fitur Bluetooth & Serial demi keamanan.
               </div>
             )}
 
-            <p className={styles.errorNotice}>
-              <strong>Fitur Perangkat Ini:</strong>
-            </p>
-            <ul
-              style={{
-                paddingLeft: '18px',
-                fontSize: '13px',
-                lineHeight: '1.6',
-                margin: '4px 0 16px',
-                color: '#334155',
-              }}
-            >
-              <li>Web Bluetooth: {caps?.ble ? '✅ Didukung' : '❌ Tidak didukung'}</li>
-              <li>Web Serial (USB): {caps?.serial ? '✅ Didukung' : '❌ Tidak didukung'}</li>
-              <li>
-                Platform OS:{' '}
-                {caps?.platform === 'ios'
-                  ? '📱 iOS (iPhone/iPad)'
-                  : caps?.platform === 'android'
-                    ? '📱 Android'
-                    : '💻 Laptop / Desktop'}
-              </li>
-            </ul>
+            <div className={styles.sectionHeader}>
+              Fitur Perangkat Ini:
+            </div>
 
-            <div
-              style={{
-                background: '#F0FDF4',
-                border: '1.5px dashed #22C55E',
-                borderRadius: '12px',
-                padding: '12px 14px',
-                marginBottom: '16px',
-              }}
-            >
-              <h4
-                style={{ margin: '0 0 6px', color: '#15803D', fontSize: '14px', fontWeight: 800 }}
-              >
+            <div className={styles.featureList}>
+              <div className={styles.featureItem}>
+                <span className={styles.featureLabel}>Web Bluetooth</span>
+                <span className={caps?.ble ? styles.badgeSuccess : styles.badgeError}>
+                  {caps?.ble ? '✅ Didukung' : '❌ Tidak didukung'}
+                </span>
+              </div>
+
+              <div className={styles.featureItem}>
+                <span className={styles.featureLabel}>Web Serial (USB)</span>
+                <span className={caps?.serial ? styles.badgeSuccess : styles.badgeError}>
+                  {caps?.serial ? '✅ Didukung' : '❌ Tidak didukung'}
+                </span>
+              </div>
+
+              <div className={styles.featureItem}>
+                <span className={styles.featureLabel}>Platform OS</span>
+                <span className={styles.badgeInfo}>
+                  {caps?.platform === 'ios'
+                    ? '📱 iOS (iPhone/iPad)'
+                    : caps?.platform === 'android'
+                      ? '📱 Android'
+                      : '💻 Laptop / Desktop'}
+                </span>
+              </div>
+            </div>
+
+            <div className={styles.learningModeCard}>
+              <h4 className={styles.learningModeTitle}>
                 ✨ Mode Belajar Aktif!
               </h4>
-              <p style={{ margin: 0, fontSize: '12.5px', color: '#166534', lineHeight: '1.5' }}>
+              <p className={styles.learningModeText}>
                 Kamu tetap bisa membuat program blok, menjalankan simulasi 2D/3D di layar, dan
                 mengakses seluruh modul Academy di HP ini. Gunakan Chrome di laptop untuk menyambung
                 langsung ke robot fisik.

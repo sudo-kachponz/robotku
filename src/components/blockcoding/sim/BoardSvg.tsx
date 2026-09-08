@@ -5,7 +5,7 @@
 // with generous, non-overlapping orthogonal schematic wire channels, prominent pin labels,
 // CAD blueprint grid, solder terminal nodes, and live animated electron signal flow.
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './SimBoard.module.css';
 
 // Component color palette matching real photos
@@ -82,6 +82,19 @@ interface Props {
   oledMatrix?: boolean[];
   oledBitmap?: { w: number; h: number; pixels: string } | null;
   servoSpeed?: number;
+  servoSpeeds?: Record<string, number> | number[];
+  positions?: Record<string, { x: number; y: number }>;
+  onPositionsChange?: (positions: Record<string, { x: number; y: number }>) => void;
+}
+
+export interface PlacedModule {
+  id: string;
+  kind: 'oled' | 'servo';
+  portId: string;
+  x: number;
+  y: number;
+  col: number;
+  row: number;
 }
 
 export default function BoardSvg({
@@ -96,18 +109,169 @@ export default function BoardSvg({
   oledMatrix,
   oledBitmap,
   servoSpeed = 0,
+  servoSpeeds,
+  positions,
+  onPositionsChange,
 }: Props) {
   const led = rgb ? `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})` : null;
   const byId = (id: string) => ports.find((p) => p.id === id);
 
-  // Detect attached ports
-  const attachedOledPort = ports.find((p) => p.kind === 'i2c' && p.module === 'oled');
-  const attachedServoPort = ports.find((p) => p.kind === 'pwm' && p.module === 'servo');
-  const hasModules = !!(attachedOledPort || attachedServoPort);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [localPositions, setLocalPositions] = useState<Record<string, { x: number; y: number }>>(positions || {});
+  const [dragging, setDragging] = useState<{
+    id: string;
+    pointerId: number;
+    startX: number;
+    startY: number;
+    origX: number;
+    origY: number;
+  } | null>(null);
 
-  // Coordinates offset for Controller Board inside the SVG canvas
-  const boardOffsetX = hasModules ? 30 : 15;
-  const boardOffsetY = hasModules ? 80 : 20;
+  useEffect(() => {
+    if (positions) {
+      setLocalPositions(positions);
+    }
+  }, [positions]);
+
+  // Detect ALL attached ports (multiple OLEDs and multiple Servos)
+  const attachedOledPorts = useMemo(
+    () => ports.filter((p) => p.kind === 'i2c' && p.module === 'oled'),
+    [ports]
+  );
+  const attachedServoPorts = useMemo(
+    () => ports.filter((p) => p.kind === 'pwm' && p.module === 'servo'),
+    [ports]
+  );
+  const totalModules = attachedOledPorts.length + attachedServoPorts.length;
+  const hasModules = totalModules > 0;
+
+  const getModulePos = (id: string, defaultX: number, defaultY: number) => {
+    const pos = positions?.[id] ?? localPositions[id];
+    return pos ? pos : { x: defaultX, y: defaultY };
+  };
+
+  const defaultBoardX = hasModules ? 30 : 15;
+  const defaultBoardY = hasModules ? 80 : 20;
+  const boardPos = getModulePos('board', defaultBoardX, defaultBoardY);
+  const boardOffsetX = boardPos.x;
+  const boardOffsetY = boardPos.y;
+
+  // Grid placement for all attached modules on the right with custom positions
+  const placedModules = useMemo(() => {
+    const list: PlacedModule[] = [];
+    let index = 0;
+
+    // Place OLEDs first
+    attachedOledPorts.forEach((p) => {
+      const col = Math.floor(index / 2);
+      const row = index % 2;
+      const defX = 680 + col * 265;
+      const defY = row === 0 ? 25 : 245;
+      const pos = getModulePos(`oled-${p.id}`, defX, defY);
+      list.push({
+        id: `oled-${p.id}`,
+        kind: 'oled',
+        portId: p.id,
+        x: pos.x,
+        y: pos.y,
+        col,
+        row,
+      });
+      index++;
+    });
+
+    // Then place Servos
+    attachedServoPorts.forEach((p) => {
+      const col = Math.floor(index / 2);
+      const row = index % 2;
+      const defX = 680 + col * 265;
+      const defY = row === 0 ? 25 : 245;
+      const pos = getModulePos(`servo-${p.id}`, defX, defY);
+      list.push({
+        id: `servo-${p.id}`,
+        kind: 'servo',
+        portId: p.id,
+        x: pos.x,
+        y: pos.y,
+        col,
+        row,
+      });
+      index++;
+    });
+
+    return list;
+  }, [attachedOledPorts, attachedServoPorts, positions, localPositions]);
+
+  // Dynamically compute canvas dimensions based on board and module positions
+  const { svgWidth, svgHeight } = useMemo(() => {
+    if (!hasModules) return { svgWidth: 420, svgHeight: 340 };
+    let maxX = boardOffsetX + 380;
+    let maxY = boardOffsetY + 300;
+    placedModules.forEach((m) => {
+      maxX = Math.max(maxX, m.x + 250);
+      maxY = Math.max(maxY, m.y + 210);
+    });
+    return {
+      svgWidth: Math.max(960, maxX + 40),
+      svgHeight: Math.max(500, maxY + 40),
+    };
+  }, [hasModules, boardOffsetX, boardOffsetY, placedModules]);
+
+  const handlePointerDown = (id: string, e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    if ((e.target as HTMLElement).closest?.(`.${styles.portClick}`)) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      (e.currentTarget as Element).setPointerCapture(e.pointerId);
+    } catch {}
+
+    const current = id === 'board'
+      ? { x: boardOffsetX, y: boardOffsetY }
+      : (placedModules.find((m) => m.id === id) || { x: 0, y: 0 });
+
+    setDragging({
+      id,
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      origX: current.x,
+      origY: current.y,
+    });
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!dragging || !svgRef.current) return;
+    const svg = svgRef.current;
+    const rect = svg.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    const scaleX = svgWidth / rect.width;
+    const scaleY = svgHeight / rect.height;
+
+    const dx = (e.clientX - dragging.startX) * scaleX;
+    const dy = (e.clientY - dragging.startY) * scaleY;
+
+    const nextX = Math.max(10, Math.round(dragging.origX + dx));
+    const nextY = Math.max(10, Math.round(dragging.origY + dy));
+
+    const updated = {
+      ...(positions || localPositions),
+      [dragging.id]: { x: nextX, y: nextY },
+    };
+    setLocalPositions(updated);
+    onPositionsChange?.(updated);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (dragging) {
+      try {
+        (e.currentTarget as Element).releasePointerCapture?.(e.pointerId);
+      } catch {}
+      setDragging(null);
+    }
+  };
 
   // Generate bitmap preview URL for OLED if provided
   const bmpUrl = useMemo(() => {
@@ -128,12 +292,6 @@ export default function BoardSvg({
     cx.putImageData(img, 0, 0);
     return cv.toDataURL();
   }, [oledBitmap]);
-
-  const spinning = Math.abs(servoSpeed) > 2;
-  const dur = spinning ? `${Math.max(0.35, 1.8 - Math.abs(servoSpeed) / 70).toFixed(2)}s` : undefined;
-  const hornStyle: React.CSSProperties = spinning
-    ? ({ ['--spin-dur' as string]: dur, animationDirection: servoSpeed < 0 ? 'reverse' : 'normal' } as React.CSSProperties)
-    : { transform: 'rotate(90deg)', transformOrigin: 'center', transition: 'transform 0.2s ease' };
 
   // Render Port Header Column (Interactive button)
   const renderHeaderColumn = (kind: 'pwm' | 'i2c', i: number) => {
@@ -209,7 +367,8 @@ export default function BoardSvg({
   };
 
   // Render Spacious Direct Schematic Wires: Board Port -> OLED Module
-  const renderOledSchematicWires = (portId: string) => {
+  const renderOledSchematicWires = (placed: PlacedModule) => {
+    const portId = placed.portId;
     const colIdx = Number(portId.slice(1)) - 1;
     const startX = boardOffsetX + I2C_COL_X[colIdx];
     // Y coordinates of GND, VCC, SCL, SDA on board
@@ -219,24 +378,34 @@ export default function BoardSvg({
       boardOffsetY + 36 + 2 * 13.5 + 6.5,
       boardOffsetY + 36 + 3 * 13.5 + 6.5,
     ];
-    // Spacious non-overlapping elevated horizontal routing rails (18px gaps)
-    const elevatedYRails = [20, 38, 56, 74];
-    // Solder terminals on OLED Module (GND, VDD, SCK, SDA with 35px pitch)
-    const targetPinsX = [745, 780, 815, 850];
-    const targetY = 60;
+    // Solder terminals on OLED Module
+    const targetPinsX = [placed.x + 45, placed.x + 80, placed.x + 115, placed.x + 150];
+    const targetY = placed.y + 30;
 
     return (
       <g key={`schematic-oled-wires-${portId}`}>
         {WIRE_I2C.map((wire, i) => {
           const py = pinYOffsets[i];
-          const ry = elevatedYRails[i];
           const tx = targetPinsX[i];
-          const chipX = 420 + i * 58;
-          // Spacious Orthogonal schematic path with smooth 8px fillets
-          const d = `M ${startX} ${py} V ${ry + 8} Q ${startX} ${ry} ${startX + 8} ${ry} H ${tx - 8} Q ${tx} ${ry} ${tx} ${ry + 8} V ${targetY}`;
+          const chipX = (startX + tx) / 2 - 23;
+
+          let d = '';
+          let chipY = 0;
+          if (placed.x > startX + 30) {
+            const ry =
+              placed.y + 30 < py
+                ? Math.min(py - 25 - colIdx * 8 - i * 3, placed.y - 12 - i * 3)
+                : Math.max(py + 45 + colIdx * 8 + i * 3, placed.y - 12 - i * 3);
+            chipY = ry - 8;
+            d = `M ${startX} ${py} V ${ry + 8} Q ${startX} ${ry} ${startX + 8} ${ry} H ${tx - 8} Q ${tx} ${ry} ${tx} ${ry + 8} V ${targetY}`;
+          } else {
+            const topCurveY = Math.min(py, targetY) - 40 - i * 8;
+            chipY = topCurveY - 8;
+            d = `M ${startX} ${py} C ${startX} ${topCurveY} ${tx} ${topCurveY} ${tx} ${targetY}`;
+          }
 
           return (
-            <g key={`oled-wire-${i}`}>
+            <g key={`oled-wire-${portId}-${i}`}>
               {/* Soft Drop shadow */}
               <path d={d} fill="none" stroke="rgba(15,23,42,0.18)" strokeWidth={5} transform="translate(1, 3)" />
               {/* Dark insulation border */}
@@ -253,22 +422,21 @@ export default function BoardSvg({
                 strokeWidth={1.8}
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                strokeDasharray="5 15"
+                strokeDasharray="4 12"
                 className={styles.wireFlow}
-                opacity={0.9}
+                opacity={0.85}
               />
 
-              {/* Large, Clear Schematic Pin Badge on horizontal rail */}
-              <g transform={`translate(${chipX}, ${ry - 8})`}>
-                <rect x={0} y={0} width={54} height={16} rx={4} fill={wire.core} stroke="#FFFFFF" strokeWidth={1.2} />
-                <text x={27} y={11.5} textAnchor="middle" fontSize={7.5} fontWeight={900} fill="#FFFFFF">
-                  {wire.name}
+              {/* Schematic Pin Badge on horizontal rail */}
+              <g transform={`translate(${chipX}, ${chipY})`}>
+                <rect x={0} y={0} width={46} height={15} rx={3} fill={wire.core} stroke="#FFFFFF" strokeWidth={1.2} />
+                <text x={23} y={10.5} textAnchor="middle" fontSize={6.5} fontWeight={900} fill="#FFFFFF">
+                  {wire.pin}
                 </text>
               </g>
 
-              {/* Source pin junction dot */}
+              {/* Source & Destination pin junction dots */}
               <circle cx={startX} cy={py} r={3.5} fill="#FFFFFF" stroke={wire.core} strokeWidth={1.6} />
-              {/* Destination pin junction dot */}
               <circle cx={tx} cy={targetY} r={3.5} fill="#FFFFFF" stroke={wire.core} strokeWidth={1.6} />
             </g>
           );
@@ -278,7 +446,8 @@ export default function BoardSvg({
   };
 
   // Render Spacious Direct Schematic Wires: Board Port -> Servo Module
-  const renderServoSchematicWires = (portId: string) => {
+  const renderServoSchematicWires = (placed: PlacedModule) => {
+    const portId = placed.portId;
     const colIdx = Number(portId.slice(1)) - 1;
     const startX = boardOffsetX + PWM_COL_X[colIdx];
     // Y coordinates of PWM, 5V, GND on board
@@ -287,25 +456,45 @@ export default function BoardSvg({
       boardOffsetY + 222 + 1 * 13.5 + 6.5,
       boardOffsetY + 222 + 2 * 13.5 + 6.5,
     ];
-    // Spacious non-overlapping lowered horizontal routing rails (25px gaps)
-    const loweredYRails = [395, 420, 445];
-    const turnColumnsX = [620, 645, 670];
-    const targetPinsY = [295, 335, 375]; // Y inputs on Servo module (40px pitch)
-    const targetX = 700;
+    const speed =
+      (servoSpeeds && typeof servoSpeeds === 'object' && !Array.isArray(servoSpeeds)
+        ? servoSpeeds[portId]
+        : Array.isArray(servoSpeeds)
+          ? servoSpeeds[colIdx]
+          : servoSpeed) ?? 0;
+    const isSpinning = Math.abs(speed) > 2;
+
+    const turnX = placed.x - 30;
+    const targetPinsY = [placed.y + 55, placed.y + 95, placed.y + 135];
+    const targetX = placed.x;
 
     return (
       <g key={`schematic-servo-wires-${portId}`}>
         {WIRE_PWM.map((wire, i) => {
           const py = pinYOffsets[i];
-          const ry = loweredYRails[i];
           const ty = targetPinsY[i];
-          const turnX = turnColumnsX[i];
-          const chipX = 430 + i * 62;
-          // Orthogonal path with smooth 8px fillets
-          const d = `M ${startX} ${py} V ${ry - 8} Q ${startX} ${ry} ${startX + 8} ${ry} H ${turnX - 8} Q ${turnX} ${ry} ${turnX} ${ry - 8} V ${ty + 8} Q ${turnX} ${ty} ${turnX + 8} ${ty} H ${targetX}`;
+          const turnXi = turnX + i * 8;
+          const chipX = (startX + turnXi) / 2 - 23;
+
+          let d = '';
+          let chipY = 0;
+          if (placed.x > startX + 30) {
+            if (placed.y + 75 < py) {
+              const ry = Math.min(boardOffsetY - 20 - colIdx * 8 - i * 3, placed.y - 15 - i * 3);
+              chipY = ry - 8;
+              d = `M ${startX} ${py} V ${ry + 8} Q ${startX} ${ry} ${startX + 8} ${ry} H ${turnXi - 8} Q ${turnXi} ${ry} ${turnXi} ${ry + 8} V ${ty - 8} Q ${turnXi} ${ty} ${turnXi + 8} ${ty} H ${targetX}`;
+            } else {
+              const ry = Math.max(boardOffsetY + 280 + colIdx * 8 + i * 3, placed.y + 180 + i * 3);
+              chipY = ry - 8;
+              d = `M ${startX} ${py} V ${ry - 8} Q ${startX} ${ry} ${startX + 8} ${ry} H ${turnXi - 8} Q ${turnXi} ${ry} ${turnXi} ${ry - 8} V ${ty + 8} Q ${turnXi} ${ty} ${turnXi + 8} ${ty} H ${targetX}`;
+            }
+          } else {
+            chipY = Math.max(py, ty) + 40;
+            d = `M ${startX} ${py} C ${startX} ${py + 80 + i * 10} ${targetX - 60 - i * 10} ${ty} ${targetX} ${ty}`;
+          }
 
           return (
-            <g key={`servo-wire-${i}`}>
+            <g key={`servo-wire-${portId}-${i}`}>
               {/* Soft Drop shadow */}
               <path d={d} fill="none" stroke="rgba(15,23,42,0.18)" strokeWidth={5} transform="translate(1, 3)" />
               {/* Dark insulation border */}
@@ -323,15 +512,15 @@ export default function BoardSvg({
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeDasharray="5 15"
-                className={spinning ? styles.wireFlowFast : styles.wireFlow}
+                className={isSpinning ? styles.wireFlowFast : styles.wireFlow}
                 opacity={0.9}
               />
 
               {/* Large, Clear Schematic Pin Badge */}
-              <g transform={`translate(${chipX}, ${ry - 8})`}>
-                <rect x={0} y={0} width={58} height={16} rx={4} fill={wire.core} stroke="#FFFFFF" strokeWidth={1.2} />
-                <text x={29} y={11.5} textAnchor="middle" fontSize={7.5} fontWeight={900} fill="#FFFFFF">
-                  {wire.name}
+              <g transform={`translate(${chipX}, ${chipY})`}>
+                <rect x={0} y={0} width={46} height={15} rx={3} fill={wire.core} stroke="#FFFFFF" strokeWidth={1.2} />
+                <text x={23} y={10.5} textAnchor="middle" fontSize={6.5} fontWeight={900} fill="#FFFFFF">
+                  {wire.pin}
                 </text>
               </g>
 
@@ -348,10 +537,21 @@ export default function BoardSvg({
 
   return (
     <svg
-      viewBox={hasModules ? '0 0 960 480' : '0 0 420 340'}
+      ref={svgRef}
+      viewBox={hasModules ? `0 0 ${svgWidth} ${svgHeight}` : '0 0 420 340'}
       role="img"
       aria-label="Skema Rangkaian Interaktif Papan Robotku Controller V3"
-      style={{ width: '100%', height: 'auto', display: 'block', transition: 'viewBox 0.3s ease' }}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      style={{
+        width: '100%',
+        height: 'auto',
+        display: 'block',
+        touchAction: 'none',
+        userSelect: 'none',
+        transition: dragging ? 'none' : 'viewBox 0.3s ease',
+      }}
     >
       <defs>
         {/* CAD Blueprint Schematic Grid Pattern */}
@@ -382,15 +582,22 @@ export default function BoardSvg({
           <stop offset="50%" stopColor={C.screwHead} />
           <stop offset="100%" stopColor="#64748B" />
         </radialGradient>
+        <filter id="dragShadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="6" stdDeviation="6" floodColor="#0f172a" floodOpacity="0.25" />
+        </filter>
       </defs>
 
       {/* Blueprint Grid Background when schematic mode is active */}
       {hasModules && <rect width="100%" height="100%" fill="url(#schemGrid)" rx={12} />}
 
       {/* ═══════════════════════════════════════════════════════════════
-          SECTION 1: CONTROLLER BOARD V3 (LEFT SIDE)
+          SECTION 1: CONTROLLER BOARD V3 (LEFT SIDE - DRAGGABLE)
           ═══════════════════════════════════════════════════════════════ */}
-      <g transform={`translate(${boardOffsetX}, ${boardOffsetY})`}>
+      <g
+        transform={`translate(${boardOffsetX}, ${boardOffsetY})`}
+        className={`${styles.dragItem} ${dragging?.id === 'board' ? styles.dragging : ''}`}
+        onPointerDown={(e) => handlePointerDown('board', e)}
+      >
         {/* Toska Case */}
         <rect x={2} y={2} width={386} height={296} rx={18} fill="url(#caseGrad)" />
         {[55, 115, 235, 295].map((nx) => (
@@ -399,6 +606,14 @@ export default function BoardSvg({
             <rect x={nx} y={294} width={22} height={6} rx={2} fill="#0F172A" opacity={0.25} />
           </g>
         ))}
+
+        {/* Drag handle header hint */}
+        <g transform="translate(14, 18)" opacity={0.75}>
+          <rect x={0} y={0} width={30} height={14} rx={3} fill="#091A36" />
+          <text x={15} y={10} textAnchor="middle" fontSize={7} fontWeight={800} fill="#67E8F9">
+            ⠿ Geser
+          </text>
+        </g>
 
         {/* Navy PCB */}
         <rect x={14} y={14} width={362} height={272} rx={8} fill="url(#pcbGrad)" stroke="#091A36" strokeWidth={1.5} />
@@ -562,126 +777,168 @@ export default function BoardSvg({
       {/* ═══════════════════════════════════════════════════════════════
           SECTION 2: DIRECT SCHEMATIC WIRES (SPACIOUS FRITZING BUS)
           ═══════════════════════════════════════════════════════════════ */}
-      {showWires && attachedOledPort && renderOledSchematicWires(attachedOledPort.id)}
-      {showWires && attachedServoPort && renderServoSchematicWires(attachedServoPort.id)}
+      {showWires &&
+        placedModules.map((placed) =>
+          placed.kind === 'oled' ? renderOledSchematicWires(placed) : renderServoSchematicWires(placed)
+        )}
 
       {/* ═══════════════════════════════════════════════════════════════
-          SECTION 3: ATTACHED MODULES (RIGHT SIDE)
+          SECTION 3: ATTACHED MODULES (RIGHT SIDE - DRAGGABLE)
           ═══════════════════════════════════════════════════════════════ */}
       {hasModules && (
         <g>
-          {/* OLED 0.96" Module Top Right */}
-          {attachedOledPort && (
-            <g transform="translate(700, 30)">
-              {/* Mint Enclosure */}
-              <rect x={0} y={0} width={230} height={160} rx={16} fill="url(#caseGrad)" />
-              <rect x={8} y={8} width={214} height={144} rx={8} fill={C.oledPcb} stroke="#0B254E" strokeWidth={1.5} />
-              {/* Screws */}
-              <circle cx={20} cy={20} r={5.5} fill="#64748B" />
-              <circle cx={210} cy={20} r={5.5} fill="url(#screwGrad)" />
-              <circle cx={20} cy={140} r={5.5} fill="url(#screwGrad)" />
-              <circle cx={210} cy={140} r={5.5} fill="#64748B" />
+          {placedModules.map((placed) => {
+            if (placed.kind === 'oled') {
+              return (
+                <g
+                  key={placed.id}
+                  transform={`translate(${placed.x}, ${placed.y})`}
+                  className={`${styles.dragItem} ${dragging?.id === placed.id ? styles.dragging : ''}`}
+                  onPointerDown={(e) => handlePointerDown(placed.id, e)}
+                >
+                  {/* Mint Enclosure */}
+                  <rect x={0} y={0} width={230} height={160} rx={16} fill="url(#caseGrad)" />
+                  <rect x={8} y={8} width={214} height={144} rx={8} fill={C.oledPcb} stroke="#0B254E" strokeWidth={1.5} />
+                  {/* Screws */}
+                  <circle cx={20} cy={20} r={5.5} fill="#64748B" />
+                  <circle cx={210} cy={20} r={5.5} fill="url(#screwGrad)" />
+                  <circle cx={20} cy={140} r={5.5} fill="url(#screwGrad)" />
+                  <circle cx={210} cy={140} r={5.5} fill="#64748B" />
 
-              {/* Pin Header with 35px spacing matching wire destinations */}
-              {[45, 80, 115, 150].map((px) => (
-                <g key={`pad-${px}`}>
-                  <circle cx={px} cy={30} r={4} fill="#E2E8F0" stroke="#94A3B8" strokeWidth={1} />
-                  <circle cx={px} cy={30} r={1.8} fill="#64748B" />
-                </g>
-              ))}
-              <text x={28} y={23} fontSize={7.5} fontWeight={900} fill="#FFFFFF">1</text>
-              <text x={45} y={22} textAnchor="middle" fontSize={7} fontWeight={800} fill="#FFFFFF">GND</text>
-              <text x={80} y={22} textAnchor="middle" fontSize={7} fontWeight={800} fill="#FFFFFF">VDD</text>
-              <text x={115} y={22} textAnchor="middle" fontSize={7} fontWeight={800} fill="#FFFFFF">SCK</text>
-              <text x={150} y={22} textAnchor="middle" fontSize={7} fontWeight={800} fill="#FFFFFF">SDA</text>
-              <text x={168} y={23} fontSize={7.5} fontWeight={900} fill="#FFFFFF">4</text>
-
-              {/* OLED Screen Glass */}
-              <rect x={18} y={42} width={194} height={98} rx={4} fill={C.oledScreen} stroke="#090F1A" strokeWidth={1.5} />
-
-              {/* Live OLED Display Content */}
-              <svg x={22} y={46} width={186} height={90} viewBox="0 0 128 64">
-                {bmpUrl ? (
-                  <image href={bmpUrl} x={0} y={0} width={128} height={64} style={{ imageRendering: 'pixelated' }} />
-                ) : oledMatrix ? (
-                  Array.from({ length: 25 }, (_, i) => (
-                    <rect
-                      key={i}
-                      x={24 + (i % 5) * 16}
-                      y={2 + Math.floor(i / 5) * 12}
-                      width={13}
-                      height={10}
-                      rx={2}
-                      fill={oledMatrix[i] ? C.oledPixelOn : C.oledPixelOff}
-                    />
-                  ))
-                ) : oledShape ? (
-                  <circle cx={64} cy={32} r={18} fill="none" stroke={C.oledPixelOn} strokeWidth={3} />
-                ) : (
-                  <text
-                    x={4}
-                    y={32}
-                    fontSize={18}
-                    fontFamily="monospace"
-                    fontWeight={700}
-                    fill={C.oledPixelOn}
-                    className={styles.oledMarquee}
-                  >
-                    {oledText || 'Robotku OLED'}
-                  </text>
-                )}
-              </svg>
-            </g>
-          )}
-
-          {/* SG90 Servo Module Bottom Right */}
-          {attachedServoPort && (
-            <g transform={attachedOledPort ? 'translate(700, 240)' : 'translate(700, 120)'}>
-              {/* Mint Mount */}
-              <rect x={0} y={0} width={230} height={190} rx={14} fill={C.casing} stroke={C.casingDark} strokeWidth={1.2} />
-
-              {/* Translucent Blue Servo Body */}
-              <rect x={40} y={20} width={115} height={150} rx={8} fill={C.servoBody} stroke="#1E40AF" strokeWidth={1.5} />
-              <text x={97} y={155} textAnchor="middle" fontSize={9} fontWeight={900} fill="#BFDBFE">
-                SG90 9g Micro Servo
-              </text>
-
-              {/* Gear Silhouettes inside servo body */}
-              <circle cx={97} cy={75} r={32} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth={3.5} strokeDasharray="4 4" />
-              <circle cx={72} cy={88} r={18} fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth={2.5} strokeDasharray="3 3" />
-
-              {/* Terminal Connector Block on Left matching wire targets */}
-              {[
-                { y: 55, label: 'PWM', color: '#F59E0B' },
-                { y: 95, label: '5V', color: '#DC2626' },
-                { y: 135, label: 'GND', color: '#78350F' },
-              ].map((pin, i) => (
-                <g key={`servo-pin-${i}`}>
-                  <rect x={0} y={pin.y - 12} width={36} height={24} rx={3} fill="#18181B" stroke="#27272A" strokeWidth={0.8} />
-                  <rect x={4} y={pin.y - 8} width={14} height={16} rx={2} fill={pin.color} />
-                  <text x={22} y={pin.y + 4} fontSize={7} fontWeight={900} fill="#FFFFFF">
-                    {pin.label}
-                  </text>
-                </g>
-              ))}
-
-              {/* Spinning 4-Arm Cross Servo Horn */}
-              <g className={spinning ? styles.servoHornSpin : undefined} style={hornStyle}>
-                <g transform="translate(97, 75)">
-                  <rect x={-45} y={-7} width={90} height={14} rx={7} fill={C.servoHorn} stroke="#CBD5E1" strokeWidth={1} />
-                  <rect x={-7} y={-45} width={14} height={90} rx={7} fill={C.servoHorn} stroke="#CBD5E1" strokeWidth={1} />
-                  <circle cx={0} cy={0} r={11} fill={C.servoHorn} stroke="#CBD5E1" strokeWidth={1} />
-                  {[-35, -24, 24, 35].map((d) => (
-                    <circle key={`h-${d}`} cx={d} cy={0} r={2} fill="#64748B" />
+                  {/* Pin Header with 35px spacing matching wire destinations */}
+                  {[45, 80, 115, 150].map((px) => (
+                    <g key={`pad-${px}`}>
+                      <circle cx={px} cy={30} r={4} fill="#E2E8F0" stroke="#94A3B8" strokeWidth={1} />
+                      <circle cx={px} cy={30} r={1.8} fill="#64748B" />
+                    </g>
                   ))}
-                  {[-35, -24, 24, 35].map((d) => (
-                    <circle key={`v-${d}`} cx={0} cy={d} r={2} fill="#64748B" />
-                  ))}
-                  <circle cx={0} cy={0} r={4} fill="#94A3B8" />
+                  <text x={28} y={23} fontSize={7.5} fontWeight={900} fill="#FFFFFF">1</text>
+                  <text x={45} y={22} textAnchor="middle" fontSize={7} fontWeight={800} fill="#FFFFFF">GND</text>
+                  <text x={80} y={22} textAnchor="middle" fontSize={7} fontWeight={800} fill="#FFFFFF">VDD</text>
+                  <text x={115} y={22} textAnchor="middle" fontSize={7} fontWeight={800} fill="#FFFFFF">SCK</text>
+                  <text x={150} y={22} textAnchor="middle" fontSize={7} fontWeight={800} fill="#FFFFFF">SDA</text>
+                  <text x={168} y={23} fontSize={7.5} fontWeight={900} fill="#FFFFFF">4</text>
+
+                  {/* Port Badge & Drag Grip */}
+                  <rect x={170} y={10} width={48} height={16} rx={4} fill="#0F172A" stroke="#38BDF8" strokeWidth={1} />
+                  <text x={194} y={21.5} textAnchor="middle" fontSize={7.5} fontWeight={900} fill="#38BDF8">
+                    ⠿ {placed.portId}
+                  </text>
+
+                  {/* OLED Screen Glass */}
+                  <rect x={18} y={42} width={194} height={98} rx={4} fill={C.oledScreen} stroke="#090F1A" strokeWidth={1.5} />
+
+                  {/* Live OLED Display Content */}
+                  <svg x={22} y={46} width={186} height={90} viewBox="0 0 128 64">
+                    {bmpUrl ? (
+                      <image href={bmpUrl} x={0} y={0} width={128} height={64} style={{ imageRendering: 'pixelated' }} />
+                    ) : oledMatrix ? (
+                      Array.from({ length: 25 }, (_, i) => (
+                        <rect
+                          key={i}
+                          x={24 + (i % 5) * 16}
+                          y={2 + Math.floor(i / 5) * 12}
+                          width={13}
+                          height={10}
+                          rx={2}
+                          fill={oledMatrix[i] ? C.oledPixelOn : C.oledPixelOff}
+                        />
+                      ))
+                    ) : oledShape ? (
+                      <circle cx={64} cy={32} r={18} fill="none" stroke={C.oledPixelOn} strokeWidth={3} />
+                    ) : (
+                      <text
+                        x={4}
+                        y={32}
+                        fontSize={18}
+                        fontFamily="monospace"
+                        fontWeight={700}
+                        fill={C.oledPixelOn}
+                        className={styles.oledMarquee}
+                      >
+                        {oledText || `Robotku (${placed.portId})`}
+                      </text>
+                    )}
+                  </svg>
+                </g>
+              );
+            }
+
+            // SG90 Servo Module
+            const colIdx = Number(placed.portId.slice(1)) - 1;
+            const currentSpeed =
+              (servoSpeeds && typeof servoSpeeds === 'object' && !Array.isArray(servoSpeeds)
+                ? servoSpeeds[placed.portId]
+                : Array.isArray(servoSpeeds)
+                  ? servoSpeeds[colIdx]
+                  : servoSpeed) ?? 0;
+            const isPortSpinning = Math.abs(currentSpeed) > 2;
+            const portDur = isPortSpinning ? `${Math.max(0.35, 1.8 - Math.abs(currentSpeed) / 70).toFixed(2)}s` : undefined;
+            const currentHornStyle: React.CSSProperties = isPortSpinning
+              ? ({ ['--spin-dur' as string]: portDur, animationDirection: currentSpeed < 0 ? 'reverse' : 'normal' } as React.CSSProperties)
+              : { transform: 'rotate(90deg)', transformOrigin: 'center', transition: 'transform 0.2s ease' };
+
+            return (
+              <g
+                key={placed.id}
+                transform={`translate(${placed.x}, ${placed.y})`}
+                className={`${styles.dragItem} ${dragging?.id === placed.id ? styles.dragging : ''}`}
+                onPointerDown={(e) => handlePointerDown(placed.id, e)}
+              >
+                {/* Mint Mount */}
+                <rect x={0} y={0} width={230} height={190} rx={14} fill={C.casing} stroke={C.casingDark} strokeWidth={1.2} />
+
+                {/* Drag handle header hint */}
+                <g transform="translate(170, 10)">
+                  <rect x={0} y={0} width={48} height={16} rx={4} fill="#0F172A" stroke="#F59E0B" strokeWidth={1} />
+                  <text x={24} y={11.5} textAnchor="middle" fontSize={7.5} fontWeight={900} fill="#F59E0B">
+                    ⠿ {placed.portId}
+                  </text>
+                </g>
+
+                {/* Translucent Blue Servo Body */}
+                <rect x={40} y={20} width={115} height={150} rx={8} fill={C.servoBody} stroke="#1E40AF" strokeWidth={1.5} />
+                <text x={97} y={155} textAnchor="middle" fontSize={9} fontWeight={900} fill="#BFDBFE">
+                  SG90 9g ({placed.portId})
+                </text>
+
+                {/* Gear Silhouettes inside servo body */}
+                <circle cx={97} cy={75} r={32} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth={3.5} strokeDasharray="4 4" />
+                <circle cx={72} cy={88} r={18} fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth={2.5} strokeDasharray="3 3" />
+
+                {/* Terminal Connector Block on Left matching wire targets */}
+                {[
+                  { y: 55, label: 'PWM', color: '#F59E0B' },
+                  { y: 95, label: '5V', color: '#DC2626' },
+                  { y: 135, label: 'GND', color: '#78350F' },
+                ].map((pin, i) => (
+                  <g key={`servo-pin-${placed.id}-${i}`}>
+                    <rect x={0} y={pin.y - 12} width={36} height={24} rx={3} fill="#18181B" stroke="#27272A" strokeWidth={0.8} />
+                    <rect x={4} y={pin.y - 8} width={14} height={16} rx={2} fill={pin.color} />
+                    <text x={22} y={pin.y + 4} fontSize={7} fontWeight={900} fill="#FFFFFF">
+                      {pin.label}
+                    </text>
+                  </g>
+                ))}
+
+                {/* Spinning 4-Arm Cross Servo Horn */}
+                <g className={isPortSpinning ? styles.servoHornSpin : undefined} style={currentHornStyle}>
+                  <g transform="translate(97, 75)">
+                    <rect x={-45} y={-7} width={90} height={14} rx={7} fill={C.servoHorn} stroke="#CBD5E1" strokeWidth={1} />
+                    <rect x={-7} y={-45} width={14} height={90} rx={7} fill={C.servoHorn} stroke="#CBD5E1" strokeWidth={1} />
+                    <circle cx={0} cy={0} r={11} fill={C.servoHorn} stroke="#CBD5E1" strokeWidth={1} />
+                    {[-35, -24, 24, 35].map((d) => (
+                      <circle key={`h-${d}`} cx={d} cy={0} r={2} fill="#64748B" />
+                    ))}
+                    {[-35, -24, 24, 35].map((d) => (
+                      <circle key={`v-${d}`} cx={0} cy={d} r={2} fill="#64748B" />
+                    ))}
+                    <circle cx={0} cy={0} r={4} fill="#94A3B8" />
+                  </g>
                 </g>
               </g>
-            </g>
-          )}
+            );
+          })}
         </g>
       )}
     </svg>

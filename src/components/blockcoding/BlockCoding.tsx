@@ -33,7 +33,8 @@ import { useBlocklyWorkspace } from './hooks/useBlocklyWorkspace';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 import TemplateGallery from './TemplateGallery';
 import { insertTemplate } from '../../templates/insert';
-import { setGalleryOpener } from '../../templates/galleryBridge';
+import { buildTemplateWorkspace } from '../../templates/authoring';
+import { setGalleryOpener, setLcdBlockInserter } from '../../templates/galleryBridge';
 import styles from './BlockCoding.module.css';
 
 // Client-only: the CV panel pulls in camera + (lazily) ML libs.
@@ -141,6 +142,26 @@ function BlockCodingInner() {
     setGalleryOpener(() => setShowGallery(true));
     return () => setGalleryOpener(null);
   }, []);
+
+  // Let OLED Animator & LED Panel insert block sequences directly into Blockly.
+  useEffect(() => {
+    setLcdBlockInserter((program, label) => {
+      const ws = workspaceRef.current;
+      if (!ws) {
+        showToast('Buka tab Blok Kode untuk memasang blok!', 'warn');
+        return;
+      }
+      try {
+        const wsJson = buildTemplateWorkspace(program);
+        insertTemplate(ws, wsJson as any, 'append');
+        showToast(label ?? '🧩 Blok berhasil dipasang ke Blok Kode!', 'success');
+      } catch (err) {
+        console.error('Failed to insert block sequence:', err);
+        showToast('Gagal memasang blok ke Blok Kode', 'error');
+      }
+    });
+    return () => setLcdBlockInserter(null);
+  }, [workspaceRef]);
 
   // Camera on? (drives the AI button's live dot). Stop the camera on unmount so a
   // forgotten MediaStream can never leave the webcam LED on.
