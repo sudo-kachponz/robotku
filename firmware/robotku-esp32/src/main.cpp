@@ -387,10 +387,12 @@ void handleCommand(const String& jsonLine) {
     JsonArray caps = ack["capabilities"].to<JsonArray>();
     caps.add("SET_PORT");
     caps.add("STOP_ALL");
+    caps.add("STOP");
     caps.add("MOVE_TIMED");
     // Turning needs two independently driven sides. With HAS_SERVO_R = 0 there
     // is only one, so don't advertise it — see the ports scan below.
     if (HAS_SERVO_R) caps.add("TURN_TIMED");
+    if (HAS_SERVO_R) caps.add("STEER_TIMED");
     caps.add("WAIT");
     caps.add("PLAY_TONE");
 #if HAS_RGB
@@ -472,6 +474,29 @@ void handleCommand(const String& jsonLine) {
     driveTank(left ? -speed : speed, left ? speed : -speed);
     if (ms > 0) motionEndsAtMs = millis() + ms + MOTION_SAFETY_MARGIN_MS;
     lastStatus = left ? "Kiri" : "Kanan";
+    return;
+  }
+
+  // --- Block: Stop (wheels) ------------------------------------------------
+  if (strcmp(cmd, "STOP") == 0) {
+    driveTank(0, 0);          // halt the drive servos; leave buzzer/LED alone
+    motionEndsAtMs = 0;
+    lastStatus = "Stop";
+    return;
+  }
+
+  // --- Block: Steer (differential) ----------------------------------------
+  if (strcmp(cmd, "STEER_TIMED") == 0) {
+    if (!HAS_SERVO_R) { sendUnsupported("STEER_TIMED"); return; }  // needs two sides
+    int speed    = constrain((int)(p["speed"] | 60), 0, 100);
+    int steering = constrain((int)(p["steering"] | 0), -100, 100);
+    long ms      = readDurationMs(p);
+    float turn = steering / 100.0f;                                // -1..1
+    int lspeed = constrain((int)(speed * (1.0f + turn)), -100, 100);
+    int rspeed = constrain((int)(speed * (1.0f - turn)), -100, 100);
+    driveTank(lspeed, rspeed);
+    if (ms > 0) motionEndsAtMs = millis() + ms + MOTION_SAFETY_MARGIN_MS;
+    lastStatus = "Belok";
     return;
   }
 

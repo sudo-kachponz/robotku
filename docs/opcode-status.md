@@ -37,8 +37,8 @@
 | `SET_LED_BRIGHTNESS` | fw-todo | display_set_brightness |
 | `SET_LED_COLOR` | handled | set_led_color |
 | `SET_VOLUME` | unsupported-by-profile | audio_set_volume |
-| `STEER_TIMED` | fw-todo | move_steer |
-| `STOP` | fw-todo | move_stop |
+| `STEER_TIMED` | handled | move_steer |
+| `STOP` | handled | move_stop |
 | `STOP_ALL` | handled | move_stop_all |
 | `STOP_SOUNDS` | unsupported-by-profile | audio_stop_sounds |
 | `TURN_TIMED` | handled | move_left, move_right |

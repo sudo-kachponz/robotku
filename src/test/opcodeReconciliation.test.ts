@@ -27,8 +27,6 @@ function firmwareHandlers(): Set<string> {
 // hardware capability (see boardProfile TODO / pin.md FW-06) that currently answers
 // UNSUPPORTED. Shrinks as firmware catches up; a new entry here is a conscious IOU.
 const FW_TODO = new Set<string>([
-  'STOP', // move_stop — trivial (= stopAllActuators), not yet wired
-  'STEER_TIMED', // move_steer — differential steer on tank drive, not yet wired
   'SET_LED_BRIGHTNESS', // RGB brightness — no-op on the digital LED (FW-06 handled color only)
 ]);
 
