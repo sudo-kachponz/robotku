@@ -10,6 +10,7 @@ import BoardSvg, { type PortVisual } from './BoardSvg';
 import OledModule from './OledModule';
 import ServoModule from './ServoModule';
 import PixelEditor, { type Bitmap } from './PixelEditor';
+import OledAnimator from './OledAnimator';
 import { useDrive } from '../../../hooks/useDrive';
 import { PWM_PORTS, I2C_PORTS } from '../../../domain/hardware';
 import { loadSimModules, persistSimModules, type SimModules } from '../../../app/persistence';
@@ -224,6 +225,11 @@ export default function BoardPanel({ state }: { state: SimState }) {
           Gambar pixel (OLED) <em style={{ color: '#9DB0C9', fontWeight: 400 }}>— gambar, lalu Kirim ke OLED</em>
         </span>
         <PixelEditor onSend={setBitmap} />
+      </div>
+
+      {/* Wokwi-style OLED animator: pick a card -> plays on sim + robot */}
+      <div style={{ ...box, display: 'grid', gap: 8 }}>
+        <OledAnimator onFrame={setBitmap} />
       </div>
     </div>
   );
