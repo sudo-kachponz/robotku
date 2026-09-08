@@ -1,10 +1,12 @@
+/* src/styles/Settings.module.css */
+
 .page {
   flex: 1;
   width: min(920px, 95vw);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
   overflow-y: auto;
   padding-bottom: 24px;
 }
@@ -12,27 +14,30 @@
 .tabs {
   display: inline-flex;
   align-self: center;
-  gap: 6px;
-  padding: 6px;
+  gap: 4px;
+  padding: 4px;
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: var(--rk-r-pill);
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .tab {
-  padding: 10px 32px;
+  padding: 8px 24px;
   border-radius: var(--rk-r-pill);
   border: none;
   background: transparent;
   color: rgba(255, 255, 255, 0.85);
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 16px;
+  font-size: 14.5px;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   cursor: pointer;
   transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
 .tabActive {
@@ -43,23 +48,23 @@
 
 .card {
   background: var(--rk-surface-3);
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--rk-r-xl);
   box-shadow: var(--rk-shadow);
-  padding: 24px 28px;
+  padding: 20px 24px;
 }
 
 .cardTitle {
   margin: 0 0 4px;
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 700;
   color: var(--rk-on);
 }
 
 .cardSub {
   margin: 0 0 16px;
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--rk-on-muted);
 }
 
@@ -92,14 +97,14 @@
 }
 
 .chip {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: var(--rk-r-md);
   border: none;
   background: rgba(0, 0, 0, 0.05);
   color: var(--ink-600);
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13.5px;
   cursor: pointer;
   transition: all 0.12s ease;
 }
@@ -141,12 +146,12 @@
 }
 
 .seg {
-  padding: 6px 16px;
+  padding: 6px 14px;
   border-radius: var(--rk-r-pill);
   border: none;
   background: transparent;
   color: var(--rk-on-muted);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -177,7 +182,7 @@
 .kbTable {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13.5px;
+  font-size: 13px;
 }
 
 .kbTable td {
@@ -247,29 +252,29 @@
 .guideContainer {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 .guideBanner {
   background: linear-gradient(135deg, rgba(236, 45, 143, 0.2) 0%, rgba(79, 70, 229, 0.25) 100%);
   border: 1.5px solid rgba(236, 45, 143, 0.4);
-  border-radius: 24px;
-  padding: 28px 32px;
+  border-radius: 20px;
+  padding: 24px 20px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
 }
 
 .guideBannerBadge {
-  padding: 5px 16px;
+  padding: 4px 14px;
   border-radius: 999px;
   background: #ec2d8f;
   color: #ffffff;
   font-family: var(--font-display);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -279,7 +284,7 @@
 .guideBannerTitle {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(24px, 3.8vw, 32px);
+  font-size: clamp(22px, 3.8vw, 30px);
   font-weight: 700;
   color: #ffffff;
   letter-spacing: 0.02em;
@@ -288,22 +293,21 @@
 
 .guideBannerSub {
   margin: 0;
-  font-size: 16px;
+  font-size: 14.5px;
   color: rgba(255, 255, 255, 0.92);
 }
 
-/* High-Contrast Elevated White Cards for Guide Steps */
 .guideCard {
   background: #ffffff;
   border: 2px solid rgba(236, 45, 143, 0.25);
-  border-radius: 24px;
+  border-radius: 20px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16);
-  padding: 36px 32px;
+  padding: 28px 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 16px;
+  gap: 14px;
   transition:
     transform 0.2s ease,
     border-color 0.2s ease,
@@ -312,7 +316,7 @@
 
 .guideCard:hover {
   border-color: #ec2d8f;
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   box-shadow: 0 20px 48px rgba(236, 45, 143, 0.2);
 }
 
@@ -320,16 +324,16 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .stepBadge {
-  padding: 6px 20px;
+  padding: 5px 18px;
   border-radius: 999px;
   background: #ec2d8f;
   color: #ffffff;
   font-family: var(--font-display);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.05em;
   box-shadow: 0 4px 14px rgba(236, 45, 143, 0.35);
@@ -339,7 +343,7 @@
 .guideTitle {
   margin: 4px 0 0;
   font-family: var(--font-display);
-  font-size: clamp(22px, 3.2vw, 28px);
+  font-size: clamp(20px, 3vw, 26px);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -349,7 +353,7 @@
 .guideDesc {
   margin: 0;
   font-family: var(--font);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
   line-height: 1.6;
   color: #334155;
@@ -358,25 +362,25 @@
 
 .imgWrap {
   width: 100%;
-  max-width: 620px;
-  padding: 16px;
-  border-radius: 20px;
+  max-width: 600px;
+  padding: 12px;
+  border-radius: 16px;
   background: #f8fafc;
   border: 1.5px solid #e2e8f0;
-  margin-top: 8px;
+  margin-top: 6px;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 .guideImg {
   width: 100%;
   height: auto;
-  border-radius: 12px;
+  border-radius: 10px;
   display: block;
 }
 
 .pinRow {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
   justify-content: center;
   margin: 6px 0;
@@ -385,10 +389,10 @@
 .pinChip {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
+  gap: 6px;
+  padding: 6px 14px;
   border-radius: 999px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   font-family: var(--font);
 }
@@ -400,11 +404,10 @@
 }
 
 .pinDotYellow {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: #f59e0b;
-  box-shadow: 0 0 6px rgba(245, 158, 11, 0.5);
 }
 
 .pinRed {
@@ -414,11 +417,10 @@
 }
 
 .pinDotRed {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: #ef4444;
-  box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
 }
 
 .pinBrown {
@@ -428,9 +430,29 @@
 }
 
 .pinDotBrown {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: #9333ea;
-  box-shadow: 0 0 6px rgba(147, 51, 234, 0.5);
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: 16px;
+  }
+  .mapRow {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .speedRow {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .tab {
+    padding: 7px 14px;
+    font-size: 12.5px;
+  }
+  .guideCard {
+    padding: 20px 14px;
+  }
 }

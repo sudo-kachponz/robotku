@@ -42,5 +42,8 @@ releases/
 # PlatformIO firmware build output (firmware/robotku-esp32/.pio)
 .pio/
 
+# arduino-cli export output (firmware/build/*.bin — regenerated on compile)
+firmware/build/
+
 # large distribution artifact — not source
 hub-robotku.zip

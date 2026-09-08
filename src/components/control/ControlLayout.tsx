@@ -3,7 +3,7 @@
 // Persistent chrome for every /control/* screen: Home button (top-left),
 // connection badge (top-center), Connect power button (bottom-right, green ring
 // when connected), Fullscreen (bottom-left), and the bottom dock
-// (Projects · Community · Settings). One shared connection drives all modes.
+// (Projects · Community · Settings) with hide/reveal toggle.
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/router';
@@ -13,7 +13,6 @@ import { useConnection } from '../../hooks/useConnection';
 import { autoConnect } from '../../app/connection';
 import styles from './ControlLayout.module.css';
 
-// Configurable external community link (spec: "link to Robotku community").
 const COMMUNITY_URL = 'https://robotku.id/#course';
 
 export default function ControlLayout({
@@ -33,12 +32,13 @@ export default function ControlLayout({
   const { connState } = useConnection();
   const [panelOpen, setPanelOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [dockHidden, setDockHidden] = useState(false);
   const connected = connState === 'connected';
 
   const isAyoMulai = router.pathname === '/control';
   const shouldHideDock = hideDock ?? isAyoMulai;
 
-  // Auto-reconnect to an already-granted robot on load — no click needed.
+  // Auto-reconnect to an already-granted robot on load
   useEffect(() => {
     void autoConnect();
   }, []);
@@ -76,7 +76,19 @@ export default function ControlLayout({
           {title && <h1 className={styles.screenTitle}>{title}</h1>}
         </div>
 
-        <div className={styles.topRight}>{topRightAction}</div>
+        <div className={styles.topRight}>
+          {topRightAction}
+          {!shouldHideDock && (
+            <button
+              className={styles.iconBtn}
+              onClick={() => setDockHidden((v) => !v)}
+              aria-label={dockHidden ? 'Tampilkan Menu Bawah' : 'Sembunyikan Menu Bawah'}
+              title={dockHidden ? 'Tampilkan Menu Bawah' : 'Sembunyikan Menu Bawah (Layar Luas)'}
+            >
+              {dockHidden ? <DockShowIcon /> : <DockHideIcon />}
+            </button>
+          )}
+        </div>
       </header>
 
       <div className={styles.connectionBadgeContainer}>
@@ -88,7 +100,11 @@ export default function ControlLayout({
 
       {/* Bottom dock */}
       {!shouldHideDock && (
-        <nav className={styles.dock}>
+        <nav
+          className={`${styles.dock} ${
+            dockHidden ? styles.dockHidden : ''
+          }`}
+        >
           <DockButton
             label="Projects"
             active={router.pathname === '/control/projects'}
@@ -271,6 +287,22 @@ function GearIcon() {
     >
       <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
       <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+function DockHideIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <rect x="3" y="16" width="18" height="5" rx="1.5" strokeDasharray="3 3" />
+      <path d="M7 10l5 4 5-4" />
+    </svg>
+  );
+}
+function DockShowIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <rect x="3" y="16" width="18" height="5" rx="1.5" />
+      <path d="M7 14l5-4 5 4" />
     </svg>
   );
 }
