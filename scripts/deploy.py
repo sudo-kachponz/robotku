@@ -16,6 +16,7 @@ def run_curl(args):
         "--connect-timeout", "15",
         "--max-time", "60",
         "--disable-epsv",
+        "--ftp-create-dirs",
         "-u", f"{FTP_USER}:{FTP_PASS}",
     ] + args
     return subprocess.run(cmd, capture_output=True, text=True)
@@ -28,26 +29,15 @@ def main():
 
     print(f"🚀 Deploying out/ to https://hub.robotku.id (FTP: {FTP_HOST})...\n")
 
-    all_dirs = set()
     all_files = []
-
     for root, dirs, files in os.walk(out_dir):
         rel_dir = os.path.relpath(root, out_dir)
-        if rel_dir != ".":
-            norm_dir = rel_dir.replace("\\", "/")
-            all_dirs.add(norm_dir)
         for f in files:
             local_path = os.path.join(root, f)
             rel_path = os.path.normpath(os.path.join(rel_dir, f)).replace("\\", "/")
             if rel_path.startswith("./"):
                 rel_path = rel_path[2:]
             all_files.append((rel_path, local_path, f, rel_dir))
-
-    sorted_dirs = sorted(list(all_dirs), key=lambda d: (d.count("/"), d))
-
-    print(f"📁 Pre-creating {len(sorted_dirs)} remote directories...")
-    for d in sorted_dirs:
-        run_curl(["-Q", f"-MKD {d}", f"ftp://{FTP_HOST}/"])
 
     total = len(all_files)
     print(f"📦 Uploading {total} files...\n")
