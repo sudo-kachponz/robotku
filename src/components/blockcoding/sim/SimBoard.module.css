@@ -88,12 +88,27 @@
   }
 }
 
+/* "Living" wires: marching-ants flow from board pin toward the module. */
+.wireFlow {
+  animation: wireFlow 0.6s linear infinite;
+}
+.wire:hover .wireFlow,
+.wireFlow:hover {
+  stroke-width: 3.4px;
+}
+@keyframes wireFlow {
+  to {
+    stroke-dashoffset: -18;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .wave,
   .bleBlink,
   .marquee,
   .oledMarquee,
-  .servoHornSpin {
+  .servoHornSpin,
+  .wireFlow {
     animation: none !important;
   }
 }

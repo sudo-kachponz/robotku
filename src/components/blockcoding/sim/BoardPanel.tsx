@@ -78,6 +78,7 @@ export default function BoardPanel({ state }: { state: SimState }) {
   const { sendCommand } = useDrive();
   const [modules, setModules] = useState<SimModules>({});
   const [pending, setPending] = useState<'servo' | 'oled' | null>(null);
+  const [showWires, setShowWires] = useState(true);
   const [manualRgb, setManualRgb] = useState<string | null>(null);
   const [manualText, setManualText] = useState<string | null>(null);
   const [bitmap, setBitmap] = useState<Bitmap | null>(null);
@@ -138,7 +139,7 @@ export default function BoardPanel({ state }: { state: SimState }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 1.4fr) 1fr', gap: 12, alignItems: 'start' }}>
         {/* board */}
         <div>
-          <BoardSvg rgb={rgb} buzzerActive={buzzerActive} linkState="off" ports={ports} onPortClick={attach} />
+          <BoardSvg rgb={rgb} buzzerActive={buzzerActive} linkState="off" ports={ports} onPortClick={attach} showWires={showWires} />
           {pending && (
             <div style={{ fontSize: 12, color: '#F5C518', marginTop: 4 }}>
               Klik kolom port {pending === 'servo' ? 'PWM (bawah)' : 'I2C (atas)'} untuk memasang {pending === 'servo' ? 'Servo' : 'OLED'}.
@@ -178,6 +179,10 @@ export default function BoardPanel({ state }: { state: SimState }) {
         <button onClick={() => setPending('oled')} aria-pressed={pending === 'oled'} style={btn(pending === 'oled')}>
           Layar OLED
         </button>
+        <label style={{ fontSize: 12, color: '#cdd6e6', display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto', cursor: 'pointer' }}>
+          <input type="checkbox" checked={showWires} onChange={(e) => setShowWires(e.target.checked)} aria-label="Tampilkan kabel" />
+          Tampilkan kabel
+        </label>
       </div>
 
       {/* Coba langsung (simulator only) */}

@@ -25,6 +25,10 @@ const C = {
   active: '#8085F4',
 } as const;
 
+// Jumper-cable colors by real-world convention, per pin top→bottom.
+const CABLE_I2C = ['#1B1B1B', '#D42E2E', '#2FA84F', '#2E6BE0']; // GND VCC SCL SDA
+const CABLE_PWM = ['#E8C41F', '#D42E2E', '#1B1B1B']; // PWM 5V GND
+
 export interface PortVisual {
   id: string; // 'P1'..'P5' | 'I1'..'I5'
   kind: 'pwm' | 'i2c';
@@ -45,11 +49,40 @@ interface Props {
   linkState: 'usb' | 'ble' | 'off';
   ports: PortVisual[];
   onPortClick?: (id: string) => void;
+  showWires?: boolean; // draw live jumper cables for attached modules (default on)
 }
 
-export default function BoardSvg({ rgb, buzzerActive, linkState, ports, onPortClick }: Props) {
+export default function BoardSvg({ rgb, buzzerActive, linkState, ports, onPortClick, showWires = true }: Props) {
   const led = rgb ? `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})` : null;
   const byId = (id: string) => ports.find((p) => p.id === id);
+
+  // Colored cables from an attached port's real pins to a small plug just outside
+  // the header — flowing (marching ants) = "alive". ponytail: short per-port bundles,
+  // not routed across the board; this packed PCB has no clean lanes to the module.
+  const cableBundle = (kind: 'pwm' | 'i2c', i: number, module: 'servo' | 'oled') => {
+    const x = (kind === 'pwm' ? PWM_COL_X : I2C_COL_X)[i];
+    const colors = kind === 'pwm' ? CABLE_PWM : CABLE_I2C;
+    const y0 = kind === 'pwm' ? 225 : 18;
+    const tagY = kind === 'pwm' ? 285 : 6; // plug sits just past the block
+    const span = colors.length > 1 ? 18 / (colors.length - 1) : 0;
+    return (
+      <g key={`w-${kind}-${i}`} style={{ pointerEvents: 'none' }}>
+        {colors.map((c, r) => {
+          const pinY = y0 + r * 16 + 6;
+          const ex = x - 9 + r * span; // fan into the plug
+          const my = (pinY + tagY) / 2;
+          const d = `M ${x} ${pinY} C ${x} ${my}, ${ex} ${my}, ${ex} ${tagY + (kind === 'pwm' ? 4 : -4)}`;
+          return (
+            <path key={r} d={d} fill="none" stroke={c} strokeWidth={2.2} strokeLinecap="round" strokeDasharray="5 4" className={styles.wireFlow} />
+          );
+        })}
+        <rect x={x - 14} y={tagY - 4} width={28} height={8} rx={2} fill="#1c1c1c" stroke="#3a3a3a" strokeWidth={0.6} />
+        <text x={x} y={kind === 'pwm' ? tagY + 11 : tagY - 6} textAnchor="middle" fontSize={6} fontWeight={700} fill={C.silkDim}>
+          {module === 'oled' ? 'OLED' : 'Servo'}
+        </text>
+      </g>
+    );
+  };
 
   const headerColumn = (kind: 'pwm' | 'i2c', i: number) => {
     const id = `${kind === 'pwm' ? 'P' : 'I'}${i + 1}`;
@@ -248,6 +281,10 @@ export default function BoardSvg({ rgb, buzzerActive, linkState, ports, onPortCl
       {/* Headers */}
       {[0, 1, 2, 3, 4].map((i) => headerColumn('i2c', i))}
       {[0, 1, 2, 3, 4].map((i) => headerColumn('pwm', i))}
+
+      {/* Live jumper cables for attached modules (on top of the pins = plugged in) */}
+      {showWires &&
+        ports.map((p) => (p.module ? cableBundle(p.kind, Number(p.id.slice(1)) - 1, p.module) : null))}
     </svg>
   );
 }
