@@ -77,6 +77,8 @@ export async function connect(kind: TransportKind): Promise<RobotInfo> {
   }
 }
 
+let autoConnecting = false;
+
 /**
  * Auto-reconnect on page load with NO click: if the user already granted a serial
  * port before (navigator.serial.getPorts()), reopen it and run the handshake.
@@ -86,7 +88,11 @@ export async function connect(kind: TransportKind): Promise<RobotInfo> {
  */
 export async function autoConnect(): Promise<boolean> {
   if (typeof navigator === 'undefined' || !navigator.serial) return false;
-  if (getState().connState === 'connected') return false;
+  // Guard against concurrent/duplicate runs: React StrictMode double-invokes effects
+  // in dev, and two robot pages both call this — two connect()s would race and one
+  // would close the port the other is opening (InvalidStateError).
+  if (autoConnecting || getState().connState === 'connected') return false;
+  autoConnecting = true;
   try {
     const ports = await navigator.serial.getPorts();
     if (ports.length === 0) return false;
@@ -94,6 +100,8 @@ export async function autoConnect(): Promise<boolean> {
     return true;
   } catch {
     return false; // stay quiet; the Connect button still works
+  } finally {
+    autoConnecting = false;
   }
 }
 
