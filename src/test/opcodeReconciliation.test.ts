@@ -26,9 +26,9 @@ function firmwareHandlers(): Set<string> {
 // Profile-supported opcodes whose firmware handler hasn't landed yet. Each is a real
 // hardware capability (see boardProfile TODO / pin.md FW-06) that currently answers
 // UNSUPPORTED. Shrinks as firmware catches up; a new entry here is a conscious IOU.
-const FW_TODO = new Set<string>([
-  'SET_LED_BRIGHTNESS', // RGB brightness — no-op on the digital LED (FW-06 handled color only)
-]);
+// Empty: every block-emittable opcode now has a firmware handler (or is
+// unsupported-by-profile and greyed out). SET_LED_BRIGHTNESS drives OLED contrast.
+const FW_TODO = new Set<string>([]);
 
 type Status = 'handled' | 'unsupported-by-profile' | 'fw-todo' | 'DANGLING';
 

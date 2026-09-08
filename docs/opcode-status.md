@@ -34,7 +34,7 @@
 | `SET_DIGITAL` | unsupported-by-profile | sensor_set_digital |
 | `SET_GRIPPER` | unsupported-by-profile | mechanism_set_gripper |
 | `SET_HEAD_POSITION` | unsupported-by-profile | mechanism_set_head |
-| `SET_LED_BRIGHTNESS` | fw-todo | display_set_brightness |
+| `SET_LED_BRIGHTNESS` | handled | display_set_brightness |
 | `SET_LED_COLOR` | handled | set_led_color |
 | `SET_VOLUME` | unsupported-by-profile | audio_set_volume |
 | `STEER_TIMED` | handled | move_steer |

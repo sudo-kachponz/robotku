@@ -400,6 +400,7 @@ void handleCommand(const String& jsonLine) {
 #endif
     if (oledOk) caps.add("DISPLAY_TEXT");   // OLED text — only if the panel answered
     if (oledOk) caps.add("DISPLAY_BITMAP"); // OLED pixel-art
+    if (oledOk) caps.add("SET_LED_BRIGHTNESS"); // OLED contrast/brightness
     // Report the ports that are REALLY wired by scanning the config.h table —
     // never a hardcoded list. A board claiming port 2 it doesn't have makes the
     // right joystick axis die silently, which reads as "the web app is broken".
@@ -541,6 +542,18 @@ void handleCommand(const String& jsonLine) {
     } else {
       sendUnsupported("DISPLAY_TEXT");   // OLED not detected (FIX 4)
     }
+    return;
+  }
+
+  // --- Block: OLED brightness (SSD1306 contrast) --------------------------
+  // The RGB LED is digital and can't dim, so this drives the ONE dimmable display:
+  // the OLED's contrast register (0..255 mapped from 0..100%).
+  if (strcmp(cmd, "SET_LED_BRIGHTNESS") == 0) {
+    if (!oledOk) { sendUnsupported("SET_LED_BRIGHTNESS"); return; }
+    int pct = constrain((int)(p["value"] | 100), 0, 100);
+    oled.ssd1306_command(SSD1306_SETCONTRAST);
+    oled.ssd1306_command((uint8_t)(pct * 255 / 100));
+    lastStatus = "Terang";
     return;
   }
 
