@@ -29,10 +29,7 @@ if command -v lftp >/dev/null 2>&1; then
   echo "→ Mengunggah via lftp..."
   run_lftp() {
     lftp -c "set ftp:ssl-force false; \
-             set ftp:ssl-allow true; \
-             set ftp:ssl-protect-data false; \
-             set ssl:verify-certificate false; \
-             set ssl:check-hostname false; \
+             set ftp:ssl-allow false; \
              set ftp:passive-mode true; \
              set net:timeout 30; \
              set net:max-retries 3; \
