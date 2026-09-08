@@ -67,6 +67,23 @@
 #define SERVO_L_TRIM   0
 #define SERVO_R_TRIM   0
 
+// Released joystick / idle: treat |value| below this as "stop" so the pulses are
+// CUT (servo.detach), not held at ~90 where a continuous SG90 keeps creeping.
+// This is the knob for "servo selalu berputar": raise it if the servo still drifts.
+#define SERVO_DEADBAND 3
+
+// ---------------------------------------------------- Accessory (positional) servo
+// The schematic's detachable "Servo SG90" module lives on port P5. Unlike the two
+// CONTINUOUS drive servos, this one is POSITIONAL: it holds an angle (head/arm),
+// so value -100..100 maps to 0..180 deg and value 0 = centre (held, not detached).
+//   GPIO26 = the free "PWM3 aux header" (see the buzzer note above).
+// ponytail: a 3rd ESP32Servo claims another LEDC timer; 2 drives + buzzer + this
+// still fit the 4 timers, but if the aux servo jitters, that contention is the suspect.
+#define PIN_SERVO_AUX  26
+#define HAS_SERVO_AUX  1       // 0 = no accessory servo -> P5 answers UNSUPPORTED
+#define SERVO_AUX_CH   2       // third channel index (0=left,1=right,2=aux)
+#define SERVO_AUX_PORT 5       // which web port drives it (matches P5 in the UI)
+
 // --------------------------------------------------- Port (1..8) -> drive side
 // Joystick / SET_PORT addresses output ports 1..8. Keep the mapping a TABLE so
 // wiring a new port later is a one-line change, not another if-branch.
@@ -80,7 +97,7 @@ static const int PORT_CHANNEL[9] = {
   (HAS_SERVO_R ? 1 : -1),    // port 2 -> RIGHT (PIN_SERVO_R), only if wired
   -1,   // port 3 — not wired
   -1,   // port 4
-  -1,   // port 5
+  (HAS_SERVO_AUX ? SERVO_AUX_CH : -1),   // port 5 -> AUX positional servo (P5)
   -1,   // port 6
   -1,   // port 7
   -1    // port 8
