@@ -331,43 +331,52 @@ export default function BoardPanel({ state }: { state: SimState }) {
         </div>
       </div>
 
-      {/* Detail zoom modul jika terpasang */}
-      {plugged.length > 0 && (
+      {/* OLED module = the live screen, with its pixel editor + animator right beside
+          it (one unit — no separate "Gambar pixel" section duplicating the screen). */}
+      {plugged.filter(([, k]) => k === 'oled').map(([id]) => (
+        <div key={id} style={{ ...box, padding: 10, background: '#ffffff', boxShadow: '0 1px 3px rgba(27,24,64,0.04)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#1b1840' }}>📺 Layar OLED 0.96&quot; ({id})</span>
+            <button onClick={() => attach(id)} style={cabutBtn} title="Cabut modul ini">
+              Cabut
+            </button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 340px) minmax(0, 1fr)', gap: 12, alignItems: 'start' }}>
+            <OledModule
+              text={oledText}
+              shape={state.lcdShape}
+              matrix={matrixOn ? state.matrix.map(Boolean) : undefined}
+              bitmap={bitmap}
+            />
+            <div style={{ display: 'grid', gap: 12 }}>
+              <PixelEditor onSend={setBitmap} onPreview={setBitmap} />
+              <OledAnimator onFrame={setBitmap} />
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {/* Servo modules */}
+      {plugged.some(([, k]) => k === 'servo') && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
-          {plugged.map(([id, kind]) => (
+          {plugged.filter(([, k]) => k === 'servo').map(([id]) => (
             <div key={id} style={{ ...box, padding: 10, background: '#ffffff', boxShadow: '0 1px 3px rgba(27,24,64,0.04)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <span style={{ fontSize: 12, fontWeight: 800, color: '#1b1840' }}>
-                  {kind === 'oled' ? '📺 Layar OLED 0.96"' : '⚙️ Servo SG90'} ({id})
-                </span>
-                <button
-                  onClick={() => attach(id)}
-                  style={{
-                    fontSize: 10,
-                    padding: '2px 6px',
-                    borderRadius: 4,
-                    border: '1px solid #fecaca',
-                    background: '#fef2f2',
-                    color: '#b91c1c',
-                    cursor: 'pointer',
-                  }}
-                  title="Cabut modul ini"
-                >
+                <span style={{ fontSize: 12, fontWeight: 800, color: '#1b1840' }}>⚙️ Servo SG90 ({id})</span>
+                <button onClick={() => attach(id)} style={cabutBtn} title="Cabut modul ini">
                   Cabut
                 </button>
               </div>
-              {kind === 'oled' ? (
-                <OledModule
-                  text={oledText}
-                  shape={state.lcdShape}
-                  matrix={matrixOn ? state.matrix.map(Boolean) : undefined}
-                  bitmap={bitmap}
-                />
-              ) : (
-                <ServoModule speed={state.portValues[PWM_PORTS.findIndex((p) => p.id === id)] ?? 0} />
-              )}
+              <ServoModule speed={state.portValues[PWM_PORTS.findIndex((p) => p.id === id)] ?? 0} />
             </div>
           ))}
+        </div>
+      )}
+
+      {/* No OLED attached: point the user to attach one to draw/animate. */}
+      {!plugged.some(([, k]) => k === 'oled') && (
+        <div style={{ ...box, background: '#ffffff', fontSize: 12, color: '#6b7194' }}>
+          🖼️ Pasang <strong>Layar OLED</strong> (port I1–I5) untuk menggambar pixel & memainkan animasi di layarnya.
         </div>
       )}
 
@@ -410,21 +419,19 @@ export default function BoardPanel({ state }: { state: SimState }) {
         <em style={{ fontSize: 11, color: '#6b7194' }}>roda warna + hex, langsung ke LED asli</em>
       </div>
 
-      {/* ── Gambar pixel -> OLED ── */}
-      <div style={{ ...box, display: 'grid', gap: 8, background: '#ffffff' }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: '#1b1840' }}>
-          Gambar pixel (OLED) <em style={{ color: '#6b7194', fontWeight: 400 }}>— gambar, lalu Kirim ke OLED</em>
-        </span>
-        <PixelEditor onSend={setBitmap} onPreview={setBitmap} />
-      </div>
-
-      {/* ── Wokwi-style OLED animator ── */}
-      <div style={{ ...box, display: 'grid', gap: 8, background: '#ffffff' }}>
-        <OledAnimator onFrame={setBitmap} />
-      </div>
     </div>
   );
 }
+
+const cabutBtn: React.CSSProperties = {
+  fontSize: 10,
+  padding: '2px 6px',
+  borderRadius: 4,
+  border: '1px solid #fecaca',
+  background: '#fef2f2',
+  color: '#b91c1c',
+  cursor: 'pointer',
+};
 
 function btn(active: boolean): React.CSSProperties {
   return {
