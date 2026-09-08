@@ -510,8 +510,8 @@ export default function OledModule({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: 12,
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: 14,
           alignItems: 'stretch',
         }}
       >
@@ -631,8 +631,10 @@ export default function OledModule({
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))',
+                gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
                 gap: 6,
+                alignContent: 'start',
+                gridAutoRows: 'max-content',
                 flex: 1,
                 minHeight: 280,
                 maxHeight: 340,
@@ -652,6 +654,7 @@ export default function OledModule({
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
+                      justifyContent: 'center',
                       gap: 4,
                       padding: '6px 4px',
                       borderRadius: 8,
@@ -660,6 +663,7 @@ export default function OledModule({
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
                       boxShadow: isSelected ? '0 2px 6px rgba(37,99,235,0.15)' : 'none',
+                      boxSizing: 'border-box',
                     }}
                   >
                     <img
