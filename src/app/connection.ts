@@ -77,6 +77,26 @@ export async function connect(kind: TransportKind): Promise<RobotInfo> {
   }
 }
 
+/**
+ * Auto-reconnect on page load with NO click: if the user already granted a serial
+ * port before (navigator.serial.getPorts()), reopen it and run the handshake.
+ * getPorts() needs no user gesture, so the robot connects by itself every visit.
+ * No-op when nothing is remembered (Web Serial can't prompt without a click) or
+ * already connected — the Connect button still covers the first-time grant.
+ */
+export async function autoConnect(): Promise<boolean> {
+  if (typeof navigator === 'undefined' || !navigator.serial) return false;
+  if (getState().connState === 'connected') return false;
+  try {
+    const ports = await navigator.serial.getPorts();
+    if (ports.length === 0) return false;
+    await connect('serial');
+    return true;
+  } catch {
+    return false; // stay quiet; the Connect button still works
+  }
+}
+
 /** Disconnect the active transport (if any). */
 export async function disconnect(): Promise<void> {
   const { transport } = getState();

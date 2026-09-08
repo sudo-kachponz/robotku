@@ -10,6 +10,7 @@ import { useRouter } from 'next/router';
 import ConnectionBadge from './ConnectionBadge';
 import ConnectPanel from './ConnectPanel';
 import { useConnection } from '../../hooks/useConnection';
+import { autoConnect } from '../../app/connection';
 import styles from './ControlLayout.module.css';
 
 // Configurable external community link (spec: "link to Robotku community").
@@ -36,6 +37,11 @@ export default function ControlLayout({
 
   const isAyoMulai = router.pathname === '/control';
   const shouldHideDock = hideDock ?? isAyoMulai;
+
+  // Auto-reconnect to an already-granted robot on load — no click needed.
+  useEffect(() => {
+    void autoConnect();
+  }, []);
 
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);

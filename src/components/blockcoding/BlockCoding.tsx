@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 import * as Blockly from 'blockly';
 import { generateProgramJson } from '../../blockcoding/generateProgram';
 import { cvStore } from '../../ai/cvStore';
-import { estop } from '../../app/connection';
+import { estop, autoConnect } from '../../app/connection';
 import { getState } from '../../app/store';
 // three.js is a ~600 KB dependency used ONLY by the opt-in 3D beta (default OFF),
 // so Simulator/SimulatorSequencer are imported lazily inside the use3D effect and
@@ -50,6 +50,11 @@ export default function BlockCodingWrapper() {
 function BlockCodingInner() {
   const { connState, robotInfo } = useConnection();
   const connected = connState === 'connected';
+
+  // Auto-reconnect to an already-granted robot on load — no click needed.
+  useEffect(() => {
+    void autoConnect();
+  }, []);
 
   const blocklyDivRef = useRef<HTMLDivElement | null>(null);
   const simDivRef = useRef<HTMLDivElement | null>(null);
