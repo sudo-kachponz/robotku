@@ -47,10 +47,11 @@ function ensureVariable(
   ws: Blockly.Workspace,
   name: string,
 ): Blockly.IVariableModel<Blockly.IVariableState> {
-  const existing = ws
+  const map = ws.getVariableMap ? ws.getVariableMap() : (ws as any);
+  const existing = map
     .getAllVariables()
-    .find((v) => v.getName?.() === name || (v as any).name === name);
-  return existing ?? ws.createVariable(name);
+    .find((v: any) => v.getName?.() === name || v.name === name);
+  return existing ?? map.createVariable(name);
 }
 
 function createBlock(ws: Blockly.Workspace, spec: BlockSpec): Blockly.Block {
