@@ -29,6 +29,7 @@
   align-items: center;
   gap: 10px;
   flex: 1;
+  min-width: 0;
 }
 
 .topCenter {
@@ -36,11 +37,12 @@
   align-items: center;
   justify-content: center;
   flex: 2;
+  min-width: 0;
 }
 
 .screenTitle {
   font-family: var(--font-display);
-  font-size: clamp(16px, 3.5vw, 22px);
+  font-size: clamp(15px, 3.5vw, 22px);
   font-weight: 800;
   color: #ffffff;
   margin: 0;
@@ -50,7 +52,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 90%;
+  max-width: 95%;
 }
 
 .topRight {
@@ -59,6 +61,7 @@
   justify-content: flex-end;
   gap: 8px;
   flex: 1;
+  min-width: 0;
 }
 
 .connectionBadgeContainer {
@@ -217,7 +220,7 @@
 
 @media (max-width: 480px) {
   .dock {
-    max-width: calc(100vw - 110px);
+    max-width: calc(100vw - 100px);
     padding: 4px 6px;
     gap: 2px;
   }
@@ -243,5 +246,20 @@
   }
   .dock {
     bottom: calc(8px + var(--safe-b));
+  }
+}
+
+@media (max-width: 380px) {
+  .dock {
+    max-width: calc(100vw - 92px);
+    padding: 3px 4px;
+    gap: 1px;
+  }
+  .dockBtn {
+    padding: 5px 6px;
+    min-height: 32px;
+  }
+  .dockBtn span {
+    font-size: 9px;
   }
 }

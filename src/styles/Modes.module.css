@@ -196,3 +196,26 @@
     padding: 0 6px;
   }
 }
+
+@media (max-width: 480px) {
+  .stage {
+    padding: 0 4px;
+  }
+  .arrow {
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+  }
+  .title {
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+  .desc {
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+  .enter {
+    padding: 12px 28px;
+    font-size: 16px;
+  }
+}
