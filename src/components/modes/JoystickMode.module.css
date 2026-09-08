@@ -4,12 +4,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   width: 100%;
   max-width: 1080px;
   margin: 0 auto;
-  padding: 8px 16px calc(24px + var(--safe-b)) 16px;
+  padding: 6px 16px calc(96px + var(--safe-b)) 16px;
   user-select: none;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* ── TOP COCKPIT BAR (Mode Switcher, Gears, Audio) ── */
@@ -18,14 +20,15 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
   background: rgba(36, 31, 94, 0.7);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--rk-r-xl);
-  padding: 10px 16px;
+  padding: 8px 14px;
   box-shadow: 0 8px 24px rgba(20, 16, 60, 0.3);
+  box-sizing: border-box;
 }
 
 .pillGroup {
@@ -42,7 +45,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
+  padding: 6px 12px;
   border-radius: var(--rk-r-pill);
   border: none;
   background: transparent;
@@ -93,9 +96,10 @@
 /* ── MAIN FLIGHT DECK (2-Column Grid on Desktop, Stack on Mobile) ── */
 .mainDeck {
   display: grid;
-  grid-template-columns: 1.05fr 1.35fr;
+  grid-template-columns: 1fr 1.25fr;
   gap: 16px;
   width: 100%;
+  align-items: stretch;
 }
 
 @media (max-width: 860px) {
@@ -112,17 +116,18 @@
   background: radial-gradient(120% 120% at 50% 0%, #31298a 0%, #1e1b4b 100%);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--rk-r-xl);
-  padding: 16px;
+  padding: 14px;
   box-shadow: var(--rk-shadow);
   overflow: hidden;
-  min-height: 360px;
+  min-height: 380px;
+  justify-content: space-between;
 }
 
 .arenaHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   z-index: 2;
 }
 
@@ -167,7 +172,7 @@
 .arenaStage {
   position: relative;
   flex: 1;
-  min-height: 260px;
+  min-height: 270px;
   border-radius: var(--rk-r-lg);
   background:
     radial-gradient(circle at center, rgba(99, 102, 241, 0.12) 0%, transparent 70%),
@@ -217,7 +222,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 12px;
+  margin-top: 10px;
   z-index: 2;
   gap: 8px;
 }
@@ -264,24 +269,28 @@
   background: radial-gradient(120% 120% at 50% 0%, #2e287e 0%, #1c184c 100%);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--rk-r-xl);
-  padding: 16px;
+  padding: 14px;
   box-shadow: var(--rk-shadow);
-  gap: 16px;
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 380px;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 /* ── DUAL LEVERS LAYOUT ── */
 .dualThrottleStage {
   display: grid;
-  grid-template-columns: 1fr 120px 1fr;
+  grid-template-columns: 1fr 96px 1fr;
   align-items: center;
-  gap: 12px;
-  padding: 6px 0;
+  gap: 10px;
+  padding: 4px 0;
 }
 
 @media (max-width: 520px) {
   .dualThrottleStage {
-    grid-template-columns: 1fr 90px 1fr;
-    gap: 8px;
+    grid-template-columns: 1fr 80px 1fr;
+    gap: 6px;
   }
 }
 
@@ -289,11 +298,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: rgba(15, 23, 42, 0.4);
+  background: rgba(15, 23, 42, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--rk-r-lg);
-  padding: 12px 8px;
-  gap: 10px;
+  padding: 10px 6px;
+  gap: 8px;
+  min-width: 0;
 }
 
 .leverHeader {
@@ -304,27 +314,28 @@
 }
 
 .leverTitle {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #e2e8f0;
+  text-align: center;
 }
 
 .leverSpeed {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
   color: #38bdf8;
 }
 
 .leverSpeedFwd {
-  color: #4ade80;
+  color: #4ade80 !important;
   text-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
 }
 
 .leverSpeedRev {
-  color: #f87171;
+  color: #f87171 !important;
   text-shadow: 0 0 10px rgba(248, 113, 113, 0.5);
 }
 
@@ -333,16 +344,16 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  height: 200px;
-  width: 48px;
+  height: 180px;
+  width: 44px;
   justify-content: center;
 }
 
 .leverRangeInput {
   writing-mode: vertical-lr;
   direction: rtl;
-  width: 44px;
-  height: 190px;
+  width: 40px;
+  height: 170px;
   accent-color: #ec2d8f;
   cursor: pointer;
   touch-action: none;
@@ -351,13 +362,13 @@
 .leverQuickButtons {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   width: 100%;
-  max-width: 110px;
+  max-width: 100px;
 }
 
 .quickStepBtn {
-  padding: 4px 6px;
+  padding: 3px 6px;
   border-radius: var(--rk-r-xs);
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.06);
@@ -381,12 +392,30 @@
 
 /* Servo mini preview inside lever card */
 .servoMiniPreview {
-  width: 72px;
-  height: 52px;
+  width: 60px;
+  height: 44px;
+  min-width: 60px;
+  max-height: 44px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--rk-r-sm);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   margin-top: 4px;
 }
 
-/* ── CENTER ACTION COLUMN (E-STOP, HORN, LED, GADGETS) ── */
+.servoMiniPreview svg,
+.telemetryServoBox svg {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 44px !important;
+  object-fit: contain !important;
+  display: block !important;
+}
+
+/* ── CENTER ACTION COLUMN (E-STOP, HORN) ── */
 .centerActionCol {
   display: flex;
   flex-direction: column;
@@ -402,14 +431,14 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 86px;
-  height: 86px;
+  width: 76px;
+  height: 76px;
   border-radius: 50%;
   border: 3px solid #fecdd3;
   background: radial-gradient(circle at 30% 30%, #f43f5e 0%, #be123c 60%, #881337 100%);
   color: #ffffff;
   font-weight: 900;
-  font-size: 13px;
+  font-size: 12px;
   letter-spacing: 0.05em;
   box-shadow:
     0 0 20px rgba(244, 63, 94, 0.6),
@@ -479,46 +508,103 @@
 .analogStickStage {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  padding: 8px 0;
+  gap: 12px;
+  width: 100%;
 }
 
 .stickAndTelemetryRow {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) 1fr;
+  gap: 16px;
   align-items: center;
-  justify-content: space-around;
   width: 100%;
-  flex-wrap: wrap;
-  gap: 20px;
+}
+
+@media (max-width: 640px) {
+  .stickAndTelemetryRow {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
 }
 
 .joystickBaseRing {
   position: relative;
-  width: clamp(190px, 45vw, 240px);
-  height: clamp(190px, 45vw, 240px);
+  width: 100%;
+  max-width: 220px;
+  aspect-ratio: 1 / 1;
   border-radius: 50%;
   background:
-    radial-gradient(circle at center, rgba(99, 102, 241, 0.2) 0%, rgba(20, 16, 60, 0.9) 70%),
+    radial-gradient(circle at center, rgba(99, 102, 241, 0.25) 0%, rgba(20, 16, 60, 0.95) 75%),
     #18153d;
-  border: 2px solid rgba(99, 102, 241, 0.4);
+  border: 2px solid rgba(99, 102, 241, 0.45);
   box-shadow:
-    inset 0 6px 24px rgba(0, 0, 0, 0.7),
-    0 0 20px rgba(79, 70, 229, 0.25);
+    inset 0 6px 24px rgba(0, 0, 0, 0.75),
+    0 0 20px rgba(79, 70, 229, 0.3);
   display: grid;
   place-items: center;
   touch-action: none;
   cursor: grab;
+  user-select: none;
 }
 
 .joystickBaseRing:active {
   cursor: grabbing;
 }
 
+.joystickDirectionLabels {
+  position: absolute;
+  inset: 6px;
+  pointer-events: none;
+}
+
+.dirLabelTop {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: rgba(148, 163, 184, 0.5);
+}
+
+.dirLabelBottom {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: rgba(148, 163, 184, 0.5);
+}
+
+.dirLabelLeft {
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: rgba(148, 163, 184, 0.5);
+}
+
+.dirLabelRight {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: rgba(148, 163, 184, 0.5);
+}
+
 .joystickTargetRing {
   position: absolute;
-  width: 60%;
-  height: 60%;
+  width: 58%;
+  height: 58%;
   border-radius: 50%;
   border: 1px dashed rgba(255, 255, 255, 0.15);
   pointer-events: none;
@@ -542,14 +628,14 @@
 
 .joystickThumbKnob {
   position: absolute;
-  width: 74px;
-  height: 74px;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, #818cf8 0%, #4f46e5 50%, #312e81 100%);
   border: 3px solid #c7d2fe;
   box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.6),
-    0 0 12px rgba(129, 140, 248, 0.6),
+    0 0 14px rgba(129, 140, 248, 0.6),
     inset 0 2px 4px rgba(255, 255, 255, 0.6);
   display: grid;
   place-items: center;
@@ -558,11 +644,11 @@
 }
 
 .joystickThumbGrip {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* Servo Dual Telemetry Panels */
@@ -570,17 +656,29 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-width: 150px;
+  width: 100%;
+  min-width: 0;
 }
 
 .telemetryCard {
-  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--rk-r-md);
-  padding: 10px 12px;
+  padding: 8px 12px;
+  min-width: 0;
+}
+
+.telemetryCardHeader {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .telemetryLabelRow {
@@ -595,6 +693,9 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .telemetryValue {
@@ -604,27 +705,75 @@
   color: #38bdf8;
 }
 
+.telemetryServoBox {
+  width: 58px;
+  height: 42px;
+  min-width: 58px;
+  max-height: 42px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--rk-r-sm);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
 .meterTrack {
   height: 8px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: var(--rk-r-pill);
-  overflow: hidden;
   position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.meterCenterDivider {
+  position: absolute;
+  left: calc(50% - 1px);
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.35);
+  z-index: 2;
 }
 
 .meterFill {
-  height: 100%;
+  position: absolute;
+  top: 0;
+  bottom: 0;
   border-radius: var(--rk-r-pill);
-  transition: width 0.08s ease;
+  transition: width 0.08s ease, left 0.08s ease;
 }
 
-/* ── ACTION DECK GADGETS (Underglow LEDs, Stunts, Spring Toggle) ── */
+/* Integrated stick action row */
+.stickActionRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 2px;
+}
+
+.stickActionRow .eStopButton {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+}
+
+.stickActionRow .hornButton {
+  flex: 1;
+  min-height: 48px;
+}
+
+/* ── ACTION DECK GADGETS (Underglow LEDs, Stunts) ── */
 .actionGadgetsBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
   padding-top: 8px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -633,6 +782,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .gadgetLabel {
@@ -698,13 +848,15 @@
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 12px;
   font-size: 11px;
   color: #94a3b8;
   padding: 8px 16px;
   background: rgba(20, 16, 60, 0.4);
   border-radius: var(--rk-r-pill);
   border: 1px solid rgba(255, 255, 255, 0.06);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .kbdBadge {
