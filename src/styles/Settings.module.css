@@ -437,8 +437,13 @@
 }
 
 @media (max-width: 640px) {
+  .page {
+    width: 96vw;
+    gap: 14px;
+  }
   .card {
-    padding: 16px;
+    padding: 16px 14px;
+    border-radius: 16px;
   }
   .mapRow {
     grid-template-columns: 1fr;
@@ -454,5 +459,19 @@
   }
   .guideCard {
     padding: 20px 14px;
+    border-radius: 16px;
+  }
+  .guideBanner {
+    padding: 18px 14px;
+    border-radius: 16px;
+  }
+  .footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+  .resetBtn {
+    width: 100%;
+    text-align: center;
   }
 }

@@ -904,3 +904,88 @@
   font-size: 10px;
   font-weight: 700;
 }
+
+/* ── Mobile Responsive Refinements ── */
+@media (max-width: 640px) {
+  .keyboardGuide {
+    display: none;
+  }
+  .container {
+    padding: 4px 8px calc(96px + var(--safe-b)) 8px;
+    gap: 10px;
+  }
+  .topCockpit {
+    padding: 6px 10px;
+    gap: 6px;
+    justify-content: center;
+  }
+  .pillBtn {
+    padding: 5px 8px;
+    font-size: 11px;
+    gap: 4px;
+  }
+  .audioBtn {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+  .arenaCard,
+  .consoleCard {
+    padding: 10px;
+    border-radius: 16px;
+  }
+  .actionGadgetsBar {
+    justify-content: center;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 420px) {
+  .dualThrottleStage {
+    grid-template-columns: 1fr auto 1fr;
+    gap: 4px;
+  }
+  .leverColumn {
+    padding: 6px 4px;
+    max-width: 130px;
+    gap: 6px;
+  }
+  .joystickBaseRingSmall {
+    max-width: 108px;
+  }
+  .joystickThumbKnobSmall {
+    width: 38px;
+    height: 38px;
+  }
+  .eStopButton {
+    width: 58px;
+    height: 58px;
+    font-size: 10px;
+  }
+  .eStopLabel {
+    font-size: 9.5px;
+  }
+  .eStopKeyHint {
+    display: none;
+  }
+  .hornButton {
+    padding: 6px 8px;
+    font-size: 11px;
+    gap: 4px;
+  }
+  .quickStepBtn {
+    font-size: 8.5px;
+    padding: 2px 4px;
+  }
+  .servoMiniPreview {
+    width: 42px;
+    min-width: 42px;
+    height: 34px;
+  }
+  .leverTitle {
+    font-size: 10px;
+  }
+  .leverSpeed {
+    font-size: 14px;
+  }
+}
