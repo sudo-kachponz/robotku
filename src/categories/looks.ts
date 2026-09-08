@@ -81,37 +81,58 @@ defineOnce([
     nextStatement: null,
     style: 'looks_blocks',
   },
-  // --- RGB LED (Robotku FW-06): 8-color pick + duration ---
-  // Digital LED = 8 colors (any mix of R/G/B), so a dropdown matches the hardware
-  // exactly and needs no field_colour plugin (which requires Blockly 13; we're on 12).
+  // --- RGB LED (Robotku FW-06): Visual Color Picker + duration ---
   {
     type: 'set_led_color',
     message0: 'Set LED %1 for %2 sec',
     args0: [
       {
-        type: 'field_dropdown',
+        type: 'field_colour',
         name: 'COLOR',
-        options: [
-          ['Red', '255,0,0'],
-          ['Green', '0,255,0'],
-          ['Blue', '0,0,255'],
-          ['Yellow', '255,255,0'],
-          ['Cyan', '0,255,255'],
-          ['Pink', '255,0,255'],
-          ['Orange', '255,127,0'],
-          ['Purple', '128,0,128'],
-          ['Dark Red', '136,19,55'],
-          ['Lime', '181,230,29'],
-          ['Gold', '255,201,14'],
-          ['Sand', '239,228,176'],
-          ['Brown', '185,122,87'],
-          ['Powder Blue', '153,217,234'],
-          ['Slate', '112,146,190'],
-          ['Lavender', '200,191,231'],
-          ['Gray', '107,114,128'],
-          ['Light Gray', '195,195,195'],
-          ['White', '255,255,255'],
-          ['Off', '0,0,0'],
+        colour: '#ff0000',
+        colourOptions: [
+          '#ff0000',
+          '#00ff00',
+          '#0000ff',
+          '#ffff00',
+          '#00ffff',
+          '#ff00ff',
+          '#ff7f00',
+          '#800080',
+          '#881337',
+          '#b5e61d',
+          '#ffc90e',
+          '#efe4b0',
+          '#b97a57',
+          '#99d9ea',
+          '#7092be',
+          '#c8bfe7',
+          '#6b7280',
+          '#c3c3c3',
+          '#ffffff',
+          '#000000',
+        ],
+        colourTitles: [
+          'Red',
+          'Green',
+          'Blue',
+          'Yellow',
+          'Cyan',
+          'Pink',
+          'Orange',
+          'Purple',
+          'Dark Red',
+          'Lime',
+          'Gold',
+          'Sand',
+          'Brown',
+          'Powder Blue',
+          'Slate',
+          'Lavender',
+          'Gray',
+          'Light Gray',
+          'White',
+          'Off',
         ],
       },
       { type: 'input_value', name: 'DURATION', check: 'Number' },
@@ -217,9 +238,24 @@ javascriptGenerator.forBlock['display_clear_matrix'] = function () {
 };
 
 javascriptGenerator.forBlock['set_led_color'] = function (block, gen) {
-  const [r, g, b] = String(block.getFieldValue('COLOR'))
-    .split(',')
-    .map((n) => parseInt(n, 10) || 0);
+  const raw = String(block.getFieldValue('COLOR') || '#ff0000');
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  if (raw.startsWith('#')) {
+    const hex = raw.slice(1);
+    if (hex.length === 3) {
+      r = parseInt(hex[0] + hex[0], 16) || 0;
+      g = parseInt(hex[1] + hex[1], 16) || 0;
+      b = parseInt(hex[2] + hex[2], 16) || 0;
+    } else {
+      r = parseInt(hex.slice(0, 2), 16) || 0;
+      g = parseInt(hex.slice(2, 4), 16) || 0;
+      b = parseInt(hex.slice(4, 6), 16) || 0;
+    }
+  } else if (raw.includes(',')) {
+    [r, g, b] = raw.split(',').map((n) => parseInt(n, 10) || 0);
+  }
   return (
     JSON.stringify({
       command: astroidV2.commands.setLedColor,
