@@ -520,3 +520,29 @@
     animation: none;
   }
 }
+
+@media (max-width: 600px) {
+  .topGrid {
+    flex-direction: column;
+    align-items: center;
+  }
+  .topGrid > :first-child {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+  .arena {
+    width: 100%;
+    max-width: 240px;
+  }
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .speedRow,
+  .ctrlBtns {
+    justify-content: center;
+  }
+}
+

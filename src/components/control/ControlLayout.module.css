@@ -1,3 +1,5 @@
+/* src/components/control/ControlLayout.module.css */
+
 .shell {
   position: relative;
   min-height: 100vh;
@@ -12,12 +14,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: calc(64px + var(--safe-t));
+  height: calc(56px + var(--safe-t));
   padding-top: var(--safe-t);
-  padding-left: calc(16px + var(--safe-l));
-  padding-right: calc(16px + var(--safe-r));
+  padding-left: calc(14px + var(--safe-l));
+  padding-right: calc(14px + var(--safe-r));
   background-color: var(--rk-header, #2b2680);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   position: relative;
   z-index: 40;
 }
@@ -25,7 +27,7 @@
 .topLeft {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex: 1;
 }
 
@@ -38,26 +40,30 @@
 
 .screenTitle {
   font-family: var(--font-display);
-  font-size: clamp(18px, 4vw, 26px);
-  font-weight: 700;
+  font-size: clamp(16px, 3.5vw, 22px);
+  font-weight: 800;
   color: #ffffff;
   margin: 0;
   letter-spacing: 0.03em;
   text-transform: uppercase;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90%;
 }
 
 .topRight {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 8px;
   flex: 1;
 }
 
 .connectionBadgeContainer {
   position: absolute;
-  top: calc(72px + var(--safe-t));
+  top: calc(62px + var(--safe-t));
   left: 0;
   right: 0;
   display: flex;
@@ -71,8 +77,10 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 48px 16px calc(90px + var(--safe-b));
+  padding: clamp(16px, 3vh, 36px) clamp(12px, 3vw, 24px) calc(76px + var(--safe-b));
   min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .contentFull {
@@ -84,13 +92,13 @@
 .iconBtn {
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
-  min-width: 44px;
-  min-height: 44px;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
   border-radius: var(--rk-r-pill);
   background: var(--rk-surface-3);
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: var(--rk-on);
   cursor: pointer;
   box-shadow: var(--rk-shadow);
@@ -108,33 +116,41 @@
 /* Bottom dock */
 .dock {
   position: fixed;
-  bottom: calc(14px + var(--safe-b));
+  bottom: calc(12px + var(--safe-b));
   left: 50%;
   transform: translateX(-50%);
   z-index: 40;
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 6px 12px;
-  background: var(--rk-surface-3);
-  border: none;
+  padding: 5px 10px;
+  background: rgba(43, 38, 128, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: var(--rk-r-pill);
   box-shadow: var(--rk-shadow);
   max-width: calc(100vw - 120px);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.dockHidden {
+  transform: translate(-50%, calc(100% + 40px)) !important;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .dockBtn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
-  min-height: 44px;
+  padding: 6px 12px;
+  min-height: 38px;
   border-radius: var(--rk-r-pill);
   border: none;
   background: transparent;
   color: var(--rk-on-muted);
   font-family: var(--font-display);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -156,14 +172,14 @@
 /* Corner buttons */
 .cornerBtn {
   position: fixed;
-  bottom: calc(14px + var(--safe-b));
+  bottom: calc(12px + var(--safe-b));
   z-index: 41;
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--rk-r-pill);
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   background: var(--rk-surface-3);
   color: var(--rk-on);
   cursor: pointer;
@@ -179,13 +195,13 @@
 }
 
 .fullscreenBtn {
-  left: calc(14px + var(--safe-l));
-  width: 46px;
-  height: 46px;
+  left: calc(12px + var(--safe-l));
+  width: 42px;
+  height: 42px;
 }
 
 .connectBtn {
-  right: calc(14px + var(--safe-r));
+  right: calc(12px + var(--safe-r));
   color: var(--rk-danger);
 }
 .connectBtnOn {
@@ -200,11 +216,32 @@
 }
 
 @media (max-width: 480px) {
+  .dock {
+    max-width: calc(100vw - 110px);
+    padding: 4px 6px;
+    gap: 2px;
+  }
   .dockBtn span {
     display: inline;
-    font-size: 11px;
+    font-size: 10px;
   }
   .dockBtn {
-    padding: 6px 10px;
+    padding: 6px 8px;
+    min-height: 34px;
+    gap: 4px;
+  }
+  .cornerBtn {
+    width: 38px;
+    height: 38px;
+    bottom: calc(8px + var(--safe-b));
+  }
+  .fullscreenBtn {
+    left: calc(8px + var(--safe-l));
+  }
+  .connectBtn {
+    right: calc(8px + var(--safe-r));
+  }
+  .dock {
+    bottom: calc(8px + var(--safe-b));
   }
 }

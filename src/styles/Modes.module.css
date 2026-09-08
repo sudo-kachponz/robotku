@@ -1,3 +1,5 @@
+/* src/styles/Modes.module.css */
+
 .fullScreenWrapper {
   position: absolute;
   inset: 0;
@@ -5,6 +7,8 @@
   flex-direction: column;
   transition: background-color 0.4s ease;
   z-index: 10;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .navSetting {
@@ -15,7 +19,7 @@
   cursor: pointer;
   display: grid;
   place-items: center;
-  padding: 10px;
+  padding: 8px;
   border-radius: 50%;
   transition: background 0.15s ease;
 }
@@ -29,26 +33,27 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 80px;
+  padding: 0 clamp(10px, 4vw, 80px);
+  min-height: 0;
 }
 
 .arrow {
   flex: none;
   display: grid;
   place-items: center;
-  width: 72px;
-  height: 72px;
+  width: clamp(44px, 8vw, 72px);
+  height: clamp(44px, 8vw, 72px);
   border-radius: 50%;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(0, 0, 0, 0.3);
   color: #fff;
-  font-size: 40px;
+  font-size: clamp(24px, 4vw, 36px);
   line-height: 1;
   cursor: pointer;
   transition:
     transform 0.12s ease,
     background 0.14s ease;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 5;
 }
 
 .arrow:hover {
@@ -61,10 +66,11 @@
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 64px;
+  gap: clamp(20px, 5vw, 64px);
   text-align: left;
   max-width: 1200px;
   width: 100%;
+  padding: 16px 0;
 }
 
 .illus {
@@ -74,8 +80,8 @@
 }
 
 .cardImage {
-  width: 360px;
-  max-width: 38vw;
+  width: 340px;
+  max-width: clamp(180px, 35vw, 340px);
   height: auto;
   filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.3));
   object-fit: contain;
@@ -85,15 +91,15 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  max-width: 560px;
+  max-width: 540px;
   text-align: left;
 }
 
 .title {
-  margin: 0 0 16px;
+  margin: 0 0 12px;
   font-family: var(--font-display);
-  font-size: 54px;
-  font-weight: 600;
+  font-size: clamp(28px, 5.5vw, 50px);
+  font-weight: 700;
   color: #fff;
   line-height: 1.1;
   letter-spacing: 0.03em;
@@ -101,23 +107,23 @@
 }
 
 .desc {
-  margin: 0 0 36px;
+  margin: 0 0 24px;
   font-family: var(--font);
-  font-size: 24px;
+  font-size: clamp(15px, 2.2vw, 22px);
   font-weight: 500;
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.95);
 }
 
 .enter {
-  padding: 20px 64px;
+  padding: clamp(14px, 2vh, 18px) clamp(32px, 5vw, 56px);
   border-radius: 99px;
   border: none;
   background: var(--rk-success);
   color: #fff;
   font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 600;
+  font-size: clamp(17px, 2.5vw, 22px);
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.02em;
   cursor: pointer;
@@ -125,50 +131,36 @@
   transition:
     filter 0.12s ease,
     transform 0.15s ease;
-  animation: wiggle 2s infinite;
+  animation: wiggle 2.5s infinite;
 }
 
 .enter:hover {
   filter: brightness(1.1);
-  animation: none; /* Stop wiggling when hovered */
+  animation: none;
   transform: translateY(-3px) scale(1.02);
 }
 
 @keyframes wiggle {
-  0% {
-    transform: rotate(0deg) translateX(0);
-  }
-  5% {
-    transform: rotate(-8deg) translateX(-6px) scale(1.05);
-  }
-  10% {
-    transform: rotate(8deg) translateX(6px) scale(1.05);
-  }
-  15% {
-    transform: rotate(-8deg) translateX(-6px) scale(1.05);
-  }
-  20% {
-    transform: rotate(8deg) translateX(6px) scale(1.05);
-  }
-  25% {
-    transform: rotate(0deg) translateX(0) scale(1);
-  }
-  100% {
-    transform: rotate(0deg) translateX(0);
-  }
+  0% { transform: rotate(0deg) translateX(0); }
+  5% { transform: rotate(-6deg) translateX(-4px) scale(1.03); }
+  10% { transform: rotate(6deg) translateX(4px) scale(1.03); }
+  15% { transform: rotate(-6deg) translateX(-4px) scale(1.03); }
+  20% { transform: rotate(6deg) translateX(4px) scale(1.03); }
+  25% { transform: rotate(0deg) translateX(0) scale(1); }
+  100% { transform: rotate(0deg) translateX(0); }
 }
 
 .lines {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding-bottom: 90px; /* Space for the dock */
+  gap: 12px;
+  padding-bottom: calc(76px + var(--safe-b));
 }
 
 .line {
-  width: 36px;
-  height: 6px;
+  width: 28px;
+  height: 5px;
   border-radius: 4px;
   border: none;
   background: rgba(255, 255, 255, 0.35);
@@ -184,37 +176,23 @@
 
 .lineActive {
   background: #fff;
-  width: 56px;
+  width: 48px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 860px) {
   .contentRow {
     flex-direction: column;
     text-align: center;
-    gap: 28px;
+    gap: 16px;
   }
   .info {
     align-items: center;
     text-align: center;
   }
   .cardImage {
-    width: 240px;
-  }
-  .title {
-    font-size: 38px;
-  }
-  .desc {
-    font-size: 18px;
+    max-width: min(220px, 45vw);
   }
   .stage {
-    padding: 0 20px;
-  }
-}
-
-@media (max-width: 520px) {
-  .arrow {
-    width: 52px;
-    height: 52px;
-    font-size: 28px;
+    padding: 0 6px;
   }
 }
