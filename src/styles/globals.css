@@ -181,3 +181,23 @@ button {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
+
+@media (max-width: 767px) {
+  .robotkuToolboxCategory {
+    min-height: 40px;
+    padding: 7px 10px;
+    border-left-width: 6px;
+    margin-bottom: 4px;
+  }
+  .robotkuCategoryLabel {
+    font-size: 13px !important;
+  }
+  .robotkuCategoryIcon {
+    width: 20px;
+    height: 20px;
+    margin: 0 6px 0 0;
+  }
+  .robotkuToolboxContent {
+    gap: 6px;
+  }
+}
