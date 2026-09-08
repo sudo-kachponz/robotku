@@ -59,9 +59,20 @@ export default function JoystickMode() {
   const gearRef = useRef<GearLevel>('NORMAL');
   const stageRef = useRef<HTMLDivElement | null>(null);
   const robotElRef = useRef<HTMLDivElement | null>(null);
+
+  // Single 360° stick refs
   const stickBaseRef = useRef<HTMLDivElement | null>(null);
   const stickKnobRef = useRef<HTMLDivElement | null>(null);
   const isDraggingStickRef = useRef(false);
+
+  // Dual sticks (S1 & S2) refs
+  const stick1BaseRef = useRef<HTMLDivElement | null>(null);
+  const stick1KnobRef = useRef<HTMLDivElement | null>(null);
+  const isDraggingStick1Ref = useRef(false);
+
+  const stick2BaseRef = useRef<HTMLDivElement | null>(null);
+  const stick2KnobRef = useRef<HTMLDivElement | null>(null);
+  const isDraggingStick2Ref = useRef(false);
 
   // Robot simulation state
   const poseRef = useRef({ x: 0, y: 0, heading: 0 });
@@ -94,6 +105,9 @@ export default function JoystickMode() {
   const stopAll = useCallback(() => {
     applyMotors(0, 0);
     soundFx.playEStopAlert();
+    if (stickKnobRef.current) stickKnobRef.current.style.transform = `translate(0px, 0px)`;
+    if (stick1KnobRef.current) stick1KnobRef.current.style.transform = `translate(0px, 0px)`;
+    if (stick2KnobRef.current) stick2KnobRef.current.style.transform = `translate(0px, 0px)`;
   }, [applyMotors]);
 
   // Apply single servo from lever
@@ -114,6 +128,87 @@ export default function JoystickMode() {
     },
     [applyMotors],
   );
+
+  // ── DUAL CIRCULAR JOYSTICK POINTER HANDLERS ──
+  const handleStick1PointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    isDraggingStick1Ref.current = true;
+    updateStick1Position(e.clientY);
+  };
+
+  const handleStick1PointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingStick1Ref.current) return;
+    updateStick1Position(e.clientY);
+  };
+
+  const handleStick1PointerUp = (_e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingStick1Ref.current) return;
+    isDraggingStick1Ref.current = false;
+    if (stick1KnobRef.current) {
+      stick1KnobRef.current.style.transform = `translate(0px, 0px)`;
+    }
+    handleLever1(0);
+  };
+
+  const updateStick1Position = (clientY: number) => {
+    const base = stick1BaseRef.current;
+    if (!base) return;
+    const rect = base.getBoundingClientRect();
+    const centerY = rect.top + rect.height / 2;
+    const maxRadius = rect.height / 2 - 14;
+
+    let dy = clientY - centerY;
+    if (Math.abs(dy) > maxRadius) {
+      dy = Math.sign(dy) * maxRadius;
+    }
+
+    if (stick1KnobRef.current) {
+      stick1KnobRef.current.style.transform = `translate(0px, ${dy}px)`;
+    }
+
+    const normY = -dy / maxRadius; // +1 (up) .. -1 (down)
+    handleLever1(normY * 100);
+  };
+
+  const handleStick2PointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    isDraggingStick2Ref.current = true;
+    updateStick2Position(e.clientY);
+  };
+
+  const handleStick2PointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingStick2Ref.current) return;
+    updateStick2Position(e.clientY);
+  };
+
+  const handleStick2PointerUp = (_e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingStick2Ref.current) return;
+    isDraggingStick2Ref.current = false;
+    if (stick2KnobRef.current) {
+      stick2KnobRef.current.style.transform = `translate(0px, 0px)`;
+    }
+    handleLever2(0);
+  };
+
+  const updateStick2Position = (clientY: number) => {
+    const base = stick2BaseRef.current;
+    if (!base) return;
+    const rect = base.getBoundingClientRect();
+    const centerY = rect.top + rect.height / 2;
+    const maxRadius = rect.height / 2 - 14;
+
+    let dy = clientY - centerY;
+    if (Math.abs(dy) > maxRadius) {
+      dy = Math.sign(dy) * maxRadius;
+    }
+
+    if (stick2KnobRef.current) {
+      stick2KnobRef.current.style.transform = `translate(0px, ${dy}px)`;
+    }
+
+    const normY = -dy / maxRadius; // +1 (up) .. -1 (down)
+    handleLever2(normY * 100);
+  };
 
   // Klakson / Buzzer Honk
   const triggerHorn = useCallback(() => {
@@ -453,10 +548,10 @@ export default function JoystickMode() {
 
           {/* RIGHT: CONTROLS CONSOLE */}
           <div className={styles.consoleCard}>
-            {/* ── MODE A: DUAL FLIGHT THROTTLE LEVERS ── */}
+            {/* ── MODE A: DUAL CIRCULAR ANALOG STICKS (TUAS GANDA) ── */}
             {controlType === 'LEVERS' && (
               <div className={styles.dualThrottleStage}>
-                {/* Servo 1 Lever (Left) */}
+                {/* Servo 1 Stick (Left) */}
                 <div className={styles.leverColumn}>
                   <div className={styles.leverHeader}>
                     <span className={styles.leverTitle}>Servo 1 (Kiri)</span>
@@ -469,56 +564,55 @@ export default function JoystickMode() {
                     </span>
                   </div>
 
-                  <div className={styles.leverTrackWrapper}>
-                    <input
-                      className={styles.leverRangeInput}
-                      type="range"
-                      min={-100}
-                      max={100}
-                      value={s1}
-                      onChange={(e) => handleLever1(Number(e.target.value))}
-                      onPointerUp={() => handleLever1(0)}
-                      onPointerCancel={() => handleLever1(0)}
-                    />
+                  {/* Left Circular Joystick */}
+                  <div
+                    className={styles.joystickBaseRingSmall}
+                    ref={stick1BaseRef}
+                    onPointerDown={handleStick1PointerDown}
+                    onPointerMove={handleStick1PointerMove}
+                    onPointerUp={handleStick1PointerUp}
+                    onPointerCancel={handleStick1PointerUp}
+                  >
+                    <div className={styles.joystickDirectionLabels}>
+                      <span className={styles.dirLabelTop}>▲ MAJU</span>
+                      <span className={styles.dirLabelBottom}>▼ MUNDUR</span>
+                    </div>
+                    <div className={styles.joystickTargetRing} />
+                    <div className={styles.joystickCrossH} />
+                    <div className={styles.joystickCrossV} />
+                    <div className={styles.joystickThumbKnobSmall} ref={stick1KnobRef}>
+                      <div className={styles.joystickThumbGrip} />
+                    </div>
                   </div>
 
-                  {/* Quick Preset Step Buttons */}
-                  <div className={styles.leverQuickButtons}>
-                    <button
-                      className={`${styles.quickStepBtn} ${s1 === 100 ? styles.quickStepActive : ''}`}
-                      onClick={() => handleLever1(100)}
-                    >
-                      ▲ +100%
-                    </button>
-                    <button
-                      className={`${styles.quickStepBtn} ${s1 === 50 ? styles.quickStepActive : ''}`}
-                      onClick={() => handleLever1(50)}
-                    >
-                      ▲ +50%
-                    </button>
-                    <button
-                      className={`${styles.quickStepBtn} ${s1 === 0 ? styles.quickStepActive : ''}`}
-                      onClick={() => handleLever1(0)}
-                    >
-                      ■ 0
-                    </button>
-                    <button
-                      className={`${styles.quickStepBtn} ${s1 === -50 ? styles.quickStepActive : ''}`}
-                      onClick={() => handleLever1(-50)}
-                    >
-                      ▼ -50%
-                    </button>
-                    <button
-                      className={`${styles.quickStepBtn} ${s1 === -100 ? styles.quickStepActive : ''}`}
-                      onClick={() => handleLever1(-100)}
-                    >
-                      ▼ -100%
-                    </button>
-                  </div>
-
-                  {/* Live SG90 Servo Horn Preview */}
-                  <div className={styles.servoMiniPreview}>
-                    <ServoModule speed={s1} />
+                  {/* Quick Preset Step Buttons & Servo Preview */}
+                  <div className={styles.leverFooterRow}>
+                    <div className={styles.servoMiniPreview}>
+                      <ServoModule speed={s1} />
+                    </div>
+                    <div className={styles.leverQuickButtonsRow}>
+                      <button
+                        className={`${styles.quickStepBtn} ${s1 === 100 ? styles.quickStepActive : ''}`}
+                        onClick={() => handleLever1(100)}
+                        title="Maju Penuh (+100%)"
+                      >
+                        ▲ +100%
+                      </button>
+                      <button
+                        className={`${styles.quickStepBtn} ${s1 === 0 ? styles.quickStepActive : ''}`}
+                        onClick={() => handleLever1(0)}
+                        title="Stop (0%)"
+                      >
+                        ■ 0%
+                      </button>
+                      <button
+                        className={`${styles.quickStepBtn} ${s1 === -100 ? styles.quickStepActive : ''}`}
+                        onClick={() => handleLever1(-100)}
+                        title="Mundur Penuh (-100%)"
+                      >
+                        ▼ -100%
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -541,7 +635,7 @@ export default function JoystickMode() {
                   </button>
                 </div>
 
-                {/* Servo 2 Lever (Right) */}
+                {/* Servo 2 Stick (Right) */}
                 <div className={styles.leverColumn}>
                   <div className={styles.leverHeader}>
                     <span className={styles.leverTitle}>Servo 2 (Kanan)</span>
@@ -554,56 +648,55 @@ export default function JoystickMode() {
                     </span>
                   </div>
 
-                  <div className={styles.leverTrackWrapper}>
-                    <input
-                      className={styles.leverRangeInput}
-                      type="range"
-                      min={-100}
-                      max={100}
-                      value={s2}
-                      onChange={(e) => handleLever2(Number(e.target.value))}
-                      onPointerUp={() => handleLever2(0)}
-                      onPointerCancel={() => handleLever2(0)}
-                    />
+                  {/* Right Circular Joystick */}
+                  <div
+                    className={styles.joystickBaseRingSmall}
+                    ref={stick2BaseRef}
+                    onPointerDown={handleStick2PointerDown}
+                    onPointerMove={handleStick2PointerMove}
+                    onPointerUp={handleStick2PointerUp}
+                    onPointerCancel={handleStick2PointerUp}
+                  >
+                    <div className={styles.joystickDirectionLabels}>
+                      <span className={styles.dirLabelTop}>▲ MAJU</span>
+                      <span className={styles.dirLabelBottom}>▼ MUNDUR</span>
+                    </div>
+                    <div className={styles.joystickTargetRing} />
+                    <div className={styles.joystickCrossH} />
+                    <div className={styles.joystickCrossV} />
+                    <div className={styles.joystickThumbKnobSmall} ref={stick2KnobRef}>
+                      <div className={styles.joystickThumbGrip} />
+                    </div>
                   </div>
 
-                  {/* Quick Preset Step Buttons */}
-                  <div className={styles.leverQuickButtons}>
-                    <button
-                      className={`${styles.quickStepBtn} ${s2 === 100 ? styles.quickStepActive : ''}`}
-                      onClick={() => handleLever2(100)}
-                    >
-                      ▲ +100%
-                    </button>
-                    <button
-                      className={`${styles.quickStepBtn} ${s2 === 50 ? styles.quickStepActive : ''}`}
-                      onClick={() => handleLever2(50)}
-                    >
-                      ▲ +50%
-                    </button>
-                    <button
-                      className={`${styles.quickStepBtn} ${s2 === 0 ? styles.quickStepActive : ''}`}
-                      onClick={() => handleLever2(0)}
-                    >
-                      ■ 0
-                    </button>
-                    <button
-                      className={`${styles.quickStepBtn} ${s2 === -50 ? styles.quickStepActive : ''}`}
-                      onClick={() => handleLever2(-50)}
-                    >
-                      ▼ -50%
-                    </button>
-                    <button
-                      className={`${styles.quickStepBtn} ${s2 === -100 ? styles.quickStepActive : ''}`}
-                      onClick={() => handleLever2(-100)}
-                    >
-                      ▼ -100%
-                    </button>
-                  </div>
-
-                  {/* Live SG90 Servo Horn Preview */}
-                  <div className={styles.servoMiniPreview}>
-                    <ServoModule speed={s2} />
+                  {/* Quick Preset Step Buttons & Servo Preview */}
+                  <div className={styles.leverFooterRow}>
+                    <div className={styles.servoMiniPreview}>
+                      <ServoModule speed={s2} />
+                    </div>
+                    <div className={styles.leverQuickButtonsRow}>
+                      <button
+                        className={`${styles.quickStepBtn} ${s2 === 100 ? styles.quickStepActive : ''}`}
+                        onClick={() => handleLever2(100)}
+                        title="Maju Penuh (+100%)"
+                      >
+                        ▲ +100%
+                      </button>
+                      <button
+                        className={`${styles.quickStepBtn} ${s2 === 0 ? styles.quickStepActive : ''}`}
+                        onClick={() => handleLever2(0)}
+                        title="Stop (0%)"
+                      >
+                        ■ 0%
+                      </button>
+                      <button
+                        className={`${styles.quickStepBtn} ${s2 === -100 ? styles.quickStepActive : ''}`}
+                        onClick={() => handleLever2(-100)}
+                        title="Mundur Penuh (-100%)"
+                      >
+                        ▼ -100%
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
