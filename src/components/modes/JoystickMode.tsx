@@ -622,6 +622,12 @@ export default function JoystickMode() {
                     onPointerUp={handleStickPointerUp}
                     onPointerCancel={handleStickPointerUp}
                   >
+                    <div className={styles.joystickDirectionLabels}>
+                      <span className={styles.dirLabelTop}>▲ MAJU</span>
+                      <span className={styles.dirLabelBottom}>▼ MUNDUR</span>
+                      <span className={styles.dirLabelLeft}>◄ KIRI</span>
+                      <span className={styles.dirLabelRight}>KANAN ►</span>
+                    </div>
                     <div className={styles.joystickTargetRing} />
                     <div className={styles.joystickCrossH} />
                     <div className={styles.joystickCrossV} />
@@ -630,60 +636,83 @@ export default function JoystickMode() {
                     </div>
                   </div>
 
-                  {/* Dual Servo Telemetry Gauges */}
+                  {/* Dual Servo Telemetry Gauges & Controls */}
                   <div className={styles.servoTelemetryPair}>
                     <div className={styles.telemetryCard}>
-                      <div className={styles.telemetryLabelRow}>
-                        <span className={styles.telemetryName}>Servo 1 (Kiri)</span>
-                        <span className={styles.telemetryValue}>{s1}%</span>
+                      <div className={styles.telemetryCardHeader}>
+                        <div className={styles.telemetryLabelRow}>
+                          <span className={styles.telemetryName}>Servo 1 (Kiri)</span>
+                          <span
+                            className={`${styles.telemetryValue} ${
+                              s1 > 0 ? styles.leverSpeedFwd : s1 < 0 ? styles.leverSpeedRev : ''
+                            }`}
+                          >
+                            {s1 > 0 ? `+${s1}` : s1}%
+                          </span>
+                        </div>
+                        <div className={styles.meterTrack}>
+                          <div className={styles.meterCenterDivider} />
+                          <div
+                            className={styles.meterFill}
+                            style={{
+                              width: `${Math.abs(s1) / 2}%`,
+                              left: s1 >= 0 ? '50%' : `${50 - Math.abs(s1) / 2}%`,
+                              background: s1 >= 0 ? '#4ADE80' : '#F87171',
+                            }}
+                          />
+                        </div>
                       </div>
-                      <div className={styles.meterTrack}>
-                        <div
-                          className={styles.meterFill}
-                          style={{
-                            width: `${Math.abs(s1)}%`,
-                            background: s1 >= 0 ? '#4ADE80' : '#F87171',
-                            marginLeft: s1 < 0 ? 'auto' : undefined,
-                          }}
-                        />
-                      </div>
-                      <div style={{ width: '100%', height: 44, marginTop: 4 }}>
+                      <div className={styles.telemetryServoBox}>
                         <ServoModule speed={s1} />
                       </div>
                     </div>
 
                     <div className={styles.telemetryCard}>
-                      <div className={styles.telemetryLabelRow}>
-                        <span className={styles.telemetryName}>Servo 2 (Kanan)</span>
-                        <span className={styles.telemetryValue}>{s2}%</span>
+                      <div className={styles.telemetryCardHeader}>
+                        <div className={styles.telemetryLabelRow}>
+                          <span className={styles.telemetryName}>Servo 2 (Kanan)</span>
+                          <span
+                            className={`${styles.telemetryValue} ${
+                              s2 > 0 ? styles.leverSpeedFwd : s2 < 0 ? styles.leverSpeedRev : ''
+                            }`}
+                          >
+                            {s2 > 0 ? `+${s2}` : s2}%
+                          </span>
+                        </div>
+                        <div className={styles.meterTrack}>
+                          <div className={styles.meterCenterDivider} />
+                          <div
+                            className={styles.meterFill}
+                            style={{
+                              width: `${Math.abs(s2) / 2}%`,
+                              left: s2 >= 0 ? '50%' : `${50 - Math.abs(s2) / 2}%`,
+                              background: s2 >= 0 ? '#4ADE80' : '#F87171',
+                            }}
+                          />
+                        </div>
                       </div>
-                      <div className={styles.meterTrack}>
-                        <div
-                          className={styles.meterFill}
-                          style={{
-                            width: `${Math.abs(s2)}%`,
-                            background: s2 >= 0 ? '#4ADE80' : '#F87171',
-                            marginLeft: s2 < 0 ? 'auto' : undefined,
-                          }}
-                        />
-                      </div>
-                      <div style={{ width: '100%', height: 44, marginTop: 4 }}>
+                      <div className={styles.telemetryServoBox}>
                         <ServoModule speed={s2} />
                       </div>
                     </div>
+
+                    {/* Integrated Action Row (E-STOP + Klakson) */}
+                    <div className={styles.stickActionRow}>
+                      <button className={styles.eStopButton} onClick={stopAll} title="Emergency Stop (Spasi)">
+                        <span className={styles.eStopLabel}>E-STOP</span>
+                        <span className={styles.eStopKeyHint}>[SPASI]</span>
+                      </button>
+
+                      <button
+                        className={styles.hornButton}
+                        onClick={triggerHorn}
+                        style={isHornActive ? { transform: 'scale(1.06)', background: '#F59E0B', color: '#000' } : {}}
+                        title="Bunyikan Klakson (H)"
+                      >
+                        <span>📢</span> Klakson
+                      </button>
+                    </div>
                   </div>
-                </div>
-
-                {/* Center Row Action Controls */}
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                  <button className={styles.eStopButton} onClick={stopAll} title="Emergency Stop (Spasi)">
-                    <span className={styles.eStopLabel}>E-STOP</span>
-                    <span className={styles.eStopKeyHint}>[SPASI]</span>
-                  </button>
-
-                  <button className={styles.hornButton} onClick={triggerHorn} title="Bunyikan Klakson (H)">
-                    <span>📢</span> Klakson
-                  </button>
                 </div>
               </div>
             )}
