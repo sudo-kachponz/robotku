@@ -56,6 +56,7 @@
 // =============================================================== HARDWARE
 Servo servoL;
 Servo servoR;
+Servo servoAux;       // accessory positional servo on P5 (config.h)
 ESP32PWM buzzerPwm;   // buzzer via the SAME allocator as the servos -> its own timer
                       // (Arduino tone() stole a servo's timer, making the servo "sing")
 unsigned long buzzerOffMs = 0;   // 0 = silent; else stop the tone at this millis()
@@ -100,7 +101,17 @@ bool usbSeen = false;
 // Last angle actually written per channel, so the OLED can show the true servo
 // position (ControllerV1 does this and it is far more useful on the bench than a
 // generic status string). Index 0 = left, 1 = right.
-int servoAngle[2] = { SERVO_STOP_DEG, SERVO_STOP_DEG };
+// Index 0=left drive, 1=right drive, 2=aux positional. Aux centres at 90.
+int servoAngle[3] = { SERVO_STOP_DEG, SERVO_STOP_DEG, 90 };
+
+// Is the ESP32Servo currently emitting pulses on this channel? A DETACHED channel
+// sends no signal at all, so a continuous SG90 truly stops instead of creeping at
+// "90". We attach lazily (first real drive) and detach at idle / on "cabut", so
+// "not driving" == "physically cut" — what the virtual schematic promises.
+bool servoHwAttached[3] = { false, false, false };
+// Schematic module present? The web's pasang/cabut toggles this. A cut channel
+// refuses to drive until it is attached again ("kecuali disambungin lagi").
+bool servoModulePresent[3] = { true, true, true };
 
 // ---------------------------------------------------------- OLED throttling
 // An SSD1306 refresh is ~30 ms over I2C. Rendering on every command would
@@ -122,18 +133,53 @@ bool oledBitmapMode = false;
 // ============================================================ ACTUATOR API
 // Where "stopped" actually is for a channel, once trim is applied.
 int servoNeutralDeg(int ch) {
+  if (ch == 2) return 90;   // aux is positional — centre, no continuous-servo trim
   return SERVO_STOP_DEG + (ch == 0 ? SERVO_L_TRIM : SERVO_R_TRIM);
+}
+
+// Pin + Servo object for a channel, so the switch lives in ONE place.
+int servoPin(int ch) {
+  return (ch == 0) ? PIN_SERVO_L : (ch == 1) ? PIN_SERVO_R : PIN_SERVO_AUX;
+}
+Servo* servoObj(int ch) {
+  return (ch == 0) ? &servoL : (ch == 1) ? &servoR : &servoAux;
+}
+// This channel physically exists on this board?
+bool servoChannelWired(int ch) {
+  if (ch == 0) return true;
+  if (ch == 1) return HAS_SERVO_R;
+  if (ch == 2) return HAS_SERVO_AUX;
+  return false;
+}
+
+// Attach or detach the ESP32Servo for a channel — ONLY on a real transition
+// (calling attach() every frame glitches the pulse train). Detach parks the pin
+// LOW so it can't float and twitch: the signal is genuinely gone, not just "90".
+void servoSetAttached(int ch, bool want) {
+  if (ch < 0 || ch > 2 || !servoChannelWired(ch)) return;
+  if (want == servoHwAttached[ch]) return;
+  Servo* s = servoObj(ch);
+  int pin = servoPin(ch);
+  if (want) {
+    s->setPeriodHertz(50);
+    s->attach(pin, SERVO_MIN_US, SERVO_MAX_US);
+  } else {
+    s->detach();
+    pinMode(pin, OUTPUT);
+    digitalWrite(pin, LOW);
+  }
+  servoHwAttached[ch] = want;
 }
 
 // The ONE place a servo angle is written. Both the JSON path (driveChannel) and
 // the bench text path (a bare 0-180) go through here, so the OLED mirror and the
 // unwired-channel guard can't drift apart.
 void servoWriteAngle(int ch, int deg) {
-  if (ch < 0 || ch > 1) return;
-  if (ch == 1 && !HAS_SERVO_R) return;   // right servo not soldered — nothing to drive
+  if (ch < 0 || ch > 2 || !servoChannelWired(ch)) return;   // no such servo here
+  if (!servoModulePresent[ch]) return;   // cut in the schematic — refuse to drive
+  servoSetAttached(ch, true);            // writing an angle means we ARE driving
   deg = constrain(deg, 0, 180);
-  Servo* s = (ch == 0) ? &servoL : &servoR;
-  s->write(deg);
+  servoObj(ch)->write(deg);
   servoAngle[ch] = deg;
   oledDirty = true;                      // pushed by loop(), throttled
 }
@@ -150,10 +196,34 @@ const char* servoDirLabel(int ch) {
 // One continuous-servo channel. value in [-100,100]: + = forward for that side
 // AFTER invert is applied, 0 = stop (with trim), - = reverse.
 void driveChannel(int ch, int value) {
+  if (ch < 0 || ch > 2 || !servoChannelWired(ch)) return;
   value = constrain(value, -100, 100);
+
+  // Cut in the schematic: go silent regardless of channel type.
+  if (!servoModulePresent[ch]) {
+    servoSetAttached(ch, false);
+    servoAngle[ch] = servoNeutralDeg(ch);
+    oledDirty = true;
+    return;
+  }
+
+  // Aux (positional): value -100..100 -> 0..180 deg, HELD (0 = centre, not cut).
+  if (ch == 2) {
+    servoWriteAngle(2, 90 + (value * 90) / 100);
+    return;
+  }
+
+  // Continuous drive (0/1): idle within the deadband cuts the pulses entirely.
+  // No signal -> a continuous servo actually STOPS; one held at "90" creeps.
+  if (abs(value) < SERVO_DEADBAND) {
+    servoSetAttached(ch, false);
+    servoAngle[ch] = servoNeutralDeg(ch);   // OLED reads STOP
+    oledDirty = true;
+    return;
+  }
+
   int trim   = (ch == 0) ? SERVO_L_TRIM : SERVO_R_TRIM;
   bool invert = (ch == 0) ? false : (SERVO_R_INVERT != 0);
-
   int eff = invert ? -value : value;
   // Continuous SG90: 90 = stop, ±90 span. Trim nudges the neutral point.
   servoWriteAngle(ch, SERVO_STOP_DEG + trim + (eff * 90) / 100);
@@ -386,6 +456,11 @@ void handleCommand(const String& jsonLine) {
     ack["protocol"] = PROTOCOL_ID;
     JsonArray caps = ack["capabilities"].to<JsonArray>();
     caps.add("SET_PORT");
+    caps.add("ATTACH");
+    caps.add("DETACH");
+#if HAS_SERVO_AUX
+    caps.add("SET_HEAD_POSITION");   // accessory positional servo on P5
+#endif
     caps.add("STOP_ALL");
     caps.add("STOP");
     caps.add("MOVE_TIMED");
