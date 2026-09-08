@@ -223,6 +223,52 @@
   color: #ffffff;
 }
 
+/* Floating minus/plus button to toggle Blockly Categories sidebar (matching .simToggle) */
+.toolboxToggle {
+  position: absolute;
+  top: calc(14px + var(--safe-t));
+  z-index: 35;
+  border: 1px solid #e7e9f2;
+  background: #eef0ff;
+  color: #4338ca;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 14px rgba(27, 24, 64, 0.12);
+  transition:
+    left 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+  touch-action: manipulation;
+}
+
+.toolboxToggle:hover {
+  background: #ec2d8f;
+  border-color: #ec2d8f;
+  color: #ffffff;
+  transform: scale(1.08);
+  box-shadow: 0 6px 18px rgba(236, 45, 143, 0.35);
+}
+
+.toolboxToggleOpen {
+  left: calc(320px - 16px);
+}
+
+.toolboxToggleClosed {
+  left: calc(14px + var(--safe-l));
+  background: #ffffff;
+  border-color: #c7d2fe;
+}
+
 .simCanvas {
   width: 100%;
   flex: 1;
@@ -338,6 +384,9 @@
   .blockly :global(.blocklyToolboxDiv) {
     width: 240px !important;
   }
+  .toolboxToggleOpen {
+    left: calc(240px - 16px);
+  }
   .simCard {
     width: 380px;
     right: calc(68px + var(--safe-r));
@@ -350,6 +399,13 @@
 
 /* Phone (<768px) Bottom Sheet & Touch Responsive Layout */
 @media (max-width: 767px) {
+  .toolboxToggle {
+    top: calc(8px + var(--safe-t));
+  }
+  .toolboxToggleOpen {
+    left: calc(180px - 14px);
+  }
+
   .toolbar {
     top: calc(8px + var(--safe-t));
     right: calc(8px + var(--safe-r));
@@ -407,6 +463,10 @@
 
 /* Landscape orientation adjustments (<960px) */
 @media (max-width: 959px) and (orientation: landscape) {
+  .toolboxToggleOpen {
+    left: calc(160px - 14px);
+  }
+
   .toolbar {
     top: calc(6px + var(--safe-t));
     right: calc(6px + var(--safe-r));

@@ -439,6 +439,16 @@ function BlockCodingInner() {
       <div className={styles.editor}>
         <div ref={blocklyDivRef} className={styles.blockly} />
 
+        {/* Minus/Plus button to collapse or expand the Blockly Categories Sidebar (matching .simToggle) */}
+        <button
+          className={`${styles.toolboxToggle} ${showToolbox ? styles.toolboxToggleOpen : styles.toolboxToggleClosed}`}
+          onClick={toggleToolbox}
+          title={showToolbox ? 'Sembunyikan Kategori Blok (–)' : 'Tampilkan Kategori Blok (+)'}
+          aria-label={showToolbox ? 'Sembunyikan Kategori Blok' : 'Tampilkan Kategori Blok'}
+        >
+          {showToolbox ? '–' : '+'}
+        </button>
+
         <div className={styles.toolbar}>
           <button
             className={`${styles.tbBtn} ${showToolbox ? styles.tbActive : ''}`}

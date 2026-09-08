@@ -111,10 +111,10 @@ export default function AppShell({
           <button
             className={styles.sidebarCloseBtn}
             onClick={toggleSidebar}
-            title={sidebarOpen ? 'Sembunyikan Sidebar' : 'Tampilkan Sidebar'}
+            title={sidebarOpen ? 'Sembunyikan Sidebar (–)' : 'Tampilkan Sidebar (+)'}
             aria-label="Toggle Sidebar"
           >
-            {isMobile ? '✕' : '«'}
+            {isMobile ? '✕' : sidebarOpen ? '–' : '+'}
           </button>
         </div>
 
