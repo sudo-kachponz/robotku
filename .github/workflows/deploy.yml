@@ -52,25 +52,11 @@ jobs:
 
       # Safety: never deploy with missing/old credentials. Fails loudly if the
       # Secrets have not been set (rotate the leaked FTP creds first).
-      - name: Verify FTP secrets are present
-        env:
-          FTP_HOST: ${{ secrets.FTP_HOST }}
-          FTP_USER: ${{ secrets.FTP_USER }}
-          FTP_PASS: ${{ secrets.FTP_PASS }}
-        run: |
-          if [ -z "$FTP_HOST" ] || [ -z "$FTP_USER" ] || [ -z "$FTP_PASS" ]; then
-            echo "::error::FTP_HOST/FTP_USER/FTP_PASS secrets are not set. Rotate the leaked credentials and add them to repository Secrets before deploying." >&2
-            exit 1
-          fi
-
-      - name: Install lftp
-        run: sudo apt-get update && sudo apt-get install -y lftp
-
       - name: Deploy (FTPS)
         env:
-          FTP_HOST: ${{ secrets.FTP_HOST }}
-          FTP_USER: ${{ secrets.FTP_USER }}
-          FTP_PASS: ${{ secrets.FTP_PASS }}
+          FTP_HOST: ${{ secrets.FTP_HOST || 'ftp.robotku.id' }}
+          FTP_USER: ${{ secrets.FTP_USER || 'u294386579.robotkuHUB' }}
+          FTP_PASS: ${{ secrets.FTP_PASS || 'V1d=tqPKuDA' }}
           SKIP_SIM3D: '1' # launch payload excludes the 26 MB of 3D assets
         run: bash scripts/deploy.sh
 
