@@ -512,7 +512,7 @@ export default function OledModule({
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
           gap: 12,
-          alignItems: 'start',
+          alignItems: 'stretch',
         }}
       >
         {/* ── Left Column: Icon Catalogue & Categories ── */}
@@ -522,9 +522,12 @@ export default function OledModule({
             borderRadius: 8,
             border: '1px solid #e0e3ff',
             padding: 10,
-            display: 'grid',
+            display: 'flex',
+            flexDirection: 'column',
             gap: 8,
             boxShadow: '0 1px 3px rgba(27,24,64,0.03)',
+            height: '100%',
+            boxSizing: 'border-box',
           }}
         >
           {/* Header Row: Title & Size Selector */}
@@ -628,9 +631,11 @@ export default function OledModule({
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(68px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))',
                 gap: 6,
-                maxHeight: 220,
+                flex: 1,
+                minHeight: 280,
+                maxHeight: 340,
                 overflowY: 'auto',
                 padding: 2,
                 scrollbarWidth: 'thin',
@@ -725,7 +730,7 @@ export default function OledModule({
           )}
 
           {/* Helper caption */}
-          <div style={{ fontSize: 10, color: '#8e94b8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ marginTop: 'auto', paddingTop: 6, fontSize: 10, color: '#8e94b8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span>{displayedAnims.length} animasi tersedia</span>
             <span style={{ fontWeight: 700, color: '#4f46e5' }}>{selectedSize}x{selectedSize === 128 ? 64 : selectedSize === 64 ? 32 : selectedSize} px</span>
           </div>
