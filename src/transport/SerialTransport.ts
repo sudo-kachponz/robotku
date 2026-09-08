@@ -29,11 +29,17 @@ export class SerialTransport extends BaseTransport {
     let port = remembered;
     try {
       if (!port) port = await navigator.serial.requestPort();
-      await port.open({ baudRate: BAUD_RATE });
+      // A remembered port may still be OPEN from a prior/failed attempt (its
+      // close() can fail). Reuse it instead of re-opening — closeTransport already
+      // releases the stream locks, so its readable/writable are usable. Only open()
+      // when it's actually closed, avoiding "The port is already open".
+      if (!port.readable && !port.writable) {
+        await port.open({ baudRate: BAUD_RATE });
+      }
     } catch (err) {
       if (!remembered) throw err; // picker cancelled or genuinely failed
       port = await navigator.serial.requestPort(); // remembered port dead → pick
-      await port.open({ baudRate: BAUD_RATE });
+      if (!port.readable && !port.writable) await port.open({ baudRate: BAUD_RATE });
     }
     this.port = port;
 
