@@ -380,13 +380,8 @@ export default function OledModule({
       redrawCanvas();
       const b = snapshot();
       onBitmapChange?.(b);
+      sendCommand('DISPLAY_BITMAP', { ...b });
     }
-  };
-
-  const handleSendToRobot = () => {
-    const b = snapshot();
-    sendCommand('DISPLAY_BITMAP', { ...b });
-    onBitmapChange?.(b);
   };
 
   const handleClear = () => {
@@ -900,6 +895,7 @@ export default function OledModule({
                 if (painting.current) {
                   const b = snapshot();
                   onBitmapChange?.(b);
+                  sendCommand('DISPLAY_BITMAP', { ...b });
                 }
                 painting.current = false;
               }}
@@ -907,6 +903,7 @@ export default function OledModule({
                 if (painting.current) {
                   const b = snapshot();
                   onBitmapChange?.(b);
+                  sendCommand('DISPLAY_BITMAP', { ...b });
                 }
                 painting.current = false;
               }}
@@ -925,52 +922,30 @@ export default function OledModule({
             />
           </div>
 
-          {/* ── Primary Action Buttons ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <button
-              onClick={handleInsertToBlockly}
-              style={{
-                fontSize: 12,
-                fontWeight: 800,
-                padding: '8px 10px',
-                borderRadius: 8,
-                border: '1px solid #16a34a',
-                background: '#22c55e',
-                color: '#ffffff',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 5,
-                boxShadow: '0 2px 4px rgba(22,163,74,0.2)',
-              }}
-            >
-              <span>🧩</span>
-              <span>Pasang ke Blok Kode</span>
-            </button>
-
-            <button
-              onClick={handleSendToRobot}
-              style={{
-                fontSize: 12,
-                fontWeight: 800,
-                padding: '8px 10px',
-                borderRadius: 8,
-                border: '1px solid #3730a3',
-                background: '#4f46e5',
-                color: '#ffffff',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 5,
-                boxShadow: '0 2px 4px rgba(79,70,229,0.2)',
-              }}
-            >
-              <span>🚀</span>
-              <span>Kirim ke OLED</span>
-            </button>
-          </div>
+          {/* ── Primary Action Button ── */}
+          <button
+            onClick={handleInsertToBlockly}
+            style={{
+              width: '100%',
+              fontSize: 12.5,
+              fontWeight: 800,
+              padding: '9px 12px',
+              borderRadius: 8,
+              border: '1px solid #16a34a',
+              background: '#22c55e',
+              color: '#ffffff',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              boxShadow: '0 2px 4px rgba(22,163,74,0.2)',
+              transition: 'transform 0.1s ease',
+            }}
+          >
+            <span>🧩</span>
+            <span>Pasang ke Blok Kode</span>
+          </button>
         </div>
       </div>
     </div>
