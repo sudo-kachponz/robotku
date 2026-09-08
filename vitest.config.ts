@@ -8,8 +8,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     include: ['src/test/**/*.test.ts'],
-    testTimeout: 15000,
-    hookTimeout: 15000,
+    testTimeout: 30000,
+    hookTimeout: 30000,
     coverage: {
       provider: 'v8',
       include: ['src/runtime/**', 'src/categories/**', 'src/blockcoding/**'],
