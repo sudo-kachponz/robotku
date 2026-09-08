@@ -671,7 +671,10 @@ void feed(String& buffer, char c, bool fromSerial) {
     else                handleTextCommand(line);
   } else {
     buffer += c;
-    if (buffer.length() > 600) buffer = "";   // overflow guard
+    // Overflow guard. Must fit the largest command: DISPLAY_BITMAP carries a full
+    // 128x64 = 8192-char pixel string (+ JSON wrapper), so allow ~9000. Anything
+    // bigger is genuinely malformed -> drop it.
+    if (buffer.length() > 9000) buffer = "";
   }
 }
 
