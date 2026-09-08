@@ -26,7 +26,7 @@ const BlockCoding = dynamic(() => import('../../../components/blockcoding/BlockC
 
 export default function CodePage() {
   return (
-    <ControlLayout title="Block Coding" fullBleed>
+    <ControlLayout title="Block Coding" fullBleed hideDock>
       <BlockCoding />
     </ControlLayout>
   );
