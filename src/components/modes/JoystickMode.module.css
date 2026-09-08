@@ -1,0 +1,720 @@
+/* src/components/modes/JoystickMode.module.css */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 8px 16px calc(24px + var(--safe-b)) 16px;
+  user-select: none;
+}
+
+/* ── TOP COCKPIT BAR (Mode Switcher, Gears, Audio) ── */
+.topCockpit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+  background: rgba(36, 31, 94, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--rk-r-xl);
+  padding: 10px 16px;
+  box-shadow: 0 8px 24px rgba(20, 16, 60, 0.3);
+}
+
+.pillGroup {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--rk-r-pill);
+  padding: 3px;
+  gap: 2px;
+}
+
+.pillBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--rk-r-pill);
+  border: none;
+  background: transparent;
+  color: var(--rk-on-muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pillBtn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.pillActive {
+  background: var(--rk-surface-1) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(79, 70, 229, 0.45);
+}
+
+.gearTurbo {
+  background: linear-gradient(135deg, #ec2d8f 0%, #f43f5e 100%) !important;
+  box-shadow: 0 0 14px rgba(236, 45, 143, 0.6) !important;
+  color: #ffffff !important;
+}
+
+.audioBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.4);
+  color: var(--rk-on);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.audioBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: scale(1.05);
+}
+
+/* ── MAIN FLIGHT DECK (2-Column Grid on Desktop, Stack on Mobile) ── */
+.mainDeck {
+  display: grid;
+  grid-template-columns: 1.05fr 1.35fr;
+  gap: 16px;
+  width: 100%;
+}
+
+@media (max-width: 860px) {
+  .mainDeck {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── LEFT: ARENA CARD ── */
+.arenaCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(120% 120% at 50% 0%, #31298a 0%, #1e1b4b 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--rk-r-xl);
+  padding: 16px;
+  box-shadow: var(--rk-shadow);
+  overflow: hidden;
+  min-height: 360px;
+}
+
+.arenaHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  z-index: 2;
+}
+
+.arenaTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #cbd5e1;
+}
+
+.arenaStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: var(--rk-r-pill);
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(22, 163, 74, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.arenaStatusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 8px #4ade80;
+  animation: pulseDot 1.5s infinite alternate;
+}
+
+@keyframes pulseDot {
+  0% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+.arenaStage {
+  position: relative;
+  flex: 1;
+  min-height: 260px;
+  border-radius: var(--rk-r-lg);
+  background:
+    radial-gradient(circle at center, rgba(99, 102, 241, 0.12) 0%, transparent 70%),
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    #131131;
+  background-size: 100% 100%, 28px 28px, 28px 28px;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  box-shadow: inset 0 4px 20px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.arenaCrosshair {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.arenaRobot {
+  position: absolute;
+  width: 96px;
+  height: 96px;
+  display: grid;
+  place-items: center;
+  will-change: transform;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.7));
+}
+
+.arenaTrailDot {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(236, 45, 143, 0.6);
+  box-shadow: 0 0 6px rgba(236, 45, 143, 0.8);
+  pointer-events: none;
+}
+
+.arenaFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  z-index: 2;
+  gap: 8px;
+}
+
+.telemetryBadges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-family: monospace;
+  color: #94a3b8;
+}
+
+.telemetryChip {
+  background: rgba(15, 23, 42, 0.6);
+  padding: 3px 8px;
+  border-radius: var(--rk-r-sm);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.resetPosBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: var(--rk-r-pill);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.resetPosBtn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* ── RIGHT: CONTROLS CONSOLE ── */
+.consoleCard {
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(120% 120% at 50% 0%, #2e287e 0%, #1c184c 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--rk-r-xl);
+  padding: 16px;
+  box-shadow: var(--rk-shadow);
+  gap: 16px;
+}
+
+/* ── DUAL LEVERS LAYOUT ── */
+.dualThrottleStage {
+  display: grid;
+  grid-template-columns: 1fr 120px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+@media (max-width: 520px) {
+  .dualThrottleStage {
+    grid-template-columns: 1fr 90px 1fr;
+    gap: 8px;
+  }
+}
+
+.leverColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--rk-r-lg);
+  padding: 12px 8px;
+  gap: 10px;
+}
+
+.leverHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.leverTitle {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #e2e8f0;
+}
+
+.leverSpeed {
+  font-size: 18px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: #38bdf8;
+}
+
+.leverSpeedFwd {
+  color: #4ade80;
+  text-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+}
+
+.leverSpeedRev {
+  color: #f87171;
+  text-shadow: 0 0 10px rgba(248, 113, 113, 0.5);
+}
+
+.leverTrackWrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 200px;
+  width: 48px;
+  justify-content: center;
+}
+
+.leverRangeInput {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 44px;
+  height: 190px;
+  accent-color: #ec2d8f;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.leverQuickButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  max-width: 110px;
+}
+
+.quickStepBtn {
+  padding: 4px 6px;
+  border-radius: var(--rk-r-xs);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  text-align: center;
+}
+
+.quickStepBtn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.quickStepActive {
+  background: #4f46e5 !important;
+  color: #ffffff !important;
+}
+
+/* Servo mini preview inside lever card */
+.servoMiniPreview {
+  width: 72px;
+  height: 52px;
+  margin-top: 4px;
+}
+
+/* ── CENTER ACTION COLUMN (E-STOP, HORN, LED, GADGETS) ── */
+.centerActionCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+
+/* Glowing Arcade E-STOP Button */
+.eStopButton {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 86px;
+  height: 86px;
+  border-radius: 50%;
+  border: 3px solid #fecdd3;
+  background: radial-gradient(circle at 30% 30%, #f43f5e 0%, #be123c 60%, #881337 100%);
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  box-shadow:
+    0 0 20px rgba(244, 63, 94, 0.6),
+    inset 0 2px 4px rgba(255, 255, 255, 0.6),
+    0 6px 14px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: all 0.1s ease;
+  user-select: none;
+  touch-action: none;
+}
+
+.eStopButton:hover {
+  transform: scale(1.04);
+  box-shadow:
+    0 0 28px rgba(244, 63, 94, 0.8),
+    inset 0 2px 6px rgba(255, 255, 255, 0.8),
+    0 8px 18px rgba(0, 0, 0, 0.6);
+}
+
+.eStopButton:active {
+  transform: scale(0.94);
+  box-shadow:
+    0 0 10px rgba(244, 63, 94, 0.4),
+    inset 0 4px 8px rgba(0, 0, 0, 0.6);
+}
+
+.eStopLabel {
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.eStopKeyHint {
+  font-size: 8px;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+/* Horn / Klakson Button */
+.hornButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--rk-r-md);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.15) 100%);
+  color: #fef08a;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.hornButton:hover {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.4) 0%, rgba(217, 119, 6, 0.25) 100%);
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.35);
+}
+
+.hornButton:active {
+  transform: scale(0.96);
+}
+
+/* ── 360° ANALOG STICK MODE ── */
+.analogStickStage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0;
+}
+
+.stickAndTelemetryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.joystickBaseRing {
+  position: relative;
+  width: clamp(190px, 45vw, 240px);
+  height: clamp(190px, 45vw, 240px);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, rgba(99, 102, 241, 0.2) 0%, rgba(20, 16, 60, 0.9) 70%),
+    #18153d;
+  border: 2px solid rgba(99, 102, 241, 0.4);
+  box-shadow:
+    inset 0 6px 24px rgba(0, 0, 0, 0.7),
+    0 0 20px rgba(79, 70, 229, 0.25);
+  display: grid;
+  place-items: center;
+  touch-action: none;
+  cursor: grab;
+}
+
+.joystickBaseRing:active {
+  cursor: grabbing;
+}
+
+.joystickTargetRing {
+  position: absolute;
+  width: 60%;
+  height: 60%;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  pointer-events: none;
+}
+
+.joystickCrossH {
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.joystickCrossV {
+  position: absolute;
+  height: 100%;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.joystickThumbKnob {
+  position: absolute;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #818cf8 0%, #4f46e5 50%, #312e81 100%);
+  border: 3px solid #c7d2fe;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.6),
+    0 0 12px rgba(129, 140, 248, 0.6),
+    inset 0 2px 4px rgba(255, 255, 255, 0.6);
+  display: grid;
+  place-items: center;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.joystickThumbGrip {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Servo Dual Telemetry Panels */
+.servoTelemetryPair {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 150px;
+}
+
+.telemetryCard {
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--rk-r-md);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.telemetryLabelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.telemetryName {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.telemetryValue {
+  font-size: 13px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: #38bdf8;
+}
+
+.meterTrack {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--rk-r-pill);
+  overflow: hidden;
+  position: relative;
+}
+
+.meterFill {
+  height: 100%;
+  border-radius: var(--rk-r-pill);
+  transition: width 0.08s ease;
+}
+
+/* ── ACTION DECK GADGETS (Underglow LEDs, Stunts, Spring Toggle) ── */
+.actionGadgetsBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.gadgetGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gadgetLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--rk-on-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ledColorPicker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ledDotBtn {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  padding: 0;
+}
+
+.ledDotBtn:hover {
+  transform: scale(1.25);
+}
+
+.ledDotSelected {
+  border-color: #ffffff !important;
+  transform: scale(1.25);
+  box-shadow: 0 0 10px currentColor;
+}
+
+.stuntBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: var(--rk-r-sm);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.stuntBtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.stuntBtn:active {
+  transform: scale(0.95);
+}
+
+/* ── KEYBOARD HINTS BAR ── */
+.keyboardGuide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 11px;
+  color: #94a3b8;
+  padding: 8px 16px;
+  background: rgba(20, 16, 60, 0.4);
+  border-radius: var(--rk-r-pill);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.kbdBadge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-family: monospace;
+  font-size: 10px;
+  font-weight: 700;
+}
