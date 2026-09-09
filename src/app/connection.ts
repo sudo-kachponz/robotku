@@ -88,10 +88,17 @@ let autoConnecting = false;
  */
 export async function autoConnect(): Promise<boolean> {
   if (typeof navigator === 'undefined' || !navigator.serial) return false;
-  // Guard against concurrent/duplicate runs: React StrictMode double-invokes effects
-  // in dev, and two robot pages both call this — two connect()s would race and one
-  // would close the port the other is opening (InvalidStateError).
-  if (autoConnecting || getState().connState === 'connected') return false;
+  // NEVER disturb an existing connection. This runs on mount of BOTH the Control and
+  // Block Coding pages, so if the user connected over BLE on one page, opening the
+  // other must not fire a serial connect — connect('serial') calls disconnect() first,
+  // which tears down the live BLE link and then times out its own handshake (no
+  // HELLO_ACK) on a board that's on battery/BLE only. connect() sets the store
+  // transport before its handshake, so a truthy transport also catches an in-flight
+  // BLE connect. Also guards StrictMode's double-invoke.
+  const st = getState();
+  if (autoConnecting || st.transport || st.connState === 'connected' || st.connState === 'connecting') {
+    return false;
+  }
   autoConnecting = true;
   try {
     const ports = await navigator.serial.getPorts();
