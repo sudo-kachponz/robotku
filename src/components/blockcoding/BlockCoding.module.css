@@ -463,6 +463,13 @@
     box-shadow: 0 8px 30px rgba(27, 24, 64, 0.18);
   }
 
+  /* Reserve the right edge for the floating toolbar: keep the whole Blockly area
+     (workspace, toolbox, flyout) to its LEFT so blocks/flyouts never render — and get
+     cut off — underneath the dock. Matches the sim card's right inset. */
+  .blockly {
+    right: calc(50px + var(--safe-r));
+  }
+
   /* When the sim sheet is open, shrink Blockly to the top half so blocks and sim
      STACK vertically instead of the sheet covering the blocks. */
   .blocklySimOpen {
@@ -561,5 +568,10 @@
     transform: translateX(calc(100% + 60px));
     opacity: 0;
     pointer-events: none;
+  }
+
+  /* Keep Blockly left of the toolbar dock in landscape too. */
+  .blockly {
+    right: calc(44px + var(--safe-r));
   }
 }
