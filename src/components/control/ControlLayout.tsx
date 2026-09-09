@@ -99,6 +99,12 @@ export default function ControlLayout({
         </div>
 
         <div className={styles.topRight}>
+          {/* Mobile: compact online/offline indicator in the navbar (the big centered
+              pill is hidden on phones — it overlapped the blocks/toolbox). */}
+          <span className={styles.connStatus} data-connected={connected} aria-live="polite">
+            <span className={styles.connDot} />
+            {connState === 'connected' ? 'Online' : connState === 'connecting' ? '…' : 'Offline'}
+          </span>
           {topRightAction}
           {!shouldHideDock && (
             <button
