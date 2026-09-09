@@ -631,7 +631,9 @@ export default function OledModule({
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+                // Responsive: as many ~84px cards as fit, wrapping down — no horizontal
+                // overflow on phones (was a fixed 4 columns that ran off-screen).
+                gridTemplateColumns: 'repeat(auto-fill, minmax(84px, 1fr))',
                 gap: 6,
                 alignContent: 'start',
                 gridAutoRows: 'max-content',
