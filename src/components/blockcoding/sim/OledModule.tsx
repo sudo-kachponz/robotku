@@ -510,9 +510,11 @@ export default function OledModule({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(240px, 100%), 1fr))',
           gap: 14,
           alignItems: 'stretch',
+          minWidth: 0,
+          maxWidth: '100%',
         }}
       >
         {/* ── Left Column: Icon Catalogue & Categories ── */}
@@ -528,6 +530,9 @@ export default function OledModule({
             boxShadow: '0 1px 3px rgba(27,24,64,0.03)',
             height: '100%',
             boxSizing: 'border-box',
+            minWidth: 0,
+            maxWidth: '100%',
+            overflow: 'hidden',
           }}
         >
           {/* Header Row: Title & Size Selector */}
@@ -743,7 +748,7 @@ export default function OledModule({
         </div>
 
         {/* ── Right Column: Live OLED Module & Action Buttons ── */}
-        <div style={{ display: 'grid', gap: 10 }}>
+        <div style={{ display: 'grid', gap: 10, minWidth: 0, maxWidth: '100%' }}>
           {/* Top Label & Controls */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: 11.5, fontWeight: 800, color: '#1e1b4b', display: 'flex', alignItems: 'center', gap: 5 }}>
