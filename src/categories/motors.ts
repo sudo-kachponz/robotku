@@ -26,13 +26,6 @@ const MOTOR_PORTS: [string, string][] = [
   ['P4', 'P4'],
   ['P5', 'P5'],
 ];
-const MOTOR_PORTS_R: [string, string][] = [
-  ['P2', 'P2'],
-  ['P1', 'P1'],
-  ['P3', 'P3'],
-  ['P4', 'P4'],
-  ['P5', 'P5'],
-];
 
 // --- Block Definitions ---
 defineOnce([
@@ -42,11 +35,6 @@ defineOnce([
     args0: [
       { type: 'input_value', name: 'DURATION', check: 'Number' },
       { type: 'field_dropdown', name: 'SPEED', options: SPEED_OPTIONS },
-    ],
-    message1: 'Ports L %1 R %2',
-    args1: [
-      { type: 'field_dropdown', name: 'LEFT', options: MOTOR_PORTS },
-      { type: 'field_dropdown', name: 'RIGHT', options: MOTOR_PORTS_R },
     ],
     previousStatement: null,
     nextStatement: null,
@@ -60,11 +48,6 @@ defineOnce([
       { type: 'input_value', name: 'DURATION', check: 'Number' },
       { type: 'field_dropdown', name: 'SPEED', options: SPEED_OPTIONS },
     ],
-    message1: 'Ports L %1 R %2',
-    args1: [
-      { type: 'field_dropdown', name: 'LEFT', options: MOTOR_PORTS },
-      { type: 'field_dropdown', name: 'RIGHT', options: MOTOR_PORTS_R },
-    ],
     previousStatement: null,
     nextStatement: null,
     style: 'motors_blocks',
@@ -76,11 +59,6 @@ defineOnce([
     args0: [
       { type: 'input_value', name: 'DURATION', check: 'Number' },
       { type: 'field_dropdown', name: 'SPEED', options: SPEED_OPTIONS },
-    ],
-    message1: 'Ports L %1 R %2',
-    args1: [
-      { type: 'field_dropdown', name: 'LEFT', options: MOTOR_PORTS },
-      { type: 'field_dropdown', name: 'RIGHT', options: MOTOR_PORTS_R },
     ],
     previousStatement: null,
     nextStatement: null,
@@ -94,11 +72,6 @@ defineOnce([
       { type: 'input_value', name: 'DURATION', check: 'Number' },
       { type: 'field_dropdown', name: 'SPEED', options: SPEED_OPTIONS },
     ],
-    message1: 'Ports L %1 R %2',
-    args1: [
-      { type: 'field_dropdown', name: 'LEFT', options: MOTOR_PORTS },
-      { type: 'field_dropdown', name: 'RIGHT', options: MOTOR_PORTS_R },
-    ],
     previousStatement: null,
     nextStatement: null,
     style: 'motors_blocks',
@@ -111,12 +84,8 @@ defineOnce([
       { type: 'input_value', name: 'DURATION', check: 'Number' },
       { type: 'field_dropdown', name: 'SPEED', options: SPEED_OPTIONS },
     ],
-    message1: 'Steering %1  Ports L %2 R %3',
-    args1: [
-      { type: 'field_slider', name: 'STEERING', value: 0, min: -100, max: 100 },
-      { type: 'field_dropdown', name: 'LEFT', options: MOTOR_PORTS },
-      { type: 'field_dropdown', name: 'RIGHT', options: MOTOR_PORTS_R },
-    ],
+    message1: 'Steering %1',
+    args1: [{ type: 'field_slider', name: 'STEERING', value: 0, min: -100, max: 100 }],
     previousStatement: null,
     nextStatement: null,
     style: 'motors_blocks',
@@ -158,11 +127,6 @@ defineOnce([
           ['4 WHEEL', '4'],
         ],
       },
-    ],
-    message1: 'Ports L %1 R %2',
-    args1: [
-      { type: 'field_dropdown', name: 'LEFT', options: MOTOR_PORTS },
-      { type: 'field_dropdown', name: 'RIGHT', options: MOTOR_PORTS_R },
     ],
     previousStatement: null,
     nextStatement: null,
@@ -211,8 +175,10 @@ function driveTimed(command: string, direction: string) {
         direction,
         speed,
         duration_ms: mulNum(numArg(block, gen, 'DURATION', 1), 1000),
-        left: block.getFieldValue('LEFT'),
-        right: block.getFieldValue('RIGHT'),
+        // Left=P1, Right=P2 are fixed on this board (the firmware drives those pins);
+        // the port pickers were removed from the block to keep it short on mobile.
+        left: 'P1',
+        right: 'P2',
       },
     };
     return JSON.stringify(commandObj) + ';';
@@ -231,8 +197,8 @@ javascriptGenerator.forBlock['move_steer'] = function (block, gen) {
       duration_ms: mulNum(numArg(block, gen, 'DURATION', 1), 1000),
       steering: parseInt(block.getFieldValue('STEERING'), 10),
       speed: SPEED_ENUM[block.getFieldValue('SPEED')] ?? 70,
-      left: block.getFieldValue('LEFT'),
-      right: block.getFieldValue('RIGHT'),
+      left: 'P1',
+      right: 'P2',
     },
   };
   return JSON.stringify(commandObj) + ';';
@@ -256,8 +222,8 @@ javascriptGenerator.forBlock['move_stop'] = function (block) {
     command: astroidV2.commands.stop,
     params: {
       wheels: parseInt(block.getFieldValue('WHEELS'), 10),
-      left: block.getFieldValue('LEFT'),
-      right: block.getFieldValue('RIGHT'),
+      left: 'P1',
+      right: 'P2',
     },
   };
   return JSON.stringify(commandObj) + ';';

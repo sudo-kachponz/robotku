@@ -64,6 +64,9 @@ export function useBlocklyWorkspace(blocklyDivRef: React.RefObject<HTMLDivElemen
 
     initializeAstroidEditor();
 
+    // Thinner scrollbars on phones — the default touch thickness (~15px) was chunky.
+    if (window.innerWidth < 768) Blockly.Scrollbar.scrollbarThickness = 9;
+
     Blockly.registry.register(
       Blockly.registry.Type.TOOLBOX_ITEM,
       Blockly.ToolboxCategory.registrationName,
