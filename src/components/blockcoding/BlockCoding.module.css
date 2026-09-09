@@ -3,6 +3,9 @@
   inset: 0;
   height: 100dvh;
   overflow: hidden;
+  /* Light base so nothing shows the harsh purple page gradient behind the floating
+     toolbar or beside the sim card — the Blockly canvas sits on this. */
+  background: #f4f5fb;
 }
 
 .editor {
@@ -466,17 +469,8 @@
     box-shadow: 0 8px 30px rgba(27, 24, 64, 0.18);
   }
 
-  /* Reserve the right edge for the floating toolbar: keep the whole Blockly area
-     (workspace, toolbox, flyout) to its LEFT so blocks/flyouts never render — and get
-     cut off — underneath the dock. !important beats the base `inset: 0`. */
-  .blockly {
-    right: calc(58px + var(--safe-r)) !important;
-  }
-  /* Blockly's injected div + SVG must also honor the inset, not just the wrapper. */
-  .blockly :global(.injectionDiv),
-  .blockly :global(.blocklySvg) {
-    width: 100% !important;
-  }
+  /* Blockly stays full width (white canvas) so the floating toolbar's white buttons
+     sit on white, never exposing the purple page gradient behind an inset. */
 
   /* When the sim sheet is open, shrink Blockly to the top half so blocks and sim
      STACK vertically instead of the sheet covering the blocks. */
@@ -576,10 +570,5 @@
     transform: translateX(calc(100% + 60px));
     opacity: 0;
     pointer-events: none;
-  }
-
-  /* Keep Blockly left of the toolbar dock in landscape too. */
-  .blockly {
-    right: calc(44px + var(--safe-r));
   }
 }
