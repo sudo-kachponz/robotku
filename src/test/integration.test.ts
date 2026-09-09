@@ -25,7 +25,7 @@ const SAMPLE: BlockSpec[] = [
       DO: [
         {
           type: 'move_forward',
-          fields: { SPEED: 'medium', LEFT: 'P1', RIGHT: 'P2' },
+          fields: { SPEED: 'medium' },
           inputs: { DURATION: { type: 'variables_get', fields: { VAR: 'sec' } } },
         },
         {

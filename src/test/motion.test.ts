@@ -124,12 +124,12 @@ describe('Parity: Motion & Actuators', () => {
   it('move_steer generates STEER_TIMED; ±100 steering mirror the heading', async () => {
     const cmds = buildBlock({
       type: 'move_steer',
-      fields: { STEERING: '100', SPEED: 'medium', LEFT: 'P1', RIGHT: 'P2' },
+      fields: { STEERING: '100', SPEED: 'medium' },
       inputs: { DURATION: 0.3 },
     });
     expect(cmds[0]).toMatchObject({
       command: 'STEER_TIMED',
-      params: { steering: 100, speed: 70 },
+      params: { steering: 100, speed: 70, left: 'P1', right: 'P2' },
     });
 
     const right = await buildAndRun([
@@ -155,7 +155,7 @@ describe('Parity: Motion & Actuators', () => {
   it('move_stop generates STOP naming only the given ports and halts drive', async () => {
     const cmds = buildBlock({
       type: 'move_stop',
-      fields: { WHEELS: '2', LEFT: 'P1', RIGHT: 'P2' },
+      fields: { WHEELS: '2' },
     });
     expect(cmds[0]).toMatchObject({
       command: 'STOP',
@@ -164,7 +164,7 @@ describe('Parity: Motion & Actuators', () => {
 
     const { state } = await buildAndRun([
       { type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.2 } },
-      { type: 'move_stop', fields: { WHEELS: '2', LEFT: 'P1', RIGHT: 'P2' } },
+      { type: 'move_stop', fields: { WHEELS: '2' } },
     ]);
     expect(state.fwd).toBe(0);
     expect(state.turn).toBe(0);
