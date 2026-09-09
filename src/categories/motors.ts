@@ -38,10 +38,13 @@ const MOTOR_PORTS_R: [string, string][] = [
 defineOnce([
   {
     type: 'move_forward',
-    message0: 'Forward for %1 sec  Speed %2  Ports L %3 R %4',
+    message0: 'Forward for %1 sec  Speed %2',
     args0: [
       { type: 'input_value', name: 'DURATION', check: 'Number' },
       { type: 'field_dropdown', name: 'SPEED', options: SPEED_OPTIONS },
+    ],
+    message1: 'Ports L %1 R %2',
+    args1: [
       { type: 'field_dropdown', name: 'LEFT', options: MOTOR_PORTS },
       { type: 'field_dropdown', name: 'RIGHT', options: MOTOR_PORTS_R },
     ],
@@ -52,10 +55,13 @@ defineOnce([
   },
   {
     type: 'move_reverse',
-    message0: 'Reverse for %1 sec  Speed %2  Ports L %3 R %4',
+    message0: 'Reverse for %1 sec  Speed %2',
     args0: [
       { type: 'input_value', name: 'DURATION', check: 'Number' },
       { type: 'field_dropdown', name: 'SPEED', options: SPEED_OPTIONS },
+    ],
+    message1: 'Ports L %1 R %2',
+    args1: [
       { type: 'field_dropdown', name: 'LEFT', options: MOTOR_PORTS },
       { type: 'field_dropdown', name: 'RIGHT', options: MOTOR_PORTS_R },
     ],
@@ -66,10 +72,13 @@ defineOnce([
   },
   {
     type: 'move_left',
-    message0: 'Left for %1 sec  Speed %2  Ports L %3 R %4',
+    message0: 'Left for %1 sec  Speed %2',
     args0: [
       { type: 'input_value', name: 'DURATION', check: 'Number' },
       { type: 'field_dropdown', name: 'SPEED', options: SPEED_OPTIONS },
+    ],
+    message1: 'Ports L %1 R %2',
+    args1: [
       { type: 'field_dropdown', name: 'LEFT', options: MOTOR_PORTS },
       { type: 'field_dropdown', name: 'RIGHT', options: MOTOR_PORTS_R },
     ],
@@ -80,10 +89,13 @@ defineOnce([
   },
   {
     type: 'move_right',
-    message0: 'Right for %1 sec  Speed %2  Ports L %3 R %4',
+    message0: 'Right for %1 sec  Speed %2',
     args0: [
       { type: 'input_value', name: 'DURATION', check: 'Number' },
       { type: 'field_dropdown', name: 'SPEED', options: SPEED_OPTIONS },
+    ],
+    message1: 'Ports L %1 R %2',
+    args1: [
       { type: 'field_dropdown', name: 'LEFT', options: MOTOR_PORTS },
       { type: 'field_dropdown', name: 'RIGHT', options: MOTOR_PORTS_R },
     ],
@@ -94,11 +106,14 @@ defineOnce([
   },
   {
     type: 'move_steer',
-    message0: 'Steering for %1 sec  Steering %2  Speed %3  Ports L %4 R %5',
+    message0: 'Steering for %1 sec  Speed %2',
     args0: [
       { type: 'input_value', name: 'DURATION', check: 'Number' },
-      { type: 'field_slider', name: 'STEERING', value: 0, min: -100, max: 100 },
       { type: 'field_dropdown', name: 'SPEED', options: SPEED_OPTIONS },
+    ],
+    message1: 'Steering %1  Ports L %2 R %3',
+    args1: [
+      { type: 'field_slider', name: 'STEERING', value: 0, min: -100, max: 100 },
       { type: 'field_dropdown', name: 'LEFT', options: MOTOR_PORTS },
       { type: 'field_dropdown', name: 'RIGHT', options: MOTOR_PORTS_R },
     ],
@@ -109,9 +124,13 @@ defineOnce([
   },
   {
     type: 'move_claw',
-    message0: 'Claw for %1 sec  Direction %2  Speed %3  Port %4',
+    message0: 'Claw for %1 sec  Speed %2',
     args0: [
       { type: 'input_value', name: 'DURATION', check: 'Number' },
+      { type: 'field_dropdown', name: 'SPEED', options: SPEED_OPTIONS },
+    ],
+    message1: 'Direction %1  Port %2',
+    args1: [
       {
         type: 'field_dropdown',
         name: 'DIRECTION',
@@ -120,7 +139,6 @@ defineOnce([
           ['Anticlockwise', 'anticlockwise'],
         ],
       },
-      { type: 'field_dropdown', name: 'SPEED', options: SPEED_OPTIONS },
       { type: 'field_dropdown', name: 'PORT', options: MOTOR_PORTS },
     ],
     previousStatement: null,
@@ -130,7 +148,7 @@ defineOnce([
   },
   {
     type: 'move_stop',
-    message0: 'Stop %1  Ports L %2 R %3',
+    message0: 'Stop %1',
     args0: [
       {
         type: 'field_dropdown',
@@ -140,6 +158,9 @@ defineOnce([
           ['4 WHEEL', '4'],
         ],
       },
+    ],
+    message1: 'Ports L %1 R %2',
+    args1: [
       { type: 'field_dropdown', name: 'LEFT', options: MOTOR_PORTS },
       { type: 'field_dropdown', name: 'RIGHT', options: MOTOR_PORTS_R },
     ],
@@ -159,10 +180,13 @@ defineOnce([
   {
     // Test ONE servo at a time (the drive blocks always move L+R together).
     type: 'servo_single',
-    message0: 'Uji servo %1  kecepatan %2  selama %3 dtk',
+    message0: 'Uji servo %1  kecepatan %2',
     args0: [
       { type: 'field_dropdown', name: 'PORT', options: MOTOR_PORTS },
       { type: 'field_slider', name: 'SPEED', value: 100, min: -100, max: 100 },
+    ],
+    message1: 'selama %1 dtk',
+    args1: [
       { type: 'input_value', name: 'DURATION', check: 'Number' },
     ],
     previousStatement: null,
