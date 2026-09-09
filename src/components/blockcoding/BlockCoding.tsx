@@ -128,6 +128,14 @@ function BlockCodingInner() {
     return simSinkRef.current!;
   }, [connected, showSim, use3D]);
 
+  // Re-fit Blockly when the sim panel opens/closes — on mobile the sim sheet shrinks
+  // the Blockly area (blocklySimOpen) so they stack; wait out the sheet transition,
+  // then a resize event drives Blockly.svgResize (handled in the workspace hook).
+  useEffect(() => {
+    const id = setTimeout(() => window.dispatchEvent(new Event('resize')), 320);
+    return () => clearTimeout(id);
+  }, [showSim]);
+
   // Prefers reduced motion
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -437,7 +445,7 @@ function BlockCodingInner() {
   return (
     <div className={styles.wrap}>
       <div className={styles.editor}>
-        <div ref={blocklyDivRef} className={styles.blockly} />
+        <div ref={blocklyDivRef} className={`${styles.blockly} ${showSim ? styles.blocklySimOpen : ''}`} />
 
         {/* Minus/Plus button to collapse or expand the Blockly Categories Sidebar (matching .simToggle) */}
         <button

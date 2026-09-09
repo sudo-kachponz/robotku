@@ -463,6 +463,12 @@
     box-shadow: 0 8px 30px rgba(27, 24, 64, 0.18);
   }
 
+  /* When the sim sheet is open, shrink Blockly to the top half so blocks and sim
+     STACK vertically instead of the sheet covering the blocks. */
+  .blocklySimOpen {
+    bottom: calc(56vh + 16px + var(--safe-b));
+  }
+
   .simHidden {
     transform: translateY(calc(100% + 40px));
     opacity: 0;

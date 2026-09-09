@@ -37,7 +37,11 @@ export function useBlocklyWorkspace(blocklyDivRef: React.RefObject<HTMLDivElemen
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null);
   const [telemetry, setTelemetry] = useState<string[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [showToolbox, setShowToolbox] = useState(true);
+  // Phones start with the category sidebar collapsed — otherwise the 145px toolbox
+  // crowds the blocks. The toolbox toggle opens it on demand.
+  const [showToolbox, setShowToolbox] = useState(
+    () => typeof window === 'undefined' || window.innerWidth >= 768,
+  );
 
   const toggleToolbox = useCallback(() => {
     setShowToolbox((prev) => {
@@ -90,6 +94,12 @@ export function useBlocklyWorkspace(blocklyDivRef: React.RefObject<HTMLDivElemen
       move: { scrollbars: true, drag: true, wheel: true },
     });
     workspaceRef.current = workspace;
+
+    // Match the mobile default: hide the toolbox so blocks fill the screen.
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      workspace.getToolbox()?.setVisible(false);
+      Blockly.svgResize(workspace);
+    }
 
     // Templates category is a custom flyout (gallery button + comment block).
     registerTemplatesFlyout(workspace);
