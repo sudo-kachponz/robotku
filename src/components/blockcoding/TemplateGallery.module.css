@@ -349,14 +349,105 @@
 }
 
 @media (max-width: 720px) {
+  .overlay {
+    padding: 6px;
+  }
   .modal {
-    grid-template-columns: 1fr;
+    width: 100%;
+    height: 98vh;
+    height: 98dvh;
+    max-height: none;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
   }
   .rail {
     flex-direction: row;
     overflow-x: auto;
+    overflow-y: hidden;
+    flex-shrink: 0;
+    padding: 8px 10px;
+    gap: 6px;
+    border-right: none;
+    border-bottom: 1px solid #fde68a;
+    white-space: nowrap;
+    scrollbar-width: none;
+  }
+  .rail::-webkit-scrollbar {
+    display: none;
+  }
+  .railTitle {
+    display: none;
+  }
+  .railBtn {
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+  .header {
+    padding: 10px 12px;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+  .header h2 {
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .search {
+    min-width: 0;
+    flex: 1;
+    padding: 7px 10px;
+    font-size: 12px;
+    border-radius: 10px;
+  }
+  .closeBtn {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .grid {
+    padding: 10px 12px;
+    gap: 10px;
+    grid-template-columns: 1fr;
+  }
+  .card {
+    border-radius: 14px;
+  }
+  .cardBody {
+    padding: 10px 12px 12px;
+    gap: 4px;
+  }
+  .cardTitle {
+    font-size: 14px;
+  }
+  .cardDesc {
+    font-size: 12px;
+    min-height: auto;
+  }
+  .sheetHead {
+    padding: 10px 14px;
+    gap: 8px;
+  }
+  .sheetHead h3 {
+    font-size: 16px;
   }
   .sheetBody {
     grid-template-columns: 1fr;
+    padding: 12px 14px;
+    gap: 12px;
+  }
+  .sheetFoot {
+    padding: 10px 14px;
+    gap: 8px;
+    flex-direction: column;
+  }
+  .btn {
+    width: 100%;
+    padding: 10px 16px;
+    font-size: 13px;
+    text-align: center;
   }
 }
+

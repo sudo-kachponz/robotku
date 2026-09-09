@@ -7,8 +7,9 @@ import { astroidV2 } from '../robotProfiles';
 defineOnce([
   {
     type: 'mechanism_set_head',
-    message0: 'Set head position to Pitch: %1 Yaw: %2',
-    args0: [
+    message0: 'Set head position',
+    message1: 'Pitch: %1  Yaw: %2',
+    args1: [
       {
         type: 'field_slider',
         name: 'PITCH',

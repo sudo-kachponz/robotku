@@ -138,13 +138,6 @@ export default function ControlLayout({
             <CommunityIcon />
             <span>Community</span>
           </a>
-          <DockButton
-            label="Settings"
-            active={router.pathname === '/control/settings'}
-            onClick={() => router.push('/control/settings')}
-          >
-            <GearIcon />
-          </DockButton>
         </nav>
       )}
 

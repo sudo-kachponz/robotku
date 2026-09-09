@@ -16,7 +16,7 @@
   top: calc(56px + var(--safe-t));
   left: 50%;
   transform: translateX(-50%);
-  z-index: 30;
+  z-index: 1000;
   font-size: clamp(11px, 2.5vw, 13px);
   font-weight: 600;
   color: var(--rk-on);

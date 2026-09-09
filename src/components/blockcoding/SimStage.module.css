@@ -6,6 +6,7 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   color: #1b1840;
 }
 
@@ -522,6 +523,11 @@
 }
 
 @media (max-width: 600px) {
+  .stack {
+    padding: 10px 8px;
+    gap: 10px;
+    overflow-x: hidden;
+  }
   .topGrid {
     flex-direction: column;
     align-items: center;
@@ -532,17 +538,26 @@
     justify-content: center;
   }
   .arena {
-    width: 100%;
-    max-width: 240px;
+    width: 100% !important;
+    max-width: 240px !important;
+    height: auto !important;
+    aspect-ratio: 1 !important;
   }
   .controls {
     flex-direction: column;
     align-items: stretch;
-    gap: 10px;
+    gap: 8px;
+    padding: 6px 8px;
   }
   .speedRow,
   .ctrlBtns {
     justify-content: center;
+    flex-wrap: wrap;
+  }
+  .sliderRow {
+    grid-template-columns: 65px 1fr 45px;
+    gap: 6px;
   }
 }
+
 

@@ -72,7 +72,10 @@ const box: React.CSSProperties = {
   background: '#fafafe',
   border: '1px solid #e7e9f2',
   borderRadius: 12,
-  padding: 12,
+  padding: 10,
+  maxWidth: '100%',
+  minWidth: 0,
+  boxSizing: 'border-box',
 };
 
 export default function BoardPanel({ state }: { state: SimState }) {
