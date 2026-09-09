@@ -423,14 +423,17 @@
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: none;
-    padding: 4px 3px;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid #e7e9f2;
-    border-radius: 28px;
-    box-shadow: 0 4px 18px rgba(27, 24, 64, 0.12);
+    padding: 2px;
+    /* No purple/backdrop pill — let the white buttons float with their own soft
+       shadows (each .tbBtn keeps its shadow) so it reads gentler over the page. */
+    background: transparent;
+    border: none;
+    box-shadow: none;
     z-index: 35;
+  }
+  /* Softer floating shadow on each button now that the pill is gone. */
+  .tbBtn {
+    box-shadow: 0 3px 12px rgba(27, 24, 64, 0.18);
   }
   .toolbar::-webkit-scrollbar {
     display: none;
@@ -450,7 +453,7 @@
   }
 
   .simCard {
-    right: calc(52px + var(--safe-r));
+    right: calc(58px + var(--safe-r));
     left: calc(8px + var(--safe-l));
     top: auto;
     bottom: calc(8px + var(--safe-b));
@@ -465,9 +468,14 @@
 
   /* Reserve the right edge for the floating toolbar: keep the whole Blockly area
      (workspace, toolbox, flyout) to its LEFT so blocks/flyouts never render — and get
-     cut off — underneath the dock. Matches the sim card's right inset. */
+     cut off — underneath the dock. !important beats the base `inset: 0`. */
   .blockly {
-    right: calc(50px + var(--safe-r));
+    right: calc(58px + var(--safe-r)) !important;
+  }
+  /* Blockly's injected div + SVG must also honor the inset, not just the wrapper. */
+  .blockly :global(.injectionDiv),
+  .blockly :global(.blocklySvg) {
+    width: 100% !important;
   }
 
   /* When the sim sheet is open, shrink Blockly to the top half so blocks and sim

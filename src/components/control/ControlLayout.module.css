@@ -76,6 +76,39 @@
   z-index: 1000;
 }
 
+/* Compact navbar status — desktop uses the big centered badge, so hidden here. */
+.connStatus {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #dc2626; /* offline red */
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.connStatus[data-connected='true'] {
+  color: #16a34a; /* online green */
+}
+.connDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
+  flex-shrink: 0;
+}
+
+/* Phones: swap the big centered pill for the compact navbar indicator. */
+@media (max-width: 767px) {
+  .connStatus {
+    display: inline-flex;
+  }
+  .connectionBadgeContainer {
+    display: none;
+  }
+}
+
 .content {
   flex: 1;
   display: flex;

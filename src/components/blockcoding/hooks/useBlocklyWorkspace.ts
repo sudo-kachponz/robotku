@@ -102,6 +102,11 @@ export function useBlocklyWorkspace(blocklyDivRef: React.RefObject<HTMLDivElemen
       workspace.getToolbox()?.setVisible(false);
       Blockly.svgResize(workspace);
     }
+    // Re-measure after layout settles so Blockly (and its flyout) honor the mobile
+    // right-inset (.blockly is inset left of the toolbar) instead of full width.
+    setTimeout(() => {
+      if (workspaceRef.current) Blockly.svgResize(workspaceRef.current);
+    }, 80);
 
     // Templates category is a custom flyout (gallery button + comment block).
     registerTemplatesFlyout(workspace);
