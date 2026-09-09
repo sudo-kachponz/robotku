@@ -25,7 +25,6 @@ function isDisabled(toolbox: any, type: string): boolean {
 describe('toolbox guard (P1)', () => {
   it('disables ghost-hardware blocks on the default profile', () => {
     const tb = getAstroidToolbox();
-    expect(isDisabled(tb, 'display_matrix')).toBe(true); // no LED matrix
     expect(isDisabled(tb, 'lcd_shape')).toBe(true); // no graphic LCD
     expect(isDisabled(tb, 'sensor_ultrasonic')).toBe(true); // no sensors
     // real hardware stays enabled

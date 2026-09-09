@@ -5,28 +5,6 @@ import { describe, it, expect } from 'vitest';
 import { buildBlock, buildAndRun } from './harness';
 
 describe('Parity: Display & LED', () => {
-  // No LED matrix on Robotku V3 (P2): block emits the opcode, sim leaves it dark.
-  it('display_matrix emits DISPLAY_MATRIX but the sim ignores it (no matrix)', async () => {
-    const cmds = buildBlock({
-      type: 'display_matrix',
-      fields: { PATTERN: '1111110001100011000111111' },
-      inputs: { DURATION: 0.1 },
-    });
-    expect(cmds[0]).toMatchObject({
-      command: 'DISPLAY_MATRIX',
-    });
-
-    const { state } = await buildAndRun([
-      {
-        type: 'display_matrix',
-        fields: { PATTERN: '1111110001100011000111111' },
-        inputs: { DURATION: 0.1 },
-      },
-    ]);
-    expect(state.matrix.some((on) => on)).toBe(false); // inert — stays dark
-    expect(state.simConsole.some((m) => m.includes('DISPLAY_MATRIX'))).toBe(true);
-  });
-
   it('display_text generates DISPLAY_TEXT and sets state displayText', async () => {
     const cmds = buildBlock({
       type: 'display_text',
@@ -49,18 +27,6 @@ describe('Parity: Display & LED', () => {
 
     const { state } = await buildAndRun([{ type: 'display_kaomoji', fields: { FACE: '(>_<)' } }]);
     expect(state.displayText).toBe('(>_<)');
-  });
-
-  it('display_clear_matrix generates CLEAR_MATRIX and clears matrix LEDs', async () => {
-    const { state } = await buildAndRun([
-      {
-        type: 'display_matrix',
-        fields: { PATTERN: '1111110001100011000111111' },
-        inputs: { DURATION: 0.1 },
-      },
-      { type: 'display_clear_matrix' },
-    ]);
-    expect(state.matrix.every((on) => !on)).toBe(true);
   });
 
   // No graphic LCD on Robotku V3 (P2): opcode emitted, sim ignores it.

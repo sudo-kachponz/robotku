@@ -77,7 +77,9 @@ export function useBlocklyWorkspace(blocklyDivRef: React.RefObject<HTMLDivElemen
 
     const workspace = Blockly.inject(blocklyDiv, {
       theme: getRobotkuTheme(),
-      toolbox: getAstroidToolbox(),
+      // Phones: hide blocks the board can't run so the cramped flyout only shows
+      // usable (short) blocks instead of long greyed clutter.
+      toolbox: getAstroidToolbox(robotkuEsp32V3, window.innerWidth < 768),
       renderer: 'zelos',
       toolboxPosition: 'start',
       trashcan: false,
@@ -123,7 +125,7 @@ export function useBlocklyWorkspace(blocklyDivRef: React.RefObject<HTMLDivElemen
       const profile = s.robotInfo
         ? profileFromHello(s.robotInfo.capabilities, s.robotInfo.ports)
         : robotkuEsp32V3;
-      workspace.updateToolbox(getAstroidToolbox(profile));
+      workspace.updateToolbox(getAstroidToolbox(profile, window.innerWidth < 768));
     });
 
     const unsubTelemetry = onTelemetry((msg) => {

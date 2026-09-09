@@ -25,14 +25,36 @@ import { isSupported, robotkuEsp32V3, type BoardProfile } from './domain/boardPr
 // profile can still surface them later). Walks category trees recursively.
 const DISABLED_TOOLTIP = 'Hardware ini tidak ada pada board Robotku V3';
 
-function guardItem(item: any, profile: BoardProfile): any {
+// Drop labels that no longer precede any block (after unsupported blocks are cut).
+function dropOrphanLabels(contents: any[]): any[] {
+  return contents.filter((item: any, i: number) => {
+    if (item?.kind !== 'label') return true;
+    for (let j = i + 1; j < contents.length; j++) {
+      if (contents[j]?.kind === 'label') break;
+      if (contents[j]?.kind === 'block') return true;
+    }
+    return false;
+  });
+}
+
+// hide=true (phones): REMOVE unsupported blocks (and emptied labels/categories) so the
+// flyout only lists blocks this board can run — decluttering the cramped mobile view.
+// hide=false (default/desktop): keep them, greyed + non-draggable.
+function guardItem(item: any, profile: BoardProfile, hide: boolean): any {
   if (item?.contents) {
-    return { ...item, contents: item.contents.map((c: any) => guardItem(c, profile)) };
+    const contents = dropOrphanLabels(
+      item.contents.map((c: any) => guardItem(c, profile, hide)).filter(Boolean),
+    );
+    // A category left with only labels/seps (all its blocks were unsupported) is dropped.
+    if (hide && item.kind === 'category' && !contents.some((c: any) => c?.kind === 'block')) {
+      return null;
+    }
+    return { ...item, contents };
   }
   if (item?.kind === 'block' && typeof item.type === 'string') {
     const opcode = BLOCK_OPCODE[item.type];
     if (opcode && !isSupported(opcode, profile)) {
-      return { ...item, disabled: true, tooltip: DISABLED_TOOLTIP };
+      return hide ? null : { ...item, disabled: true, tooltip: DISABLED_TOOLTIP };
     }
   }
   return item;
@@ -40,6 +62,7 @@ function guardItem(item: any, profile: BoardProfile): any {
 
 export function getAstroidToolbox(
   profile: BoardProfile = robotkuEsp32V3,
+  hideUnsupported = false,
 ): Blockly.utils.toolbox.ToolboxDefinition {
   const contents = [
     motorsCategory,
@@ -55,7 +78,9 @@ export function getAstroidToolbox(
     functionsCategory,
     templatesCategory,
     aiCategory,
-  ].map((c) => guardItem(c, profile));
+  ]
+    .map((c) => guardItem(c, profile, hideUnsupported))
+    .filter(Boolean);
 
   return { kind: 'categoryToolbox', contents } as Blockly.utils.toolbox.ToolboxDefinition;
 }

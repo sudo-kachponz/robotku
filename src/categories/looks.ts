@@ -295,13 +295,12 @@ export const looksCategory = {
   categorystyle: 'looks_category',
   cssconfig: { icon: 'icon-looks' },
   contents: [
+    // No 5x5 LED matrix on this board — the OLED is the display. The matrix blocks
+    // (display_matrix's raw binary field + clear_matrix) were greyed clutter, removed.
     { kind: 'label', text: 'Display' },
-    { kind: 'label', text: 'LED Matrix' },
-    { kind: 'block', type: 'display_matrix', inputs: durShadow },
     { kind: 'block', type: 'display_text' },
     { kind: 'block', type: 'display_kaomoji' },
     { kind: 'block', type: 'display_set_brightness' },
-    { kind: 'block', type: 'display_clear_matrix' },
     { kind: 'label', text: 'RGB LED' },
     { kind: 'block', type: 'set_led_color', inputs: durShadow },
     { kind: 'label', text: 'LCD Screen' },
