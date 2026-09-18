@@ -65,6 +65,22 @@
   --surface-2: #fafafe;
   --bg: #f3f4fb;
 
+  /* Code editor (Python mode) — read by CodeMirror at runtime; overridden per theme. */
+  --code-bg: #ffffff;
+  --code-fg: #1b1840;
+  --code-gutter-bg: #f7f8fc;
+  --code-gutter-fg: #b9bdd4;
+  --code-active-line: #eef0ff;
+  --code-selection: #dbe3ff;
+  --code-keyword: #a626a4;
+  --code-string: #c18401;
+  --code-number: #986801;
+  --code-comment: #9aa0b4;
+  --code-ident: #1b1840;
+  --code-fn: #4078f2;
+  --code-error: #b91c1c;
+  --code-warn: #9a6a00;
+
   /* Radii */
   --r-xs: 6px;
   --r-sm: 8px;
