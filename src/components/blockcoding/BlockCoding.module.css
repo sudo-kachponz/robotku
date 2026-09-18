@@ -712,6 +712,43 @@
   min-height: 0;
   overflow: hidden;
   background: #ffffff;
+  display: flex;
+  position: relative; /* DocsPanel overlays within here */
+}
+.pyFlyoutWrap {
+  width: 264px;
+  flex-shrink: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.pyEditorWrap {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* In Python mode the custom PyFlyout replaces Blockly's toolbox, and the panel
+   spans the whole code area (starting at the sim dock, not after the toolbox). */
+.pythonMode .blockly :global(.blocklyToolbox),
+.pythonMode .blockly :global(.blocklyToolboxDiv),
+.pythonMode .blockly :global(.blocklyFlyout) {
+  display: none !important;
+}
+.pythonMode .toolboxToggle {
+  display: none;
+}
+.pythonMode .pyPanel {
+  left: 0;
+}
+.pythonMode.simOpen .pyPanel {
+  left: var(--sim-dock, 0px);
+}
+
+@media (max-width: 767px) {
+  .pyFlyoutWrap {
+    width: 132px;
+  }
 }
 .pyProblems {
   flex-shrink: 0;
