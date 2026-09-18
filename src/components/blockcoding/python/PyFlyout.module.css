@@ -129,3 +129,18 @@
   border-color: #ec2d8f;
   color: #ffffff;
 }
+
+/* colored drag ghost (rendered off-screen, used as the drag image) */
+.ghost {
+  position: fixed;
+  top: -1000px;
+  left: -1000px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--cat, #4f46e5);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 13px;
+  box-shadow: 0 6px 18px rgba(27, 24, 64, 0.3);
+  white-space: nowrap;
+}
