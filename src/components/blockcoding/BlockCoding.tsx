@@ -615,9 +615,6 @@ function BlockCodingInner({ viewMode, setViewMode, canLeavePythonRef }: BlockCod
                   }}
                 />
               </div>
-              {docsSnippet && (
-                <DocsPanel snippet={docsSnippet} onClose={() => setDocsSnippet(null)} />
-              )}
             </div>
             {pyProblems.length > 0 ? (
               <div className={styles.pyProblems}>
@@ -762,6 +759,10 @@ function BlockCodingInner({ viewMode, setViewMode, canLeavePythonRef }: BlockCod
         )}
 
         {showTutorial && <Tour lang={tutLang} onLang={setTutLang} onClose={closeTutorial} />}
+
+        {docsSnippet && (
+          <DocsPanel snippet={docsSnippet} onClose={() => setDocsSnippet(null)} />
+        )}
 
         <div className={`${styles.simCard} ${showSim ? '' : styles.simHidden}`} data-tour="sim-panel">
           <div className={styles.simHead}>

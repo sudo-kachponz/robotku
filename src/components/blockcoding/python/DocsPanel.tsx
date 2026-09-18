@@ -19,12 +19,16 @@ export default function DocsPanel({ snippet, onClose }: { snippet: Snippet; onCl
         aria-label={`Dokumentasi ${d.title}`}
       >
         <div className={styles.head}>
-          <button className={styles.back} onClick={onClose}>
+          <button className={styles.back} onClick={onClose} aria-label="Kembali ke editor">
             ← Kembali
           </button>
           <span className={styles.cat}>{snippet.category}</span>
+          <button className={styles.closeBtn} onClick={onClose} aria-label="Tutup dokumentasi" title="Tutup">
+            ✕
+          </button>
         </div>
         <h2 className={styles.title}>{d.title}</h2>
+
         <p className={styles.body}>{d.body}</p>
 
         <div className={styles.section}>Contoh</div>
