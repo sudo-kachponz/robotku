@@ -36,8 +36,10 @@ import { insertTemplate } from '../../templates/insert';
 import { buildTemplateWorkspace, type BlockSpec } from '../../templates/authoring';
 import { setGalleryOpener, setLcdBlockInserter } from '../../templates/galleryBridge';
 import Tour from './Tour';
+import ProblemsPanel from './python/ProblemsPanel';
 import { generatePython } from '../../pythongen';
 import { parsePython, CompileError } from '../../pythongen/compile';
+import { getDoc } from '../../pythongen/docs/registry';
 import { generateProgram } from '../../blockcoding/generateProgram';
 import { unsupportedOpcodesInProgram } from '../../blockcoding/blockOpcodes';
 import type { PyProblem, PyEditorApi } from './python/PyEditor';
@@ -196,6 +198,27 @@ function BlockCodingInner({ viewMode, setViewMode, canLeavePythonRef }: BlockCod
     }, 500);
     return () => clearTimeout(id);
   }, [pyBuffer, viewMode, workspaceRef, connected, robotInfo]);
+
+  const openDocsBySlug = useCallback((slug: string) => {
+    const d = getDoc(slug);
+    setDocsSnippet({
+      id: slug,
+      category: d?.category ?? '',
+      label: d?.title ?? slug,
+      desc: d?.summary ?? '',
+      py: '',
+      docs: slug,
+    });
+  }, []);
+
+  const jumpToPyLine = useCallback((line: number) => {
+    const view = pyApiRef.current?.view;
+    if (!view) return;
+    const n = Math.max(1, Math.min(line, view.state.doc.lines));
+    const l = view.state.doc.line(n);
+    view.dispatch({ selection: { anchor: l.from, head: l.to }, scrollIntoView: true });
+    view.focus();
+  }, []);
 
   const copyPython = useCallback(() => {
     navigator.clipboard?.writeText(pyBuffer).then(
@@ -636,20 +659,12 @@ function BlockCodingInner({ viewMode, setViewMode, canLeavePythonRef }: BlockCod
                   onReady={(api) => {
                     pyApiRef.current = api;
                   }}
+                  onOpenDocs={openDocsBySlug}
                 />
               </div>
             </div>
             {pyProblems.length > 0 ? (
-              <div className={styles.pyProblems}>
-                {pyProblems.map((p, i) => (
-                  <div
-                    key={i}
-                    className={p.severity === 'error' ? styles.pyProbErr : styles.pyProbWarn}
-                  >
-                    {p.severity === 'error' ? '⛔' : '⚠'} Baris {p.line}: {p.message}
-                  </div>
-                ))}
-              </div>
+              <ProblemsPanel problems={pyProblems} onJump={jumpToPyLine} />
             ) : (
               <div className={styles.pyHint}>
                 Klik / seret kartu dari kiri ke editor, atau ketik langsung. Tekan “?” untuk bantuan. Tersinkron ke mode Blocks.
