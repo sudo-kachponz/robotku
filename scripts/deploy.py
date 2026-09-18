@@ -21,7 +21,7 @@ def get_ipv4_host(hostname):
 
 def create_ftp_client(host_ip):
     ftp = ftplib.FTP()
-    ftp.connect(host_ip, 21, timeout=20)
+    ftp.connect(host_ip, 21, timeout=30)
     ftp.login(FTP_USER, FTP_PASS)
     ftp.set_pasv(True)
     return ftp
@@ -38,39 +38,49 @@ def ensure_remote_dirs(ftp, dir_path):
         except Exception:
             pass
 
-def upload_single_file(host_ip, rel_path, local_path, rel_dir, filename):
-    for attempt in range(1, 4):
-        ftp = None
+def clean_lock_for_file(ftp, rel_dir, filename):
+    lock1 = f"{rel_dir}/.in.{filename}." if rel_dir and rel_dir != "." else f".in.{filename}."
+    lock2 = f"/{lock1}"
+    for lk in (lock1, lock2):
         try:
-            ftp = create_ftp_client(host_ip)
-            ensure_remote_dirs(ftp, rel_dir)
-            
-            # Remove any stale Pure-FTPd upload lock file
-            lock_name = f"{rel_dir}/.in.{filename}." if rel_dir and rel_dir != "." else f".in.{filename}."
-            try:
-                ftp.delete(lock_name)
-            except Exception:
-                pass
+            ftp.delete(lk)
+        except Exception:
+            pass
 
-            remote_path = rel_path.replace("\\", "/")
+def upload_file_with_ftp(ftp, host_ip, rel_path, local_path, rel_dir, filename):
+    remote_path = rel_path.replace("\\", "/")
+    
+    for attempt in range(1, 4):
+        try:
+            if ftp is None:
+                ftp = create_ftp_client(host_ip)
+                ensure_remote_dirs(ftp, rel_dir)
+            
             with open(local_path, "rb") as f:
                 ftp.storbinary(f"STOR {remote_path}", f, blocksize=65536)
-            
-            try:
-                ftp.quit()
-            except Exception:
-                ftp.close()
-            return (True, rel_path, None)
+            return (True, ftp, None)
         except Exception as e:
+            err_str = str(e)
+            # Reset FTP connection on any failure
             if ftp:
                 try:
                     ftp.close()
                 except Exception:
                     pass
+                ftp = None
+            
+            # Open fresh connection on retry and clean locks
+            try:
+                ftp = create_ftp_client(host_ip)
+                ensure_remote_dirs(ftp, rel_dir)
+                clean_lock_for_file(ftp, rel_dir, filename)
+            except Exception:
+                pass
+            
             if attempt == 3:
-                return (False, rel_path, str(e))
+                return (False, ftp, err_str)
             time.sleep(1)
-    return (False, rel_path, "Max retries exceeded")
+    return (False, ftp, "Max retries exceeded")
 
 def main():
     out_dir = os.path.abspath("out")
@@ -81,8 +91,7 @@ def main():
     host_ip = get_ipv4_host(FTP_HOST)
     print(f"🚀 Deploying out/ to https://hub.robotku.id (FTP: {FTP_HOST} [{host_ip}])...")
 
-    # Verify connection & pre-create all directories sequentially first
-    print("📁 Pre-creating directory tree...")
+    # Collect files and dirs
     all_files = []
     all_dirs = set()
 
@@ -97,39 +106,48 @@ def main():
                 rel_path = rel_path[2:]
             all_files.append((rel_path, local_path, rel_dir, f))
 
-    init_ftp = create_ftp_client(host_ip)
-    # Sort dirs by depth so parent is created before child
+    print("📁 Pre-creating remote directory tree and cleaning stale locks...")
+    ftp = create_ftp_client(host_ip)
     for d in sorted(all_dirs, key=lambda x: (x.count("/"), x)):
         try:
-            init_ftp.mkd(d)
+            ftp.mkd(d)
         except Exception:
             pass
-    init_ftp.quit()
+
+    # Quick pre-cleanup of any pending locks
+    for (rel_path, local_path, rel_dir, f) in all_files:
+        clean_lock_for_file(ftp, rel_dir, f)
 
     total = len(all_files)
-    print(f"📦 Uploading {total} files using 6 concurrent workers...\n")
+    print(f"📦 Uploading {total} files...\n")
     sys.stdout.flush()
 
     success_count = 0
     fail_count = 0
-    done_count = 0
 
-    with ThreadPoolExecutor(max_workers=6) as executor:
-        future_to_file = {
-            executor.submit(upload_single_file, host_ip, rel_path, local_path, rel_dir, filename): rel_path
-            for (rel_path, local_path, rel_dir, filename) in all_files
-        }
+    for idx, (rel_path, local_path, rel_dir, filename) in enumerate(all_files, start=1):
+        # Refresh connection every 30 files to prevent pure-ftpd passive connection stall
+        if idx > 1 and idx % 30 == 0 and ftp:
+            try:
+                ftp.quit()
+            except Exception:
+                ftp.close()
+            ftp = None
 
-        for future in as_completed(future_to_file):
-            ok, rpath, err = future.result()
-            done_count += 1
-            if ok:
-                success_count += 1
-                print(f"[{done_count}/{total}] ✅ {rpath}")
-            else:
-                fail_count += 1
-                print(f"[{done_count}/{total}] ❌ {rpath} ({err})")
-            sys.stdout.flush()
+        ok, ftp, err = upload_file_with_ftp(ftp, host_ip, rel_path, local_path, rel_dir, filename)
+        if ok:
+            success_count += 1
+            print(f"[{idx}/{total}] ✅ {rel_path}")
+        else:
+            fail_count += 1
+            print(f"[{idx}/{total}] ❌ {rel_path} ({err})")
+        sys.stdout.flush()
+
+    if ftp:
+        try:
+            ftp.quit()
+        except Exception:
+            ftp.close()
 
     print(f"\n🎉 Deployment completed: {success_count}/{total} files uploaded successfully.")
     if fail_count > 0:
@@ -140,6 +158,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
 
 
 

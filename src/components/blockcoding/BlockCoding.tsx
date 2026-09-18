@@ -35,6 +35,7 @@ import TemplateGallery from './TemplateGallery';
 import { insertTemplate } from '../../templates/insert';
 import { buildTemplateWorkspace } from '../../templates/authoring';
 import { setGalleryOpener, setLcdBlockInserter } from '../../templates/galleryBridge';
+import Tour from './Tour';
 import styles from './BlockCoding.module.css';
 
 // Client-only: the CV panel pulls in camera + (lazily) ML libs.
@@ -96,6 +97,21 @@ function BlockCodingInner() {
   const [simError, setSimError] = useState(false);
   const [sim3DLoading, setSim3DLoading] = useState(false);
   const [reduced, setReduced] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutLang, setTutLang] = useState<'id' | 'en'>('id');
+
+  // Auto-open the tutorial the first time only; the "?" button reopens it anytime.
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem('robotku.tutorialSeen')) setShowTutorial(true);
+    } catch {}
+  }, []);
+  const closeTutorial = useCallback(() => {
+    setShowTutorial(false);
+    try {
+      localStorage.setItem('robotku.tutorialSeen', '1');
+    } catch {}
+  }, []);
 
   const attachRunner = useCallback(
     (runner: ProgramRunner) => {
@@ -444,7 +460,7 @@ function BlockCodingInner() {
 
   return (
     <div className={styles.wrap}>
-      <div className={styles.editor}>
+      <div className={`${styles.editor} ${showSim ? styles.simOpen : ''}`}>
         <div ref={blocklyDivRef} className={`${styles.blockly} ${showSim ? styles.blocklySimOpen : ''}`} />
 
         {/* Minus/Plus button to collapse or expand the Blockly Categories Sidebar (matching .simToggle) */}
@@ -465,7 +481,12 @@ function BlockCodingInner() {
           >
             <SidebarIcon /> <span>Sidebar</span>
           </button>
-          <button className={`${styles.tbBtn} ${styles.run}`} onClick={handleRun} title="Run">
+          <button
+            className={`${styles.tbBtn} ${styles.run}`}
+            onClick={handleRun}
+            title="Run"
+            data-tour="run"
+          >
             <PlayIcon /> <span>Run</span>
           </button>
           <button
@@ -473,6 +494,7 @@ function BlockCodingInner() {
             onClick={handleStop}
             disabled={!running && !connected}
             title="Stop (failsafe)"
+            data-tour="stop"
           >
             <StopIcon /> <span>Stop</span>
           </button>
@@ -480,6 +502,7 @@ function BlockCodingInner() {
             className={`${styles.tbBtn} ${showSim ? styles.tbActive : ''}`}
             onClick={() => setShowSim((v) => !v)}
             title={showSim ? 'Tutup Simulator' : 'Buka Simulator'}
+            data-tour="simulator"
           >
             <SimIcon /> <span>Simulator</span>
           </button>
@@ -487,6 +510,7 @@ function BlockCodingInner() {
             className={`${styles.tbBtn} ${showCvPanel || cameraOn ? styles.tbActive : ''}`}
             onClick={() => setShowCvPanel((v) => !v)}
             title="Computer Vision (kamera AI)"
+            data-tour="ai"
           >
             <AiIcon /> <span>AI</span>
             {cameraOn && <span className={styles.tbLiveDot} />}
@@ -495,6 +519,7 @@ function BlockCodingInner() {
             className={`${styles.tbBtn} ${showGallery ? styles.tbActive : ''}`}
             onClick={() => setShowGallery(true)}
             title="Galeri Template"
+            data-tour="templates"
           >
             <TemplatesIcon /> <span>Templates</span>
           </button>
@@ -505,7 +530,12 @@ function BlockCodingInner() {
           >
             <SaveTemplateIcon /> <span>+ Template</span>
           </button>
-          <button className={styles.tbBtn} onClick={handleSave} title="Simpan ke Projects">
+          <button
+            className={styles.tbBtn}
+            onClick={handleSave}
+            title="Simpan ke Projects"
+            data-tour="save"
+          >
             <SaveIcon /> <span>Save</span>
           </button>
           <button className={styles.tbBtn} onClick={handleShare} title="Share (copy JSON)">
@@ -521,9 +551,18 @@ function BlockCodingInner() {
           >
             <MonitorIcon /> <span>Monitor</span>
           </button>
+          <button
+            className={styles.tbBtn}
+            onClick={() => setShowTutorial(true)}
+            title="Bantuan / Help"
+          >
+            <HelpIcon /> <span>Bantuan</span>
+          </button>
         </div>
 
-        <div className={`${styles.simCard} ${showSim ? '' : styles.simHidden}`}>
+        {showTutorial && <Tour lang={tutLang} onLang={setTutLang} onClose={closeTutorial} />}
+
+        <div className={`${styles.simCard} ${showSim ? '' : styles.simHidden}`} data-tour="sim-panel">
           <div className={styles.simHead}>
             <span>{connected ? `Robot · ${robotInfo?.board ?? ''}` : 'Simulator'}</span>
             <div className={styles.simHeadActions}>
@@ -812,6 +851,24 @@ function AiIcon() {
       <rect x="3" y="5" width="18" height="14" rx="3" />
       <circle cx="12" cy="12" r="3.2" />
       <path d="M8 5l1.5-2h5L16 5" />
+    </svg>
+  );
+}
+function HelpIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.2 9.2a2.8 2.8 0 015.4 1c0 1.9-2.6 2.2-2.6 4.1" />
+      <circle cx="12" cy="17.6" r="0.5" fill="currentColor" stroke="none" />
     </svg>
   );
 }
