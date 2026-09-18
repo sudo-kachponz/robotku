@@ -1,0 +1,29 @@
+.toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+}
+.toggle button {
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 800;
+  font-size: 12.5px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    background 0.14s ease,
+    color 0.14s ease;
+}
+.toggle button:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.12);
+}
+.active {
+  background: #ffffff !important;
+  color: #4338ca !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}

@@ -21,12 +21,14 @@ export default function ControlLayout({
   fullBleed = false,
   topRightAction,
   hideDock,
+  hideCenterBadge = false,
 }: {
   children: ReactNode;
   title?: string;
   fullBleed?: boolean;
   topRightAction?: ReactNode;
   hideDock?: boolean;
+  hideCenterBadge?: boolean;
 }) {
   const router = useRouter();
   const { connState } = useConnection();
@@ -101,7 +103,12 @@ export default function ControlLayout({
         <div className={styles.topRight}>
           {/* Mobile: compact online/offline indicator in the navbar (the big centered
               pill is hidden on phones — it overlapped the blocks/toolbox). */}
-          <span className={styles.connStatus} data-connected={connected} aria-live="polite">
+          <span
+            className={styles.connStatus}
+            data-connected={connected}
+            data-force={hideCenterBadge}
+            aria-live="polite"
+          >
             <span className={styles.connDot} />
             {connState === 'connected' ? 'Online' : connState === 'connecting' ? '…' : 'Offline'}
           </span>
@@ -119,9 +126,11 @@ export default function ControlLayout({
         </div>
       </header>
 
-      <div className={styles.connectionBadgeContainer}>
-        <ConnectionBadge />
-      </div>
+      {!hideCenterBadge && (
+        <div className={styles.connectionBadgeContainer}>
+          <ConnectionBadge />
+        </div>
+      )}
 
       {/* Content */}
       <main className={fullBleed ? styles.contentFull : styles.content}>{children}</main>

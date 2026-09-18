@@ -36,20 +36,33 @@ import { insertTemplate } from '../../templates/insert';
 import { buildTemplateWorkspace } from '../../templates/authoring';
 import { setGalleryOpener, setLcdBlockInserter } from '../../templates/galleryBridge';
 import Tour from './Tour';
+import { pythonGenerator } from 'blockly/python';
+import { generatePython, initPythonGenerator } from '../../pythongen';
+import { parsePython, CompileError } from '../../pythongen/compile';
+import { generateProgram } from '../../blockcoding/generateProgram';
+import { unsupportedOpcodesInProgram } from '../../blockcoding/blockOpcodes';
+import type { EditorView } from '@codemirror/view';
+import type { PyProblem } from './python/PyEditor';
 import styles from './BlockCoding.module.css';
+
+const PyEditor = dynamic(() => import('./python/PyEditor'), { ssr: false });
 
 // Client-only: the CV panel pulls in camera + (lazily) ML libs.
 const CvPanel = dynamic(() => import('./CvPanel'), { ssr: false });
 
-export default function BlockCodingWrapper() {
+export default function BlockCodingWrapper({
+  viewMode = 'blocks',
+}: {
+  viewMode?: 'blocks' | 'python';
+}) {
   return (
     <ErrorBoundary fallbackTitle="Kendala pada Editor Blockly">
-      <BlockCodingInner />
+      <BlockCodingInner viewMode={viewMode} />
     </ErrorBoundary>
   );
 }
 
-function BlockCodingInner() {
+function BlockCodingInner({ viewMode }: { viewMode: 'blocks' | 'python' }) {
   const { connState, robotInfo } = useConnection();
   const connected = connState === 'connected';
 
@@ -99,6 +112,136 @@ function BlockCodingInner() {
   const [reduced, setReduced] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutLang, setTutLang] = useState<'id' | 'en'>('id');
+  const [pyBuffer, setPyBuffer] = useState('');
+  const [pyProblems, setPyProblems] = useState<PyProblem[]>([]);
+  const [pyCopied, setPyCopied] = useState(false);
+  const pyViewRef = useRef<EditorView | null>(null);
+  // Re-seed Python from blocks ONLY when the blocks actually changed (in Blocks
+  // mode) — never clobber the user's typed Python on a plain toggle round-trip (§H).
+  const blocksDirtyRef = useRef(true);
+  useEffect(() => {
+    if (viewMode !== 'blocks') return;
+    const ws = workspaceRef.current;
+    if (!ws) return;
+    const mark = () => {
+      blocksDirtyRef.current = true;
+    };
+    ws.addChangeListener(mark);
+    return () => ws.removeChangeListener(mark);
+  }, [viewMode, workspaceRef]);
+
+  // Entering Python mode seeds the editor from blocks (Blocks -> Python) only if
+  // the blocks changed since last time (or the buffer is empty).
+  useEffect(() => {
+    if (viewMode !== 'python') return;
+    const ws = workspaceRef.current;
+    if (!ws) return;
+    setPyBuffer((prev) => {
+      if (blocksDirtyRef.current || prev === '') {
+        blocksDirtyRef.current = false;
+        return generatePython(ws);
+      }
+      return prev;
+    });
+  }, [viewMode, workspaceRef]);
+
+  // In Python mode the editor text is the source of truth: debounce-parse it back
+  // into the workspace (Python -> Blocks) so Run/Blocks stay in sync, and surface
+  // parser + board-support problems. Events are disabled during the reload so it
+  // doesn't retrigger the flyout-insert listener below.
+  useEffect(() => {
+    if (viewMode !== 'python') return;
+    const ws = workspaceRef.current;
+    if (!ws) return;
+    const id = setTimeout(() => {
+      try {
+        const json = buildTemplateWorkspace(parsePython(pyBuffer));
+        Blockly.Events.disable();
+        try {
+          Blockly.serialization.workspaces.load(json, ws);
+        } finally {
+          Blockly.Events.enable();
+        }
+        const profile =
+          connected && robotInfo
+            ? profileFromHello(robotInfo.capabilities, robotInfo.ports)
+            : robotkuEsp32V3;
+        const unsupported = unsupportedOpcodesInProgram(generateProgram(ws), profile);
+        setPyProblems(
+          unsupported.map((op) => ({
+            line: 1,
+            message: `Perangkat aktif belum mendukung: ${op}`,
+            severity: 'warning' as const,
+          })),
+        );
+      } catch (e) {
+        const err = e as CompileError;
+        setPyProblems([
+          { line: err?.line ?? 1, message: err?.message ?? String(e), severity: 'error' },
+        ]);
+      }
+    }, 500);
+    return () => clearTimeout(id);
+  }, [pyBuffer, viewMode, workspaceRef, connected, robotInfo]);
+
+  const insertPySnippet = useCallback((text: string) => {
+    const view = pyViewRef.current;
+    if (view) {
+      const head = view.state.selection.main.head;
+      const line = view.state.doc.lineAt(head);
+      const insert = (line.length ? '\n' : '') + text;
+      view.dispatch({
+        changes: { from: line.to, insert },
+        selection: { anchor: line.to + insert.length },
+      });
+      view.focus();
+    } else {
+      setPyBuffer((b) => (b && !b.endsWith('\n') ? b + '\n' : b) + text + '\n');
+    }
+  }, []);
+
+  // Picking a block from the (still-visible) toolbox in Python mode inserts its
+  // Python line at the cursor, then discards the transient block.
+  useEffect(() => {
+    if (viewMode !== 'python') return;
+    const ws = workspaceRef.current as Blockly.WorkspaceSvg | null;
+    if (!ws) return;
+    const onCreate = (e: Blockly.Events.Abstract) => {
+      if (e.type !== Blockly.Events.BLOCK_CREATE) return;
+      const block = ws.getBlockById((e as Blockly.Events.BlockCreate).blockId ?? '');
+      if (!block || block.isShadow() || block.getParent() || block.type === 'program_start') return;
+      if (!block.previousConnection && !block.outputConnection) return;
+      let snippet = '';
+      try {
+        initPythonGenerator();
+        pythonGenerator.init(ws);
+        const code = pythonGenerator.blockToCode(block);
+        snippet = (Array.isArray(code) ? code[0] : code).trimEnd();
+      } catch {
+        /* ignore */
+      }
+      if (snippet) insertPySnippet(snippet);
+      setTimeout(() => {
+        try {
+          block.dispose(false);
+        } catch {
+          /* already gone */
+        }
+      }, 0);
+    };
+    ws.addChangeListener(onCreate);
+    return () => ws.removeChangeListener(onCreate);
+  }, [viewMode, workspaceRef, insertPySnippet]);
+
+  const copyPython = useCallback(() => {
+    navigator.clipboard?.writeText(pyBuffer).then(
+      () => {
+        setPyCopied(true);
+        setTimeout(() => setPyCopied(false), 1500);
+      },
+      () => {},
+    );
+  }, [pyBuffer]);
 
   // Auto-open the tutorial the first time only; the "?" button reopens it anytime.
   useEffect(() => {
@@ -369,15 +512,23 @@ function BlockCodingInner() {
   const handleDownload = useCallback(() => {
     const workspace = workspaceRef.current;
     if (!workspace) return;
-    const json = Blockly.serialization.workspaces.save(workspace);
-    const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
+    // In Python mode download the .py source; in Blocks mode the .rbk workspace.
+    const [content, type, name] =
+      viewMode === 'python'
+        ? [pyBuffer, 'text/x-python', 'program.py']
+        : [
+            JSON.stringify(Blockly.serialization.workspaces.save(workspace), null, 2),
+            'application/json',
+            'program.rbk',
+          ];
+    const blob = new Blob([content], { type });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'program.rbk';
+    a.download = name;
     a.click();
     URL.revokeObjectURL(url);
-  }, [workspaceRef]);
+  }, [workspaceRef, viewMode, pyBuffer]);
 
   const handleSave = useCallback(async () => {
     const workspace = workspaceRef.current;
@@ -460,8 +611,45 @@ function BlockCodingInner() {
 
   return (
     <div className={styles.wrap}>
-      <div className={`${styles.editor} ${showSim ? styles.simOpen : ''}`}>
+      <div
+        className={`${styles.editor} ${showSim ? styles.simOpen : ''} ${showToolbox ? styles.toolboxOpen : ''}`}
+      >
         <div ref={blocklyDivRef} className={`${styles.blockly} ${showSim ? styles.blocklySimOpen : ''}`} />
+
+        {viewMode === 'python' && (
+          <div className={styles.pyPanel}>
+            <div className={styles.pyHead}>
+              <span>main.py</span>
+              <button onClick={copyPython}>{pyCopied ? '✓ Disalin' : 'Copy'}</button>
+            </div>
+            <div className={styles.pyBody}>
+              <PyEditor
+                value={pyBuffer}
+                onChange={setPyBuffer}
+                problems={pyProblems}
+                onReady={(v) => {
+                  pyViewRef.current = v;
+                }}
+              />
+            </div>
+            {pyProblems.length > 0 ? (
+              <div className={styles.pyProblems}>
+                {pyProblems.map((p, i) => (
+                  <div
+                    key={i}
+                    className={p.severity === 'error' ? styles.pyProbErr : styles.pyProbWarn}
+                  >
+                    {p.severity === 'error' ? '⛔' : '⚠'} Baris {p.line}: {p.message}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.pyHint}>
+                Ketik Python, atau klik blok di panel kiri untuk menyisipkannya. Program tersinkron ke mode Blocks.
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Minus/Plus button to collapse or expand the Blockly Categories Sidebar (matching .simToggle) */}
         <button

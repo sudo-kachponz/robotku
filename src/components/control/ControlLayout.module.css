@@ -91,6 +91,11 @@
 .connStatus[data-connected='true'] {
   color: #16a34a; /* online green */
 }
+/* Screens that hide the big centered badge (e.g. Block Coding) show this compact
+   indicator in the navbar on every size, not just phones. */
+.connStatus[data-force='true'] {
+  display: inline-flex;
+}
 .connDot {
   width: 8px;
   height: 8px;

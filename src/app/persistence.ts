@@ -73,6 +73,9 @@ export interface RbkProject {
   name: string;
   workspace: unknown; // Blockly.serialization.workspaces.save() output
   savedAt: number;
+  // Additive (Python mode). Old .rbk without these open normally as blocks.
+  mode?: 'blocks' | 'python';
+  python?: string;
 }
 export function loadProjects(): Promise<RbkProject[]> {
   return safeGet<RbkProject[]>(PROJECTS_KEY, []);

@@ -408,6 +408,9 @@
 
 /* Tablet (768px to 1023px) */
 @media (min-width: 768px) and (max-width: 1023px) {
+  .editor {
+    --tb-w: 240px;
+  }
   .blockly :global(.blocklyToolboxDiv) {
     width: 240px !important;
   }
@@ -474,6 +477,9 @@
     flex-shrink: 0;
   }
 
+  .editor {
+    --tb-w: 125px;
+  }
   .blockly :global(.blocklyToolboxDiv) {
     width: 125px !important;
     max-width: 38vw !important;
@@ -646,5 +652,95 @@
   .simCard {
     width: 440px;
   }
+}
+
+/* --- Python view: SAME light interface as Blocks, but the workspace shows text.
+   The panel covers only the workspace area — it starts AFTER the toolbox so the
+   category bar (Movement, …) stays open and usable, and sits BELOW the toolbox /
+   flyout z-index so clicking a category still opens its flyout over the text. --- */
+.editor {
+  --tb-w: 320px; /* Blockly toolbox width (kept in sync with .blocklyToolboxDiv) */
+}
+.pyPanel {
+  position: absolute;
+  inset: 0;
+  left: 0;
+  z-index: 19; /* toolbox=20, flyout=21 stay above; toolbar/toggle above too */
+  display: flex;
+  flex-direction: column;
+  background: #f7f8fc;
+}
+.toolboxOpen .pyPanel {
+  left: var(--tb-w);
+}
+.simOpen .pyPanel {
+  left: var(--sim-dock, 0px);
+}
+.simOpen.toolboxOpen .pyPanel {
+  left: calc(var(--sim-dock, 0px) + var(--tb-w));
+}
+.pyHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 16px;
+  background: #ffffff;
+  color: #6b6a86;
+  font-size: 12.5px;
+  font-weight: 700;
+  border-bottom: 1px solid #e7e9f2;
+  flex-shrink: 0;
+}
+.pyHead button {
+  border: 1px solid #e0e3ff;
+  background: #eef0ff;
+  color: #4338ca;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+.pyHead button:hover {
+  background: #ec2d8f;
+  border-color: #ec2d8f;
+  color: #ffffff;
+}
+.pyBody {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: #ffffff;
+}
+.pyProblems {
+  flex-shrink: 0;
+  max-height: 30%;
+  overflow: auto;
+  border-top: 1px solid #e7e9f2;
+  background: #fffaf7;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.pyProbErr,
+.pyProbWarn {
+  padding: 6px 16px;
+  border-bottom: 1px solid #f3e6de;
+}
+.pyProbErr {
+  color: #b91c1c;
+}
+.pyProbWarn {
+  color: #9a6a00;
+}
+.pyHint {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  background: #fff8fc;
+  border-top: 1px solid #f2d9ea;
+  color: #9a4f7a;
+  font-size: 12px;
+  font-weight: 600;
 }
 
