@@ -3,7 +3,7 @@
 // Block Coding mode. The editor imports `blockly` + three.js (both browser-only),
 // so it is loaded client-side via next/dynamic({ ssr: false }).
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import ControlLayout from '../../../components/control/ControlLayout';
 import ViewToggle from '../../../components/blockcoding/ViewToggle';
@@ -30,15 +30,26 @@ export default function CodePage() {
   // Lifted here so the Blocks/Python toggle can live in the navbar (topRightAction)
   // while BlockCoding reacts to the chosen mode.
   const [viewMode, setViewMode] = useState<'blocks' | 'python'>('blocks');
+  // BlockCoding fills this guard; it can veto a switch to Blocks (e.g. Python has a
+  // parse error) and show its own confirm modal (§H — never silently drop code).
+  const canLeavePythonRef = useRef<() => boolean>(() => true);
+  const requestMode = (m: 'blocks' | 'python') => {
+    if (m === 'blocks' && viewMode === 'python' && !canLeavePythonRef.current()) return;
+    setViewMode(m);
+  };
   return (
     <ControlLayout
       title="Block Coding"
       fullBleed
       hideDock
       hideCenterBadge
-      topRightAction={<ViewToggle mode={viewMode} onChange={setViewMode} />}
+      topRightAction={<ViewToggle mode={viewMode} onChange={requestMode} />}
     >
-      <BlockCoding viewMode={viewMode} />
+      <BlockCoding
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        canLeavePythonRef={canLeavePythonRef}
+      />
     </ControlLayout>
   );
 }

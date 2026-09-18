@@ -51,19 +51,29 @@ const DocsPanel = dynamic(() => import('./python/DocsPanel'), { ssr: false });
 // Client-only: the CV panel pulls in camera + (lazily) ML libs.
 const CvPanel = dynamic(() => import('./CvPanel'), { ssr: false });
 
+interface BlockCodingProps {
+  viewMode?: 'blocks' | 'python';
+  setViewMode?: (m: 'blocks' | 'python') => void;
+  canLeavePythonRef?: { current: () => boolean };
+}
+
 export default function BlockCodingWrapper({
   viewMode = 'blocks',
-}: {
-  viewMode?: 'blocks' | 'python';
-}) {
+  setViewMode,
+  canLeavePythonRef,
+}: BlockCodingProps) {
   return (
     <ErrorBoundary fallbackTitle="Kendala pada Editor Blockly">
-      <BlockCodingInner viewMode={viewMode} />
+      <BlockCodingInner
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        canLeavePythonRef={canLeavePythonRef}
+      />
     </ErrorBoundary>
   );
 }
 
-function BlockCodingInner({ viewMode }: { viewMode: 'blocks' | 'python' }) {
+function BlockCodingInner({ viewMode, setViewMode, canLeavePythonRef }: BlockCodingProps) {
   const { connState, robotInfo } = useConnection();
   const connected = connState === 'connected';
 
@@ -118,6 +128,7 @@ function BlockCodingInner({ viewMode }: { viewMode: 'blocks' | 'python' }) {
   const [pyCopied, setPyCopied] = useState(false);
   const pyApiRef = useRef<PyEditorApi | null>(null);
   const [docsSnippet, setDocsSnippet] = useState<Snippet | null>(null);
+  const [showSwitchWarn, setShowSwitchWarn] = useState(false);
   // Re-seed Python from blocks ONLY when the blocks actually changed (in Blocks
   // mode) — never clobber the user's typed Python on a plain toggle round-trip (§H).
   const blocksDirtyRef = useRef(true);
@@ -195,6 +206,19 @@ function BlockCodingInner({ viewMode }: { viewMode: 'blocks' | 'python' }) {
       () => {},
     );
   }, [pyBuffer]);
+
+  // Guard the navbar toggle: block a switch to Blocks while the Python has a parse
+  // error, and pop a confirm modal instead of silently dropping to old blocks (§H).
+  const pyHasError = pyProblems.some((p) => p.severity === 'error');
+  if (canLeavePythonRef) {
+    canLeavePythonRef.current = () => {
+      if (pyHasError) {
+        setShowSwitchWarn(true);
+        return false;
+      }
+      return true;
+    };
+  }
 
   // Auto-open the tutorial the first time only; the "?" button reopens it anytime.
   useEffect(() => {
@@ -493,11 +517,13 @@ function BlockCodingInner({ viewMode }: { viewMode: 'blocks' | 'python' }) {
       name: name.trim(),
       workspace: Blockly.serialization.workspaces.save(workspace),
       savedAt: Date.now(),
+      // Additive: remember the Python source + mode when saved from Python view.
+      ...(viewMode === 'python' ? { mode: 'python' as const, python: pyBuffer } : {}),
     };
     const list = await loadProjects();
     await persistProjects([project, ...list]);
     showToast(`Tersimpan: ${project.name}`, 'success');
-  }, [workspaceRef]);
+  }, [workspaceRef, viewMode, pyBuffer]);
 
   const handleShare = useCallback(async () => {
     const json = generateCode();
@@ -708,6 +734,32 @@ function BlockCodingInner({ viewMode }: { viewMode: 'blocks' | 'python' }) {
             <HelpIcon /> <span>Bantuan</span>
           </button>
         </div>
+
+        {showSwitchWarn && (
+          <div className={styles.switchWarn} onClick={() => setShowSwitchWarn(false)}>
+            <div className={styles.switchWarnCard} onClick={(e) => e.stopPropagation()}>
+              <h3>⚠ Kode Python belum valid</h3>
+              <p>
+                Ada error di kode Python-mu, jadi belum bisa diubah jadi blok. Kalau lanjut, mode
+                Blocks menampilkan versi valid terakhir dan editan yang error tidak ikut.
+              </p>
+              <div className={styles.switchWarnActions}>
+                <button className={styles.swCancel} onClick={() => setShowSwitchWarn(false)}>
+                  Perbaiki dulu
+                </button>
+                <button
+                  className={styles.swGo}
+                  onClick={() => {
+                    setShowSwitchWarn(false);
+                    setViewMode?.('blocks');
+                  }}
+                >
+                  Lanjut ke Blocks
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showTutorial && <Tour lang={tutLang} onLang={setTutLang} onClose={closeTutorial} />}
 

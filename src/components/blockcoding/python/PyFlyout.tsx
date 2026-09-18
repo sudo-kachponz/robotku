@@ -69,6 +69,14 @@ export default function PyFlyout({
             onDragStart={(e) => {
               e.dataTransfer.setData(DRAG_MIME, s.py);
               e.dataTransfer.effectAllowed = 'copy';
+              // colored chip ghost instead of the default block screenshot
+              const ghost = document.createElement('div');
+              ghost.textContent = s.label;
+              ghost.className = styles.ghost;
+              ghost.style.setProperty('--cat', color);
+              document.body.appendChild(ghost);
+              e.dataTransfer.setDragImage(ghost, 12, 12);
+              setTimeout(() => ghost.remove(), 0);
             }}
             onClick={() => onInsert(s.py)}
             title="Klik untuk menyisipkan · seret ke editor"

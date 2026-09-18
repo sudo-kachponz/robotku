@@ -771,6 +771,57 @@
 .pyProbWarn {
   color: #9a6a00;
 }
+.switchWarn {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(20, 16, 60, 0.45);
+  backdrop-filter: blur(4px);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.switchWarnCard {
+  width: min(440px, 100%);
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 22px 24px;
+  box-shadow: 0 24px 60px rgba(20, 16, 60, 0.35);
+}
+.switchWarnCard h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  color: #b45309;
+}
+.switchWarnCard p {
+  margin: 0 0 18px;
+  color: #4b4a63;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.switchWarnActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.swCancel,
+.swGo {
+  border: none;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 14px;
+  padding: 10px 16px;
+  cursor: pointer;
+}
+.swCancel {
+  background: #eef0ff;
+  color: #4338ca;
+}
+.swGo {
+  background: #ec2d8f;
+  color: #ffffff;
+}
+
 .pyHint {
   flex-shrink: 0;
   padding: 8px 16px;
