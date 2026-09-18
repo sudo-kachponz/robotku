@@ -2,7 +2,7 @@
   height: 100%;
   width: 100%;
   overflow: hidden;
-  background: #ffffff;
+  background: var(--code-bg);
 }
 .editor :global(.cm-editor) {
   height: 100%;

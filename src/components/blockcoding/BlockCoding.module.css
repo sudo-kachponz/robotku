@@ -668,7 +668,7 @@
   z-index: 19; /* toolbox=20, flyout=21 stay above; toolbar/toggle above too */
   display: flex;
   flex-direction: column;
-  background: #f7f8fc;
+  background: var(--code-gutter-bg);
 }
 .toolboxOpen .pyPanel {
   left: var(--tb-w);
@@ -684,17 +684,17 @@
   align-items: center;
   justify-content: space-between;
   padding: 9px 16px;
-  background: #ffffff;
-  color: #6b6a86;
+  background: var(--surface);
+  color: var(--ink-500);
   font-size: 12.5px;
   font-weight: 700;
-  border-bottom: 1px solid #e7e9f2;
+  border-bottom: 1px solid var(--line);
   flex-shrink: 0;
 }
 .pyHead button {
-  border: 1px solid #e0e3ff;
-  background: #eef0ff;
-  color: #4338ca;
+  border: 1px solid var(--indigo-100);
+  background: var(--indigo-50);
+  color: var(--indigo-700);
   font-size: 12px;
   font-weight: 700;
   padding: 6px 14px;
@@ -703,15 +703,15 @@
   transition: background 0.14s ease;
 }
 .pyHead button:hover {
-  background: #ec2d8f;
-  border-color: #ec2d8f;
-  color: #ffffff;
+  background: var(--pink-500);
+  border-color: var(--pink-500);
+  color: var(--surface);
 }
 .pyBody {
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  background: #ffffff;
+  background: var(--code-bg);
   display: flex;
   position: relative; /* DocsPanel overlays within here */
 }
@@ -754,8 +754,8 @@
   flex-shrink: 0;
   max-height: 30%;
   overflow: auto;
-  border-top: 1px solid #e7e9f2;
-  background: #fffaf7;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 12px;
   line-height: 1.5;
@@ -763,13 +763,13 @@
 .pyProbErr,
 .pyProbWarn {
   padding: 6px 16px;
-  border-bottom: 1px solid #f3e6de;
+  border-bottom: 1px solid var(--line-soft);
 }
 .pyProbErr {
-  color: #b91c1c;
+  color: var(--code-error);
 }
 .pyProbWarn {
-  color: #9a6a00;
+  color: var(--code-warn);
 }
 .switchWarn {
   position: fixed;
@@ -783,19 +783,19 @@
 }
 .switchWarnCard {
   width: min(440px, 100%);
-  background: #ffffff;
+  background: var(--surface);
   border-radius: 18px;
   padding: 22px 24px;
-  box-shadow: 0 24px 60px rgba(20, 16, 60, 0.35);
+  box-shadow: var(--shadow-lg, 0 24px 60px rgba(20, 16, 60, 0.35));
 }
 .switchWarnCard h3 {
   margin: 0 0 8px;
   font-size: 18px;
-  color: #b45309;
+  color: var(--code-warn);
 }
 .switchWarnCard p {
   margin: 0 0 18px;
-  color: #4b4a63;
+  color: var(--ink-700);
   font-size: 14px;
   line-height: 1.55;
 }
@@ -814,20 +814,20 @@
   cursor: pointer;
 }
 .swCancel {
-  background: #eef0ff;
-  color: #4338ca;
+  background: var(--indigo-50);
+  color: var(--indigo-700);
 }
 .swGo {
-  background: #ec2d8f;
-  color: #ffffff;
+  background: var(--pink-500);
+  color: var(--surface);
 }
 
 .pyHint {
   flex-shrink: 0;
   padding: 8px 16px;
-  background: #fff8fc;
-  border-top: 1px solid #f2d9ea;
-  color: #9a4f7a;
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+  color: var(--ink-500);
   font-size: 12px;
   font-weight: 600;
 }

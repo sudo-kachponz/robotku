@@ -6,7 +6,7 @@
 // 4-space indent, basic dialect highlighting, and diagnostics from the compiler.
 
 import { useEffect, useRef } from 'react';
-import { EditorState } from '@codemirror/state';
+import { EditorState, Compartment, type Extension } from '@codemirror/state';
 import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter, dropCursor } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { StreamLanguage, HighlightStyle, syntaxHighlighting, indentUnit } from '@codemirror/language';
@@ -51,26 +51,62 @@ const dialect = StreamLanguage.define({
   },
 });
 
-const highlight = HighlightStyle.define([
-  { tag: t.keyword, color: '#a626a4', fontWeight: '600' },
-  { tag: t.comment, color: '#9aa0b4', fontStyle: 'italic' },
-  { tag: t.string, color: '#c18401' },
-  { tag: t.number, color: '#986801' },
-  { tag: t.variableName, color: '#1b1840' },
-]);
+// --- Theme is token-driven (C4): read --code-* from :root at runtime and rebuild
+// via a Compartment on theme change, so the editor never hardcodes colours and
+// swapping themes preserves state + undo history (no reload).
+const CODE_TOKENS = [
+  'bg', 'fg', 'gutter-bg', 'gutter-fg', 'active-line', 'selection',
+  'keyword', 'string', 'number', 'comment', 'ident', 'fn', 'error', 'warn',
+] as const;
+type CodeVars = Record<(typeof CODE_TOKENS)[number], string>;
 
-const theme = EditorView.theme(
-  {
-    '&': { height: '100%', fontSize: '15px', backgroundColor: '#ffffff', color: '#1b1840' },
-    '.cm-scroller': { fontFamily: "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace", lineHeight: '1.7' },
-    '.cm-gutters': { backgroundColor: '#f7f8fc', color: '#b9bdd4', border: 'none' },
-    '.cm-activeLineGutter': { backgroundColor: '#eef0ff' },
-    '.cm-activeLine': { backgroundColor: 'rgba(238,240,255,0.5)' },
-    '.cm-content': { padding: '12px 0' },
-    '&.cm-focused': { outline: 'none' },
-  },
-  { dark: false },
-);
+function readCodeVars(): CodeVars {
+  const s = getComputedStyle(document.documentElement);
+  const v = {} as CodeVars;
+  for (const k of CODE_TOKENS) v[k] = s.getPropertyValue('--code-' + k).trim() || 'currentColor';
+  return v;
+}
+
+// Rough luminance for a #rrggbb bg → decide dark mode (for CM's native bits).
+function isDarkBg(bg: string): boolean {
+  const m = /^#([0-9a-f]{6})$/i.exec(bg);
+  if (!m) return false;
+  const n = parseInt(m[1], 16);
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
+}
+
+function buildTheme(v: CodeVars): Extension {
+  return [
+    syntaxHighlighting(
+      HighlightStyle.define([
+        { tag: t.keyword, color: v.keyword, fontWeight: '600' },
+        { tag: t.comment, color: v.comment, fontStyle: 'italic' },
+        { tag: t.string, color: v.string },
+        { tag: t.number, color: v.number },
+        { tag: t.variableName, color: v.ident },
+      ]),
+    ),
+    EditorView.theme(
+      {
+        '&': { height: '100%', fontSize: '15px', backgroundColor: v.bg, color: v.fg },
+        '.cm-scroller': {
+          fontFamily: "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace",
+          lineHeight: '1.7',
+        },
+        '.cm-gutters': { backgroundColor: v['gutter-bg'], color: v['gutter-fg'], border: 'none' },
+        '.cm-activeLineGutter': { backgroundColor: v['active-line'] },
+        '.cm-activeLine': { backgroundColor: v['active-line'] },
+        '.cm-cursor': { borderLeftColor: v.fg },
+        '.cm-selectionBackground, .cm-content ::selection': { backgroundColor: v.selection },
+        '&.cm-focused .cm-selectionBackground': { backgroundColor: v.selection },
+        '.cm-content': { padding: '12px 0' },
+        '&.cm-focused': { outline: 'none' },
+      },
+      { dark: isDarkBg(v.bg) },
+    ),
+  ];
+}
 
 function toDiagnostics(view: EditorView, problems: PyProblem[]): Diagnostic[] {
   const doc = view.state.doc;
@@ -96,9 +132,11 @@ export default function PyEditor({
   const hostRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
   const lastEmitted = useRef(value);
+  const themeComp = useRef(new Compartment());
 
   useEffect(() => {
     if (!hostRef.current) return;
+    const themeCompartment = themeComp.current;
     const state = EditorState.create({
       doc: value,
       extensions: [
@@ -110,10 +148,9 @@ export default function PyEditor({
         dropCursor(),
         keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
         dialect,
-        syntaxHighlighting(highlight),
         lintGutter(),
         linter(() => []), // diagnostics are pushed via setDiagnostics on `problems` change
-        theme,
+        themeCompartment.of(buildTheme(readCodeVars())),
         EditorView.domEventHandlers({
           dragover(e) {
             if (e.dataTransfer?.types.includes(DRAG_MIME)) {
@@ -146,6 +183,25 @@ export default function PyEditor({
       viewRef.current = null;
     };
 
+  }, []);
+
+  // Rebuild editor colours when the app theme changes (data-theme on <html>) —
+  // reconfigure the compartment, so state + undo history stay intact (no reload).
+  useEffect(() => {
+    const apply = () => {
+      const view = viewRef.current;
+      if (view) view.dispatch({ effects: themeComp.current.reconfigure(buildTheme(readCodeVars())) });
+    };
+    const obs = new MutationObserver(apply);
+    obs.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme', 'class', 'style'],
+    });
+    window.addEventListener('robotku:themechange', apply);
+    return () => {
+      obs.disconnect();
+      window.removeEventListener('robotku:themechange', apply);
+    };
   }, []);
 
   // External value updates (e.g. seeded from blocks) — replace without clobbering
