@@ -36,16 +36,17 @@ import { insertTemplate } from '../../templates/insert';
 import { buildTemplateWorkspace } from '../../templates/authoring';
 import { setGalleryOpener, setLcdBlockInserter } from '../../templates/galleryBridge';
 import Tour from './Tour';
-import { pythonGenerator } from 'blockly/python';
-import { generatePython, initPythonGenerator } from '../../pythongen';
+import { generatePython } from '../../pythongen';
 import { parsePython, CompileError } from '../../pythongen/compile';
 import { generateProgram } from '../../blockcoding/generateProgram';
 import { unsupportedOpcodesInProgram } from '../../blockcoding/blockOpcodes';
-import type { EditorView } from '@codemirror/view';
-import type { PyProblem } from './python/PyEditor';
+import type { PyProblem, PyEditorApi } from './python/PyEditor';
+import type { Snippet } from '../../pythongen/snippets';
 import styles from './BlockCoding.module.css';
 
 const PyEditor = dynamic(() => import('./python/PyEditor'), { ssr: false });
+const PyFlyout = dynamic(() => import('./python/PyFlyout'), { ssr: false });
+const DocsPanel = dynamic(() => import('./python/DocsPanel'), { ssr: false });
 
 // Client-only: the CV panel pulls in camera + (lazily) ML libs.
 const CvPanel = dynamic(() => import('./CvPanel'), { ssr: false });
@@ -115,7 +116,8 @@ function BlockCodingInner({ viewMode }: { viewMode: 'blocks' | 'python' }) {
   const [pyBuffer, setPyBuffer] = useState('');
   const [pyProblems, setPyProblems] = useState<PyProblem[]>([]);
   const [pyCopied, setPyCopied] = useState(false);
-  const pyViewRef = useRef<EditorView | null>(null);
+  const pyApiRef = useRef<PyEditorApi | null>(null);
+  const [docsSnippet, setDocsSnippet] = useState<Snippet | null>(null);
   // Re-seed Python from blocks ONLY when the blocks actually changed (in Blocks
   // mode) — never clobber the user's typed Python on a plain toggle round-trip (§H).
   const blocksDirtyRef = useRef(true);
@@ -183,55 +185,6 @@ function BlockCodingInner({ viewMode }: { viewMode: 'blocks' | 'python' }) {
     }, 500);
     return () => clearTimeout(id);
   }, [pyBuffer, viewMode, workspaceRef, connected, robotInfo]);
-
-  const insertPySnippet = useCallback((text: string) => {
-    const view = pyViewRef.current;
-    if (view) {
-      const head = view.state.selection.main.head;
-      const line = view.state.doc.lineAt(head);
-      const insert = (line.length ? '\n' : '') + text;
-      view.dispatch({
-        changes: { from: line.to, insert },
-        selection: { anchor: line.to + insert.length },
-      });
-      view.focus();
-    } else {
-      setPyBuffer((b) => (b && !b.endsWith('\n') ? b + '\n' : b) + text + '\n');
-    }
-  }, []);
-
-  // Picking a block from the (still-visible) toolbox in Python mode inserts its
-  // Python line at the cursor, then discards the transient block.
-  useEffect(() => {
-    if (viewMode !== 'python') return;
-    const ws = workspaceRef.current as Blockly.WorkspaceSvg | null;
-    if (!ws) return;
-    const onCreate = (e: Blockly.Events.Abstract) => {
-      if (e.type !== Blockly.Events.BLOCK_CREATE) return;
-      const block = ws.getBlockById((e as Blockly.Events.BlockCreate).blockId ?? '');
-      if (!block || block.isShadow() || block.getParent() || block.type === 'program_start') return;
-      if (!block.previousConnection && !block.outputConnection) return;
-      let snippet = '';
-      try {
-        initPythonGenerator();
-        pythonGenerator.init(ws);
-        const code = pythonGenerator.blockToCode(block);
-        snippet = (Array.isArray(code) ? code[0] : code).trimEnd();
-      } catch {
-        /* ignore */
-      }
-      if (snippet) insertPySnippet(snippet);
-      setTimeout(() => {
-        try {
-          block.dispose(false);
-        } catch {
-          /* already gone */
-        }
-      }, 0);
-    };
-    ws.addChangeListener(onCreate);
-    return () => ws.removeChangeListener(onCreate);
-  }, [viewMode, workspaceRef, insertPySnippet]);
 
   const copyPython = useCallback(() => {
     navigator.clipboard?.writeText(pyBuffer).then(
@@ -612,7 +565,7 @@ function BlockCodingInner({ viewMode }: { viewMode: 'blocks' | 'python' }) {
   return (
     <div className={styles.wrap}>
       <div
-        className={`${styles.editor} ${showSim ? styles.simOpen : ''} ${showToolbox ? styles.toolboxOpen : ''}`}
+        className={`${styles.editor} ${showSim ? styles.simOpen : ''} ${showToolbox ? styles.toolboxOpen : ''} ${viewMode === 'python' ? styles.pythonMode : ''}`}
       >
         <div ref={blocklyDivRef} className={`${styles.blockly} ${showSim ? styles.blocklySimOpen : ''}`} />
 
@@ -623,14 +576,22 @@ function BlockCodingInner({ viewMode }: { viewMode: 'blocks' | 'python' }) {
               <button onClick={copyPython}>{pyCopied ? '✓ Disalin' : 'Copy'}</button>
             </div>
             <div className={styles.pyBody}>
-              <PyEditor
-                value={pyBuffer}
-                onChange={setPyBuffer}
-                problems={pyProblems}
-                onReady={(v) => {
-                  pyViewRef.current = v;
-                }}
-              />
+              <div className={styles.pyFlyoutWrap}>
+                <PyFlyout onInsert={(py) => pyApiRef.current?.insertSnippet(py)} onDocs={setDocsSnippet} />
+              </div>
+              <div className={styles.pyEditorWrap}>
+                <PyEditor
+                  value={pyBuffer}
+                  onChange={setPyBuffer}
+                  problems={pyProblems}
+                  onReady={(api) => {
+                    pyApiRef.current = api;
+                  }}
+                />
+              </div>
+              {docsSnippet && (
+                <DocsPanel snippet={docsSnippet} onClose={() => setDocsSnippet(null)} />
+              )}
             </div>
             {pyProblems.length > 0 ? (
               <div className={styles.pyProblems}>
@@ -645,7 +606,7 @@ function BlockCodingInner({ viewMode }: { viewMode: 'blocks' | 'python' }) {
               </div>
             ) : (
               <div className={styles.pyHint}>
-                Ketik Python, atau klik blok di panel kiri untuk menyisipkannya. Program tersinkron ke mode Blocks.
+                Klik / seret kartu dari kiri ke editor, atau ketik langsung. Tekan “?” untuk bantuan. Tersinkron ke mode Blocks.
               </div>
             )}
           </div>

@@ -7,14 +7,34 @@
 
 import { useEffect, useRef } from 'react';
 import { EditorState } from '@codemirror/state';
-import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view';
+import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter, dropCursor } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { StreamLanguage, HighlightStyle, syntaxHighlighting, indentUnit } from '@codemirror/language';
+import { snippet } from '@codemirror/autocomplete';
 import { tags as t } from '@lezer/highlight';
 import { linter, lintGutter, setDiagnostics, type Diagnostic } from '@codemirror/lint';
 import styles from './PyEditor.module.css';
 
 export type PyProblem = { line: number; message: string; severity: 'error' | 'warning' };
+export interface PyEditorApi {
+  view: EditorView;
+  insertSnippet: (template: string) => void;
+}
+
+// Insert a CM6 snippet template (${n:...} placeholders, Tab between them) as its own
+// line at `pos`, indented to match the target line. Multi-line templates keep shape.
+const DRAG_MIME = 'application/x-robotku-snippet';
+function insertSnippetAt(view: EditorView, template: string, pos: number) {
+  const line = view.state.doc.lineAt(pos);
+  const indent = /^\s*/.exec(line.text)?.[0] ?? '';
+  const tpl = template.replace(/\t/g, '    ').replace(/\n/g, '\n' + indent);
+  const at = line.to;
+  const lead = line.text.trim() ? '\n' + indent : indent;
+  view.dispatch({ changes: { from: at, insert: lead } });
+  const start = at + lead.length;
+  snippet(tpl)(view, null, start, start);
+  view.focus();
+}
 
 const KEYWORDS = /^(while|for|if|elif|else|def|return|break|continue|pass|and|or|not|in|range|True|False|None)\b/;
 
@@ -71,7 +91,7 @@ export default function PyEditor({
   value: string;
   onChange: (v: string) => void;
   problems?: PyProblem[];
-  onReady?: (view: EditorView) => void;
+  onReady?: (api: PyEditorApi) => void;
 }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -87,12 +107,28 @@ export default function PyEditor({
         highlightActiveLineGutter(),
         history(),
         indentUnit.of('    '),
+        dropCursor(),
         keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
         dialect,
         syntaxHighlighting(highlight),
         lintGutter(),
         linter(() => []), // diagnostics are pushed via setDiagnostics on `problems` change
         theme,
+        EditorView.domEventHandlers({
+          dragover(e) {
+            if (e.dataTransfer?.types.includes(DRAG_MIME)) {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'copy';
+            }
+          },
+          drop(e, v) {
+            const tpl = e.dataTransfer?.getData(DRAG_MIME);
+            if (!tpl) return;
+            e.preventDefault();
+            const pos = v.posAtCoords({ x: e.clientX, y: e.clientY }) ?? v.state.doc.length;
+            insertSnippetAt(v, tpl, pos);
+          },
+        }),
         EditorView.updateListener.of((u) => {
           if (u.docChanged) {
             const text = u.state.doc.toString();
@@ -104,7 +140,7 @@ export default function PyEditor({
     });
     const view = new EditorView({ state, parent: hostRef.current });
     viewRef.current = view;
-    onReady?.(view);
+    onReady?.({ view, insertSnippet: (tpl) => insertSnippetAt(view, tpl, view.state.selection.main.head) });
     return () => {
       view.destroy();
       viewRef.current = null;
