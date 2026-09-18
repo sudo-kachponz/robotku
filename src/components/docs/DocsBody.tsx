@@ -4,18 +4,24 @@
 // /docs/reference pages (py2.md §2.5) so content never diverges. Pure presentation
 // of a DocEntry + the real block preview.
 
+import { useEffect, useState } from 'react';
 import BlockPreview from '../blockcoding/python/BlockPreview';
+import { renderProgramPreviewSvg } from '../blockcoding/python/blockPreview';
 import { getDoc } from '../../pythongen/docs/registry';
-import type { DocEntry } from '../../pythongen/docs/types';
+import type { DocEntry, DocExample } from '../../pythongen/docs/types';
+import type { BlockSpec } from '../../templates/authoring';
 import styles from './DocsBody.module.css';
 
 export default function DocsBody({
   entry,
   onNavigate,
+  onRun,
 }: {
   entry: DocEntry;
   /** Called when a "see also" chip is clicked (panel navigates in place). */
   onNavigate?: (slug: string) => void;
+  /** Provided only in-editor: runs an example's blocks in the simulator (▶ tab). */
+  onRun?: (blocks: BlockSpec[]) => void;
 }) {
   return (
     <div className={styles.body}>
@@ -70,11 +76,7 @@ export default function DocsBody({
         <>
           <div className={styles.section}>Contoh</div>
           {entry.examples.map((ex, i) => (
-            <div key={i}>
-              <div className={styles.exTitle}>{ex.title}</div>
-              {ex.desc && <p className={styles.text}>{ex.desc}</p>}
-              <pre className={styles.code}>{ex.python}</pre>
-            </div>
+            <ExampleView key={i} ex={ex} onRun={onRun} />
           ))}
         </>
       )}
@@ -109,6 +111,61 @@ export default function DocsBody({
             })}
           </div>
         </>
+      )}
+    </div>
+  );
+}
+
+function ExampleView({ ex, onRun }: { ex: DocExample; onRun?: (blocks: BlockSpec[]) => void }) {
+  const blocks = Array.isArray(ex.blocks) ? (ex.blocks as BlockSpec[]) : null;
+  const hasBlocks = !!blocks && blocks.length > 0;
+  const canRun = !!onRun && !!ex.runnable && hasBlocks;
+  const [tab, setTab] = useState<'blocks' | 'python'>('python');
+  const [svg, setSvg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (tab !== 'blocks' || !blocks) return;
+    setSvg(renderProgramPreviewSvg(blocks));
+  }, [tab, blocks]);
+
+  return (
+    <div className={styles.example}>
+      <div className={styles.exTitle}>{ex.title}</div>
+      {ex.desc && <p className={styles.text}>{ex.desc}</p>}
+      <div className={styles.exTabs}>
+        {hasBlocks && (
+          <button
+            className={tab === 'blocks' ? styles.exTabActive : styles.exTab}
+            onClick={() => setTab('blocks')}
+            type="button"
+          >
+            Blok
+          </button>
+        )}
+        <button
+          className={tab === 'python' ? styles.exTabActive : styles.exTab}
+          onClick={() => setTab('python')}
+          type="button"
+        >
+          Python
+        </button>
+        {canRun && (
+          <button
+            className={styles.exRun}
+            onClick={() => onRun!(blocks!)}
+            type="button"
+            title="Jalankan contoh di simulator"
+          >
+            ▶ Jalankan
+          </button>
+        )}
+      </div>
+      {tab === 'python' || !hasBlocks ? (
+        <pre className={styles.code}>{ex.python}</pre>
+      ) : svg ? (
+        <div className={styles.exPreview} dangerouslySetInnerHTML={{ __html: svg }} />
+      ) : (
+        <div className={styles.exPreview}>Memuat blok…</div>
       )}
     </div>
   );

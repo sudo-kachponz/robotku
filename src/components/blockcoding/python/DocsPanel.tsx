@@ -8,9 +8,18 @@ import { getCategoryColor } from '../../../visual/categoryColors';
 import { getDoc } from '../../../pythongen/docs/registry';
 import DocsBody from '../../docs/DocsBody';
 import type { Snippet } from '../../../pythongen/snippets';
+import type { BlockSpec } from '../../../templates/authoring';
 import styles from './DocsPanel.module.css';
 
-export default function DocsPanel({ snippet, onClose }: { snippet: Snippet; onClose: () => void }) {
+export default function DocsPanel({
+  snippet,
+  onClose,
+  onRunExample,
+}: {
+  snippet: Snippet;
+  onClose: () => void;
+  onRunExample?: (blocks: BlockSpec[]) => void;
+}) {
   const [slug, setSlug] = useState(snippet.docs);
   const d = getDoc(slug);
   const category = d?.category ?? snippet.category;
@@ -55,7 +64,7 @@ export default function DocsPanel({ snippet, onClose }: { snippet: Snippet; onCl
         ) : (
           <>
             <h2 className={styles.title}>{d.title}</h2>
-            <DocsBody entry={d} onNavigate={setSlug} />
+            <DocsBody entry={d} onNavigate={setSlug} onRun={onRunExample} />
           </>
         )}
       </aside>

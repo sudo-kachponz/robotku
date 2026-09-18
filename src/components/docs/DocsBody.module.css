@@ -84,11 +84,63 @@
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-weight: 700;
 }
+.example {
+  margin-bottom: 12px;
+}
 .exTitle {
   font-size: 13px;
   font-weight: 700;
   color: var(--ink-700);
   margin: 8px 0 4px;
+}
+.exTabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.exTab,
+.exTabActive {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-500);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+}
+.exTabActive {
+  background: var(--code-gutter-bg);
+  color: var(--ink-900);
+  border-bottom-color: transparent;
+}
+.exRun {
+  margin-left: auto;
+  border: none;
+  background: var(--green);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.exRun:hover {
+  filter: brightness(1.05);
+}
+.exPreview {
+  background: var(--code-gutter-bg);
+  border: 1px solid var(--line);
+  border-radius: 0 12px 12px 12px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  color: var(--ink-500);
+  font-size: 13px;
+}
+.exPreview svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
 }
 .seeAlso {
   display: flex;

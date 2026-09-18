@@ -33,7 +33,7 @@ import { useBlocklyWorkspace } from './hooks/useBlocklyWorkspace';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 import TemplateGallery from './TemplateGallery';
 import { insertTemplate } from '../../templates/insert';
-import { buildTemplateWorkspace } from '../../templates/authoring';
+import { buildTemplateWorkspace, type BlockSpec } from '../../templates/authoring';
 import { setGalleryOpener, setLcdBlockInserter } from '../../templates/galleryBridge';
 import Tour from './Tour';
 import { generatePython } from '../../pythongen';
@@ -564,6 +564,29 @@ function BlockCodingInner({ viewMode, setViewMode, canLeavePythonRef }: BlockCod
     [workspaceRef, handleRun],
   );
 
+  // ▶ on a docs example: load its blocks (confirm if a program exists) then run in the
+  // simulator, reusing the existing insertTemplate + run path (no new runtime).
+  const runDocExample = useCallback(
+    (blocks: BlockSpec[]) => {
+      const ws = workspaceRef.current;
+      if (!ws) return;
+      let mode: 'replace' | 'append' = 'replace';
+      if (ws.getAllBlocks(false).length > 1) {
+        mode = window.confirm(
+          'Muat contoh ini?\n\nOK = Ganti program yang ada\nBatal = Tambahkan di samping',
+        )
+          ? 'replace'
+          : 'append';
+      }
+      insertTemplate(ws, buildTemplateWorkspace(blocks), mode);
+      setDocsSnippet(null);
+      setViewMode?.('blocks');
+      setShowSim(true);
+      setTimeout(() => handleRun(), 120);
+    },
+    [workspaceRef, handleRun, setViewMode],
+  );
+
   const handleSaveTemplate = useCallback(async () => {
     const ws = workspaceRef.current;
     if (!ws) return;
@@ -761,7 +784,11 @@ function BlockCodingInner({ viewMode, setViewMode, canLeavePythonRef }: BlockCod
         {showTutorial && <Tour lang={tutLang} onLang={setTutLang} onClose={closeTutorial} />}
 
         {docsSnippet && (
-          <DocsPanel snippet={docsSnippet} onClose={() => setDocsSnippet(null)} />
+          <DocsPanel
+            snippet={docsSnippet}
+            onClose={() => setDocsSnippet(null)}
+            onRunExample={runDocExample}
+          />
         )}
 
         <div className={`${styles.simCard} ${showSim ? '' : styles.simHidden}`} data-tour="sim-panel">
