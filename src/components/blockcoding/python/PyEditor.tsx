@@ -7,7 +7,8 @@
 
 import { useEffect, useRef } from 'react';
 import { EditorState, Compartment, type Extension } from '@codemirror/state';
-import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter, dropCursor } from '@codemirror/view';
+import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter, dropCursor, hoverTooltip } from '@codemirror/view';
+import { allDocs, getDoc } from '../../../pythongen/docs/registry';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { StreamLanguage, HighlightStyle, syntaxHighlighting, indentUnit } from '@codemirror/language';
 import { snippet } from '@codemirror/autocomplete';
@@ -34,6 +35,62 @@ function insertSnippetAt(view: EditorView, template: string, pos: number) {
   const start = at + lead.length;
   snippet(tpl)(view, null, start, start);
   view.focus();
+}
+
+// Map an API call name (e.g. "robot.forward") to its docs slug, from the registry.
+const FN_TO_SLUG: Record<string, string> = {};
+for (const d of allDocs()) {
+  const m = /^([A-Za-z_][\w.]*)\s*\(/.exec(d.signature.python);
+  if (m) FN_TO_SLUG[m[1]] = d.slug;
+}
+
+// Hover an API identifier -> compact tooltip (title + summary) with a "Selengkapnya"
+// link that opens the full docs. Colours via tokens (theme-aware, no hardcoded hex).
+function apiHoverTooltip(onOpenDocs?: (slug: string) => void) {
+  return hoverTooltip((view, pos) => {
+    const line = view.state.doc.lineAt(pos);
+    const re = /[A-Za-z_][\w.]*/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(line.text))) {
+      const s = line.from + m.index;
+      const e = s + m[0].length;
+      if (pos < s || pos > e) continue;
+      const slug = FN_TO_SLUG[m[0]];
+      if (!slug) return null;
+      const d = getDoc(slug);
+      return {
+        pos: s,
+        end: e,
+        above: true,
+        create() {
+          const dom = document.createElement('div');
+          dom.style.cssText =
+            'max-width:280px;padding:8px 10px;font-family:"Plus Jakarta Sans",sans-serif;' +
+            'background:var(--surface);color:var(--ink-700);border:1px solid var(--line);' +
+            'border-radius:10px;box-shadow:var(--shadow-md);font-size:12.5px;line-height:1.45;';
+          const title = document.createElement('div');
+          title.textContent = d?.title ?? m![0];
+          title.style.cssText =
+            'font-family:"JetBrains Mono",monospace;font-weight:800;color:var(--ink-900);margin-bottom:2px;';
+          dom.appendChild(title);
+          const sum = document.createElement('div');
+          sum.textContent = d?.summary ?? '';
+          dom.appendChild(sum);
+          if (onOpenDocs) {
+            const more = document.createElement('button');
+            more.textContent = 'Selengkapnya →';
+            more.style.cssText =
+              'margin-top:6px;border:none;background:transparent;color:var(--indigo-600);' +
+              'font-weight:700;font-size:12px;cursor:pointer;padding:0;';
+            more.onclick = () => onOpenDocs(slug);
+            dom.appendChild(more);
+          }
+          return { dom };
+        },
+      };
+    }
+    return null;
+  });
 }
 
 const KEYWORDS = /^(while|for|if|elif|else|def|return|break|continue|pass|and|or|not|in|range|True|False|None)\b/;
@@ -123,11 +180,13 @@ export default function PyEditor({
   onChange,
   problems = [],
   onReady,
+  onOpenDocs,
 }: {
   value: string;
   onChange: (v: string) => void;
   problems?: PyProblem[];
   onReady?: (api: PyEditorApi) => void;
+  onOpenDocs?: (slug: string) => void;
 }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -150,6 +209,7 @@ export default function PyEditor({
         dialect,
         lintGutter(),
         linter(() => []), // diagnostics are pushed via setDiagnostics on `problems` change
+        apiHoverTooltip(onOpenDocs),
         themeCompartment.of(buildTheme(readCodeVars())),
         EditorView.domEventHandlers({
           dragover(e) {

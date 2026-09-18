@@ -750,27 +750,6 @@
     width: 132px;
   }
 }
-.pyProblems {
-  flex-shrink: 0;
-  max-height: 30%;
-  overflow: auto;
-  border-top: 1px solid var(--line);
-  background: var(--surface-2);
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 12px;
-  line-height: 1.5;
-}
-.pyProbErr,
-.pyProbWarn {
-  padding: 6px 16px;
-  border-bottom: 1px solid var(--line-soft);
-}
-.pyProbErr {
-  color: var(--code-error);
-}
-.pyProbWarn {
-  color: var(--code-warn);
-}
 .switchWarn {
   position: fixed;
   inset: 0;
