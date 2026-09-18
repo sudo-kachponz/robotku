@@ -9,6 +9,7 @@
 import * as Blockly from 'blockly';
 import { initializeAstroidEditor } from '../../../core';
 import { getRobotkuTheme } from '../../../visual/theme';
+import { buildTemplateWorkspace, type BlockSpec } from '../../../templates/authoring';
 
 const cache = new Map<string, string | null>();
 
@@ -99,6 +100,46 @@ export function renderBlockPreviewSvg(
     if (ws) ws.dispose();
   }
 
+  cache.set(key, svg);
+  return svg;
+}
+
+/** Render a multi-block example program (BlockSpec[]) to a standalone SVG. */
+export function renderProgramPreviewSvg(blocks: BlockSpec[]): string | null {
+  const themeId = currentThemeId();
+  const key = `prog|${themeId}|${JSON.stringify(blocks)}`;
+  if (cache.has(key)) return cache.get(key)!;
+
+  let svg: string | null = null;
+  let ws: Blockly.WorkspaceSvg | null = null;
+  try {
+    initializeAstroidEditor();
+    ws = Blockly.inject(getHiddenDiv(), {
+      readOnly: true,
+      renderer: 'zelos',
+      theme: getRobotkuTheme(),
+      trashcan: false,
+      scrollbars: false,
+      move: { scrollbars: false, drag: false, wheel: false },
+    });
+    Blockly.serialization.workspaces.load(buildTemplateWorkspace(blocks), ws);
+    Blockly.svgResize(ws);
+    const canvas = ws.getCanvas();
+    const bbox = canvas.getBBox();
+    if (!bbox.width || !bbox.height) throw new Error('empty bbox');
+    const pad = 6;
+    const clone = canvas.cloneNode(true) as SVGElement;
+    clone.removeAttribute('transform');
+    svg =
+      `<svg xmlns="http://www.w3.org/2000/svg" ` +
+      `width="${Math.ceil(bbox.width + pad * 2)}" height="${Math.ceil(bbox.height + pad * 2)}" ` +
+      `viewBox="${bbox.x - pad} ${bbox.y - pad} ${bbox.width + pad * 2} ${bbox.height + pad * 2}">` +
+      `<style>${inlineStyle()}</style>${new XMLSerializer().serializeToString(clone)}</svg>`;
+  } catch {
+    svg = null;
+  } finally {
+    if (ws) ws.dispose();
+  }
   cache.set(key, svg);
   return svg;
 }

@@ -38,66 +38,103 @@ export default function PyFlyout({
   onDocs: (s: Snippet) => void;
 }) {
   const [cat, setCat] = useState<string>(SNIPPET_CATEGORIES[0]);
-  const color = getCategoryColor(cat);
-  const cards = SNIPPETS.filter((s) => s.category === cat);
+  const [q, setQ] = useState('');
+  const query = q.trim().toLowerCase();
+  const searching = query.length > 0;
+
+  const cards = searching
+    ? SNIPPETS.filter(
+        (s) =>
+          s.label.toLowerCase().includes(query) ||
+          s.desc.toLowerCase().includes(query) ||
+          s.py.toLowerCase().includes(query),
+      )
+    : SNIPPETS.filter((s) => s.category === cat);
+
+  const renderCard = (s: Snippet) => {
+    const c = getCategoryColor(s.category);
+    return (
+      <div
+        key={s.id}
+        className={styles.card}
+        style={{ ['--cat' as string]: c }}
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.setData(DRAG_MIME, s.py);
+          e.dataTransfer.effectAllowed = 'copy';
+          const ghost = document.createElement('div');
+          ghost.textContent = s.label;
+          ghost.className = styles.ghost;
+          ghost.style.setProperty('--cat', c);
+          document.body.appendChild(ghost);
+          e.dataTransfer.setDragImage(ghost, 12, 12);
+          setTimeout(() => ghost.remove(), 0);
+        }}
+        onClick={() => onInsert(s.py)}
+        title="Klik untuk menyisipkan · seret ke editor"
+      >
+        <div className={styles.cardMain}>
+          <span className={styles.chip}>{s.label}</span>
+          <span className={styles.cardDesc}>{s.desc}</span>
+        </div>
+        <button
+          className={styles.help}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDocs(s);
+          }}
+          title="Bantuan / dokumentasi"
+          aria-label={`Bantuan ${s.label}`}
+        >
+          ?
+        </button>
+      </div>
+    );
+  };
 
   return (
     <div className={styles.flyout}>
-      <div className={styles.rail}>
-        {SNIPPET_CATEGORIES.map((c) => (
-          <button
-            key={c}
-            className={`${styles.railBtn} ${c === cat ? styles.railActive : ''}`}
-            style={{ ['--cat' as string]: getCategoryColor(c) }}
-            onClick={() => setCat(c)}
-            title={c}
-          >
-            <span className={styles.railIcon}>
-              <Icon name={c} />
-            </span>
-            <span className={styles.railLabel}>{c}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className={styles.cards} style={{ ['--cat' as string]: color }}>
-        {cards.map((s) => (
-          <div
-            key={s.id}
-            className={styles.card}
-            draggable
-            onDragStart={(e) => {
-              e.dataTransfer.setData(DRAG_MIME, s.py);
-              e.dataTransfer.effectAllowed = 'copy';
-              // colored chip ghost instead of the default block screenshot
-              const ghost = document.createElement('div');
-              ghost.textContent = s.label;
-              ghost.className = styles.ghost;
-              ghost.style.setProperty('--cat', color);
-              document.body.appendChild(ghost);
-              e.dataTransfer.setDragImage(ghost, 12, 12);
-              setTimeout(() => ghost.remove(), 0);
-            }}
-            onClick={() => onInsert(s.py)}
-            title="Klik untuk menyisipkan · seret ke editor"
-          >
-            <div className={styles.cardMain}>
-              <span className={styles.chip}>{s.label}</span>
-              <span className={styles.cardDesc}>{s.desc}</span>
-            </div>
+      {!searching && (
+        <div className={styles.rail}>
+          {SNIPPET_CATEGORIES.map((c) => (
             <button
-              className={styles.help}
-              onClick={(e) => {
-                e.stopPropagation();
-                onDocs(s);
-              }}
-              title="Bantuan / dokumentasi"
-              aria-label={`Bantuan ${s.label}`}
+              key={c}
+              className={`${styles.railBtn} ${c === cat ? styles.railActive : ''}`}
+              style={{ ['--cat' as string]: getCategoryColor(c) }}
+              onClick={() => setCat(c)}
+              title={c}
             >
-              ?
+              <span className={styles.railIcon}>
+                <Icon name={c} />
+              </span>
+              <span className={styles.railLabel}>{c}</span>
             </button>
-          </div>
-        ))}
+          ))}
+        </div>
+      )}
+
+      <div className={styles.right}>
+        <form
+          className={styles.searchRow}
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (cards[0]) onDocs(cards[0]);
+          }}
+        >
+          <input
+            className={styles.search}
+            placeholder="Cari blok…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </form>
+        <div className={styles.cards} style={{ ['--cat' as string]: getCategoryColor(cat) }}>
+          {cards.length === 0 ? (
+            <div className={styles.noResult}>Tidak ada hasil.</div>
+          ) : (
+            cards.map(renderCard)
+          )}
+        </div>
       </div>
     </div>
   );
