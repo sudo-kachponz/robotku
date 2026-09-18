@@ -59,8 +59,39 @@
   touch-action: manipulation;
 }
 
-.tbBtn span {
+/* Button labels are hidden by default; on hover-capable devices they reveal as a
+   tooltip pill to the LEFT of each round button (the toolbar hugs the right edge). */
+.tbBtn span:not(.tbLiveDot) {
   display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tbBtn span:not(.tbLiveDot) {
+    display: block;
+    position: absolute;
+    right: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%) translateX(6px);
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #1b1840;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    box-shadow: 0 4px 14px rgba(27, 24, 64, 0.22);
+    transition:
+      opacity 0.14s ease,
+      transform 0.14s ease;
+    z-index: 40;
+  }
+  .tbBtn:hover span:not(.tbLiveDot),
+  .tbBtn:focus-visible span:not(.tbLiveDot) {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
 }
 
 .tbBtn:hover:not(:disabled) {
@@ -153,13 +184,6 @@
   transition:
     transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
     opacity 0.25s ease;
-}
-
-@media (min-width: 1440px) {
-  .simCard {
-    width: 760px;
-    max-width: calc(100vw - 90px);
-  }
 }
 
 .simHidden {
@@ -572,3 +596,55 @@
     pointer-events: none;
   }
 }
+
+/* --- Desktop (>=1024px): kiri->kanan = Simulator | palette blok (toolbox) | workspace/IDE.
+   Sim didok ke KIRI (bukan mengambang menutupi kanan), jadi blok punya ruang penuh
+   di tengah->kanan dan tidak terjepit dua panel. --sim-dock = titik mulai area Blockly. --- */
+@media (min-width: 1024px) {
+  .simOpen {
+    --sim-dock: calc(16px + 360px + 20px + var(--safe-l)); /* offset + lebar sim + jarak */
+  }
+
+  .simCard {
+    left: calc(16px + var(--safe-l));
+    right: auto;
+    width: 360px;
+    max-width: none;
+    box-shadow: 0 16px 44px rgba(27, 24, 64, 0.1);
+  }
+
+  /* panel meluncur keluar ke KIRI saat disembunyikan */
+  .simHidden {
+    transform: translateX(calc(-100% - 40px));
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .blockly {
+    transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .simOpen .blockly {
+    left: var(--sim-dock, 0px);
+  }
+
+  /* tombol toggle toolbox + serial monitor ikut bergeser mengikuti area Blockly */
+  .simOpen .toolboxToggleOpen {
+    left: calc(var(--sim-dock, 0px) + 320px - 16px);
+  }
+  .simOpen .toolboxToggleClosed {
+    left: calc(var(--sim-dock, 0px) + 14px);
+  }
+  .simOpen .monitor {
+    left: calc(var(--sim-dock, 0px) + 8px);
+  }
+}
+
+@media (min-width: 1440px) {
+  .simOpen {
+    --sim-dock: calc(16px + 440px + 20px + var(--safe-l));
+  }
+  .simCard {
+    width: 440px;
+  }
+}
+

@@ -1,0 +1,127 @@
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+}
+
+/* transparent full-screen click catcher — advances the tour, blocks stray clicks */
+.blocker {
+  position: absolute;
+  inset: 0;
+}
+
+/* the spotlight: transparent box over the target; the huge box-shadow spread dims
+   everything around it, leaving the target visible and highlighted. */
+.spot {
+  position: fixed;
+  border-radius: 14px;
+  border: 3px solid #ec2d8f;
+  box-shadow:
+    0 0 0 9999px rgba(20, 16, 60, 0.55),
+    0 0 18px rgba(236, 45, 143, 0.6);
+  pointer-events: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 201;
+}
+
+.card {
+  position: fixed;
+  width: 320px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px 18px 14px;
+  box-shadow: 0 20px 50px rgba(20, 16, 60, 0.4);
+  z-index: 202;
+  animation: tourPop 0.2s ease;
+}
+@keyframes tourPop {
+  from {
+    opacity: 0;
+  }
+}
+
+.langRow {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 4px;
+}
+.langRow button {
+  border: 1px solid #e0e3ff;
+  background: #f4f5fb;
+  color: #4338ca;
+  font-weight: 800;
+  font-size: 10px;
+  width: 30px;
+  height: 24px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.langActive {
+  background: #ec2d8f !important;
+  color: #ffffff !important;
+  border-color: #ec2d8f !important;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 44px 6px 0;
+}
+.icon {
+  font-size: 22px;
+  line-height: 1;
+}
+.head strong {
+  font-size: 16px;
+  color: #1b1840;
+}
+.body {
+  margin: 0 0 14px;
+  color: #4b4a63;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.count {
+  font-size: 12px;
+  font-weight: 700;
+  color: #9499b8;
+}
+.actions {
+  display: flex;
+  gap: 6px;
+}
+.actions button {
+  border: none;
+  border-radius: 9px;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: filter 0.14s ease;
+}
+.skip {
+  background: transparent;
+  color: #9499b8;
+}
+.back {
+  background: #eef0ff;
+  color: #4338ca;
+}
+.next {
+  background: #ec2d8f;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(236, 45, 143, 0.35);
+}
+.next:hover {
+  filter: brightness(1.06);
+}

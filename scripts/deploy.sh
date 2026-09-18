@@ -25,7 +25,7 @@ if [ "${SKIP_SIM3D:-0}" = "1" ]; then
   EXCLUDES="$EXCLUDES --exclude-glob sim3d/*"
 fi
 
-if command -v lftp >/dev/null 2>&1; then
+if command -v lftp >/dev/null 2>&1 && [ "${USE_PYTHON_DEPLOY:-0}" != "1" ]; then
   echo "→ Mengunggah via lftp..."
   run_lftp() {
     lftp -c "set ftp:ssl-force false; \
@@ -50,15 +50,18 @@ if command -v lftp >/dev/null 2>&1; then
     TARGET_ROOT="${REMOTE_DIR}"
   fi
 
-  echo "→ pass 1: /_next hashed chunks..."
-  run_lftp "mirror -R $ONLY_NEWER_FLAG --delete --parallel=2 $EXCLUDES ./out/_next $TARGET_NEXT"
-
-  echo "→ pass 2: HTML + assets..."
-  run_lftp "mirror -R --delete --parallel=2 --exclude-glob _next/* $EXCLUDES ./out $TARGET_ROOT"
+  if run_lftp "mirror -R $ONLY_NEWER_FLAG --delete --parallel=2 $EXCLUDES ./out/_next $TARGET_NEXT" && \
+     run_lftp "mirror -R --delete --parallel=2 --exclude-glob _next/* $EXCLUDES ./out $TARGET_ROOT"; then
+    echo "✓ lftp upload selesai."
+  else
+    echo "⚠ lftp gagal (kemungkinan lock .in.* atau timeout), beralih ke python deploy..."
+    FTP_HOST="$FTP_HOST" FTP_USER="$FTP_USER" FTP_PASS="$FTP_PASS" python3 scripts/deploy.py
+  fi
 else
-  echo "→ lftp tidak terinstall, menjalankan python deploy..."
+  echo "→ Menjalankan python deploy..."
   FTP_HOST="$FTP_HOST" FTP_USER="$FTP_USER" FTP_PASS="$FTP_PASS" python3 scripts/deploy.py
 fi
+
 
 # ── Post-deploy smoke check ───────────────────────────────────────────────
 echo ""
