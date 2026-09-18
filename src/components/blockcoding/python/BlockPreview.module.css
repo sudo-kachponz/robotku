@@ -1,0 +1,22 @@
+.wrap {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--code-gutter-bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.wrap svg {
+  display: block;
+  height: auto;
+  max-width: 100%;
+}
+.chip {
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 999px;
+}

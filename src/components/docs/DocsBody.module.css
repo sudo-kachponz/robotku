@@ -1,0 +1,112 @@
+.body {
+  color: var(--ink-700);
+}
+.previewRow {
+  margin: 0 0 14px;
+}
+.summary {
+  margin: 0 0 10px;
+  color: var(--ink-900);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.55;
+}
+.text {
+  margin: 0 0 14px;
+  color: var(--ink-700);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.boardNote {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--amber) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--amber) 30%, var(--surface));
+  border-radius: 10px;
+  color: var(--amber);
+  font-size: 13px;
+  font-weight: 600;
+}
+.section {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 16px 0 8px;
+}
+.code {
+  margin: 0 0 6px;
+  background: var(--code-gutter-bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-900);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.sigTag {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--ink-400);
+  letter-spacing: 0.06em;
+}
+.params {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--ink-700);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.params code {
+  background: color-mix(in srgb, var(--cat, var(--indigo-600)) 14%, var(--surface));
+  color: var(--cat, var(--indigo-600));
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: 700;
+}
+.pType {
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-400);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.inlineCode {
+  background: var(--line-soft);
+  color: var(--ink-900);
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 700;
+}
+.exTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-700);
+  margin: 8px 0 4px;
+}
+.seeAlso {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.seeChip {
+  border: 1px solid var(--line);
+  background: var(--line-soft);
+  color: var(--ink-700);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+.seeChip:hover {
+  background: var(--line);
+}
