@@ -60,8 +60,8 @@
 
 .railSearchInput:focus {
   outline: none;
-  border-color: var(--pink-500, #ec2d8f);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pink-500, #ec2d8f) 20%, transparent);
+  border-color: var(--pink-500);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pink-500) 20%, transparent);
 }
 
 .railSearchIcon {
@@ -121,7 +121,7 @@
 .railCollapseBtn:hover {
   background: var(--pink-500);
   border-color: var(--pink-500);
-  color: #ffffff;
+  color: #fff;
 }
 
 .railList {
@@ -141,7 +141,7 @@
   height: auto;
   min-height: 54px;
   padding: 12px 16px;
-  border-left: 8px solid var(--cat, #4f46e5);
+  border-left: 8px solid var(--cat);
   margin-bottom: 8px;
   border-radius: 0;
   border-top: none;
@@ -163,15 +163,15 @@
 }
 
 .railActive {
-  background-color: var(--cat, #4f46e5) !important;
-  color: #ffffff !important;
+  background-color: var(--cat) !important;
+  color: #fff !important;
   box-shadow: 0 4px 14px color-mix(in srgb, var(--cat) 30%, transparent);
 }
 .railActive .railIcon {
-  color: #ffffff !important;
+  color: #fff !important;
 }
 .railActive .railLabel {
-  color: #ffffff !important;
+  color: #fff !important;
 }
 
 .railIcon {
@@ -183,7 +183,7 @@
   width: 32px;
   height: 32px;
   flex-shrink: 0;
-  color: var(--cat, #4f46e5);
+  color: var(--cat);
   transition: color 0.15s ease;
 }
 
@@ -193,7 +193,7 @@
 }
 
 .railLabel {
-  color: var(--cat, #4f46e5);
+  color: var(--cat);
   font-size: clamp(16px, 3.5vw, 26px);
   font-weight: 800;
   font-family: var(--font);
@@ -389,7 +389,7 @@
 }
 
 .moreBtn:hover {
-  background: color-mix(in srgb, var(--cat, #4f46e5) 12%, transparent);
+  background: color-mix(in srgb, var(--cat) 12%, transparent);
 }
 
 .cardDesc {
@@ -402,8 +402,8 @@
 
 /* Inline Documentation Box */
 .inlineDoc {
-  background: color-mix(in srgb, var(--cat, #4f46e5) 7%, var(--surface-2));
-  border: 1px solid color-mix(in srgb, var(--cat, #4f46e5) 20%, var(--line));
+  background: color-mix(in srgb, var(--cat) 7%, var(--surface-2));
+  border: 1px solid color-mix(in srgb, var(--cat) 20%, var(--line));
   border-radius: 8px;
   padding: 10px 12px;
   display: flex;
@@ -606,13 +606,13 @@
 .actionBtn:hover {
   background: var(--cat, var(--indigo-600));
   border-color: var(--cat, var(--indigo-600));
-  color: #ffffff;
+  color: #fff;
 }
 
 .actionBtnCopied {
-  background: #10b981 !important;
-  border-color: #10b981 !important;
-  color: #ffffff !important;
+  background: var(--emerald) !important;
+  border-color: var(--emerald) !important;
+  color: #fff !important;
 }
 
 /* Indented Code Lines Styling */
@@ -626,59 +626,59 @@
 }
 
 .codeLineIndented {
-  background: color-mix(in srgb, var(--cat, #38bdf8) 12%, transparent);
-  border-left: 2px solid var(--cat, #38bdf8);
+  background: color-mix(in srgb, var(--cat) 12%, transparent);
+  border-left: 2px solid var(--cat);
   padding-left: 6px;
   margin-left: 10px;
   border-radius: 0 4px 4px 0;
 }
 
 .codeLineFirstIndent {
-  border-top: 1.5px solid var(--cat, #38bdf8);
+  border-top: 1.5px solid var(--cat);
   border-top-left-radius: 3px;
 }
 
 .codeLineLastIndent {
-  border-bottom: 1.5px solid var(--cat, #38bdf8);
+  border-bottom: 1.5px solid var(--cat);
   border-bottom-left-radius: 3px;
 }
 
 /* Code Syntax Tokens */
 .tokKeyword {
-  color: var(--code-keyword, #8b5cf6);
+  color: var(--code-keyword);
   font-weight: 700;
 }
 
 .tokString {
-  color: var(--code-string, #10b981);
+  color: var(--code-string);
 }
 
 .tokNumber {
-  color: var(--code-number, #f59e0b);
+  color: var(--code-number);
 }
 
 .tokComment {
-  color: var(--code-comment, #9ca3af);
+  color: var(--code-comment);
   font-style: italic;
 }
 
 .tokIdent {
-  color: var(--code-ident, #38bdf8);
+  color: var(--code-ident);
 }
 
 :global([data-theme='space']) .codeLineIndented {
   background: rgba(56, 189, 248, 0.10);
-  border-left-color: #38bdf8;
+  border-left-color: var(--sky);
 }
 
 :global([data-theme='forest']) .codeLineIndented {
   background: rgba(16, 185, 129, 0.10);
-  border-left-color: #10b981;
+  border-left-color: var(--emerald);
 }
 
 :global([data-theme='underwater']) .codeLineIndented {
   background: rgba(6, 182, 212, 0.10);
-  border-left-color: #06b6d4;
+  border-left-color: var(--cyan);
 }
 
 .noResult {

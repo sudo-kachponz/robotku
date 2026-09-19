@@ -10,62 +10,62 @@
 
 /* Python Indentation Block Highlighting */
 .editor :global(.cm-py-indent-line) {
-  background-color: var(--code-indent-bg, color-mix(in srgb, var(--indigo-500, #6366f1) 7%, transparent));
+  background-color: var(--code-indent-bg, color-mix(in srgb, var(--indigo-500) 7%, transparent));
   position: relative;
 }
 
 .editor :global(.cm-py-indent-first) {
-  border-top: 1.5px solid var(--cat, var(--indigo-500, #38bdf8));
+  border-top: 1.5px solid var(--cat, var(--indigo-500));
   border-top-left-radius: 4px;
 }
 
 .editor :global(.cm-py-indent-last) {
-  border-bottom: 1.5px solid var(--cat, var(--indigo-500, #38bdf8));
+  border-bottom: 1.5px solid var(--cat, var(--indigo-500));
   border-bottom-left-radius: 4px;
 }
 
 .editor :global(.cm-py-indent-1) {
-  box-shadow: inset 3px 0 0 0 var(--cat, var(--indigo-500, #38bdf8));
+  box-shadow: inset 3px 0 0 0 var(--cat, var(--indigo-500));
 }
 
 .editor :global(.cm-py-indent-2) {
-  box-shadow: inset 6px 0 0 0 var(--pink-500, #ec2d8f);
+  box-shadow: inset 6px 0 0 0 var(--pink-500);
 }
 
 .editor :global(.cm-py-indent-3) {
-  box-shadow: inset 9px 0 0 0 var(--cyan-500, #06b6d4);
+  box-shadow: inset 9px 0 0 0 var(--cyan-500);
 }
 
 :global([data-theme='space']) .editor :global(.cm-py-indent-line) {
   background-color: rgba(56, 189, 248, 0.08);
 }
 :global([data-theme='space']) .editor :global(.cm-py-indent-1) {
-  box-shadow: inset 3px 0 0 0 #38bdf8;
+  box-shadow: inset 3px 0 0 0 var(--sky);
 }
 :global([data-theme='space']) .editor :global(.cm-py-indent-first),
 :global([data-theme='space']) .editor :global(.cm-py-indent-last) {
-  border-color: #38bdf8;
+  border-color: var(--sky);
 }
 
 :global([data-theme='forest']) .editor :global(.cm-py-indent-line) {
   background-color: rgba(16, 185, 129, 0.08);
 }
 :global([data-theme='forest']) .editor :global(.cm-py-indent-1) {
-  box-shadow: inset 3px 0 0 0 #10b981;
+  box-shadow: inset 3px 0 0 0 var(--emerald);
 }
 :global([data-theme='forest']) .editor :global(.cm-py-indent-first),
 :global([data-theme='forest']) .editor :global(.cm-py-indent-last) {
-  border-color: #10b981;
+  border-color: var(--emerald);
 }
 
 :global([data-theme='underwater']) .editor :global(.cm-py-indent-line) {
   background-color: rgba(6, 182, 212, 0.08);
 }
 :global([data-theme='underwater']) .editor :global(.cm-py-indent-1) {
-  box-shadow: inset 3px 0 0 0 #06b6d4;
+  box-shadow: inset 3px 0 0 0 var(--cyan);
 }
 :global([data-theme='underwater']) .editor :global(.cm-py-indent-first),
 :global([data-theme='underwater']) .editor :global(.cm-py-indent-last) {
-  border-color: #06b6d4;
+  border-color: var(--cyan);
 }
 
