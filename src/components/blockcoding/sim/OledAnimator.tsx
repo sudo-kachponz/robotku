@@ -36,6 +36,7 @@ export default function OledAnimator({ onFrame }: { onFrame: (b: Bitmap | null) 
   const { sendCommand } = useDrive();
   const [playing, setPlaying] = useState<string | null>(null);
   const lastSend = useRef(0);
+  const sending = useRef(false); // skip frames while one is mid-flight so BLE never floods
 
   // Static frame-0 previews (never change) — render once.
   const previews = useMemo(() => Object.fromEntries(OLED_ANIMS.map((a) => [a.id, toUrl(a.frame(0))])), []);
@@ -49,9 +50,12 @@ export default function OledAnimator({ onFrame }: { onFrame: (b: Bitmap | null) 
       const pixels = anim.frame(i);
       onFrame({ w: AW, h: AH, pixels });
       const now = Date.now();
-      if (now - lastSend.current >= 220) {
+      if (!sending.current && now - lastSend.current >= 220) {
         lastSend.current = now;
-        sendCommand('DISPLAY_BITMAP', { w: AW, h: AH, pixels }); // no-op if not connected
+        sending.current = true; // no-op if not connected; guard stops BLE frame pile-up
+        void sendCommand('DISPLAY_BITMAP', { w: AW, h: AH, pixels }).finally(() => {
+          sending.current = false;
+        });
       }
       i++;
     };

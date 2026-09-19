@@ -210,6 +210,7 @@ export default function OledModule({
   const [searchQuery, setSearchQuery] = useState('');
 
   const lastSend = useRef(0);
+  const sending = useRef(false); // a bitmap frame is mid-flight → skip new ones (no BLE pile-up)
   const hasDrawn = useRef(false);
   const frameRef = useRef(0);
 
@@ -327,11 +328,18 @@ export default function OledModule({
       const b: Bitmap = { w: W, h: H, pixels: snapshot().pixels };
       onBitmapChange?.(b);
 
-      // Throttle real serial transmission to ~4.5 fps
+      // Stream the NATIVE small frame (sw×sh; the firmware upscales it to fill the
+      // 128×64 panel) and only when the previous frame has fully drained. Sending the
+      // upscaled 128×64 (~8 KB) every 220 ms floods the BLE write chain and drops the
+      // link — the native frame is ~4× smaller and the in-flight guard caps the rate
+      // to what Bluetooth can actually carry, dropping intermediate frames instead.
       const now = Date.now();
-      if (now - lastSend.current >= 220) {
+      if (!sending.current && now - lastSend.current >= 220) {
         lastSend.current = now;
-        sendCommand('DISPLAY_BITMAP', { ...b });
+        sending.current = true;
+        void sendCommand('DISPLAY_BITMAP', { w: sw, h: sh, pixels: rawPixels }).finally(() => {
+          sending.current = false;
+        });
       }
 
       localFrame = (localFrame + 1) % currentAnim.frames;

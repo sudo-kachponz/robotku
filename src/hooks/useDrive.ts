@@ -11,10 +11,10 @@ import { getSettings, subscribeSettings } from '../app/settingsStore';
 import { applyPortTuning, type RobotSettings } from '../domain/settings';
 import { setPortLine, driveDirectLine, encodeCommand, OPCODES } from '../domain/protocol';
 
-function sendLine(line: string): void {
+function sendLine(line: string): Promise<void> {
   const { transport } = getState();
-  if (!transport) return;
-  transport.sendLine(line).catch((err) => console.warn('[drive] send failed', err));
+  if (!transport) return Promise.resolve();
+  return transport.sendLine(line).catch((err) => console.warn('[drive] send failed', err));
 }
 
 export function useSettings(): RobotSettings {
@@ -34,8 +34,11 @@ export interface DriveApi {
   setLed: (color: string) => void;
   /** Zero a group of ports. */
   stopGroup: (ports: number[]) => void;
-  /** Send an arbitrary command to the board (e.g. DISPLAY_BITMAP). No-op if offline. */
-  sendCommand: (command: string, params?: Record<string, unknown>) => void;
+  /**
+   * Send an arbitrary command to the board (e.g. DISPLAY_BITMAP). No-op if offline.
+   * Resolves when the write has drained — await it to pace a stream (OLED frames).
+   */
+  sendCommand: (command: string, params?: Record<string, unknown>) => Promise<void>;
 }
 
 export function useDrive(): DriveApi {
@@ -77,7 +80,7 @@ export function useDrive(): DriveApi {
     // sends and the firmware's LED/bitmap/tone handlers read (doc["params"]["…"]).
     // Spreading flat put r/g/b/pixels at the top level, so a board that reads only
     // the nested form saw empty params: LED stayed off and the OLED image never drew.
-    sendLine(encodeCommand({ command, params } as Parameters<typeof encodeCommand>[0]));
+    return sendLine(encodeCommand({ command, params } as Parameters<typeof encodeCommand>[0]));
   }, []);
 
   return { setPort, driveGroup, driveDirect, setGripper, setLed, stopGroup, sendCommand };
