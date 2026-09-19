@@ -28,7 +28,10 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  flex: 0 0 auto;
+  /* Equal weight with .topRight so the centered title lands on the TRUE window
+     center (matching the absolutely-centered connection pill), not shifted by
+     whichever side has more buttons. */
+  flex: 1 1 0;
   min-width: 0;
 }
 
@@ -61,7 +64,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  flex: 0 0 auto;
+  flex: 1 1 0;
   min-width: 0;
 }
 
