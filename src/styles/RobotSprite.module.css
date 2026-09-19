@@ -1,7 +1,14 @@
 /* src/styles/RobotSprite.module.css
  *
- * Visuals + animation for the Base Robot top-down sprite. Wheel spin and gripper
- * open/close are pure CSS driven by classes toggled in RobotSprite.tsx.
+ * Authentic Robotku 2D Top-Down Hardware Sprite Styles & Animations
+ * Features:
+ * - Real wooden chassis dowel textures
+ * - Mint-green 3D-printed brackets and wheels
+ * - Translucent blue SG90 servo motor casing
+ * - Cobalt blue PCB with ESP32 and pulsing red LED
+ * - Matte black power bank with glowing cyan battery meter
+ * - Dynamic translucent blue USB cable with cable glow
+ * - Differential wheel spin animations
  */
 
 .svg {
@@ -12,92 +19,132 @@
 }
 
 .shadow {
-  fill: rgba(20, 16, 60, 0.35);
-}
-
-/* ---- Chassis ---- */
-.chassis {
-  fill: #c2c6db;
-  stroke: #9499b8;
-  stroke-width: 2;
-}
-.bumper {
-  fill: var(--indigo-600, #4f46e5);
-}
-.battery {
-  fill: #352da0;
-}
-.batteryStripe {
-  fill: #a3a8fb;
-}
-.light {
-  fill: var(--pink-500, #ec2d8f);
+  fill: rgba(15, 23, 42, 0.45);
 }
 
 /* ---- Wheels ---- */
 .wheel {
   transform-box: view-box;
-  /* transform-origin set inline per wheel (SVG user units) */
 }
-.tire {
-  fill: #1b1840;
-  stroke: #403c6b;
-  stroke-width: 2;
+
+.wheelTire {
+  fill: #059669;
+  stroke: #10b981;
+  stroke-width: 1.5;
 }
+
+.wheelTreads {
+  stroke: #047857;
+  stroke-width: 2.5;
+  stroke-dasharray: 4 4;
+}
+
 .spoke {
-  stroke: #6b7194;
-  stroke-width: 3;
+  stroke: #047857;
+  stroke-width: 2.5;
   stroke-linecap: round;
 }
+
 .hub {
-  fill: var(--indigo-400, #8085f4);
+  fill: #065f46;
+  stroke: #10b981;
+  stroke-width: 1;
 }
+
 .spinFwd {
   animation: rk-spin 0.7s linear infinite;
 }
+
 .spinBack {
   animation: rk-spin 0.7s linear infinite reverse;
 }
+
 @keyframes rk-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-/* ---- Gripper ---- */
-.claw {
-  fill: #5b54ea;
-  stroke: #a3a8fb;
-  stroke-width: 2;
-  stroke-linejoin: round;
+/* ---- LEDs & Electronic Displays ---- */
+.redLedGlow {
+  filter: drop-shadow(0 0 5px #ef4444);
+  animation: pulseLed 1.4s ease-in-out infinite alternate;
 }
+
+@keyframes pulseLed {
+  0% {
+    opacity: 0.75;
+    filter: drop-shadow(0 0 2px #ef4444);
+  }
+  100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 7px #ff3b30);
+  }
+}
+
+.oledScreen {
+  fill: #090d16;
+  stroke: #1e293b;
+  stroke-width: 0.8;
+}
+
+.oledTextGlow {
+  fill: #38bdf8;
+  filter: drop-shadow(0 0 2px rgba(56, 189, 248, 0.8));
+  font-family: var(--font, 'Plus Jakarta Sans', sans-serif);
+}
+
+.batteryLedGlow {
+  fill: #38bdf8;
+  filter: drop-shadow(0 0 2.5px #38bdf8);
+  font-family: var(--font, 'Plus Jakarta Sans', monospace);
+}
+
+.batteryLedDim {
+  fill: #1e293b;
+  font-family: var(--font, 'Plus Jakarta Sans', monospace);
+}
+
+/* ---- Blue USB Cable ---- */
+.cableGlow {
+  filter: drop-shadow(0 0 3px rgba(56, 189, 248, 0.5));
+}
+
+.cableHead {
+  fill: #0284c7;
+  stroke: #38bdf8;
+  stroke-width: 0.8;
+}
+
+/* ---- Gripper Attachment ---- */
 .gripper {
   transform-box: view-box;
   transition: transform 0.25s ease;
 }
 .gripperL {
-  transform-origin: 74px 78px;
+  transform-origin: 82px 36px;
 }
 .gripperR {
-  transform-origin: 126px 78px;
+  transform-origin: 118px 36px;
 }
-/* Closed = tips swing toward the centre; open = swing apart. */
 .gripperL.closed {
-  transform: rotate(16deg);
+  transform: rotate(18deg);
 }
 .gripperL.open {
-  transform: rotate(-6deg);
+  transform: rotate(-8deg);
 }
 .gripperR.closed {
-  transform: rotate(-16deg);
+  transform: rotate(-18deg);
 }
 .gripperR.open {
-  transform: rotate(6deg);
+  transform: rotate(8deg);
 }
 
+/* ---- Motion Accessibility ---- */
 @media (prefers-reduced-motion: reduce) {
   .spinFwd,
-  .spinBack {
+  .spinBack,
+  .redLedGlow {
     animation: none;
   }
 }

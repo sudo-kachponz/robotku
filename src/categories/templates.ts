@@ -34,7 +34,7 @@ const FLYOUT_KEY = 'TEMPLATES_FLYOUT';
 /** Populate the Templates flyout: a gallery button + the comment block. */
 function templatesFlyout(): Blockly.utils.toolbox.FlyoutItemInfoArray {
   return [
-    { kind: 'button', text: '✨  Buka Galeri Template', callbackkey: OPEN_GALLERY_KEY },
+    { kind: 'button', text: 'Buka Galeri Template', callbackkey: OPEN_GALLERY_KEY },
     { kind: 'label', text: 'Catatan' },
     { kind: 'block', type: 'templates_comment' },
   ] as unknown as Blockly.utils.toolbox.FlyoutItemInfoArray;

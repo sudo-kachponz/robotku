@@ -195,14 +195,203 @@ export class Simulator {
     this.animate();
   }
 
-  public async loadRobotModel(url: string): Promise<void> {
-    if (this.initFailed || !this.renderer) return;
-    const loader = new GLTFLoader();
-    try {
-      const gltf = await loader.loadAsync(url);
-      this.robotModel = gltf.scene;
+  public createRobotku3DModel(): THREE.Group {
+    const robot = new THREE.Group();
+    robot.name = 'Robotku_Kit';
 
-      const masterScale = 0.4;
+    // Materials
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0xd5a575, roughness: 0.7, metalness: 0.1 });
+    const greenMat = new THREE.MeshStandardMaterial({ color: 0x059669, roughness: 0.4, metalness: 0.2 });
+    const servoMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3, metalness: 0.3, transparent: true, opacity: 0.9 });
+    const pcbMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.4, metalness: 0.3 });
+    const espMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.2, metalness: 0.8 });
+    const powerbankMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.6, metalness: 0.2 });
+    const oledScreenMat = new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.2, metalness: 0.5 });
+    const cyanGlowMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x38bdf8, emissiveIntensity: 2.0 });
+    const redLedMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xef4444, emissiveIntensity: 2.5 });
+    const blueCableMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.6, transparent: true, opacity: 0.85, roughness: 0.3 });
+
+    // Chassis Wooden Dowels (Width ~ 0.44, Length ~ 0.56, Height ~ 0.20)
+    const dowelRadius = 0.012;
+    const w = 0.44;
+    const l = 0.56;
+    const h = 0.20;
+
+    // 4 Vertical corner dowels
+    const vertGeom = new THREE.CylinderGeometry(dowelRadius, dowelRadius, h, 12);
+    [-w / 2, w / 2].forEach((x) => {
+      [-l / 2, l / 2].forEach((z) => {
+        const post = new THREE.Mesh(vertGeom, woodMat);
+        post.position.set(x, h / 2 + 0.08, z);
+        robot.add(post);
+
+        // Green corner brackets (Top & Bottom)
+        const cornerGeom = new THREE.BoxGeometry(0.04, 0.04, 0.04);
+        const topCorner = new THREE.Mesh(cornerGeom, greenMat);
+        topCorner.position.set(x, h + 0.08, z);
+        robot.add(topCorner);
+
+        const btmCorner = new THREE.Mesh(cornerGeom, greenMat);
+        btmCorner.position.set(x, 0.08, z);
+        robot.add(btmCorner);
+      });
+    });
+
+    // 4 Top horizontal dowels
+    const topLongGeom = new THREE.CylinderGeometry(dowelRadius, dowelRadius, l, 12);
+    [-w / 2, w / 2].forEach((x) => {
+      const rail = new THREE.Mesh(topLongGeom, woodMat);
+      rail.rotation.x = Math.PI / 2;
+      rail.position.set(x, h + 0.08, 0);
+      robot.add(rail);
+    });
+
+    const topCrossGeom = new THREE.CylinderGeometry(dowelRadius, dowelRadius, w, 12);
+    [-l / 2, l / 2].forEach((z) => {
+      const rail = new THREE.Mesh(topCrossGeom, woodMat);
+      rail.rotation.z = Math.PI / 2;
+      rail.position.set(0, h + 0.08, z);
+      robot.add(rail);
+    });
+
+    // 4 Bottom horizontal dowels
+    [-w / 2, w / 2].forEach((x) => {
+      const rail = new THREE.Mesh(topLongGeom, woodMat);
+      rail.rotation.x = Math.PI / 2;
+      rail.position.set(x, 0.08, 0);
+      robot.add(rail);
+    });
+
+    [-l / 2, l / 2].forEach((z) => {
+      const rail = new THREE.Mesh(topCrossGeom, woodMat);
+      rail.rotation.z = Math.PI / 2;
+      rail.position.set(0, 0.08, z);
+      robot.add(rail);
+    });
+
+    // Center longitudinal rails
+    [-0.08, 0.08].forEach((x) => {
+      const midRail = new THREE.Mesh(topLongGeom, woodMat);
+      midRail.rotation.x = Math.PI / 2;
+      midRail.position.set(x, h + 0.06, 0);
+      robot.add(midRail);
+    });
+
+    // Left and Right Wheels + Servos
+    const wheelRadius = 0.12;
+    const wheelThickness = 0.024;
+    [-1, 1].forEach((side) => {
+      const x = (w / 2 + 0.05) * side;
+      const z = 0.02;
+
+      // Servo bracket + Blue servo motor
+      const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.08, 0.08), greenMat);
+      bracket.position.set((w / 2 - 0.02) * side, 0.12, z);
+      robot.add(bracket);
+
+      const servo = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.05, 0.06), servoMat);
+      servo.position.set((w / 2 + 0.02) * side, 0.12, z);
+      robot.add(servo);
+
+      // Wheel Group
+      const wheelGroup = new THREE.Group();
+      wheelGroup.name = side === -1 ? 'Wheel_L' : 'Wheel_R';
+      wheelGroup.position.set(x, 0.12, z);
+
+      // Outer rim
+      const rim = new THREE.Mesh(new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelThickness, 32), greenMat);
+      rim.rotation.z = Math.PI / 2;
+      wheelGroup.add(rim);
+
+      // Hub
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, wheelThickness + 0.01, 16), greenMat);
+      hub.rotation.z = Math.PI / 2;
+      wheelGroup.add(hub);
+
+      robot.add(wheelGroup);
+    });
+
+    // Power Bank (Center/Rear Deck)
+    const pb = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.06, 0.26), powerbankMat);
+    pb.position.set(0, 0.12, 0.10);
+    robot.add(pb);
+
+    // Power bank 4 green clips
+    [-0.105, 0.105].forEach((x) => {
+      [-0.08, 0.08].forEach((z) => {
+        const clip = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.08, 0.04), greenMat);
+        clip.position.set(x, 0.13, 0.10 + z);
+        robot.add(clip);
+      });
+    });
+
+    // Power bank battery LED gauge
+    const pbLed = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.01, 0.02), cyanGlowMat);
+    pbLed.position.set(0, 0.151, 0.20);
+    robot.add(pbLed);
+
+    // Controller PCB (Center/Front Upper Deck)
+    const pcbCradle = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.02, 0.22), greenMat);
+    pcbCradle.position.set(0, h + 0.05, -0.12);
+    robot.add(pcbCradle);
+
+    const pcb = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.01, 0.20), pcbMat);
+    pcb.position.set(0, h + 0.065, -0.12);
+    robot.add(pcb);
+
+    // ESP32 Shield
+    const esp = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.015, 0.08), espMat);
+    esp.position.set(0, h + 0.075, -0.14);
+    robot.add(esp);
+
+    // Red Power LED (Dash-LED1)
+    const redLed = new THREE.Mesh(new THREE.SphereGeometry(0.008, 12, 12), redLedMat);
+    redLed.name = 'Dash-LED1';
+    redLed.position.set(0.06, h + 0.075, -0.06);
+    robot.add(redLed);
+
+    // Front OLED Screen (Dash-Display)
+    const oledMount = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.02), greenMat);
+    oledMount.position.set(0, h + 0.08, -l / 2 - 0.01);
+    robot.add(oledMount);
+
+    const oledScreen = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.06, 0.005), oledScreenMat);
+    oledScreen.name = 'Dash-Display';
+    oledScreen.position.set(0, h + 0.08, -l / 2 - 0.02);
+    robot.add(oledScreen);
+
+    // Blue Translucent USB Cable (connecting Powerbank to PCB)
+    const cableCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0.12, 0.23),
+      new THREE.Vector3(0.08, 0.10, 0.25),
+      new THREE.Vector3(0.12, 0.15, 0.10),
+      new THREE.Vector3(0.10, h + 0.04, -0.02),
+      new THREE.Vector3(0, h + 0.06, -0.02),
+    ]);
+    const cableGeom = new THREE.TubeGeometry(cableCurve, 24, 0.008, 8, false);
+    const cableMesh = new THREE.Mesh(cableGeom, blueCableMat);
+    robot.add(cableMesh);
+
+    // Head / Sensor Node for yaw / pitch (Dash-Head)
+    const headGroup = new THREE.Group();
+    headGroup.name = 'Dash-Head';
+    headGroup.position.set(0, h + 0.12, -l / 2);
+    const headSensor = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.03, 16), espMat);
+    headSensor.rotation.x = Math.PI / 2;
+    headGroup.add(headSensor);
+    robot.add(headGroup);
+
+    return robot;
+  }
+
+  public async loadRobotModel(url?: string): Promise<void> {
+    if (this.initFailed || !this.renderer) return;
+
+    try {
+      // Build authentic physical Robotku 3D Model
+      this.robotModel = this.createRobotku3DModel();
+
+      const masterScale = 0.45;
       this.robotModel.scale.set(masterScale, masterScale, masterScale);
 
       const box = new THREE.Box3().setFromObject(this.robotModel);
@@ -239,12 +428,8 @@ export class Simulator {
       });
 
       this.mixer = new THREE.AnimationMixer(this.robotModel);
-      gltf.animations.forEach((clip) => {
-        const action = this.mixer!.clipAction(clip);
-        this.animations.set(clip.name, action);
-      });
     } catch (error) {
-      console.error('Error loading robot model:', error);
+      console.error('Error creating robot model:', error);
     }
   }
 

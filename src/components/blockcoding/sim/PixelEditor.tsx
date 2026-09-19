@@ -99,9 +99,9 @@ const MIKU_BRAILLE = [
 
 const TEMPLATES: Record<string, () => Uint8Array> = {
   '— Template —': blank,
-  '♥ Hati': () => fromStr(HEART_16, 16, 8),
-  '🎂 Happy Birthday': () => fromStr(CAKE_16, 16, 8),
-  '🎤 Hatsune Miku': () => fromBraille(MIKU_BRAILLE),
+  'Hati': () => fromStr(HEART_16, 16, 8),
+  'Happy Birthday': () => fromStr(CAKE_16, 16, 8),
+  'Hatsune Miku': () => fromBraille(MIKU_BRAILLE),
 };
 
 // onSend = pushed to the real robot (Kirim ke OLED); onPreview = live sim mirror as

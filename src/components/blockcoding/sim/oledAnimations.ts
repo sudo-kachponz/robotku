@@ -851,7 +851,7 @@ const LOADERS_ANIMS: OledAnim[] = [
           [cx, cy + 10 + innerFlH],
         ]);
       }, i, w, h),
-    toBlockSpec: () => [lcdText('Launch 3.. 2.. 1.. 🚀', 2)],
+    toBlockSpec: () => [lcdText('Launch 3.. 2.. 1..', 2)],
   },
   {
     id: 'sync_cloud',
