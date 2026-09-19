@@ -1167,12 +1167,18 @@
 
 /* ── LIGHTBAR (dynamic glow stripe) ── */
 .psLightbar {
-  width: 70%;
-  height: 4px;
-  border-radius: 2px;
-  margin: 8px auto 0 auto;
-  transition: background 0.5s ease, box-shadow 0.5s ease;
+  width: 62%;
+  height: 6px;
+  border-radius: 3px;
+  margin: 7px auto 0 auto;
+  transition:
+    background 0.5s ease,
+    box-shadow 0.5s ease;
   pointer-events: none;
+  /* Recessed LED-strip look: seated in a dark groove so the colored glow reads like
+     the real DualShock light bar. Inline style sets the live color + outer glow. */
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  filter: saturate(1.15);
 }
 
 /* ── SHOULDER BAR (L2, L1, R1, R2) ── */
