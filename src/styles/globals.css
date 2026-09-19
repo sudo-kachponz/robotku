@@ -185,8 +185,17 @@ button {
   color: #ffffff !important;
 }
 
+.blocklyMainBackground {
+  fill: var(--bg, #f4f5fb) !important;
+}
+
+.blocklyToolboxDiv {
+  background-color: var(--surface, #ffffff) !important;
+  color: var(--ink-900) !important;
+}
+
 .blocklyFlyoutBackground {
-  fill: var(--flyout-bg-color, rgba(243, 244, 251, 0.65)) !important;
+  fill: var(--flyout-bg-color, var(--surface-2, rgba(243, 244, 251, 0.65))) !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }

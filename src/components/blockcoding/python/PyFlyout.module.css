@@ -263,6 +263,18 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
+:global([data-theme='space']) .chip,
+:global([data-theme='forest']) .chip,
+:global([data-theme='underwater']) .chip {
+  color: #0b0f19 !important;
+}
+
+:global([data-theme='space']) .ghost,
+:global([data-theme='forest']) .ghost,
+:global([data-theme='underwater']) .ghost {
+  color: #0b0f19 !important;
+}
+
 .cardDesc {
   color: var(--ink-700);
   font-size: 13px;
