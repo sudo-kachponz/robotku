@@ -1,7 +1,7 @@
 // src/categories/looks.ts
 //
-// DISPLAY (#3B82F6) — a.md Display category: LED Matrix + LCD Screen.
-// The 5x5 matrix uses a 25-char on/off pattern string (row-major, '1'=on).
+// DISPLAY (#3B82F6) — a.md Display category: OLED text/shapes + RGB LED.
+// No 5x5 LED matrix on this board — the OLED is the display, the RGB LED is one color.
 
 import * as Blockly from 'blockly/core';
 import { defineOnce } from './_defineOnce';
@@ -9,23 +9,7 @@ import { javascriptGenerator } from 'blockly/javascript';
 import { astroidV2 } from '../robotProfiles';
 import { numArg, type NumOrExpr } from './_args';
 
-const DEFAULT_MATRIX = '0110010010111110100010001'; // a friendly heart-ish glyph
-
 defineOnce([
-  // --- LED Matrix ---
-  {
-    type: 'display_matrix',
-    message0: 'Display LED %1 for %2 sec',
-    args0: [
-      { type: 'field_input', name: 'PATTERN', text: DEFAULT_MATRIX },
-      { type: 'input_value', name: 'DURATION', check: 'Number' },
-    ],
-    previousStatement: null,
-    nextStatement: null,
-    style: 'looks_blocks',
-    inputsInline: true,
-    tooltip: 'Show a 5x5 LED pattern (25 bits, row-major) for N seconds.',
-  },
   {
     type: 'display_text',
     message0: 'Display Text %1',
@@ -73,13 +57,6 @@ defineOnce([
     style: 'looks_blocks',
     inputsInline: true,
     tooltip: 'Atur kecerahan layar OLED (kontras 0-100%). LED RGB digital tidak bisa diredupkan.',
-  },
-  {
-    type: 'display_clear_matrix',
-    message0: 'Clear LED Matrix',
-    previousStatement: null,
-    nextStatement: null,
-    style: 'looks_blocks',
   },
   // --- RGB LED (Robotku FW-06): Visual Color Picker + duration ---
   {
@@ -192,21 +169,6 @@ defineOnce([
 const secs = (block: Blockly.Block, gen: typeof javascriptGenerator): NumOrExpr =>
   numArg(block, gen, 'DURATION', 1);
 
-javascriptGenerator.forBlock['display_matrix'] = function (block, gen) {
-  const raw = String(block.getFieldValue('PATTERN') || '');
-  const pattern = raw
-    .split('')
-    .slice(0, 25)
-    .map((c) => (c === '1' ? 1 : 0));
-  while (pattern.length < 25) pattern.push(0);
-  return (
-    JSON.stringify({
-      command: astroidV2.commands.displayMatrix,
-      params: { pattern, secs: secs(block, gen) },
-    }) + ';'
-  );
-};
-
 javascriptGenerator.forBlock['display_text'] = function (block) {
   return (
     JSON.stringify({
@@ -232,10 +194,6 @@ javascriptGenerator.forBlock['display_set_brightness'] = function (block) {
       params: { value: parseInt(block.getFieldValue('VALUE'), 10) },
     }) + ';'
   );
-};
-
-javascriptGenerator.forBlock['display_clear_matrix'] = function () {
-  return JSON.stringify({ command: astroidV2.commands.clearMatrix, params: {} }) + ';';
 };
 
 javascriptGenerator.forBlock['set_led_color'] = function (block, gen) {
@@ -295,8 +253,6 @@ export const looksCategory = {
   categorystyle: 'looks_category',
   cssconfig: { icon: 'icon-looks' },
   contents: [
-    // No 5x5 LED matrix on this board — the OLED is the display. The matrix blocks
-    // (display_matrix's raw binary field + clear_matrix) were greyed clutter, removed.
     { kind: 'label', text: 'Display' },
     { kind: 'block', type: 'display_text' },
     { kind: 'block', type: 'display_kaomoji' },

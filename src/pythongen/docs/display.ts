@@ -4,20 +4,6 @@ const SEC = { name: 'detik', type: 'angka', default: '1', desc: 'Lama tampil dal
 
 export const DISPLAY_DOCS: DocEntry[] = [
   {
-    slug: 'display/matrix',
-    title: 'display.matrix',
-    category: 'Display',
-    summary: 'Menampilkan pola LED 5×5.',
-    description: 'Menyalakan pola lampu dari 25 karakter 0/1 (baris demi baris) selama beberapa detik.',
-    signature: { python: 'display.matrix(pola, detik)', opcode: 'DISPLAY_MATRIX' },
-    params: [
-      { name: 'pola', type: 'teks', desc: '25 karakter 0/1 (1 = nyala).' },
-      SEC,
-    ],
-    blockPreview: { blockType: 'display_matrix' },
-    seeAlso: ['display/clear', 'display/text'],
-  },
-  {
     slug: 'display/text',
     title: 'display.text',
     category: 'Display',
@@ -34,7 +20,7 @@ export const DISPLAY_DOCS: DocEntry[] = [
         runnable: true,
       },
     ],
-    seeAlso: ['display/face', 'display/clear'],
+    seeAlso: ['display/face', 'display/lcd-clear'],
     notes: ['Butuh modul layar OLED.'],
   },
   {
@@ -67,16 +53,6 @@ export const DISPLAY_DOCS: DocEntry[] = [
     params: [{ name: 'nilai', type: 'angka', default: '100', desc: 'Kecerahan.', range: '0 … 100' }],
     blockPreview: { blockType: 'display_set_brightness', fields: { VALUE: 100 } },
     seeAlso: ['display/text'],
-  },
-  {
-    slug: 'display/clear',
-    title: 'display.clear',
-    category: 'Display',
-    summary: 'Mengosongkan layar.',
-    description: 'Menghapus semua yang tampil di layar.',
-    signature: { python: 'display.clear()', opcode: 'CLEAR_MATRIX' },
-    blockPreview: { blockType: 'display_clear_matrix' },
-    seeAlso: ['display/text', 'display/matrix'],
   },
   {
     slug: 'display/led-color',

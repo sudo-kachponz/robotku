@@ -26,8 +26,6 @@ const BLOCK_KEYWORDS: Record<string, string[]> = {
   lcd_shape: ['lcd', 'oled', 'kotak', 'lingkaran', 'garis', 'shape', 'bentuk', 'layar', 'draw'],
   lcd_text: ['lcd text', 'teks lcd', 'oled', 'layar teks', 'lcd print', 'tulisan lcd', 'huruf'],
   lcd_clear: ['lcd hapus', 'clear lcd', 'oled hapus', 'clear oled', 'layar bersih', 'kosongkan layar'],
-  display_matrix: ['matrix', 'matriks', 'led matrix', 'pola led', '5x5', 'lampu matrix'],
-  display_clear_matrix: ['hapus matrix', 'clear matrix', 'matikan matrix'],
   set_led_color: ['warna led', 'rgb', 'lampu', 'led color', 'merah', 'hijau', 'biru', 'kuning', 'color'],
   display_icon: ['ikon', 'icon', 'simbol', 'heart', 'bintang'],
   audio_record: ['rekam', 'record', 'audio record', 'mikrofon', 'mic', 'suara rekaman'],

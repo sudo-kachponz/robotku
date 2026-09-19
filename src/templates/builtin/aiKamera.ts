@@ -6,7 +6,7 @@
 
 import type { BuiltinTemplate } from '../types';
 import { aiThumb } from '../thumbnails';
-import { CHECK, CROSS } from './patterns';
+
 
 const sees = (label: string) => ({ type: 'ai_detected' as const, fields: { LABEL: label } });
 
@@ -35,11 +35,11 @@ export const stopGo: BuiltinTemplate = {
             inputs: { IF0: sees('open_palm'), IF1: sees('closed_fist') },
             statements: {
               DO0: [
-                { type: 'display_matrix', fields: { PATTERN: CHECK }, inputs: { DURATION: 0.2 } },
+                { type: 'set_led_color', fields: { COLOR: '#22C55E' }, inputs: { DURATION: 0.2 } },
                 { type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.3 } },
               ],
               DO1: [
-                { type: 'display_matrix', fields: { PATTERN: CROSS }, inputs: { DURATION: 0.2 } },
+                { type: 'set_led_color', fields: { COLOR: '#EF4444' }, inputs: { DURATION: 0.2 } },
                 { type: 'move_stop_all' },
               ],
               ELSE: [{ type: 'move_stop_all' }],
@@ -172,10 +172,10 @@ export const smileLight: BuiltinTemplate = {
             inputs: { IF0: sees('smiling') },
             statements: {
               DO0: [
-                { type: 'display_matrix', fields: { PATTERN: CHECK }, inputs: { DURATION: 0.3 } },
+                { type: 'set_led_color', fields: { COLOR: '#22C55E' }, inputs: { DURATION: 0.3 } },
               ],
               ELSE: [
-                { type: 'display_matrix', fields: { PATTERN: CROSS }, inputs: { DURATION: 0.3 } },
+                { type: 'set_led_color', fields: { COLOR: '#EF4444' }, inputs: { DURATION: 0.3 } },
               ],
             },
           },
