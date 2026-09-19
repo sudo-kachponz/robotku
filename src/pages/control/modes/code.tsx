@@ -30,13 +30,18 @@ export default function CodePage() {
   // Lifted here so the Blocks/Python toggle can live in the navbar (topRightAction)
   // while BlockCoding reacts to the chosen mode.
   const [viewMode, setViewMode] = useState<'blocks' | 'python'>('blocks');
-  // BlockCoding fills this guard; it can veto a switch to Blocks (e.g. Python has a
-  // parse error) and show its own confirm modal (§H — never silently drop code).
+  // BlockCoding fills these guards to veto switching if code has errors/issues
+  // and pop MakeCode-style modal dialogs.
   const canLeavePythonRef = useRef<() => boolean>(() => true);
+  const canLeaveBlocksRef = useRef<() => boolean>(() => true);
+
   const requestMode = (m: 'blocks' | 'python') => {
+    if (m === viewMode) return;
     if (m === 'blocks' && viewMode === 'python' && !canLeavePythonRef.current()) return;
+    if (m === 'python' && viewMode === 'blocks' && !canLeaveBlocksRef.current()) return;
     setViewMode(m);
   };
+
   return (
     <ControlLayout
       title="Block Coding"
@@ -49,7 +54,9 @@ export default function CodePage() {
         viewMode={viewMode}
         setViewMode={setViewMode}
         canLeavePythonRef={canLeavePythonRef}
+        canLeaveBlocksRef={canLeaveBlocksRef}
       />
     </ControlLayout>
   );
 }
+
