@@ -6,6 +6,7 @@
 
 import { BaseTransport } from './BaseTransport';
 
+const BLE_NAME = 'Robotku'; // firmware's advertised name — match it when reusing a granted device
 const NUS_SERVICE = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX_WRITE = '6e400002-b5a3-f393-e0a9-e50e24dcca9e'; // write (to board)
 const NUS_TX_NOTIFY = '6e400003-b5a3-f393-e0a9-e50e24dcca9e'; // notify (from board)
@@ -30,10 +31,23 @@ export class BleTransport extends BaseTransport {
       throw new Error('Web Bluetooth is not available in this browser.');
     }
 
-    this.device = await navigator.bluetooth.requestDevice({
-      filters: [{ services: [NUS_SERVICE] }],
-      optionalServices: [NUS_SERVICE],
-    });
+    // Reuse a previously-granted device so RECONNECTS (and revisits) need NO picker
+    // gesture — getDevices() returns already-permitted devices. Only the first-time
+    // grant falls back to the native picker (which requires a user gesture).
+    let device: BluetoothDevice | null = null;
+    try {
+      const granted = (await navigator.bluetooth.getDevices?.()) ?? [];
+      device = granted.find((d) => d.name === BLE_NAME) ?? null;
+    } catch {
+      /* getDevices unsupported (no flag) → fall through to the picker */
+    }
+    if (!device) {
+      device = await navigator.bluetooth.requestDevice({
+        filters: [{ services: [NUS_SERVICE] }],
+        optionalServices: [NUS_SERVICE],
+      });
+    }
+    this.device = device;
 
     this.device.addEventListener('gattserverdisconnected', this.onGattDisconnected);
 
