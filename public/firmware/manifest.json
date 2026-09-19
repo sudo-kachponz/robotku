@@ -1,0 +1,11 @@
+{
+  "name": "Robotku Firmware",
+  "version": "2.1.0-py1",
+  "new_install_prompt_erase": false,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [{ "path": "robotku-2.1.0-py1.bin", "offset": 0 }]
+    }
+  ]
+}
