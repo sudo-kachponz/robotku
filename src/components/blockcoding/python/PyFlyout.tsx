@@ -5,6 +5,7 @@
 // Each card: click to insert snippet, drag to drop into editor, or press "?" for docs.
 
 import { useState } from 'react';
+import { useAppTheme } from '../../../theme/themeManager';
 import { getCategoryColor } from '../../../visual/categoryColors';
 import { categoryIconSvg } from '../../../visual/categoryIcons';
 import { SNIPPETS, SNIPPET_CATEGORIES, type Snippet } from '../../../pythongen/snippets';
@@ -37,6 +38,7 @@ export default function PyFlyout({
   onInsert: (py: string) => void;
   onDocs: (s: Snippet) => void;
 }) {
+  const { theme: currentTheme } = useAppTheme();
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [q, setQ] = useState('');
   const query = q.trim().toLowerCase();
@@ -44,7 +46,7 @@ export default function PyFlyout({
 
   const isOpen = searching || activeCat !== null;
   const currentCategory = activeCat || SNIPPET_CATEGORIES[0];
-  const catColor = getCategoryColor(currentCategory);
+  const catColor = getCategoryColor(currentCategory, currentTheme);
 
   const cards = searching
     ? SNIPPETS.filter(
@@ -76,7 +78,7 @@ export default function PyFlyout({
   };
 
   const renderCard = (s: Snippet) => {
-    const c = getCategoryColor(s.category);
+    const c = getCategoryColor(s.category, currentTheme);
     return (
       <div
         key={s.id}
@@ -123,7 +125,7 @@ export default function PyFlyout({
       <div className={styles.rail}>
         {SNIPPET_CATEGORIES.map((c) => {
           const isSelected = c === activeCat;
-          const color = getCategoryColor(c);
+          const color = getCategoryColor(c, currentTheme);
           return (
             <button
               key={c}

@@ -687,12 +687,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 9px 16px;
+  padding-right: calc(76px + var(--safe-r));
   background: var(--surface);
   color: var(--ink-500);
   font-size: 12.5px;
   font-weight: 700;
   border-bottom: 1px solid var(--line);
   flex-shrink: 0;
+  gap: 12px;
 }
 .pyHead button {
   border: 1px solid var(--indigo-100);
