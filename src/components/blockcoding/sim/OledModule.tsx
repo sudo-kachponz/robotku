@@ -433,15 +433,15 @@ export default function OledModule({
           flexWrap: 'wrap',
           gap: 8,
           padding: '8px 12px',
-          background: '#ffffff',
+          background: 'var(--surface)',
           borderRadius: 8,
-          border: '1px solid #e0e3ff',
-          boxShadow: '0 1px 3px rgba(27,24,64,0.04)',
+          border: '1px solid var(--line)',
+          boxShadow: 'var(--shadow-xs)',
         }}
       >
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 14, fontWeight: 900, color: '#1e1b4b', letterSpacing: '-0.01em' }}>
+            <span style={{ fontSize: 14, fontWeight: 900, color: 'var(--ink-900)', letterSpacing: '-0.01em' }}>
               Wokwi Animator
             </span>
             <span
@@ -450,27 +450,27 @@ export default function OledModule({
                 fontWeight: 800,
                 padding: '2px 6px',
                 borderRadius: 999,
-                background: '#e0e7ff',
-                color: '#4338ca',
+                background: 'var(--line-soft)',
+                color: 'var(--ink-700)',
               }}
             >
               {'SSD1306 0.96"'}
             </span>
           </div>
-          <p style={{ margin: 0, fontSize: 11, color: '#6b7194' }}>
+          <p style={{ margin: 0, fontSize: 11, color: 'var(--ink-600)' }}>
             Buat & pasang animasi OLED untuk Arduino & Robotku
           </p>
         </div>
 
         {/* Step Indicator */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700 }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#4338ca' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--ink-900)' }}>
             <span
               style={{
                 width: 18,
                 height: 18,
                 borderRadius: '50%',
-                background: '#4f46e5',
+                background: 'var(--pink-500)',
                 color: '#ffffff',
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -483,15 +483,15 @@ export default function OledModule({
             </span>
             Pilih Animasi
           </span>
-          <span style={{ color: '#c6caff' }}>➔</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#6b7194' }}>
+          <span style={{ color: 'var(--ink-400)' }}>➔</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--ink-600)' }}>
             <span
               style={{
                 width: 18,
                 height: 18,
                 borderRadius: '50%',
-                background: '#e0e3ff',
-                color: '#6b7194',
+                background: 'var(--line)',
+                color: 'var(--ink-600)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -520,14 +520,14 @@ export default function OledModule({
         {/* ── Left Column: Icon Catalogue & Categories ── */}
         <div
           style={{
-            background: '#ffffff',
+            background: 'var(--surface)',
             borderRadius: 8,
-            border: '1px solid #e0e3ff',
+            border: '1px solid var(--line)',
             padding: 10,
             display: 'flex',
             flexDirection: 'column',
             gap: 8,
-            boxShadow: '0 1px 3px rgba(27,24,64,0.03)',
+            boxShadow: 'var(--shadow-xs)',
             height: '100%',
             boxSizing: 'border-box',
             minWidth: 0,
@@ -537,12 +537,12 @@ export default function OledModule({
         >
           {/* Header Row: Title & Size Selector */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
-            <span style={{ fontSize: 12, fontWeight: 800, color: '#1e1b4b' }}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink-900)' }}>
               Pustaka Animasi Icons8
             </span>
 
             {/* Size Selector: 32, 48, 64, 128 */}
-            <div style={{ display: 'flex', gap: 3, background: '#f1f3ff', padding: 2, borderRadius: 6 }}>
+            <div style={{ display: 'flex', gap: 3, background: 'var(--line-soft)', padding: 2, borderRadius: 6 }}>
               {([32, 48, 64, 128] as OledSize[]).map((sz) => {
                 const active = selectedSize === sz;
                 return (
@@ -555,10 +555,10 @@ export default function OledModule({
                       fontWeight: 800,
                       padding: '3px 7px',
                       borderRadius: 4,
-                      background: active ? '#ffffff' : 'transparent',
-                      color: active ? '#4338ca' : '#6b7194',
+                      background: active ? 'var(--surface)' : 'transparent',
+                      color: active ? 'var(--ink-900)' : 'var(--ink-600)',
                       cursor: 'pointer',
-                      boxShadow: active ? '0 1px 2px rgba(27,24,64,0.08)' : 'none',
+                      boxShadow: active ? 'var(--shadow-xs)' : 'none',
                     }}
                   >
                     {sz}px
@@ -575,7 +575,7 @@ export default function OledModule({
               gap: 4,
               overflowX: 'auto',
               paddingBottom: 4,
-              borderBottom: '1px solid #e0e3ff',
+              borderBottom: '1px solid var(--line)',
               scrollbarWidth: 'thin',
             }}
           >
@@ -594,8 +594,8 @@ export default function OledModule({
                     padding: '5px 8px',
                     fontSize: 11,
                     fontWeight: active ? 800 : 600,
-                    color: active ? '#2563eb' : '#6b7194',
-                    borderBottom: active ? '2px solid #2563eb' : '2px solid transparent',
+                    color: active ? 'var(--blue)' : 'var(--ink-600)',
+                    borderBottom: active ? '2px solid var(--blue)' : '2px solid transparent',
                     cursor: 'pointer',
                     whiteSpace: 'nowrap',
                     display: 'flex',
@@ -623,8 +623,9 @@ export default function OledModule({
                   fontSize: 11,
                   padding: '5px 8px',
                   borderRadius: 6,
-                  border: '1px solid #c6caff',
-                  background: '#fcfdff',
+                  border: '1px solid var(--line)',
+                  background: 'var(--surface-2)',
+                  color: 'var(--ink-900)',
                   boxSizing: 'border-box',
                 }}
               />
@@ -665,11 +666,11 @@ export default function OledModule({
                       gap: 4,
                       padding: '6px 4px',
                       borderRadius: 8,
-                      border: isSelected ? '2px solid #2563eb' : '1px solid #e0e3ff',
-                      background: isSelected ? '#eff6ff' : '#ffffff',
+                      border: isSelected ? '2px solid var(--blue)' : '1px solid var(--line)',
+                      background: isSelected ? 'var(--surface-2)' : 'var(--surface)',
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
-                      boxShadow: isSelected ? '0 2px 6px rgba(37,99,235,0.15)' : 'none',
+                      boxShadow: isSelected ? 'var(--shadow-xs)' : 'none',
                       boxSizing: 'border-box',
                     }}
                   >
@@ -689,7 +690,7 @@ export default function OledModule({
                       style={{
                         fontSize: 9.5,
                         fontWeight: isSelected ? 800 : 600,
-                        color: isSelected ? '#1d4ed8' : '#334155',
+                        color: isSelected ? 'var(--blue)' : 'var(--ink-700)',
                         textAlign: 'center',
                         lineHeight: 1.15,
                         overflow: 'hidden',
@@ -710,7 +711,7 @@ export default function OledModule({
             /* Custom / Drawing Mode */
             <div style={{ display: 'grid', gap: 8 }}>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#1e1b4b' }}>Template Klasik:</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-900)' }}>Template Klasik:</span>
                 <select
                   aria-label="Pilih template klasik"
                   value={selectedTemplate}
@@ -721,9 +722,9 @@ export default function OledModule({
                     fontWeight: 700,
                     padding: '4px 6px',
                     borderRadius: 6,
-                    border: '1px solid #c6caff',
-                    background: '#ffffff',
-                    color: '#1b1840',
+                    border: '1px solid var(--line)',
+                    background: 'var(--surface)',
+                    color: 'var(--ink-900)',
                     cursor: 'pointer',
                   }}
                 >
@@ -734,16 +735,16 @@ export default function OledModule({
                   ))}
                 </select>
               </div>
-              <p style={{ margin: 0, fontSize: 10.5, color: '#6b7194', lineHeight: 1.4 }}>
+              <p style={{ margin: 0, fontSize: 10.5, color: 'var(--ink-600)', lineHeight: 1.4 }}>
                 💡 <em>Sentuh atau klik layar OLED di sebelah kanan untuk menggambar piksel bebas!</em>
               </p>
             </div>
           )}
 
           {/* Helper caption */}
-          <div style={{ marginTop: 'auto', paddingTop: 6, fontSize: 10, color: '#8e94b8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ marginTop: 'auto', paddingTop: 6, fontSize: 10, color: 'var(--ink-500)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span>{displayedAnims.length} animasi tersedia</span>
-            <span style={{ fontWeight: 700, color: '#4f46e5' }}>{selectedSize}x{selectedSize === 128 ? 64 : selectedSize === 64 ? 32 : selectedSize} px</span>
+            <span style={{ fontWeight: 700, color: 'var(--ink-700)' }}>{selectedSize}x{selectedSize === 128 ? 64 : selectedSize === 64 ? 32 : selectedSize} px</span>
           </div>
         </div>
 
@@ -751,10 +752,10 @@ export default function OledModule({
         <div style={{ display: 'grid', gap: 10, minWidth: 0, maxWidth: '100%' }}>
           {/* Top Label & Controls */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 11.5, fontWeight: 800, color: '#1e1b4b', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--ink-900)', display: 'flex', alignItems: 'center', gap: 5 }}>
               <span>Preview</span>
               {currentAnim && activeCategory !== 'custom' && (
-                <span style={{ fontSize: 10.5, fontWeight: 600, color: '#4338ca' }}>
+                <span style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--ink-700)' }}>
                   ({currentAnim.name})
                 </span>
               )}
@@ -768,9 +769,9 @@ export default function OledModule({
                   fontWeight: 700,
                   padding: '3px 7px',
                   borderRadius: 5,
-                  border: '1px solid #c6caff',
-                  background: '#ffffff',
-                  color: '#4338ca',
+                  border: '1px solid var(--line)',
+                  background: 'var(--surface)',
+                  color: 'var(--ink-900)',
                   cursor: 'pointer',
                 }}
               >
@@ -783,9 +784,9 @@ export default function OledModule({
                   fontWeight: 700,
                   padding: '3px 7px',
                   borderRadius: 5,
-                  border: '1px solid #e0e3ff',
-                  background: '#ffffff',
-                  color: '#6b7194',
+                  border: '1px solid var(--line)',
+                  background: 'var(--surface)',
+                  color: 'var(--ink-700)',
                   cursor: 'pointer',
                 }}
               >

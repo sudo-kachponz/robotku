@@ -7,7 +7,7 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  color: #1b1840;
+  color: var(--ink-900);
 }
 
 .stack::-webkit-scrollbar {
@@ -17,11 +17,11 @@
   background: transparent;
 }
 .stack::-webkit-scrollbar-thumb {
-  background: rgba(79, 70, 229, 0.2);
+  background: var(--line);
   border-radius: 999px;
 }
 .stack::-webkit-scrollbar-thumb:hover {
-  background: rgba(79, 70, 229, 0.35);
+  background: var(--ink-400);
 }
 
 .topGrid {
@@ -47,10 +47,10 @@
   justify-content: space-between;
   gap: 8px;
   flex-wrap: wrap;
-  background: #fafafe;
+  background: var(--surface-2);
   padding: 8px 12px;
   border-radius: 12px;
-  border: 1px solid #e7e9f2;
+  border: 1px solid var(--line);
 }
 .speedRow,
 .ctrlBtns {
@@ -59,9 +59,9 @@
 }
 .speedBtn,
 .ctrlBtn {
-  border: 1px solid #e0e3ff;
-  background: #eef0ff;
-  color: #4338ca;
+  border: 1px solid var(--line);
+  background: var(--line-soft);
+  color: var(--ink-700);
   font-size: 11px;
   font-weight: 700;
   padding: 5px 8px;
@@ -73,12 +73,12 @@
 }
 .speedBtn:hover,
 .ctrlBtn:hover {
-  background: #e0e3ff;
-  color: #352da0;
+  background: var(--line);
+  color: var(--ink-900);
 }
 .speedActive {
-  background: #ec2d8f;
-  border-color: #ec2d8f;
+  background: var(--pink-500);
+  border-color: var(--pink-500);
   color: #ffffff;
 }
 .ctrlBtn:disabled {
@@ -94,9 +94,9 @@
   flex-wrap: wrap;
   font-size: 11px;
   font-weight: 600;
-  color: #403c6b;
-  background: #fafafe;
-  border: 1px solid #e7e9f2;
+  color: var(--ink-700);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
   border-radius: 10px;
   padding: 8px 12px;
 }
@@ -107,14 +107,14 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #c2c6db;
+  background: var(--ink-300);
 }
 .dotRun {
-  background: #16a34a;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.25);
+  background: var(--green);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 25%, transparent);
 }
 .dotPaused {
-  background: #e08600;
+  background: var(--amber);
 }
 
 /* ---- a) arena ---- */
@@ -125,23 +125,23 @@
   place-items: center;
   border-radius: 16px;
   background:
-    radial-gradient(120% 120% at 50% 0%, #ffffff, #f0f2fe 70%),
-    #ffffff;
+    radial-gradient(120% 120% at 50% 0%, var(--surface), var(--surface-2) 70%),
+    var(--surface);
   background-image:
-    linear-gradient(rgba(79, 70, 229, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(79, 70, 229, 0.08) 1px, transparent 1px);
+    linear-gradient(color-mix(in srgb, var(--line) 80%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--line) 80%, transparent) 1px, transparent 1px);
   background-size:
     100% 100%,
     22px 22px,
     22px 22px;
-  box-shadow: inset 0 2px 10px rgba(79, 70, 229, 0.06);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  border: 2px solid #e0e3ff;
+  border: 2px solid var(--line);
   transition: border-color 0.15s ease;
   max-width: 100%;
 }
 .arenaBump {
-  border-color: #ef4444;
+  border-color: var(--red);
 }
 .trail {
   position: absolute;
@@ -168,27 +168,27 @@
   top: 8px;
   font-size: 10px;
   font-weight: 700;
-  color: #403c6b;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid #c6caff;
+  color: var(--ink-700);
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: 999px;
   padding: 3px 8px;
   font-variant-numeric: tabular-nums;
-  box-shadow: 0 2px 6px rgba(27, 24, 64, 0.06);
+  box-shadow: var(--shadow-xs);
 }
 .obstacleBtn {
   position: absolute;
   left: 8px;
   bottom: 8px;
-  border: 1px solid #fde68a;
-  background: #fef3c7;
-  color: #92400e;
+  border: 1px solid color-mix(in srgb, var(--amber) 40%, var(--surface));
+  background: color-mix(in srgb, var(--amber) 16%, var(--surface));
+  color: var(--amber);
   font-size: 10px;
   font-weight: 700;
   padding: 4px 9px;
   border-radius: 999px;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(27, 24, 64, 0.05);
+  box-shadow: var(--shadow-xs);
 }
 
 /* ---- b) output panel ---- */
@@ -198,8 +198,8 @@
   gap: 10px;
   padding: 12px;
   border-radius: 14px;
-  background: #fafafe;
-  border: 1px solid #e7e9f2;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
 }
 .matrixWrap {
   display: flex;
@@ -225,14 +225,14 @@
   overflow: hidden;
   width: 100px;
   height: 16px;
-  background: #eef0ff;
-  border: 1px solid #e0e3ff;
+  background: var(--line-soft);
+  border: 1px solid var(--line);
   border-radius: 4px;
 }
 .marquee {
   display: inline-block;
   white-space: nowrap;
-  color: #4338ca;
+  color: var(--ink-700);
   font-size: 11px;
   font-weight: 700;
   padding-left: 100%;
@@ -308,9 +308,9 @@
 .chip {
   font-size: 10px;
   font-weight: 700;
-  color: #403c6b;
-  background: #eef0ff;
-  border: 1px solid #e0e3ff;
+  color: var(--ink-700);
+  background: var(--line-soft);
+  border: 1px solid var(--line);
   border-radius: 999px;
   padding: 2px 7px;
   font-variant-numeric: tabular-nums;
@@ -318,18 +318,18 @@
 .metricLabel {
   font-size: 10px;
   font-weight: 700;
-  color: #403c6b;
+  color: var(--ink-700);
 }
 .volBar {
   flex: 1;
   height: 6px;
-  background: #e2e8f0;
+  background: var(--line);
   border-radius: 999px;
   overflow: hidden;
 }
 .volBar div {
   height: 100%;
-  background: #f97316;
+  background: var(--amber);
   transition: width 0.1s ease;
 }
 
@@ -342,12 +342,12 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #e2e8f0;
+  background: var(--line);
   flex-shrink: 0;
 }
 .recOn {
-  background: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+  background: var(--red);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 30%, transparent);
   animation: pulse 1s ease-in-out infinite;
 }
 @keyframes pulse {
@@ -359,15 +359,15 @@
   width: 18px;
   height: 18px;
   border-radius: 5px;
-  background: #e2e8f0;
+  background: var(--line);
   display: grid;
   place-items: center;
   font-size: 9px;
   font-weight: 700;
-  color: #64748b;
+  color: var(--ink-500);
 }
 .clipFull {
-  background: #ec2d8f;
+  background: var(--pink-500);
   color: #fff;
 }
 
@@ -378,14 +378,14 @@
   flex-direction: column;
   gap: 8px;
   padding: 14px;
-  background: #fafafe;
-  border: 1px solid #e7e9f2;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
   border-radius: 14px;
 }
 .rackTitle {
   font-size: 12.5px;
   font-weight: 800;
-  color: #1b1840;
+  color: var(--ink-900);
 }
 .sliderRow {
   display: grid;
@@ -394,16 +394,16 @@
   gap: 8px;
   font-size: 11px;
   font-weight: 700;
-  color: #403c6b;
+  color: var(--ink-700);
 }
 .sliderRow input {
   width: 100%;
   height: 6px;
-  accent-color: #ec2d8f;
+  accent-color: var(--pink-500);
 }
 .sliderVal {
   text-align: right;
-  color: #1b1840;
+  color: var(--ink-900);
   font-variant-numeric: tabular-nums;
 }
 .roRow {
@@ -411,7 +411,7 @@
   justify-content: space-between;
   font-size: 11px;
   font-weight: 600;
-  color: #403c6b;
+  color: var(--ink-700);
 }
 .holdRow {
   display: flex;
@@ -421,10 +421,10 @@
 .holdBtn {
   flex: 1;
   padding: 7px 10px;
-  border: 1px solid #e0e3ff;
+  border: 1px solid var(--line);
   border-radius: 10px;
-  background: #eef0ff;
-  color: #4338ca;
+  background: var(--line-soft);
+  color: var(--ink-700);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -435,11 +435,12 @@
     color 0.15s ease;
 }
 .holdBtn:hover {
-  background: #e0e3ff;
+  background: var(--line);
+  color: var(--ink-900);
 }
 .holdActive {
-  background: #ec2d8f;
-  border-color: #ec2d8f;
+  background: var(--pink-500);
+  border-color: var(--pink-500);
   color: #fff;
   transform: scale(0.96);
 }
@@ -450,7 +451,7 @@
 .io summary {
   cursor: pointer;
   font-weight: 700;
-  color: #403c6b;
+  color: var(--ink-700);
 }
 .ioGrid {
   display: grid;
@@ -466,25 +467,25 @@
   gap: 6px;
   font-size: 10px;
   font-weight: 700;
-  color: #403c6b;
+  color: var(--ink-700);
 }
 .ioCell input {
   width: 48px;
-  border: 1px solid #c6caff;
-  background: #ffffff;
-  color: #1b1840;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-900);
   border-radius: 6px;
   padding: 2px 4px;
   font-size: 10px;
 }
 .ioCellToggle input {
-  accent-color: #ec2d8f;
+  accent-color: var(--pink-500);
 }
 
 /* ---- e) variables watch ---- */
 .watchEmpty {
   font-size: 11px;
-  color: #9499b8;
+  color: var(--ink-400);
 }
 .watchTable {
   width: 100%;
@@ -493,18 +494,18 @@
 }
 .watchTable td {
   padding: 4px 6px;
-  border-bottom: 1px solid #e7e9f2;
-  color: #1b1840;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-900);
   font-weight: 600;
 }
 .watchVal {
   text-align: right;
   font-variant-numeric: tabular-nums;
-  color: #ec2d8f;
+  color: var(--pink-500);
 }
 .watchType {
   text-align: right;
-  color: #9499b8;
+  color: var(--ink-400);
   font-size: 9.5px;
 }
 
@@ -512,7 +513,7 @@
   text-align: center;
   font-size: 10px;
   font-weight: 700;
-  color: #e08600;
+  color: var(--amber);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -15,6 +15,7 @@ import { getCategoryTint } from '../../../visual/categoryColors';
 import { registerTemplatesFlyout } from '../../../categories/templates';
 import { subscribe } from '../../../app/store';
 import { profileFromHello, robotkuEsp32V3 } from '../../../domain/boardProfile';
+import { getStoredTheme } from '../../../theme/themeManager';
 import type { RobotInfo } from '../../../transport';
 
 const INITIAL_WORKSPACE_JSON = {
@@ -78,8 +79,9 @@ export function useBlocklyWorkspace(blocklyDivRef: React.RefObject<HTMLDivElemen
     const w = window.innerWidth;
     const startScale = w < 480 ? 0.45 : w < 1024 ? 0.6 : 0.75;
 
+    const currentThemeId = getStoredTheme();
     const workspace = Blockly.inject(blocklyDiv, {
-      theme: getRobotkuTheme(),
+      theme: getRobotkuTheme(currentThemeId),
       // Phones: hide blocks the board can't run so the cramped flyout only shows
       // usable (short) blocks instead of long greyed clutter.
       toolbox: getAstroidToolbox(robotkuEsp32V3, window.innerWidth < 768),
@@ -100,7 +102,19 @@ export function useBlocklyWorkspace(blocklyDivRef: React.RefObject<HTMLDivElemen
     });
     workspaceRef.current = workspace;
 
+    // Listen to theme changes to dynamically update Blockly theme without disposing workspace
+    const onThemeChange = (e: Event) => {
+      const customEvent = e as CustomEvent<{ theme: string }>;
+      const tid = customEvent.detail?.theme || getStoredTheme();
+      if (workspaceRef.current) {
+        workspaceRef.current.setTheme(getRobotkuTheme(tid));
+        workspaceRef.current.refreshToolboxSelection();
+      }
+    };
+    window.addEventListener('robotku:themechange', onThemeChange);
+
     // Match the mobile default: hide the toolbox so blocks fill the screen.
+
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
       workspace.getToolbox()?.setVisible(false);
       Blockly.svgResize(workspace);
@@ -170,12 +184,14 @@ export function useBlocklyWorkspace(blocklyDivRef: React.RefObject<HTMLDivElemen
       if (window.visualViewport) {
         window.visualViewport.removeEventListener('resize', onResize);
       }
+      window.removeEventListener('robotku:themechange', onThemeChange);
       cancelAnimationFrame(raf);
       unsubStore();
       unsubTelemetry();
       workspace.dispose();
       workspaceRef.current = null;
     };
+
   }, [blocklyDivRef]);
 
   return { workspaceRef, telemetry, setTelemetry, isLoaded, showToolbox, toggleToolbox };

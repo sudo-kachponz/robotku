@@ -1,177 +1,399 @@
 .flyout {
   display: flex;
   height: 100%;
-  min-width: 0;
-  background: var(--surface-2);
+  position: relative;
+  background: var(--surface);
   border-right: 1px solid var(--line);
 }
 
-/* category rail */
+/* Category Rail on the left - matches .blocklyToolboxDiv */
 .rail {
-  flex-shrink: 0;
-  width: 132px;
+  width: 320px;
+  height: 100%;
   overflow-y: auto;
   background: var(--surface);
-  border-right: 1px solid var(--line-soft);
-  padding: 6px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
   scrollbar-width: thin;
+  flex-shrink: 0;
 }
+
 .railBtn {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 8px;
-  width: 100%;
-  border: none;
+  justify-content: flex-start;
+  height: auto;
+  min-height: 54px;
+  padding: 12px 16px;
+  border-left: 8px solid var(--cat, #4f46e5);
+  margin-bottom: 8px;
+  border-radius: 0;
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
   background: transparent;
-  color: var(--cat, var(--indigo-600));
-  font-weight: 700;
-  font-size: 12px;
-  text-align: left;
-  padding: 8px 8px;
-  border-radius: 10px;
   cursor: pointer;
-  border-left: 3px solid transparent;
-  transition: background 0.12s ease;
+  width: 100%;
+  gap: 12px;
+  text-align: left;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
+
 .railBtn:hover {
   background: var(--line-soft);
 }
+
 .railActive {
-  background: color-mix(in srgb, var(--cat) 14%, var(--surface));
-  border-left-color: var(--cat);
+  background-color: var(--cat, #4f46e5) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--cat) 30%, transparent);
 }
+.railActive .railIcon {
+  color: #ffffff !important;
+}
+.railActive .railLabel {
+  color: #ffffff !important;
+}
+
 .railIcon {
-  display: grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
+  color: var(--cat, #4f46e5);
+  transition: color 0.15s ease;
 }
+
+.railIcon svg {
+  width: 24px;
+  height: 24px;
+}
+
 .railLabel {
+  color: var(--cat, #4f46e5);
+  font-size: clamp(16px, 1.8vw, 24px);
+  font-weight: 800;
+  font-family: var(--font-display);
+  margin: 0;
+  text-align: left;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 1;
 }
+
 .dot {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: currentColor;
 }
 
-/* right column: search + cards */
-.right {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-.searchRow {
-  flex-shrink: 0;
-  padding: 8px 10px 4px;
-}
-.search {
-  width: 100%;
-  box-sizing: border-box;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  border-radius: 10px;
-  padding: 7px 12px;
-  font-size: 13px;
-  color: var(--ink-900);
-}
-.search:focus {
-  outline: none;
-  border-color: var(--indigo-400);
-}
-.noResult {
-  color: var(--ink-400);
-  font-size: 13px;
-  padding: 8px 2px;
+/* Backdrop for closing flyout when clicking editor */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 28;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(1px);
 }
 
-/* cards */
-.cards {
-  flex: 1;
-  min-width: 0;
-  overflow-y: auto;
-  padding: 10px;
+/* Flyout Drawer / Panel opening next to rail */
+.drawer {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  bottom: 0;
+  width: 380px;
+  max-width: calc(100vw - 340px);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-left: none;
+  box-shadow: 16px 0 48px rgba(0, 0, 0, 0.35);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  z-index: 30;
+  animation: slideDrawer 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.card {
+
+@keyframes slideDrawer {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.drawerHead {
+  padding: 14px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.drawerTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.drawerTitle {
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 16px;
+  font-weight: 800;
+  font-family: var(--font-display);
+  color: var(--cat, var(--ink-900));
+}
+
+.closeBtn {
+  border: none;
+  background: var(--line-soft);
+  color: var(--ink-700);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  font-weight: 700;
+  transition: all 0.12s ease;
+}
+
+.closeBtn:hover {
+  background: var(--line);
+  color: var(--ink-900);
+}
+
+.search {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid var(--line);
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13.5px;
+  color: var(--ink-900);
+  font-family: inherit;
+}
+.search::placeholder {
+  color: var(--ink-400);
+}
+.search:focus {
+  outline: none;
+  border-color: var(--cat, var(--pink-500));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cat, var(--pink-500)) 20%, transparent);
+}
+
+/* Cards list */
+.cards {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scrollbar-width: thin;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--cat, var(--indigo-600));
-  border-radius: 12px;
-  padding: 8px 10px;
-  cursor: grab;
+  border: 1.5px solid var(--line);
+  border-left: 6px solid var(--cat, var(--indigo-600));
+  border-radius: 14px;
+  padding: 12px 14px;
+  cursor: pointer;
   box-shadow: var(--shadow-xs);
   transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease;
+    transform 0.14s ease,
+    box-shadow 0.14s ease,
+    border-color 0.14s ease;
 }
+
 .card:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+  border-color: var(--cat, var(--pink-500));
+  box-shadow: var(--shadow-md);
 }
+
 .card:active {
-  cursor: grabbing;
+  transform: translateY(0);
 }
+
 .cardMain {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
 }
+
 .chip {
   align-self: flex-start;
-  background: color-mix(in srgb, var(--cat) 16%, var(--surface));
-  color: var(--cat, var(--indigo-600));
+  background: var(--cat, var(--indigo-600));
+  color: #ffffff;
   font-weight: 800;
-  font-size: 12.5px;
-  padding: 2px 9px;
+  font-size: 14px;
+  font-family: var(--font-display);
+  padding: 4px 12px;
   border-radius: 999px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
+
 .cardDesc {
-  color: var(--ink-500);
-  font-size: 11.5px;
-  line-height: 1.35;
+  color: var(--ink-700);
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 600;
 }
+
+.cardCode {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  color: var(--ink-600);
+  background: var(--surface-2);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--line-soft);
+  align-self: flex-start;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .help {
   flex-shrink: 0;
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  border: 1px solid var(--indigo-100);
-  background: var(--indigo-50);
-  color: var(--indigo-700);
+  border: 1.5px solid var(--line);
+  background: var(--line-soft);
+  color: var(--ink-700);
   font-weight: 800;
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.14s ease;
 }
+
 .help:hover {
   background: var(--pink-500);
   border-color: var(--pink-500);
-  color: var(--surface);
+  color: #ffffff;
 }
 
-/* colored drag ghost (rendered off-screen, used as the drag image) */
+.noResult {
+  color: var(--ink-400);
+  font-size: 14px;
+  padding: 24px 8px;
+  text-align: center;
+}
+
+/* colored drag ghost */
 .ghost {
   position: fixed;
   top: -1000px;
   left: -1000px;
-  padding: 6px 14px;
+  padding: 8px 18px;
   border-radius: 999px;
   background: var(--cat, var(--indigo-600));
   color: #fff;
   font-weight: 800;
-  font-size: 13px;
+  font-size: 14px;
   box-shadow: var(--shadow-lg, 0 6px 18px rgba(27, 24, 64, 0.3));
   white-space: nowrap;
+}
+
+/* Tablet (768px to 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .rail {
+    width: 240px;
+  }
+  .railLabel {
+    font-size: 17px;
+  }
+  .drawer {
+    width: 340px;
+    max-width: calc(100vw - 250px);
+  }
+}
+
+/* Mobile (<768px) */
+@media (max-width: 767px) {
+  .rail {
+    width: 125px;
+    padding: 6px 4px;
+  }
+  .railBtn {
+    min-height: 40px;
+    padding: 7px 10px;
+    border-left-width: 6px;
+    margin-bottom: 4px;
+    gap: 6px;
+  }
+  .railIcon {
+    width: 20px;
+    height: 20px;
+  }
+  .railIcon svg {
+    width: 18px;
+    height: 18px;
+  }
+  .railLabel {
+    font-size: 13px !important;
+  }
+  .drawer {
+    width: calc(100vw - 130px);
+    max-width: 320px;
+  }
+  .drawerHead {
+    padding: 10px 12px;
+  }
+  .cards {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .chip {
+    font-size: 12.5px;
+    padding: 3px 9px;
+  }
+  .cardDesc {
+    font-size: 12px;
+  }
+}
+
+/* Small Phone (<480px) */
+@media (max-width: 480px) {
+  .rail {
+    width: 115px;
+    padding: 4px 3px;
+  }
+  .drawer {
+    width: calc(100vw - 120px);
+  }
 }

@@ -44,6 +44,7 @@ import { generateProgram } from '../../blockcoding/generateProgram';
 import { unsupportedOpcodesInProgram } from '../../blockcoding/blockOpcodes';
 import type { PyProblem, PyEditorApi } from './python/PyEditor';
 import type { Snippet } from '../../pythongen/snippets';
+import { useAppTheme } from '../../theme/themeManager';
 import styles from './BlockCoding.module.css';
 
 const PyEditor = dynamic(() => import('./python/PyEditor'), { ssr: false });
@@ -131,6 +132,8 @@ function BlockCodingInner({ viewMode, setViewMode, canLeavePythonRef }: BlockCod
   const pyApiRef = useRef<PyEditorApi | null>(null);
   const [docsSnippet, setDocsSnippet] = useState<Snippet | null>(null);
   const [showSwitchWarn, setShowSwitchWarn] = useState(false);
+  const { theme: currentTheme, setTheme: setAppTheme, themes } = useAppTheme();
+  const [showThemePicker, setShowThemePicker] = useState(false);
   // Re-seed Python from blocks ONLY when the blocks actually changed (in Blocks
   // mode) — never clobber the user's typed Python on a plain toggle round-trip (§H).
   const blocksDirtyRef = useRef(true);
@@ -648,9 +651,11 @@ function BlockCodingInner({ viewMode, setViewMode, canLeavePythonRef }: BlockCod
               <button onClick={copyPython}>{pyCopied ? '✓ Disalin' : 'Copy'}</button>
             </div>
             <div className={styles.pyBody}>
-              <div className={styles.pyFlyoutWrap}>
-                <PyFlyout onInsert={(py) => pyApiRef.current?.insertSnippet(py)} onDocs={setDocsSnippet} />
-              </div>
+              {showToolbox && (
+                <div className={styles.pyFlyoutWrap}>
+                  <PyFlyout onInsert={(py) => pyApiRef.current?.insertSnippet(py)} onDocs={setDocsSnippet} />
+                </div>
+              )}
               <div className={styles.pyEditorWrap}>
                 <PyEditor
                   value={pyBuffer}
@@ -762,6 +767,14 @@ function BlockCodingInner({ viewMode, setViewMode, canLeavePythonRef }: BlockCod
             <MonitorIcon /> <span>Monitor</span>
           </button>
           <button
+            className={`${styles.tbBtn} ${showThemePicker ? styles.tbActive : ''}`}
+            onClick={() => setShowThemePicker((v) => !v)}
+            title="Pilih Tema (Theme)"
+            data-tour="theme"
+          >
+            <PaletteIcon /> <span>Tema</span>
+          </button>
+          <button
             className={styles.tbBtn}
             onClick={() => setShowTutorial(true)}
             title="Bantuan / Help"
@@ -769,6 +782,38 @@ function BlockCodingInner({ viewMode, setViewMode, canLeavePythonRef }: BlockCod
             <HelpIcon /> <span>Bantuan</span>
           </button>
         </div>
+
+        {showThemePicker && (
+          <div className={styles.themePickerOverlay} onClick={() => setShowThemePicker(false)}>
+            <div className={styles.themePickerMenu} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.themePickerHead}>
+                <span>Pilih Tema IDE</span>
+                <button onClick={() => setShowThemePicker(false)} aria-label="Tutup">✕</button>
+              </div>
+              <div className={styles.themePickerList}>
+                {themes.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className={`${styles.themePickerItem} ${currentTheme === t.id ? styles.themePickerItemActive : ''}`}
+                    onClick={() => {
+                      setAppTheme(t.id);
+                      setShowThemePicker(false);
+                    }}
+                  >
+                    <div className={styles.themePickerItemSwatches}>
+                      {t.swatch.map((c, i) => (
+                        <span key={i} style={{ backgroundColor: c }} />
+                      ))}
+                    </div>
+                    <span className={styles.themePickerItemName}>{t.label}</span>
+                    {currentTheme === t.id && <span className={styles.themePickerCheck}>✓</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {showSwitchWarn && (
           <div className={styles.switchWarn} onClick={() => setShowSwitchWarn(false)}>
@@ -1113,6 +1158,27 @@ function HelpIcon() {
       <circle cx="12" cy="12" r="9" />
       <path d="M9.2 9.2a2.8 2.8 0 015.4 1c0 1.9-2.6 2.2-2.6 4.1" />
       <circle cx="12" cy="17.6" r="0.5" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function PaletteIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+      <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+      <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
+      <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
+      <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.8-.4-1.2 0-.9.8-1.7 1.7-1.7H16c3.3 0 6-2.7 6-6 0-5.5-4.5-10-10-10z" />
     </svg>
   );
 }

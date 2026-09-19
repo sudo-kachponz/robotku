@@ -69,8 +69,8 @@ export const LED_PALETTE: LedColorOption[] = [
 ];
 
 const box: React.CSSProperties = {
-  background: '#fafafe',
-  border: '1px solid #e7e9f2',
+  background: 'var(--surface-2)',
+  border: '1px solid var(--line)',
   borderRadius: 12,
   padding: 10,
   maxWidth: '100%',
@@ -221,11 +221,11 @@ export default function BoardPanel({ state }: { state: SimState }) {
           gap: 10,
           alignItems: 'center',
           flexWrap: 'wrap',
-          background: '#ffffff',
-          boxShadow: '0 1px 3px rgba(27,24,64,0.04)',
+          background: 'var(--surface)',
+          boxShadow: 'var(--shadow-xs)',
         }}
       >
-        <span style={{ fontSize: 13, fontWeight: 800, color: '#1b1840' }}>🔌 Pasang Modul:</span>
+        <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-900)' }}>🔌 Pasang Modul:</span>
         <button
           onClick={() => setPending(pending === 'servo' ? null : 'servo')}
           aria-pressed={pending === 'servo'}
@@ -245,7 +245,7 @@ export default function BoardPanel({ state }: { state: SimState }) {
           style={{
             fontSize: 12,
             fontWeight: 600,
-            color: '#403c6b',
+            color: 'var(--ink-700)',
             display: 'flex',
             alignItems: 'center',
             gap: 6,
@@ -269,9 +269,9 @@ export default function BoardPanel({ state }: { state: SimState }) {
           style={{
             padding: '8px 12px',
             borderRadius: 8,
-            background: '#fffbeb',
-            border: '1px solid #fef3c7',
-            color: '#92400e',
+            background: 'color-mix(in srgb, var(--amber) 16%, var(--surface))',
+            border: '1px solid color-mix(in srgb, var(--amber) 40%, var(--surface))',
+            color: 'var(--amber)',
             fontSize: 12,
             fontWeight: 700,
             display: 'flex',
@@ -290,11 +290,11 @@ export default function BoardPanel({ state }: { state: SimState }) {
       {/* ── Interactive Fritzing Schematic Board Canvas ── */}
       <div
         style={{
-          background: 'linear-gradient(180deg, #ffffff 0%, #f8faff 100%)',
-          border: '1px solid #dbe1f5',
+          background: 'var(--surface-2)',
+          border: '1px solid var(--line)',
           borderRadius: 14,
           padding: 12,
-          boxShadow: '0 2px 8px rgba(27,24,64,0.06)',
+          boxShadow: 'var(--shadow-sm)',
           overflow: 'hidden',
           position: 'relative',
         }}
@@ -305,22 +305,22 @@ export default function BoardPanel({ state }: { state: SimState }) {
             justifyContent: 'space-between',
             alignItems: 'center',
             marginBottom: 8,
-            borderBottom: '1px solid #edf0fa',
+            borderBottom: '1px solid var(--line)',
             paddingBottom: 6,
             flexWrap: 'wrap',
             gap: 8,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: '#1b1840' }}>📐 Skema Rangkaian Interaktif</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-900)' }}>📐 Skema Rangkaian Interaktif</span>
             <span
               style={{
                 fontSize: 10,
                 fontWeight: 700,
                 padding: '2px 6px',
                 borderRadius: 4,
-                background: '#eef0ff',
-                color: '#4338ca',
+                background: 'var(--line-soft)',
+                color: 'var(--ink-700)',
               }}
             >
               Fritzing Live View
@@ -335,14 +335,14 @@ export default function BoardPanel({ state }: { state: SimState }) {
                 fontWeight: 700,
                 padding: '3px 9px',
                 borderRadius: 6,
-                border: '1px solid #cbd5e1',
-                background: '#ffffff',
-                color: '#334155',
+                border: '1px solid var(--line)',
+                background: 'var(--surface)',
+                color: 'var(--ink-700)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 4,
-                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                boxShadow: 'var(--shadow-xs)',
               }}
               title="Kembalikan tata letak semua modul dan papan ke posisi awal"
             >
@@ -358,21 +358,21 @@ export default function BoardPanel({ state }: { state: SimState }) {
                 fontWeight: 700,
                 padding: '3px 9px',
                 borderRadius: 6,
-                border: `1px solid ${showPinHint ? '#6366e8' : '#cbd5e1'}`,
-                background: showPinHint ? '#eef0ff' : '#ffffff',
-                color: showPinHint ? '#4338ca' : '#334155',
+                border: '1px solid var(--line)',
+                background: showPinHint ? 'var(--pink-500)' : 'var(--surface)',
+                color: showPinHint ? '#ffffff' : 'var(--ink-700)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 5,
-                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                boxShadow: 'var(--shadow-xs)',
               }}
               title="Klik untuk melihat arti warna kabel & fungsi pin"
             >
               <span>📚</span>
               <span>{showPinHint ? 'Tutup Kamus Pin' : 'Kamus Pinout'}</span>
             </button>
-            <span style={{ fontSize: 11, color: '#6b7194' }}>💡 Klik port untuk pasang/cabut | ✋ Drag untuk geser modul bebas</span>
+            <span style={{ fontSize: 11, color: 'var(--ink-500)' }}>💡 Klik port untuk pasang/cabut | ✋ Drag untuk geser modul bebas</span>
           </div>
         </div>
 
@@ -382,14 +382,14 @@ export default function BoardPanel({ state }: { state: SimState }) {
             style={{
               marginBottom: 10,
               padding: '10px 12px',
-              background: '#f8fafc',
-              border: '1px solid #cbd5e1',
+              background: 'var(--surface)',
+              border: '1px solid var(--line)',
               borderRadius: 10,
-              boxShadow: '0 4px 12px rgba(15,23,42,0.08)',
+              boxShadow: 'var(--shadow-md)',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <span style={{ fontSize: 11.5, fontWeight: 800, color: '#0f172a' }}>
+              <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--ink-900)' }}>
                 📚 Kamus Jalur Kabel & Pinout (Biar Anak Paham Port):
               </span>
               <button
@@ -399,7 +399,7 @@ export default function BoardPanel({ state }: { state: SimState }) {
                   border: 'none',
                   fontSize: 14,
                   cursor: 'pointer',
-                  color: '#64748b',
+                  color: 'var(--ink-500)',
                   padding: '0 4px',
                   fontWeight: 700,
                 }}
@@ -411,11 +411,11 @@ export default function BoardPanel({ state }: { state: SimState }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8 }}>
               {/* I2C Column */}
-              <div style={{ background: '#ffffff', padding: 8, borderRadius: 6, border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#1e40af', marginBottom: 4 }}>
+              <div style={{ background: 'var(--surface-2)', padding: 8, borderRadius: 6, border: '1px solid var(--line)' }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--blue)', marginBottom: 4 }}>
                   🟦 Port I2C (I1 - I5) ➔ Layar OLED 0.96&quot;
                 </div>
-                <div style={{ display: 'grid', gap: 3.5, fontSize: 10.5, color: '#334155' }}>
+                <div style={{ display: 'grid', gap: 3.5, fontSize: 10.5, color: 'var(--ink-700)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#2563EB', flexShrink: 0 }} />
                     <span><strong>GND</strong> (Biru/Hitam): Ground / 0V (Kutub Negatif)</span>
@@ -436,11 +436,11 @@ export default function BoardPanel({ state }: { state: SimState }) {
               </div>
 
               {/* PWM Column */}
-              <div style={{ background: '#ffffff', padding: 8, borderRadius: 6, border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#b45309', marginBottom: 4 }}>
+              <div style={{ background: 'var(--surface-2)', padding: 8, borderRadius: 6, border: '1px solid var(--line)' }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--amber)', marginBottom: 4 }}>
                   🟧 Port PWM (P1 - P5) ➔ Motor Servo SG90
                 </div>
-                <div style={{ display: 'grid', gap: 3.5, fontSize: 10.5, color: '#334155' }}>
+                <div style={{ display: 'grid', gap: 3.5, fontSize: 10.5, color: 'var(--ink-700)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#F59E0B', flexShrink: 0 }} />
                     <span><strong>PWM</strong> (Kuning/Oranye): Sinyal Pulsa Sudut Putaran</span>
@@ -479,9 +479,9 @@ export default function BoardPanel({ state }: { state: SimState }) {
 
       {/* OLED module = the ONE unified live interactive screen with realistic mint frame, direct pixel drawing, templates, animations, and live schematic sync */}
       {plugged.filter(([, k]) => k === 'oled').map(([id]) => (
-        <div key={id} style={{ ...box, padding: 12, background: '#ffffff', boxShadow: '0 1px 3px rgba(27,24,64,0.04)' }}>
+        <div key={id} style={{ ...box, padding: 12, background: 'var(--surface)', boxShadow: 'var(--shadow-xs)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: '#1b1840' }}>📺 Layar OLED 0.96&quot; ({id})</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-900)' }}>📺 Layar OLED 0.96&quot; ({id})</span>
             <button onClick={() => attach(id)} style={cabutBtn} title="Cabut modul ini">
               Cabut
             </button>
@@ -500,9 +500,9 @@ export default function BoardPanel({ state }: { state: SimState }) {
       {plugged.some(([, k]) => k === 'servo') && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
           {plugged.filter(([, k]) => k === 'servo').map(([id]) => (
-            <div key={id} style={{ ...box, padding: 10, background: '#ffffff', boxShadow: '0 1px 3px rgba(27,24,64,0.04)' }}>
+            <div key={id} style={{ ...box, padding: 10, background: 'var(--surface)', boxShadow: 'var(--shadow-xs)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <span style={{ fontSize: 12, fontWeight: 800, color: '#1b1840' }}>⚙️ Servo SG90 ({id})</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink-900)' }}>⚙️ Servo SG90 ({id})</span>
                 <button onClick={() => attach(id)} style={cabutBtn} title="Cabut modul ini">
                   Cabut
                 </button>
@@ -515,7 +515,7 @@ export default function BoardPanel({ state }: { state: SimState }) {
 
       {/* No OLED attached: point the user to attach one to draw/animate. */}
       {!plugged.some(([, k]) => k === 'oled') && (
-        <div style={{ ...box, background: '#ffffff', fontSize: 12, color: '#6b7194' }}>
+        <div style={{ ...box, background: 'var(--surface)', fontSize: 12, color: 'var(--ink-500)' }}>
           🖼️ Pasang <strong>Layar OLED</strong> (port I1–I5) untuk menggambar pixel & memainkan animasi di layarnya.
         </div>
       )}
@@ -524,9 +524,9 @@ export default function BoardPanel({ state }: { state: SimState }) {
       <div
         style={{
           ...box,
-          background: '#ffffff',
-          boxShadow: '0 2px 8px rgba(27,24,64,0.04)',
-          border: '1px solid #e7e9f2',
+          background: 'var(--surface)',
+          boxShadow: 'var(--shadow-sm)',
+          border: '1px solid var(--line)',
           padding: '14px 16px',
           display: 'flex',
           flexDirection: 'column',
@@ -538,13 +538,13 @@ export default function BoardPanel({ state }: { state: SimState }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 16 }}>💡</span>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#1b1840' }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-900)' }}>
                 Kontrol Warna LED (RGB)
               </div>
-              <div style={{ fontSize: 11, color: '#6b7194' }}>
+              <div style={{ fontSize: 11, color: 'var(--ink-500)' }}>
                 Pilih warna palet, roda warna, atau sesuaikan slider RGB untuk membuat blok kode
               </div>
-              <div style={{ fontSize: 10, color: '#b45309', marginTop: 2 }}>
+              <div style={{ fontSize: 10, color: 'var(--amber)', marginTop: 2 }}>
                 ⚠️ LED asli digital (8 warna) — warna dibulatkan ke merah/hijau/biru terdekat. Preview LED papan sudah menunjukkan warna asli yang menyala.
               </div>
             </div>
@@ -556,13 +556,13 @@ export default function BoardPanel({ state }: { state: SimState }) {
               display: 'inline-flex',
               alignItems: 'center',
               gap: 6,
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--line)',
               borderRadius: 20,
               padding: '2px 8px 2px 6px',
               fontSize: 11,
               fontWeight: 700,
-              color: '#334155',
+              color: 'var(--ink-700)',
             }}
           >
             <span
@@ -589,21 +589,21 @@ export default function BoardPanel({ state }: { state: SimState }) {
                 width: 68,
                 border: 'none',
                 background: 'transparent',
-                color: '#1e293b',
+                color: 'var(--ink-900)',
                 padding: '2px 4px',
                 textAlign: 'center',
                 borderRadius: 4,
               }}
             />
-            <span style={{ color: '#64748b', fontSize: 10 }}>({currentRgb.r}, {currentRgb.g}, {currentRgb.b})</span>
+            <span style={{ color: 'var(--ink-500)', fontSize: 10 }}>({currentRgb.r}, {currentRgb.g}, {currentRgb.b})</span>
           </div>
         </div>
 
-        {/* Palette & Color Wheel Container (matching benchmark screenshot) */}
+        {/* Palette & Color Wheel Container */}
         <div
           style={{
-            background: '#f1f5f9',
-            border: '1px solid #cbd5e1',
+            background: 'var(--surface-2)',
+            border: '1px solid var(--line)',
             borderRadius: 10,
             padding: '10px 14px',
             display: 'flex',
@@ -636,8 +636,8 @@ export default function BoardPanel({ state }: { state: SimState }) {
                       height: 22,
                       borderRadius: '50%',
                       background: col.hex,
-                      border: col.hex.toLowerCase() === '#ffffff' ? '1.5px solid #cbd5e1' : isSelected ? '2px solid #3b82f6' : '1px solid rgba(0,0,0,0.15)',
-                      boxShadow: isSelected ? `0 0 0 2px #ffffff, 0 0 0 4px #3b82f6, 0 2px 5px ${col.hex}66` : '0 1px 2px rgba(0,0,0,0.1)',
+                      border: col.hex.toLowerCase() === '#ffffff' ? '1.5px solid var(--line)' : isSelected ? '2px solid var(--pink-500)' : '1px solid rgba(0,0,0,0.15)',
+                      boxShadow: isSelected ? `0 0 0 2px var(--surface), 0 0 0 4px var(--pink-500), 0 2px 5px ${col.hex}66` : '0 1px 2px rgba(0,0,0,0.1)',
                       transform: isSelected ? 'scale(1.18)' : 'scale(1)',
                       transition: 'all 0.15s ease',
                       cursor: 'pointer',
@@ -663,8 +663,8 @@ export default function BoardPanel({ state }: { state: SimState }) {
                       height: 22,
                       borderRadius: '50%',
                       background: col.hex,
-                      border: col.hex.toLowerCase() === '#ffffff' ? '1.5px solid #cbd5e1' : isSelected ? '2px solid #3b82f6' : '1px solid rgba(0,0,0,0.15)',
-                      boxShadow: isSelected ? `0 0 0 2px #ffffff, 0 0 0 4px #3b82f6, 0 2px 5px ${col.hex}66` : '0 1px 2px rgba(0,0,0,0.1)',
+                      border: col.hex.toLowerCase() === '#ffffff' ? '1.5px solid var(--line)' : isSelected ? '2px solid var(--pink-500)' : '1px solid rgba(0,0,0,0.15)',
+                      boxShadow: isSelected ? `0 0 0 2px var(--surface), 0 0 0 4px var(--pink-500), 0 2px 5px ${col.hex}66` : '0 1px 2px rgba(0,0,0,0.1)',
                       transform: isSelected ? 'scale(1.18)' : 'scale(1)',
                       transition: 'all 0.15s ease',
                       cursor: 'pointer',
@@ -686,8 +686,8 @@ export default function BoardPanel({ state }: { state: SimState }) {
                 height: 32,
                 borderRadius: '50%',
                 background: 'conic-gradient(from 0deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)',
-                border: '2px solid #ffffff',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.1)',
+                border: '2px solid var(--surface)',
+                boxShadow: 'var(--shadow-sm)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -736,9 +736,9 @@ export default function BoardPanel({ state }: { state: SimState }) {
                 fontWeight: 700,
                 padding: '5px 8px',
                 borderRadius: 6,
-                border: '1px solid #cbd5e1',
-                background: showSliders ? '#e0e7ff' : '#ffffff',
-                color: showSliders ? '#3730a3' : '#475569',
+                border: '1px solid var(--line)',
+                background: showSliders ? 'var(--pink-500)' : 'var(--surface)',
+                color: showSliders ? '#ffffff' : 'var(--ink-700)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -751,12 +751,12 @@ export default function BoardPanel({ state }: { state: SimState }) {
           </div>
         </div>
 
-        {/* Collapsible In-Page RGB Slider Controls (Never overflows browser) */}
+        {/* Collapsible In-Page RGB Slider Controls */}
         {showSliders && (
           <div
             style={{
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
+              background: 'var(--surface)',
+              border: '1px solid var(--line)',
               borderRadius: 10,
               padding: '10px 14px',
               display: 'grid',
@@ -766,48 +766,48 @@ export default function BoardPanel({ state }: { state: SimState }) {
           >
             {/* Red Slider */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 800, color: '#dc2626', width: 28 }}>R:</span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--red)', width: 28 }}>R:</span>
               <input
                 type="range"
                 min="0"
                 max="255"
                 value={currentRgb.r}
                 onChange={(e) => handleRgbSlider('r', parseInt(e.target.value, 10))}
-                style={{ flex: 1, accentColor: '#dc2626', cursor: 'pointer' }}
+                style={{ flex: 1, accentColor: 'var(--red)', cursor: 'pointer' }}
               />
-              <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, width: 26, textAlign: 'right' }}>
+              <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, width: 26, textAlign: 'right', color: 'var(--ink-900)' }}>
                 {currentRgb.r}
               </span>
             </div>
 
             {/* Green Slider */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 800, color: '#16a34a', width: 28 }}>G:</span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--green)', width: 28 }}>G:</span>
               <input
                 type="range"
                 min="0"
                 max="255"
                 value={currentRgb.g}
                 onChange={(e) => handleRgbSlider('g', parseInt(e.target.value, 10))}
-                style={{ flex: 1, accentColor: '#16a34a', cursor: 'pointer' }}
+                style={{ flex: 1, accentColor: 'var(--green)', cursor: 'pointer' }}
               />
-              <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, width: 26, textAlign: 'right' }}>
+              <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, width: 26, textAlign: 'right', color: 'var(--ink-900)' }}>
                 {currentRgb.g}
               </span>
             </div>
 
             {/* Blue Slider */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 800, color: '#2563eb', width: 28 }}>B:</span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--blue)', width: 28 }}>B:</span>
               <input
                 type="range"
                 min="0"
                 max="255"
                 value={currentRgb.b}
                 onChange={(e) => handleRgbSlider('b', parseInt(e.target.value, 10))}
-                style={{ flex: 1, accentColor: '#2563eb', cursor: 'pointer' }}
+                style={{ flex: 1, accentColor: 'var(--blue)', cursor: 'pointer' }}
               />
-              <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, width: 26, textAlign: 'right' }}>
+              <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, width: 26, textAlign: 'right', color: 'var(--ink-900)' }}>
                 {currentRgb.b}
               </span>
             </div>
@@ -826,7 +826,7 @@ export default function BoardPanel({ state }: { state: SimState }) {
           }}
         >
           {/* Duration Selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#334155', fontWeight: 600 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-700)', fontWeight: 600 }}>
             <span>⏱️ Durasi:</span>
             <input
               type="number"
@@ -839,15 +839,15 @@ export default function BoardPanel({ state }: { state: SimState }) {
                 width: 54,
                 padding: '4px 6px',
                 borderRadius: 6,
-                border: '1px solid #cbd5e1',
+                border: '1px solid var(--line)',
                 fontSize: 12,
                 fontWeight: 700,
                 textAlign: 'center',
-                color: '#1e293b',
-                background: '#ffffff',
+                color: 'var(--ink-900)',
+                background: 'var(--surface)',
               }}
             />
-            <span style={{ color: '#64748b', fontSize: 11 }}>detik</span>
+            <span style={{ color: 'var(--ink-500)', fontSize: 11 }}>detik</span>
           </div>
 
           {/* Action Buttons */}
@@ -863,12 +863,12 @@ export default function BoardPanel({ state }: { state: SimState }) {
                 padding: '6px 14px',
                 borderRadius: 8,
                 border: 'none',
-                background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)',
+                background: 'var(--pink-500)',
                 color: '#ffffff',
                 fontSize: 12,
                 fontWeight: 800,
                 cursor: 'pointer',
-                boxShadow: '0 2px 4px rgba(79, 70, 229, 0.25)',
+                boxShadow: 'var(--shadow-sm)',
                 transition: 'all 0.15s ease',
               }}
               title="Pasang blok kode Set LED Color ke lembar kerja Blockly"
@@ -886,9 +886,9 @@ export default function BoardPanel({ state }: { state: SimState }) {
                 gap: 5,
                 padding: '6px 12px',
                 borderRadius: 8,
-                border: '1px solid #c7d2fe',
-                background: '#eef2ff',
-                color: '#4338ca',
+                border: '1px solid var(--line)',
+                background: 'var(--line-soft)',
+                color: 'var(--ink-700)',
                 fontSize: 12,
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -909,9 +909,9 @@ export default function BoardPanel({ state }: { state: SimState }) {
                 gap: 4,
                 padding: '6px 10px',
                 borderRadius: 8,
-                border: '1px solid #e2e8f0',
-                background: '#f8fafc',
-                color: '#64748b',
+                border: '1px solid var(--line)',
+                background: 'var(--line-soft)',
+                color: 'var(--ink-500)',
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -932,9 +932,9 @@ const cabutBtn: React.CSSProperties = {
   fontSize: 10,
   padding: '2px 6px',
   borderRadius: 4,
-  border: '1px solid #fecaca',
-  background: '#fef2f2',
-  color: '#b91c1c',
+  border: '1px solid var(--red)',
+  background: 'color-mix(in srgb, var(--red) 14%, var(--surface))',
+  color: 'var(--red)',
   cursor: 'pointer',
 };
 
@@ -944,10 +944,10 @@ function btn(active: boolean): React.CSSProperties {
     fontWeight: 700,
     padding: '5px 10px',
     borderRadius: 8,
-    border: `1px solid ${active ? '#6366e8' : '#e0e3ff'}`,
-    background: active ? '#eef0ff' : '#ffffff',
-    color: active ? '#4338ca' : '#403c6b',
+    border: `1px solid ${active ? 'var(--pink-500)' : 'var(--line)'}`,
+    background: active ? 'var(--pink-500)' : 'var(--surface)',
+    color: active ? '#ffffff' : 'var(--ink-700)',
     cursor: 'pointer',
-    boxShadow: '0 1px 3px rgba(27,24,64,0.05)',
+    boxShadow: 'var(--shadow-xs)',
   };
 }

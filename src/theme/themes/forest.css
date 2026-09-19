@@ -1,0 +1,56 @@
+/* src/theme/themes/forest.css
+ *
+ * Theme: Forest (Enchanted Deep Woods Dark)
+ * Deep woodland canopy, mossy stone surface, luminous emerald and lime accents.
+ */
+
+:root[data-theme='forest'] {
+  color-scheme: dark;
+
+  /* Surfaces & backgrounds */
+  --surface: #122019;
+  --surface-2: #1a2e24;
+  --bg: #0b1410;
+  --line: #243f32;
+  --line-soft: #1a2e24;
+
+  /* Ink scale (contrast against #122019: #f0fdf4 -> 14.8:1, #bbf7d0 -> 11.2:1) */
+  --ink-900: #f0fdf4;
+  --ink-800: #dcfce7;
+  --ink-700: #bbf7d0;
+  --ink-600: #86efac;
+  --ink-500: #4ade80;
+  --ink-400: #22c55e;
+  --ink-300: #166534;
+
+  /* Semantic colors */
+  --blue: #38bdf8;
+  --blue-bg: #082f49;
+  --green: #34d399;
+  --green-bg: #064e3b;
+  --amber: #fbbf24;
+  --amber-bg: #451a03;
+  --purple: #c084fc;
+  --purple-bg: #3b0764;
+  --red: #f87171;
+  --red-bg: #450a0a;
+
+  /* Code editor (Python mode) */
+  --code-bg: #0e1a15;
+  --code-fg: #f0fdf4;
+  --code-gutter-bg: #0b1410;
+  --code-gutter-fg: #4ade80;
+  --code-active-line: #1a2e24;
+  --code-selection: #243f32;
+  --code-keyword: #a3e635;
+  --code-string: #fbbf24;
+  --code-number: #f472b6;
+  --code-comment: #4ade80;
+  --code-ident: #f0fdf4;
+  --code-fn: #34d399;
+  --code-error: #f87171;
+  --code-warn: #fbbf24;
+
+  /* Flyout */
+  --flyout-bg-color: rgba(18, 32, 25, 0.88);
+}

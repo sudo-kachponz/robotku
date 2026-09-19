@@ -1,16 +1,11 @@
-// src/visual/theme.ts
-//
-// Robotku Blockly theme — a LIGHT theme built on the Robotku Design System.
-// Replaces the old dark Astroid theme. Colours are the DS palette so categories
-// stay distinguishable yet cohesive on a white flyout.
-
 import * as Blockly from 'blockly/core';
-
 import { jakarta } from '../theme/fonts';
+import { getTheme } from '../theme/themes';
 
 // --- Helper: lighten/darken a hex colour for secondary/tertiary shades ---
 function adjust(hex: string, amount: number): string {
   const color = Blockly.utils.colour.hexToRgb(hex);
+  if (!color) return hex;
   const a = Math.max(-1, Math.min(1, amount));
   const blend = (c: number) => {
     const v = a >= 0 ? c + (255 - c) * a : c * (1 + a);
@@ -19,111 +14,98 @@ function adjust(hex: string, amount: number): string {
   return Blockly.utils.colour.rgbToHex(blend(color[0]), blend(color[1]), blend(color[2]));
 }
 
-// --- DS tokens (kept in sync with src/theme/tokens.css) ---
-const DS = {
-  bg: '#F3F4FB',
-  surface: '#FFFFFF',
-  ink700: '#403C6B',
-  ink300: '#C2C6DB',
-  indigo600: '#4F46E5',
-  indigo700: '#4338CA',
-  pink500: '#EC2D8F',
-  blue: '#3B82F6',
-  green: '#16A34A',
-  amber: '#E08600',
-  purple: '#8B5CF6',
-  orange: '#F97316',
-  cyan: '#06B6D4',
-  teal: '#0D9488',
-  brown: '#A16207',
-  inkSlate: '#565386',
-  gold: '#CA8A04',
-};
-
-// --- FONT: Plus Jakarta Sans, weight 600, size 14 ---
-// Bigger + heavier than the old 11/500 so the "code" (block text) reads clearly
-// and matches the Robotku DS button typography (Plus Jakarta Sans 600).
 const fontStyle: Blockly.Theme.FontStyle = {
-  // Self-hosted via next/font — SVG text can't read the --font-jakarta CSS var, so
-  // use next/font's generated (hashed) family name directly.
   family: `${jakarta.style.fontFamily}, system-ui, -apple-system, sans-serif`,
   weight: '600',
   size: 14,
 };
 
-// --- Light component styles ---
-const lightComponentStyles: Blockly.Theme.ComponentStyle = {
-  workspaceBackgroundColour: DS.bg,
-  toolboxBackgroundColour: DS.surface,
-  toolboxForegroundColour: DS.ink700,
-  flyoutBackgroundColour: DS.surface,
-  flyoutForegroundColour: DS.ink700,
-  flyoutOpacity: 1,
-  scrollbarColour: DS.ink300,
-  scrollbarOpacity: 0.6,
-  insertionMarkerColour: DS.indigo600,
-  insertionMarkerOpacity: 0.5,
-  markerColour: DS.pink500,
-  cursorColour: DS.indigo700,
-};
+const THEME_CACHE = new Map<string, Blockly.Theme>();
 
-// --- Category -> on-brand block colour mapping (Robotku 12-category map from a.md) ---
-// Keys are Blockly *style prefixes*; the loop below expands each into
-// `${key}_blocks` (block style) and `${key}_category` (sidebar style). The
-// built-in loop/logic/math/variable/procedure/text styles are named to match
-// Blockly's own block styles so the reskin covers the standard blocks too.
-const categoryColors: Record<string, string> = {
-  motors: DS.green, // Movement
-  events: DS.amber, // Timing (Wait / hat)
-  looks: DS.blue, // Display (LED Matrix + LCD)
-  audio: DS.orange, // Audio
-  sensors: DS.purple, // Sensors & Data
-  control: DS.cyan, // Program Flow (custom control blocks)
-  loop: DS.cyan, // Program Flow (built-in loop blocks)
-  logic: DS.teal, // Logic
-  math: DS.indigo600, // Math
-  variable: DS.brown, // Variables
-  procedure: DS.inkSlate, // Functions
-  text: DS.blue, // text fields used across Display/Audio
-  templates: DS.gold, // Templates
-  ai: DS.pink500, // AI (stub)
-};
+export function getRobotkuTheme(themeId: string = 'robotku'): Blockly.Theme {
+  const tid = themeId || 'robotku';
+  if (THEME_CACHE.has(tid)) {
+    return THEME_CACHE.get(tid)!;
+  }
 
-const blockStyles: { [key: string]: Blockly.Theme.BlockStyle } = {};
-const categoryStyles: { [key: string]: Blockly.Theme.CategoryStyle } = {};
+  const def = getTheme(tid);
+  const isDark = def.mode === 'dark';
 
-for (const key in categoryColors) {
-  const primary = categoryColors[key];
-  blockStyles[`${key}_blocks`] = {
-    colourPrimary: primary,
-    colourSecondary: adjust(primary, 0.15),
-    colourTertiary: adjust(primary, -0.15),
-    hat: '',
+  const catMap: Record<string, string> = {
+    motors: def.categoryColors.Movement,
+    events: def.categoryColors.Timing,
+    looks: def.categoryColors.Display,
+    audio: def.categoryColors.Audio,
+    sensors: def.categoryColors['Sensors & Data'],
+    control: def.categoryColors['Program Flow'],
+    loop: def.categoryColors['Program Flow'],
+    logic: def.categoryColors.Logic,
+    math: def.categoryColors.Math,
+    variable: def.categoryColors.Variables,
+    procedure: def.categoryColors.Functions,
+    text: def.categoryColors.Display,
+    templates: def.categoryColors.Templates,
+    ai: def.categoryColors.AI,
   };
-  categoryStyles[`${key}_category`] = { colour: primary };
-}
-// Dedicated hat style for the "Start Program" block only, so the amber Timing
-// (events_blocks) statements don't all inherit a hat cap.
-blockStyles.hat_blocks = {
-  colourPrimary: DS.amber,
-  colourSecondary: adjust(DS.amber, 0.15),
-  colourTertiary: adjust(DS.amber, -0.15),
-  hat: 'cap',
-};
 
-const RobotkuLightTheme = new Blockly.Theme(
-  'robotku-light-theme',
-  blockStyles,
-  categoryStyles,
-  lightComponentStyles,
-);
-RobotkuLightTheme.fontStyle = fontStyle;
+  const blockStyles: { [key: string]: Blockly.Theme.BlockStyle } = {};
+  const categoryStyles: { [key: string]: Blockly.Theme.CategoryStyle } = {};
+
+  for (const key in catMap) {
+    const primary = catMap[key];
+    blockStyles[`${key}_blocks`] = {
+      colourPrimary: primary,
+      colourSecondary: adjust(primary, isDark ? 0.2 : 0.15),
+      colourTertiary: adjust(primary, isDark ? -0.2 : -0.15),
+      hat: '',
+    };
+    categoryStyles[`${key}_category`] = { colour: primary };
+  }
+
+  blockStyles.hat_blocks = {
+    colourPrimary: def.categoryColors.Timing,
+    colourSecondary: adjust(def.categoryColors.Timing, 0.15),
+    colourTertiary: adjust(def.categoryColors.Timing, -0.15),
+    hat: 'cap',
+  };
+
+  const compStyles: Blockly.Theme.ComponentStyle = isDark
+    ? {
+        workspaceBackgroundColour: def.swatch[2] || '#0B0F19',
+        toolboxBackgroundColour: def.swatch[2] || '#131826',
+        toolboxForegroundColour: '#E2E8F0',
+        flyoutBackgroundColour: def.swatch[2] || '#1C2438',
+        flyoutForegroundColour: '#E2E8F0',
+        flyoutOpacity: 0.95,
+        scrollbarColour: '#475569',
+        scrollbarOpacity: 0.7,
+        insertionMarkerColour: def.swatch[0] || '#38BDF8',
+        insertionMarkerOpacity: 0.8,
+        markerColour: def.swatch[1] || '#F472B6',
+        cursorColour: '#F8FAFC',
+      }
+    : {
+        workspaceBackgroundColour: '#F3F4FB',
+        toolboxBackgroundColour: '#FFFFFF',
+        toolboxForegroundColour: '#403C6B',
+        flyoutBackgroundColour: '#FFFFFF',
+        flyoutForegroundColour: '#403C6B',
+        flyoutOpacity: 1,
+        scrollbarColour: '#C2C6DB',
+        scrollbarOpacity: 0.6,
+        insertionMarkerColour: def.swatch[0] || '#4F46E5',
+        insertionMarkerOpacity: 0.5,
+        markerColour: def.swatch[1] || '#EC2D8F',
+        cursorColour: '#1B1840',
+      };
+
+  const theme = new Blockly.Theme(`robotku-${tid}-theme`, blockStyles, categoryStyles, compStyles);
+  theme.fontStyle = fontStyle;
+  THEME_CACHE.set(tid, theme);
+  return theme;
+}
 
 export function getAstroidTheme(): Blockly.Theme {
-  return RobotkuLightTheme;
+  return getRobotkuTheme('robotku');
 }
 
-// New name for callers migrating off the Astroid branding.
-export function getRobotkuTheme(): Blockly.Theme {
-  return RobotkuLightTheme;
-}

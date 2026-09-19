@@ -31,7 +31,13 @@ export default function Document() {
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var v=['robotku','spring','summer','autumn','winter','space','forest','underwater'];var t=localStorage.getItem('robotku.theme');if(!t||v.indexOf(t)===-1){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'space':'robotku';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`,
+          }}
+        />
       </Head>
+
       <body>
         <Main />
         <NextScript />

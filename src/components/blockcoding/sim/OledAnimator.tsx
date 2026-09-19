@@ -63,8 +63,8 @@ export default function OledAnimator({ onFrame }: { onFrame: (b: Bitmap | null) 
 
   return (
     <div style={{ display: 'grid', gap: 8 }}>
-      <span style={{ fontSize: 12, fontWeight: 700, color: '#1b1840' }}>
-        Animasi OLED <em style={{ color: '#6b7194', fontWeight: 400 }}>— klik untuk mainkan di layar & robot</em>
+      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-900)' }}>
+        Animasi OLED <em style={{ color: 'var(--ink-500)', fontWeight: 400 }}>— klik untuk mainkan di layar & robot</em>
       </span>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {OLED_ANIMS.map((a) => {
@@ -81,11 +81,11 @@ export default function OledAnimator({ onFrame }: { onFrame: (b: Bitmap | null) 
                 justifyItems: 'center',
                 padding: 6,
                 borderRadius: 8,
-                border: `1px solid ${active ? '#6366e8' : '#e0e3ff'}`,
-                background: active ? '#eef0ff' : '#ffffff',
-                color: active ? '#4338ca' : '#403c6b',
+                border: `1px solid ${active ? 'var(--blue)' : 'var(--line)'}`,
+                background: active ? 'var(--surface-2)' : 'var(--surface)',
+                color: active ? 'var(--blue)' : 'var(--ink-700)',
                 cursor: 'pointer',
-                boxShadow: '0 1px 3px rgba(27,24,64,0.06)',
+                boxShadow: 'var(--shadow-xs)',
               }}
             >
               <img

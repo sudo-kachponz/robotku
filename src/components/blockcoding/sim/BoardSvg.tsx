@@ -556,7 +556,7 @@ export default function BoardSvg({
       <defs>
         {/* CAD Blueprint Schematic Grid Pattern */}
         <pattern id="schemGrid" width="20" height="20" patternUnits="userSpaceOnUse">
-          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#E2E8F0" strokeWidth="0.75" />
+          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--line, #E2E8F0)" strokeWidth="0.75" />
         </pattern>
         <linearGradient id="pcbGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={C.pcbTop} />

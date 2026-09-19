@@ -9,7 +9,9 @@ import { useSettings } from '../../hooks/useDrive';
 import { setSettings, resetSettings } from '../../app/settingsStore';
 import { cloneSettings, type RobotSettings, type Speed } from '../../domain/settings';
 import { showToast } from '../../ui/toast';
+import { useAppTheme } from '../../theme/themeManager';
 import guide1Svg from '../../assets/Guide1.svg';
+
 import guide2Svg from '../../assets/Guide2.svg';
 import guide3Svg from '../../assets/Guide3.svg';
 import styles from '../../styles/Settings.module.css';
@@ -190,6 +192,15 @@ function SettingsTab({
         />
       </div>
 
+      {/* Theme Picker */}
+      <div className={styles.card}>
+        <h2 className={styles.cardTitle}>Tema Tampilan IDE</h2>
+        <p className={styles.cardSub}>
+          Pilih tema warna untuk Workspace Blok, Editor Python, dan Simulasi.
+        </p>
+        <ThemeSelector />
+      </div>
+
       {/* Footer */}
       <div className={styles.footer}>
         <span className={styles.footMeta}>
@@ -211,6 +222,71 @@ function SettingsTab({
     </>
   );
 }
+
+function ThemeSelector() {
+  const { theme, setTheme, themes } = useAppTheme();
+
+  return (
+    <div className={styles.themeGrid}>
+      {themes.map((t) => {
+        const isActive = theme === t.id;
+        return (
+          <div
+            key={t.id}
+            className={`${styles.themeCard} ${isActive ? styles.themeCardActive : ''}`}
+            onClick={() => {
+              setTheme(t.id);
+              showToast(`Tema diubah: ${t.name}`, 'info');
+            }}
+            role="button"
+            tabIndex={0}
+            aria-pressed={isActive}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                setTheme(t.id);
+                showToast(`Tema diubah: ${t.name}`, 'info');
+              }
+            }}
+          >
+            {isActive && <span className={styles.themeCheck}>✓</span>}
+            <div className={styles.themeCardHead}>
+              <span className={styles.themeCardName}>{t.name}</span>
+              <span
+                className={`${styles.themeModeBadge} ${t.mode === 'dark' ? styles.themeModeBadgeDark : ''}`}
+              >
+                {t.mode === 'dark' ? 'Gelap' : 'Terang'}
+              </span>
+            </div>
+
+            <div className={styles.themeSwatchRow}>
+              {t.swatch.map((c, i) => (
+                <span
+                  key={i}
+                  className={styles.swatchCircle}
+                  style={{ backgroundColor: c }}
+                  title={`Color ${i + 1}: ${c}`}
+                />
+              ))}
+            </div>
+
+            <p className={styles.themeCardDesc}>{t.desc}</p>
+
+            <div className={styles.themeMiniPreview}>
+              <span
+                className={styles.themeBlockChip}
+                style={{ backgroundColor: t.categoryColors.Movement || t.swatch[0] }}
+              >
+                Maju 1 dtk
+              </span>
+              <span className={styles.themeCodeTag}>robot.forward(1)</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 
 function MapGroup({
   label,

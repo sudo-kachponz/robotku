@@ -1,0 +1,56 @@
+/* src/theme/themes/spring.css
+ *
+ * Theme: Spring (Fresh Floral Light)
+ * Vibrant meadow greens, fresh blossoms, crisp clear skies.
+ */
+
+:root[data-theme='spring'] {
+  color-scheme: light;
+
+  /* Surfaces & backgrounds */
+  --surface: #ffffff;
+  --surface-2: #f7fdf9;
+  --bg: #f0f9f4;
+  --line: #dcf2e5;
+  --line-soft: #ebf8f0;
+
+  /* Ink scale */
+  --ink-900: #0f291e;
+  --ink-800: #1a4030;
+  --ink-700: #295944;
+  --ink-600: #3d755c;
+  --ink-500: #559477;
+  --ink-400: #7eb59c;
+  --ink-300: #b0d8c4;
+
+  /* Semantic colors */
+  --blue: #0284c7;
+  --blue-bg: #f0f9ff;
+  --green: #16a34a;
+  --green-bg: #f0fdf4;
+  --amber: #d97706;
+  --amber-bg: #fffbeb;
+  --purple: #9333ea;
+  --purple-bg: #faf5ff;
+  --red: #e11d48;
+  --red-bg: #fff1f2;
+
+  /* Code editor (Python mode) */
+  --code-bg: #ffffff;
+  --code-fg: #0f291e;
+  --code-gutter-bg: #f0f9f4;
+  --code-gutter-fg: #559477;
+  --code-active-line: #e3f5eb;
+  --code-selection: #c7edd7;
+  --code-keyword: #059669;
+  --code-string: #d97706;
+  --code-number: #0284c7;
+  --code-comment: #559477;
+  --code-ident: #0f291e;
+  --code-fn: #2563eb;
+  --code-error: #e11d48;
+  --code-warn: #d97706;
+
+  /* Flyout */
+  --flyout-bg-color: rgba(240, 249, 244, 0.75);
+}
