@@ -111,8 +111,8 @@ export default function PyFlyout({
   const currentCategory = activeCat || SNIPPET_CATEGORIES[0];
   const catColor = searching
     ? currentTheme === 'space'
-      ? '#38BDF8'
-      : '#EC2D8F'
+      ? 'var(--sky)'
+      : 'var(--pink-500)'
     : getCategoryColor(currentCategory, currentTheme);
 
   const cards = searching
