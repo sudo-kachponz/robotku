@@ -64,11 +64,11 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: var(--font);
+  font-family: var(--font-display);
 }
 
 button {
-  font-family: var(--font);
+  font-family: var(--font-display);
   touch-action: manipulation;
 }
 
@@ -198,6 +198,16 @@ button {
   fill: var(--flyout-bg-color, var(--surface-2, rgba(243, 244, 251, 0.65))) !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+}
+
+/* Simulator and Blockly typography strictly scoped to Plus Jakarta Sans */
+.blocklyText,
+.blocklyTreeLabel,
+.robotkuCategoryLabel,
+.blocklyFlyoutLabelText,
+.blocklyMenuItem,
+.blocklyHtmlInput {
+  font-family: var(--font) !important;
 }
 
 @media (max-width: 767px) {
