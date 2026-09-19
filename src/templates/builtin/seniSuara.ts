@@ -2,22 +2,21 @@
 
 import type { BuiltinTemplate } from '../types';
 import { matrixThumb, soundThumb } from '../thumbnails';
-import { SMILE, HEART, DIAMOND, CROSS, CHECK, FULL } from './patterns';
 
-const showMatrix = (pattern: string, secs = 0.25) => ({
-  type: 'display_matrix' as const,
-  fields: { PATTERN: pattern },
+const showLed = (color: string, secs = 0.25) => ({
+  type: 'set_led_color' as const,
+  fields: { COLOR: color },
   inputs: { DURATION: secs },
 });
 
 export const matrixAnim: BuiltinTemplate = {
   id: 'matrix_anim',
-  name: 'Animasi Matrix',
-  description: 'Enam pola LED berganti cepat membentuk animasi kecil di layar.',
+  name: 'Pelangi LED',
+  description: 'Enam warna LED berganti cepat membentuk animasi pelangi.',
   collection: 'seni-suara',
   tags: ['seni', 'led', 'perulangan'],
   difficulty: 1,
-  learn: ['Rangkaian pola LED', 'Perulangan untuk animasi', 'Mengatur durasi tiap frame'],
+  learn: ['Rangkaian warna LED', 'Perulangan untuk animasi', 'Mengatur durasi tiap frame'],
   thumbnail: matrixThumb(),
   program: [
     {
@@ -25,12 +24,12 @@ export const matrixAnim: BuiltinTemplate = {
       inputs: { TIMES: 3 },
       statements: {
         DO: [
-          showMatrix(SMILE),
-          showMatrix(HEART),
-          showMatrix(DIAMOND),
-          showMatrix(CROSS),
-          showMatrix(CHECK),
-          showMatrix(FULL),
+          showLed('#EF4444'), // merah
+          showLed('#F97316'), // oranye
+          showLed('#FACC15'), // kuning
+          showLed('#22C55E'), // hijau
+          showLed('#0EA5E9'), // biru
+          showLed('#8B5CF6'), // ungu
         ],
       },
     },

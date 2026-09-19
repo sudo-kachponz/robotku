@@ -94,16 +94,12 @@ export const API: ApiEntry[] = [
   { block: 'controls_continue', category: 'Program Flow', kind: 'statement', opcode: 'META_CONTINUE_LOOP', docs: 'flow/continue', py: () => 'continue\n' },
 
   // ---------------- Display (looks.ts) ----------------
-  { block: 'display_matrix', category: 'Display', kind: 'statement', opcode: 'DISPLAY_MATRIX', docs: 'display/matrix',
-    py: stmt((b, g) => `display.matrix(${q(fld(b, 'PATTERN'))}, ${dur(b, g)})`) },
   { block: 'display_text', category: 'Display', kind: 'statement', opcode: 'DISPLAY_TEXT', docs: 'display/text',
     py: stmt((b) => `display.text(${q(fld(b, 'TEXT'))})`) },
   { block: 'display_kaomoji', category: 'Display', kind: 'statement', opcode: 'DISPLAY_TEXT', docs: 'display/face',
     py: stmt((b) => `display.face(${q(fld(b, 'FACE'))})`) },
   { block: 'display_set_brightness', category: 'Display', kind: 'statement', opcode: 'SET_LED_BRIGHTNESS', docs: 'display/brightness',
     py: stmt((b) => `display.brightness(${int(b, 'VALUE')})`) },
-  { block: 'display_clear_matrix', category: 'Display', kind: 'statement', opcode: 'CLEAR_MATRIX', docs: 'display/clear',
-    py: () => 'display.clear()\n' },
   { block: 'set_led_color', category: 'Display', kind: 'statement', opcode: 'SET_LED_COLOR', docs: 'display/led-color',
     py: stmt((b, g) => `led.color(${q(fld(b, 'COLOR'))}, ${dur(b, g)})`) },
   { block: 'lcd_shape', category: 'Display', kind: 'statement', opcode: 'LCD_SHAPE', docs: 'display/lcd-shape',

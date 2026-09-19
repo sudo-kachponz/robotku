@@ -2,7 +2,6 @@
 
 import type { BuiltinTemplate } from '../types';
 import { counterThumb, funcThumb } from '../thumbnails';
-import { CHECK } from './patterns';
 
 const get = (name: string) => ({ type: 'variables_get' as const, fields: { VAR: name } });
 
@@ -52,7 +51,7 @@ export const counterGame: BuiltinTemplate = {
       },
       statements: {
         DO0: [
-          { type: 'display_matrix', fields: { PATTERN: CHECK }, inputs: { DURATION: 0.6 } },
+          { type: 'set_led_color', fields: { COLOR: '#22C55E' }, inputs: { DURATION: 0.6 } },
           { type: 'move_forward', fields: { SPEED: 'fast' }, inputs: { DURATION: 0.6 } },
         ],
       },

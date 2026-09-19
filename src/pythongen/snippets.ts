@@ -37,7 +37,7 @@ export const SNIPPETS: Snippet[] = [
   { id: 'text', category: 'Display', label: 'Tampilkan teks', desc: 'Tulis teks di layar', py: 'display.text("${1:Hi!}")', docs: 'display/text' },
   { id: 'face', category: 'Display', label: 'Tampilkan wajah', desc: 'Emoji kaomoji', py: 'display.face("${1:(^_^)}")', docs: 'display/face' },
   { id: 'brightness', category: 'Display', label: 'Kecerahan', desc: 'Atur kecerahan', py: 'display.brightness(${1:100})', docs: 'display/brightness' },
-  { id: 'clear', category: 'Display', label: 'Bersihkan', desc: 'Kosongkan layar', py: 'display.clear()', docs: 'display/clear' },
+  { id: 'clear', category: 'Display', label: 'Bersihkan', desc: 'Kosongkan layar', py: 'lcd.clear()', docs: 'display/lcd-clear' },
   { id: 'led', category: 'Display', label: 'Warna LED', desc: 'Nyalakan LED warna', py: 'led.color("${1:#ff0000}", ${2:1})', docs: 'display/led-color' },
 
   // ---------- Audio ----------

@@ -251,11 +251,9 @@ function buildStatement(fn: string, a: CallArgs, line: number): BlockSpec {
     case 'robot.gripper': return { type: 'mechanism_set_gripper', fields: { STATE: asField(a.pos[0], line) } };
     case 'wait': return { type: 'timing_wait', inputs: { DURATION: a.pos[0] ?? 1 } };
     case 'wait_until': return { type: 'timing_wait_until', inputs: { CONDITION: a.pos[0] } };
-    case 'display.matrix': return { type: 'display_matrix', fields: { PATTERN: asField(a.pos[0], line) }, inputs: { DURATION: a.pos[1] ?? 1 } };
     case 'display.text': return { type: 'display_text', fields: { TEXT: asField(a.pos[0], line) } };
     case 'display.face': return { type: 'display_kaomoji', fields: { FACE: asField(a.pos[0], line) } };
     case 'display.brightness': return { type: 'display_set_brightness', fields: { VALUE: asField(a.pos[0], line) } };
-    case 'display.clear': return { type: 'display_clear_matrix' };
     case 'led.color': return { type: 'set_led_color', fields: { COLOR: asField(a.pos[0], line) }, inputs: { DURATION: a.pos[1] ?? 1 } };
     case 'lcd.shape': return { type: 'lcd_shape', fields: { SHAPE: asField(a.pos[0], line) }, inputs: { DURATION: a.pos[1] ?? 1 } };
     case 'lcd.text': return { type: 'lcd_text', fields: { TEXT: asField(a.pos[0], line) }, inputs: { DURATION: a.pos[1] ?? 1 } };
@@ -285,7 +283,7 @@ function buildStatement(fn: string, a: CallArgs, line: number): BlockSpec {
 export const KNOWN_STATEMENT_FNS = [
   'robot.forward', 'robot.reverse', 'robot.turn', 'robot.steer', 'robot.claw', 'robot.stop', 'robot.stop_all',
   'robot.servo', 'robot.head', 'robot.gripper', 'wait', 'wait_until',
-  'display.matrix', 'display.text', 'display.face', 'display.brightness', 'display.clear',
+  'display.text', 'display.face', 'display.brightness',
   'led.color', 'lcd.shape', 'lcd.text', 'lcd.clear',
   'audio.record', 'audio.play_recording', 'audio.sound_effect', 'audio.tone', 'audio.tone_beat', 'audio.melody', 'audio.volume', 'audio.stop', 'audio.bpm',
   'sensors.set_analog', 'sensors.set_digital', 'sensors.reset_distance', 'sensors.reset_heading',

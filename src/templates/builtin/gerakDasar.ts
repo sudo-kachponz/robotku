@@ -2,7 +2,6 @@
 
 import type { BuiltinTemplate } from '../types';
 import { helloThumb, motionThumb } from '../thumbnails';
-import { SMILE, HEART } from './patterns';
 
 export const helloRobot: BuiltinTemplate = {
   id: 'hello_robot',
@@ -11,13 +10,13 @@ export const helloRobot: BuiltinTemplate = {
   collection: 'gerak-dasar',
   tags: ['pemula', 'gerak', 'suara'],
   difficulty: 1,
-  learn: ['Menjalankan blok berurutan', 'Menampilkan pola LED', 'Membunyikan nada'],
+  learn: ['Menjalankan blok berurutan', 'Menyalakan LED warna', 'Membunyikan nada'],
   thumbnail: helloThumb(),
   program: [
     { type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 1 } },
-    { type: 'display_matrix', fields: { PATTERN: SMILE }, inputs: { DURATION: 1 } },
+    { type: 'set_led_color', fields: { COLOR: '#22C55E' }, inputs: { DURATION: 1 } },
     { type: 'audio_play_tone_sec', fields: { NOTE: 'C4', WAIT: 'true' }, inputs: { DURATION: 1 } },
-    { type: 'display_matrix', fields: { PATTERN: HEART }, inputs: { DURATION: 1 } },
+    { type: 'set_led_color', fields: { COLOR: '#EF4444' }, inputs: { DURATION: 1 } },
   ],
 };
 
@@ -72,7 +71,7 @@ export const dance: BuiltinTemplate = {
             fields: { NOTE: 'G4', WAIT: 'true' },
             inputs: { BEATS: 1 },
           },
-          { type: 'display_matrix', fields: { PATTERN: HEART }, inputs: { DURATION: 0.2 } },
+          { type: 'set_led_color', fields: { COLOR: '#EF4444' }, inputs: { DURATION: 0.2 } },
         ],
       },
     },
