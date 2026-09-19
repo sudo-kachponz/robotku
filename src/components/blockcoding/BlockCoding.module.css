@@ -3,9 +3,7 @@
   inset: 0;
   height: 100dvh;
   overflow: hidden;
-  /* Light base so nothing shows the harsh purple page gradient behind the floating
-     toolbar or beside the sim card — the Blockly canvas sits on this. */
-  background: #f4f5fb;
+  background: var(--bg, #f4f5fb);
 }
 
 .editor {

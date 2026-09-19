@@ -76,6 +76,7 @@ const box: React.CSSProperties = {
   maxWidth: '100%',
   minWidth: 0,
   boxSizing: 'border-box',
+  fontFamily: 'var(--font)',
 };
 
 export default function BoardPanel({ state }: { state: SimState }) {
@@ -538,14 +539,11 @@ export default function BoardPanel({ state }: { state: SimState }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 16 }}>💡</span>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-900)' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-900)' }}>
                 Kontrol Warna LED (RGB)
               </div>
               <div style={{ fontSize: 11, color: 'var(--ink-500)' }}>
                 Pilih warna palet, roda warna, atau sesuaikan slider RGB untuk membuat blok kode
-              </div>
-              <div style={{ fontSize: 10, color: 'var(--amber)', marginTop: 2 }}>
-                ⚠️ LED asli digital (8 warna) — warna dibulatkan ke merah/hijau/biru terdekat. Preview LED papan sudah menunjukkan warna asli yang menyala.
               </div>
             </div>
           </div>
@@ -613,67 +611,42 @@ export default function BoardPanel({ state }: { state: SimState }) {
             flexWrap: 'wrap',
           }}
         >
-          {/* 2-row x 10-column Swatches Grid */}
+          {/* Responsive 10-column Swatches Grid */}
           <div
             style={{
-              display: 'flex',
-              flexDirection: 'column',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(10, minmax(0, 1fr))',
               gap: 6,
+              flex: '1 1 240px',
+              alignItems: 'center',
             }}
           >
-            {/* Row 1 */}
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-              {LED_PALETTE.slice(0, 10).map((col) => {
-                const isSelected = selectedHex.toLowerCase() === col.hex.toLowerCase();
-                return (
-                  <button
-                    key={col.name}
-                    type="button"
-                    onClick={() => handleSelectColor(col.hex, col.name)}
-                    title={`${col.name} (${col.hex})`}
-                    style={{
-                      width: 22,
-                      height: 22,
-                      borderRadius: '50%',
-                      background: col.hex,
-                      border: col.hex.toLowerCase() === '#ffffff' ? '1.5px solid var(--line)' : isSelected ? '2px solid var(--pink-500)' : '1px solid rgba(0,0,0,0.15)',
-                      boxShadow: isSelected ? `0 0 0 2px var(--surface), 0 0 0 4px var(--pink-500), 0 2px 5px ${col.hex}66` : '0 1px 2px rgba(0,0,0,0.1)',
-                      transform: isSelected ? 'scale(1.18)' : 'scale(1)',
-                      transition: 'all 0.15s ease',
-                      cursor: 'pointer',
-                      padding: 0,
-                    }}
-                  />
-                );
-              })}
-            </div>
-
-            {/* Row 2 */}
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-              {LED_PALETTE.slice(10, 20).map((col) => {
-                const isSelected = selectedHex.toLowerCase() === col.hex.toLowerCase();
-                return (
-                  <button
-                    key={col.name}
-                    type="button"
-                    onClick={() => handleSelectColor(col.hex, col.name)}
-                    title={`${col.name} (${col.hex})`}
-                    style={{
-                      width: 22,
-                      height: 22,
-                      borderRadius: '50%',
-                      background: col.hex,
-                      border: col.hex.toLowerCase() === '#ffffff' ? '1.5px solid var(--line)' : isSelected ? '2px solid var(--pink-500)' : '1px solid rgba(0,0,0,0.15)',
-                      boxShadow: isSelected ? `0 0 0 2px var(--surface), 0 0 0 4px var(--pink-500), 0 2px 5px ${col.hex}66` : '0 1px 2px rgba(0,0,0,0.1)',
-                      transform: isSelected ? 'scale(1.18)' : 'scale(1)',
-                      transition: 'all 0.15s ease',
-                      cursor: 'pointer',
-                      padding: 0,
-                    }}
-                  />
-                );
-              })}
-            </div>
+            {LED_PALETTE.map((col) => {
+              const isSelected = selectedHex.toLowerCase() === col.hex.toLowerCase();
+              return (
+                <button
+                  key={col.name}
+                  type="button"
+                  onClick={() => handleSelectColor(col.hex, col.name)}
+                  title={`${col.name} (${col.hex})`}
+                  style={{
+                    width: '100%',
+                    maxWidth: 24,
+                    aspectRatio: '1 / 1',
+                    borderRadius: '50%',
+                    background: col.hex,
+                    border: col.hex.toLowerCase() === '#ffffff' ? '1.5px solid var(--line)' : isSelected ? '2px solid var(--pink-500)' : '1px solid rgba(0,0,0,0.15)',
+                    boxShadow: isSelected ? `0 0 0 2px var(--surface), 0 0 0 4px var(--pink-500), 0 2px 5px ${col.hex}66` : '0 1px 2px rgba(0,0,0,0.1)',
+                    transform: isSelected ? 'scale(1.15)' : 'scale(1)',
+                    transition: 'all 0.15s ease',
+                    cursor: 'pointer',
+                    padding: 0,
+                    margin: '0 auto',
+                    display: 'block',
+                  }}
+                />
+              );
+            })}
           </div>
 
           {/* Color Wheel Picker Trigger on the Right with Safe Containment */}
@@ -930,6 +903,8 @@ export default function BoardPanel({ state }: { state: SimState }) {
 
 const cabutBtn: React.CSSProperties = {
   fontSize: 10,
+  fontWeight: 600,
+  fontFamily: 'var(--font)',
   padding: '2px 6px',
   borderRadius: 4,
   border: '1px solid var(--red)',
@@ -941,7 +916,8 @@ const cabutBtn: React.CSSProperties = {
 function btn(active: boolean): React.CSSProperties {
   return {
     fontSize: 12,
-    fontWeight: 700,
+    fontWeight: 600,
+    fontFamily: 'var(--font)',
     padding: '5px 10px',
     borderRadius: 8,
     border: `1px solid ${active ? 'var(--pink-500)' : 'var(--line)'}`,

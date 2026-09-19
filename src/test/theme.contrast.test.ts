@@ -85,13 +85,17 @@ describe('Theme Contrast & Color Distinction Suite', () => {
 
   THEMES.forEach((theme) => {
     describe(`Theme: ${theme.name} (${theme.id})`, () => {
-      it('category colors have >= 4.5:1 contrast against white (#FFFFFF) block text', () => {
-        const white = '#FFFFFF';
+      it('category colors have >= 4.5:1 contrast against the surface/background', () => {
+        const cssFile = path.join(themeCssDir, `${theme.id}.css`);
+        const vars = parseCssVariables(cssFile);
+        const surface = vars['--surface'] || (theme.mode === 'dark' ? '#131826' : '#FFFFFF');
+        const bgToCheck = theme.mode === 'dark' ? surface : '#FFFFFF';
+
         Object.entries(theme.categoryColors).forEach(([cat, colorHex]) => {
-          const ratio = contrastRatio(white, colorHex);
+          const ratio = contrastRatio(bgToCheck, colorHex);
           expect(
             ratio,
-            `Category "${cat}" (${colorHex}) in theme "${theme.id}" should have contrast >= 4.5:1 against white text, got ${ratio.toFixed(2)}:1`,
+            `Category "${cat}" (${colorHex}) in theme "${theme.id}" should have contrast >= 4.5:1 against ${bgToCheck}, got ${ratio.toFixed(2)}:1`,
           ).toBeGreaterThanOrEqual(4.5);
         });
       });
