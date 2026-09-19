@@ -60,7 +60,12 @@ export class TransportSink implements RobotSink {
       params = { ...params, duration_ms: toneMs(params, this.bpm) };
     }
     try {
-      this.transport.sendLine(encodeCommand({ command: cmd.command, params } as RobotCommand));
+      // AWAIT the write — this is backpressure. Without it, a program of
+      // zero-duration commands (LED/display, or a tight loop body) fires sends
+      // faster than BLE can drain; the write chain floods, a heartbeat write then
+      // rejects on the congested link, and the connection drops mid-run. Awaiting
+      // paces the runner to the real BLE throughput so heartbeats keep flowing.
+      await this.transport.sendLine(encodeCommand({ command: cmd.command, params } as RobotCommand));
     } catch (err) {
       console.warn('[TransportSink] sendLine failed', err);
     }
