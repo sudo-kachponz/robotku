@@ -12,10 +12,101 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import ControlLayout from '../control/ControlLayout';
 import ConnectHint from './ConnectHint';
 import RobotSprite from './RobotSprite';
-import ServoModule from '../blockcoding/sim/ServoModule';
 import { useDrive } from '../../hooks/useDrive';
 import { soundFx } from './JoystickAudio';
 import styles from './JoystickMode.module.css';
+
+function LeversIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="6" y1="3" x2="6" y2="21" />
+      <circle cx="6" cy="14" r="3" fill="currentColor" fillOpacity="0.25" />
+      <line x1="18" y1="3" x2="18" y2="21" />
+      <circle cx="18" cy="8" r="3" fill="currentColor" fillOpacity="0.25" />
+    </svg>
+  );
+}
+
+function AnalogStickIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="3" fill="currentColor" />
+      <line x1="12" y1="3" x2="12" y2="6" />
+      <line x1="12" y1="18" x2="12" y2="21" />
+      <line x1="3" y1="12" x2="6" y2="12" />
+      <line x1="18" y1="12" x2="21" y2="12" />
+    </svg>
+  );
+}
+
+function SpeedSlowIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 12l-4 3" />
+      <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+function SpeedNormalIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    </svg>
+  );
+}
+
+function SpeedTurboIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+      <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+    </svg>
+  );
+}
+
+function SoundOnIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+    </svg>
+  );
+}
+
+function SoundOffIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+      <line x1="23" y1="9" x2="17" y2="15" />
+      <line x1="17" y1="9" x2="23" y2="15" />
+    </svg>
+  );
+}
+
+function ArenaRadarIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4.93 19.07A10 10 0 0 1 12 2a10 10 0 0 1 7.07 17.07" />
+      <path d="M8.46 15.54A5 5 0 0 1 12 6a5 5 0 0 1 3.54 9.54" />
+      <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+function LightbulbIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 18h6" />
+      <path d="M10 22h4" />
+      <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5.76.76 1.23 1.52 1.41 2.5" />
+    </svg>
+  );
+}
+
 
 const SERVO1_PORT = 1; // Left continuous drive servo
 const SERVO2_PORT = 2; // Right continuous drive servo
@@ -25,10 +116,13 @@ const clamp = (v: number, min = -100, max = 100) => Math.max(min, Math.min(max, 
 type ControlType = 'LEVERS' | 'STICK';
 type GearLevel = 'ECO' | 'NORMAL' | 'TURBO';
 
-const GEAR_CONFIG: Record<GearLevel, { label: string; icon: string; factor: number; colorClass: string }> = {
-  ECO: { label: 'Pelan', icon: '🐢', factor: 0.4, colorClass: '' },
-  NORMAL: { label: 'Normal', icon: '⚡', factor: 0.75, colorClass: '' },
-  TURBO: { label: 'Turbo', icon: '🚀', factor: 1.0, colorClass: styles.gearTurbo },
+const GEAR_CONFIG: Record<
+  GearLevel,
+  { label: string; renderIcon: () => React.ReactNode; factor: number; colorClass: string }
+> = {
+  ECO: { label: 'Pelan', renderIcon: () => <SpeedSlowIcon />, factor: 0.4, colorClass: '' },
+  NORMAL: { label: 'Normal', renderIcon: () => <SpeedNormalIcon />, factor: 0.75, colorClass: '' },
+  TURBO: { label: 'Turbo', renderIcon: () => <SpeedTurboIcon />, factor: 1.0, colorClass: styles.gearTurbo },
 };
 
 const LED_PRESETS = [
@@ -244,34 +338,6 @@ export default function JoystickMode() {
   }, []);
 
   // Stunt maneuvers
-  const performStunt = useCallback(
-    (type: 'SPIN_L' | 'SPIN_R' | 'BOOST') => {
-      soundFx.playWhoosh();
-      if (type === 'SPIN_L') {
-        applyMotors(-100, 100);
-        setTimeout(() => applyMotors(0, 0), 450);
-      } else if (type === 'SPIN_R') {
-        applyMotors(100, -100);
-        setTimeout(() => applyMotors(0, 0), 450);
-      } else if (type === 'BOOST') {
-        applyMotors(100, 100);
-        setTimeout(() => applyMotors(0, 0), 400);
-      }
-    },
-    [applyMotors],
-  );
-
-  // Reset arena position
-  const resetPosition = useCallback(() => {
-    poseRef.current = { x: 0, y: 0, heading: 0 };
-    setTrail([]);
-    soundFx.playClick(500);
-    if (robotElRef.current) {
-      robotElRef.current.style.transform = `translate(0px, 0px) rotate(0deg)`;
-    }
-    setTelemetry({ heading: 0, speed: 0 });
-  }, []);
-
   // ── 360° ANALOG STICK POINTER HANDLER ──
   const handleStickPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
@@ -438,450 +504,388 @@ export default function JoystickMode() {
   const fwdIntent = (s1 + s2) / 200;
   const turnIntent = (s1 - s2) / 200;
 
+  // Lightbar color synced to gear + selected LED
+  const lightbarColor =
+    gear === 'TURBO'
+      ? '#a855f7'
+      : gear === 'ECO'
+        ? '#3b82f6'
+        : '#4f46e5';
+
   return (
-    <ControlLayout title="Joystick & Arena Lab">
+    <ControlLayout title="Joystick">
       <div className={styles.container}>
         <ConnectHint />
 
-        {/* ── TOP COCKPIT BAR ── */}
-        <div className={styles.topCockpit}>
-          {/* Mode Switcher */}
-          <div className={styles.pillGroup}>
-            <button
-              className={`${styles.pillBtn} ${controlType === 'LEVERS' ? styles.pillActive : ''}`}
-              onClick={() => {
-                setControlType('LEVERS');
-                soundFx.playClick(600);
-              }}
-            >
-              <span>🎛️</span> Tuas Ganda (S1 & S2)
-            </button>
-            <button
-              className={`${styles.pillBtn} ${controlType === 'STICK' ? styles.pillActive : ''}`}
-              onClick={() => {
-                setControlType('STICK');
-                soundFx.playClick(700);
-              }}
-            >
-              <span>🕹️</span> 360° Analog Stick
-            </button>
-          </div>
+        {/* ── PLAYSTATION DUALSHOCK 4 CONTROLLER ── */}
+        <div className={styles.psController}>
 
-          {/* Speed Limiters / Gears */}
-          <div className={styles.pillGroup}>
-            {(['ECO', 'NORMAL', 'TURBO'] as GearLevel[]).map((g) => {
-              const cfg = GEAR_CONFIG[g];
-              const isActive = gear === g;
-              return (
-                <button
-                  key={g}
-                  className={`${styles.pillBtn} ${isActive ? styles.pillActive : ''} ${
-                    isActive ? cfg.colorClass : ''
-                  }`}
-                  onClick={() => changeGear(g)}
-                >
-                  <span>{cfg.icon}</span> {cfg.label}
-                </button>
-              );
-            })}
-          </div>
+          {/* ── LIGHTBAR ACCENT (Dynamic RGB synced to gear) ── */}
+          <div
+            className={styles.psLightbar}
+            style={{
+              background: `linear-gradient(90deg, transparent 0%, ${lightbarColor} 20%, ${lightbarColor} 80%, transparent 100%)`,
+              boxShadow: `0 0 18px ${lightbarColor}, 0 0 6px ${lightbarColor}`,
+            }}
+            title={`Lightbar: Gear ${gear} aktif`}
+          />
 
-          {/* Sound Synthesizer Toggle */}
-          <button
-            className={styles.audioBtn}
-            onClick={toggleSound}
-            title={isMuted ? 'Nyalakan Efek Suara' : 'Matikan Efek Suara'}
-          >
-            {isMuted ? '🔇' : '🔊'}
-          </button>
-        </div>
-
-        {/* ── MAIN FLIGHT DECK ── */}
-        <div className={styles.mainDeck}>
-          {/* LEFT: 2D KINEMATIC ARENA */}
-          <div className={styles.arenaCard}>
-            <div className={styles.arenaHeader}>
-              <div className={styles.arenaTitle}>
-                <span>📡</span> Arena Virtual Robotku
-              </div>
-              <div className={styles.arenaStatusBadge}>
-                <span className={styles.arenaStatusDot} />
-                LIVE SIM
-              </div>
+          {/* ── TOP SHOULDER TRIGGERS (L2, L1, R1, R2) ── */}
+          <div className={styles.psShoulderBar}>
+            {/* Left shoulder triggers */}
+            <div className={styles.psShoulderGroup}>
+              {/* L1 — Klakson Horn */}
+              <button
+                className={`${styles.psBumper} ${isHornActive ? styles.psBumperActive : ''}`}
+                onClick={triggerHorn}
+                title="L1: Bunyikan Klakson Horn (H)"
+                aria-label="L1: Klakson"
+              >
+                L1
+              </button>
             </div>
 
-            <div className={styles.arenaStage} ref={stageRef}>
-              <div className={styles.arenaCrosshair} />
-
-              {/* Breadcrumb Trail */}
-              {trail.map((t) => (
-                <div
-                  key={t.id}
-                  className={styles.arenaTrailDot}
-                  style={{
-                    transform: `translate(${t.x}px, ${t.y}px)`,
-                  }}
-                />
-              ))}
-
-              {/* Simulated Robot Sprite */}
-              <div className={styles.arenaRobot} ref={robotElRef}>
-                <RobotSprite
-                  fwd={fwdIntent}
-                  turn={turnIntent}
-                  gripperOpen={false}
-                  reduced={false}
-                />
-              </div>
-            </div>
-
-            <div className={styles.arenaFooter}>
-              <div className={styles.telemetryBadges}>
-                <span className={styles.telemetryChip}>HDG: {telemetry.heading}°</span>
-                <span className={styles.telemetryChip}>SPD: {telemetry.speed}%</span>
-              </div>
-              <button className={styles.resetPosBtn} onClick={resetPosition} title="Reset Posisi Robot ke Tengah">
-                🎯 Reset Posisi
+            {/* Right shoulder triggers */}
+            <div className={styles.psShoulderGroup}>
+              {/* R1 — Cycle LED Underglow */}
+              <button
+                className={styles.psBumper}
+                onClick={() => {
+                  const currentIdx = LED_PRESETS.findIndex((p) => p.rgb === selectedLed);
+                  const nextIdx = (currentIdx + 1) % LED_PRESETS.length;
+                  handleSelectLed(LED_PRESETS[nextIdx].rgb);
+                }}
+                title="R1: Cycle Underglow LED Color (L)"
+                aria-label="R1: LED Color"
+              >
+                R1
               </button>
             </div>
           </div>
 
-          {/* RIGHT: CONTROLS CONSOLE */}
-          <div className={styles.consoleCard}>
-            {/* ── MODE A: DUAL CIRCULAR ANALOG STICKS (TUAS GANDA) ── */}
-            {controlType === 'LEVERS' && (
-              <div className={styles.dualThrottleStage}>
-                {/* Servo 1 Stick (Left) */}
-                <div className={styles.leverColumn}>
-                  <div className={styles.leverHeader}>
-                    <span className={styles.leverTitle}>Servo 1 (Kiri)</span>
-                    <span
-                      className={`${styles.leverSpeed} ${
-                        s1 > 0 ? styles.leverSpeedFwd : s1 < 0 ? styles.leverSpeedRev : ''
-                      }`}
-                    >
+          {/* ── MAIN CONTROLLER BODY ── */}
+          <div className={styles.psBody}>
+
+            {/* ── LEFT WING ── */}
+            <div className={styles.psLeftWing}>
+              {/* D-Pad */}
+              <div className={styles.psDpad}>
+                {/* Up: D-Pad Maju (W / ArrowUp) */}
+                <button
+                  className={`${styles.psDpadBtn} ${styles.psDpadUp}`}
+                  onPointerDown={() => {
+                    const factor = GEAR_CONFIG[gear].factor;
+                    applyMotors(factor * 100, factor * 100);
+                  }}
+                  onPointerUp={() => applyMotors(0, 0)}
+                  onPointerLeave={() => applyMotors(0, 0)}
+                  title="D-Pad Atas: Maju (W)"
+                  aria-label="Maju"
+                >
+                  <DpadArrow dir="up" />
+                </button>
+                {/* Down: D-Pad Mundur (S / ArrowDown) */}
+                <button
+                  className={`${styles.psDpadBtn} ${styles.psDpadDown}`}
+                  onPointerDown={() => {
+                    const factor = GEAR_CONFIG[gear].factor;
+                    applyMotors(-factor * 100, -factor * 100);
+                  }}
+                  onPointerUp={() => applyMotors(0, 0)}
+                  onPointerLeave={() => applyMotors(0, 0)}
+                  title="D-Pad Bawah: Mundur (S)"
+                  aria-label="Mundur"
+                >
+                  <DpadArrow dir="down" />
+                </button>
+                {/* Left: D-Pad Belok Kiri (A / ArrowLeft) */}
+                <button
+                  className={`${styles.psDpadBtn} ${styles.psDpadLeft}`}
+                  onPointerDown={() => {
+                    const factor = GEAR_CONFIG[gear].factor;
+                    applyMotors(-factor * 100, factor * 100);
+                  }}
+                  onPointerUp={() => applyMotors(0, 0)}
+                  onPointerLeave={() => applyMotors(0, 0)}
+                  title="D-Pad Kiri: Belok Kiri (A)"
+                  aria-label="Belok Kiri"
+                >
+                  <DpadArrow dir="left" />
+                </button>
+                {/* Right: D-Pad Belok Kanan (D / ArrowRight) */}
+                <button
+                  className={`${styles.psDpadBtn} ${styles.psDpadRight}`}
+                  onPointerDown={() => {
+                    const factor = GEAR_CONFIG[gear].factor;
+                    applyMotors(factor * 100, -factor * 100);
+                  }}
+                  onPointerUp={() => applyMotors(0, 0)}
+                  onPointerLeave={() => applyMotors(0, 0)}
+                  title="D-Pad Kanan: Belok Kanan (D)"
+                  aria-label="Belok Kanan"
+                >
+                  <DpadArrow dir="right" />
+                </button>
+                {/* Center divider */}
+                <div className={styles.psDpadCenter} />
+              </div>
+            </div>
+
+            {/* ── CENTER TOUCHPAD + ARENA DISPLAY ── */}
+            <div className={styles.psCenterColumn}>
+
+              {/* PS Touchpad Display (Arena Monitor) */}
+              <div className={styles.psTouchpadDisplay}>
+                {/* Arena header */}
+                <div className={styles.psTouchpadHeader}>
+                  <span className={styles.psTouchpadTitle}>
+                    <ArenaRadarIcon /> ARENA VIRTUAL
+                  </span>
+                  <div className={styles.psHudBadges}>
+                    <span className={styles.psHudBadge}>HDG: {telemetry.heading}°</span>
+                    <span className={styles.psHudBadge}>SPD: {Math.abs(telemetry.speed)}%</span>
+                  </div>
+                </div>
+
+                {/* Arena canvas */}
+                <div className={styles.psArenaStage} ref={stageRef}>
+                  <div className={styles.arenaCrosshair} />
+
+                  {trail.map((t) => (
+                    <div
+                      key={t.id}
+                      className={styles.arenaTrailDot}
+                      style={{ transform: `translate(${t.x}px, ${t.y}px)` }}
+                    />
+                  ))}
+
+                  <div className={styles.arenaRobot} ref={robotElRef}>
+                    <RobotSprite
+                      fwd={fwdIntent}
+                      turn={turnIntent}
+                      gripperOpen={false}
+                      reduced={false}
+                    />
+                  </div>
+                </div>
+
+                {/* Servo telemetry mini-gauges */}
+                <div className={styles.psServoRow}>
+                  <div className={styles.psServoGauge}>
+                    <span className={styles.psServoLabel}>L</span>
+                    <div className={styles.meterTrack}>
+                      <div className={styles.meterCenterDivider} />
+                      <div
+                        className={styles.meterFill}
+                        style={{
+                          width: `${Math.abs(s1) / 2}%`,
+                          left: s1 >= 0 ? '50%' : `${50 - Math.abs(s1) / 2}%`,
+                          background: s1 >= 0 ? '#4ade80' : '#f87171',
+                        }}
+                      />
+                    </div>
+                    <span className={`${styles.psServoVal} ${s1 > 0 ? styles.leverSpeedFwd : s1 < 0 ? styles.leverSpeedRev : ''}`}>
                       {s1 > 0 ? `+${s1}` : s1}%
                     </span>
                   </div>
-
-                  {/* Left Circular Joystick */}
-                  <div
-                    className={styles.joystickBaseRingSmall}
-                    ref={stick1BaseRef}
-                    onPointerDown={handleStick1PointerDown}
-                    onPointerMove={handleStick1PointerMove}
-                    onPointerUp={handleStick1PointerUp}
-                    onPointerCancel={handleStick1PointerUp}
-                  >
-                    <div className={styles.joystickDirectionLabels}>
-                      <span className={styles.dirLabelTop}>▲ MAJU</span>
-                      <span className={styles.dirLabelBottom}>▼ MUNDUR</span>
+                  <div className={styles.psServoGauge}>
+                    <span className={styles.psServoLabel}>R</span>
+                    <div className={styles.meterTrack}>
+                      <div className={styles.meterCenterDivider} />
+                      <div
+                        className={styles.meterFill}
+                        style={{
+                          width: `${Math.abs(s2) / 2}%`,
+                          left: s2 >= 0 ? '50%' : `${50 - Math.abs(s2) / 2}%`,
+                          background: s2 >= 0 ? '#4ade80' : '#f87171',
+                        }}
+                      />
                     </div>
-                    <div className={styles.joystickTargetRing} />
-                    <div className={styles.joystickCrossH} />
-                    <div className={styles.joystickCrossV} />
-                    <div className={styles.joystickThumbKnobSmall} ref={stick1KnobRef}>
-                      <div className={styles.joystickThumbGrip} />
-                    </div>
-                  </div>
-
-                  {/* Quick Preset Step Buttons & Servo Preview */}
-                  <div className={styles.leverFooterRow}>
-                    <div className={styles.servoMiniPreview}>
-                      <ServoModule speed={s1} />
-                    </div>
-                    <div className={styles.leverQuickButtonsRow}>
-                      <button
-                        className={`${styles.quickStepBtn} ${s1 === 100 ? styles.quickStepActive : ''}`}
-                        onClick={() => handleLever1(100)}
-                        title="Maju Penuh (+100%)"
-                      >
-                        ▲ +100%
-                      </button>
-                      <button
-                        className={`${styles.quickStepBtn} ${s1 === 0 ? styles.quickStepActive : ''}`}
-                        onClick={() => handleLever1(0)}
-                        title="Stop (0%)"
-                      >
-                        ■ 0%
-                      </button>
-                      <button
-                        className={`${styles.quickStepBtn} ${s1 === -100 ? styles.quickStepActive : ''}`}
-                        onClick={() => handleLever1(-100)}
-                        title="Mundur Penuh (-100%)"
-                      >
-                        ▼ -100%
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Center Action Column */}
-                <div className={styles.centerActionCol}>
-                  {/* Glowing E-STOP Button */}
-                  <button className={styles.eStopButton} onClick={stopAll} title="Emergency Stop (Spasi)">
-                    <span className={styles.eStopLabel}>E-STOP</span>
-                    <span className={styles.eStopKeyHint}>[SPASI]</span>
-                  </button>
-
-                  {/* Horn / Klakson */}
-                  <button
-                    className={styles.hornButton}
-                    onClick={triggerHorn}
-                    style={isHornActive ? { transform: 'scale(1.08)', background: '#F59E0B', color: '#000' } : {}}
-                    title="Bunyikan Klakson (H)"
-                  >
-                    <span>📢</span> Klakson
-                  </button>
-                </div>
-
-                {/* Servo 2 Stick (Right) */}
-                <div className={styles.leverColumn}>
-                  <div className={styles.leverHeader}>
-                    <span className={styles.leverTitle}>Servo 2 (Kanan)</span>
-                    <span
-                      className={`${styles.leverSpeed} ${
-                        s2 > 0 ? styles.leverSpeedFwd : s2 < 0 ? styles.leverSpeedRev : ''
-                      }`}
-                    >
+                    <span className={`${styles.psServoVal} ${s2 > 0 ? styles.leverSpeedFwd : s2 < 0 ? styles.leverSpeedRev : ''}`}>
                       {s2 > 0 ? `+${s2}` : s2}%
                     </span>
                   </div>
+                </div>
+              </div>
 
-                  {/* Right Circular Joystick */}
-                  <div
-                    className={styles.joystickBaseRingSmall}
-                    ref={stick2BaseRef}
-                    onPointerDown={handleStick2PointerDown}
-                    onPointerMove={handleStick2PointerMove}
-                    onPointerUp={handleStick2PointerUp}
-                    onPointerCancel={handleStick2PointerUp}
+              {/* PS Options Row (Share + PS + Options buttons) */}
+              <div className={styles.psCenterMeta}>
+                {/* Control Mode pill toggle */}
+                <div className={styles.pillGroup}>
+                  <button
+                    className={`${styles.pillBtn} ${controlType === 'LEVERS' ? styles.pillActive : ''}`}
+                    onClick={() => { setControlType('LEVERS'); soundFx.playClick(600); }}
+                    title="Mode: Dual Lever (Tuas Ganda)"
                   >
-                    <div className={styles.joystickDirectionLabels}>
-                      <span className={styles.dirLabelTop}>▲ MAJU</span>
-                      <span className={styles.dirLabelBottom}>▼ MUNDUR</span>
-                    </div>
-                    <div className={styles.joystickTargetRing} />
-                    <div className={styles.joystickCrossH} />
-                    <div className={styles.joystickCrossV} />
-                    <div className={styles.joystickThumbKnobSmall} ref={stick2KnobRef}>
-                      <div className={styles.joystickThumbGrip} />
-                    </div>
-                  </div>
-
-                  {/* Quick Preset Step Buttons & Servo Preview */}
-                  <div className={styles.leverFooterRow}>
-                    <div className={styles.servoMiniPreview}>
-                      <ServoModule speed={s2} />
-                    </div>
-                    <div className={styles.leverQuickButtonsRow}>
-                      <button
-                        className={`${styles.quickStepBtn} ${s2 === 100 ? styles.quickStepActive : ''}`}
-                        onClick={() => handleLever2(100)}
-                        title="Maju Penuh (+100%)"
-                      >
-                        ▲ +100%
-                      </button>
-                      <button
-                        className={`${styles.quickStepBtn} ${s2 === 0 ? styles.quickStepActive : ''}`}
-                        onClick={() => handleLever2(0)}
-                        title="Stop (0%)"
-                      >
-                        ■ 0%
-                      </button>
-                      <button
-                        className={`${styles.quickStepBtn} ${s2 === -100 ? styles.quickStepActive : ''}`}
-                        onClick={() => handleLever2(-100)}
-                        title="Mundur Penuh (-100%)"
-                      >
-                        ▼ -100%
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ── MODE B: 360° ARCADE ANALOG STICK ── */}
-            {controlType === 'STICK' && (
-              <div className={styles.analogStickStage}>
-                <div className={styles.stickAndTelemetryRow}>
-                  {/* Virtual Thumbstick Base */}
-                  <div
-                    className={styles.joystickBaseRing}
-                    ref={stickBaseRef}
-                    onPointerDown={handleStickPointerDown}
-                    onPointerMove={handleStickPointerMove}
-                    onPointerUp={handleStickPointerUp}
-                    onPointerCancel={handleStickPointerUp}
+                    <LeversIcon /> Tuas
+                  </button>
+                  <button
+                    className={`${styles.pillBtn} ${controlType === 'STICK' ? styles.pillActive : ''}`}
+                    onClick={() => { setControlType('STICK'); soundFx.playClick(700); }}
+                    title="Mode: 360° Analog Stick"
                   >
-                    <div className={styles.joystickDirectionLabels}>
-                      <span className={styles.dirLabelTop}>▲ MAJU</span>
-                      <span className={styles.dirLabelBottom}>▼ MUNDUR</span>
-                      <span className={styles.dirLabelLeft}>◄ KIRI</span>
-                      <span className={styles.dirLabelRight}>KANAN ►</span>
-                    </div>
-                    <div className={styles.joystickTargetRing} />
-                    <div className={styles.joystickCrossH} />
-                    <div className={styles.joystickCrossV} />
-                    <div className={styles.joystickThumbKnob} ref={stickKnobRef}>
-                      <div className={styles.joystickThumbGrip} />
-                    </div>
-                  </div>
-
-                  {/* Dual Servo Telemetry Gauges & Controls */}
-                  <div className={styles.servoTelemetryPair}>
-                    <div className={styles.telemetryCard}>
-                      <div className={styles.telemetryCardHeader}>
-                        <div className={styles.telemetryLabelRow}>
-                          <span className={styles.telemetryName}>Servo 1 (Kiri)</span>
-                          <span
-                            className={`${styles.telemetryValue} ${
-                              s1 > 0 ? styles.leverSpeedFwd : s1 < 0 ? styles.leverSpeedRev : ''
-                            }`}
-                          >
-                            {s1 > 0 ? `+${s1}` : s1}%
-                          </span>
-                        </div>
-                        <div className={styles.meterTrack}>
-                          <div className={styles.meterCenterDivider} />
-                          <div
-                            className={styles.meterFill}
-                            style={{
-                              width: `${Math.abs(s1) / 2}%`,
-                              left: s1 >= 0 ? '50%' : `${50 - Math.abs(s1) / 2}%`,
-                              background: s1 >= 0 ? '#4ADE80' : '#F87171',
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <div className={styles.telemetryServoBox}>
-                        <ServoModule speed={s1} />
-                      </div>
-                    </div>
-
-                    <div className={styles.telemetryCard}>
-                      <div className={styles.telemetryCardHeader}>
-                        <div className={styles.telemetryLabelRow}>
-                          <span className={styles.telemetryName}>Servo 2 (Kanan)</span>
-                          <span
-                            className={`${styles.telemetryValue} ${
-                              s2 > 0 ? styles.leverSpeedFwd : s2 < 0 ? styles.leverSpeedRev : ''
-                            }`}
-                          >
-                            {s2 > 0 ? `+${s2}` : s2}%
-                          </span>
-                        </div>
-                        <div className={styles.meterTrack}>
-                          <div className={styles.meterCenterDivider} />
-                          <div
-                            className={styles.meterFill}
-                            style={{
-                              width: `${Math.abs(s2) / 2}%`,
-                              left: s2 >= 0 ? '50%' : `${50 - Math.abs(s2) / 2}%`,
-                              background: s2 >= 0 ? '#4ADE80' : '#F87171',
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <div className={styles.telemetryServoBox}>
-                        <ServoModule speed={s2} />
-                      </div>
-                    </div>
-
-                    {/* Integrated Action Row (E-STOP + Klakson) */}
-                    <div className={styles.stickActionRow}>
-                      <button className={styles.eStopButton} onClick={stopAll} title="Emergency Stop (Spasi)">
-                        <span className={styles.eStopLabel}>E-STOP</span>
-                        <span className={styles.eStopKeyHint}>[SPASI]</span>
-                      </button>
-
-                      <button
-                        className={styles.hornButton}
-                        onClick={triggerHorn}
-                        style={isHornActive ? { transform: 'scale(1.06)', background: '#F59E0B', color: '#000' } : {}}
-                        title="Bunyikan Klakson (H)"
-                      >
-                        <span>📢</span> Klakson
-                      </button>
-                    </div>
-                  </div>
+                    <AnalogStickIcon /> Stick
+                  </button>
                 </div>
-              </div>
-            )}
-
-            {/* ── ACTION DECK GADGETS (LEDs & Stunt buttons) ── */}
-            <div className={styles.actionGadgetsBar}>
-              {/* RGB LED Lamp Selector */}
-              <div className={styles.gadgetGroup}>
-                <span className={styles.gadgetLabel}>💡 LED:</span>
-                <div className={styles.ledColorPicker}>
-                  {LED_PRESETS.map((p) => {
-                    const isSelected = selectedLed === p.rgb;
-                    return (
-                      <button
-                        key={p.name}
-                        className={`${styles.ledDotBtn} ${isSelected ? styles.ledDotSelected : ''}`}
-                        style={{ backgroundColor: p.color, color: p.color }}
-                        onClick={() => handleSelectLed(p.rgb)}
-                        title={`Lampu LED ${p.name}`}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Stunt Quick Maneuvers */}
-              <div className={styles.gadgetGroup}>
-                <span className={styles.gadgetLabel}>⚡ Manuver:</span>
-                <button
-                  className={styles.stuntBtn}
-                  onClick={() => performStunt('SPIN_L')}
-                  title="Putar Kiri Cepat"
-                >
-                  ↺ Putar Kiri
-                </button>
-                <button
-                  className={styles.stuntBtn}
-                  onClick={() => performStunt('SPIN_R')}
-                  title="Putar Kanan Cepat"
-                >
-                  ↻ Putar Kanan
-                </button>
-                <button
-                  className={styles.stuntBtn}
-                  onClick={() => performStunt('BOOST')}
-                  title="Dorongan Turbo Cepat"
-                >
-                  🚀 Boost
-                </button>
               </div>
             </div>
+          </div>
+
+          {/* ── DUAL ANALOG STICKS + SPEAKER GRILLE ── */}
+          <div className={styles.psSticksRow}>
+            {/* Left Stick (L3) — Primary Drive & Steer */}
+            <div className={styles.psStickSection}>
+              <div className={styles.psStickLabel}>L3</div>
+              {controlType === 'LEVERS' ? (
+                <div
+                  className={styles.psStickWell}
+                  ref={stick1BaseRef}
+                  onPointerDown={handleStick1PointerDown}
+                  onPointerMove={handleStick1PointerMove}
+                  onPointerUp={handleStick1PointerUp}
+                  onPointerCancel={handleStick1PointerUp}
+                  title="L3: Tuas Kiri — Drag vertikal untuk servo kiri"
+                >
+                  <div className={styles.psStickRing} />
+                  <div className={styles.psStickCrossH} />
+                  <div className={styles.psStickCrossV} />
+                  <div className={styles.psStickKnob} ref={stick1KnobRef}>
+                    <div className={styles.psStickGrip} />
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className={styles.psStickWell}
+                  ref={stickBaseRef}
+                  onPointerDown={handleStickPointerDown}
+                  onPointerMove={handleStickPointerMove}
+                  onPointerUp={handleStickPointerUp}
+                  onPointerCancel={handleStickPointerUp}
+                  title="L3: 360° Analog Stick — Drag untuk gerak proporsional"
+                >
+                  <div className={styles.psStickRing} />
+                  <div className={styles.psStickCrossH} />
+                  <div className={styles.psStickCrossV} />
+                  <div className={styles.psStickKnob} ref={stickKnobRef}>
+                    <div className={styles.psStickGrip} />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Center Speaker Grille & E-STOP */}
+            <div className={styles.psCenterGrille}>
+              {/* Speaker dots */}
+              <div className={styles.psGrilleDots}>
+                {Array.from({ length: 20 }).map((_, i) => (
+                  <div key={i} className={styles.psGrilleDot} />
+                ))}
+              </div>
+              {/* E-STOP */}
+              <button
+                className={styles.psEStop}
+                onClick={stopAll}
+                title="E-STOP: Hentikan semua motor (Space / Esc)"
+                aria-label="E-STOP"
+              >
+                <span className={styles.psEStopLabel}>STOP</span>
+              </button>
+              {/* Speaker dots */}
+              <div className={styles.psGrilleDots}>
+                {Array.from({ length: 20 }).map((_, i) => (
+                  <div key={i} className={styles.psGrilleDot} />
+                ))}
+              </div>
+            </div>
+
+            {/* Right Stick (R3) — Secondary Throttle / Stunt */}
+            <div className={styles.psStickSection}>
+              <div className={styles.psStickLabel}>R3</div>
+              <div
+                className={styles.psStickWell}
+                ref={stick2BaseRef}
+                onPointerDown={handleStick2PointerDown}
+                onPointerMove={handleStick2PointerMove}
+                onPointerUp={handleStick2PointerUp}
+                onPointerCancel={handleStick2PointerUp}
+                title="R3: Tuas Kanan — Drag untuk servo kanan / stunt"
+              >
+                <div className={styles.psStickRing} />
+                <div className={styles.psStickCrossH} />
+                <div className={styles.psStickCrossV} />
+                <div className={styles.psStickKnob} ref={stick2KnobRef}>
+                  <div className={styles.psStickGrip} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── BOTTOM LED UNDERGLOW COLOR ROW ── */}
+          <div className={styles.psUnderglowRow}>
+            <span className={styles.psUnderglowLabel}>
+              <LightbulbIcon /> LED:
+            </span>
+            <div className={styles.ledColorPicker}>
+              {LED_PRESETS.map((p) => (
+                <button
+                  key={p.name}
+                  className={`${styles.ledDotBtn} ${selectedLed === p.rgb ? styles.ledDotSelected : ''}`}
+                  style={{ backgroundColor: p.color, color: p.color }}
+                  onClick={() => handleSelectLed(p.rgb)}
+                  title={`Lampu LED ${p.name}`}
+                />
+              ))}
+            </div>
+            <span className={styles.psUnderglowLabel}>
+              GEAR:
+            </span>
+            <div className={styles.pillGroup}>
+              {(['ECO', 'NORMAL', 'TURBO'] as GearLevel[]).map((g) => {
+                const cfg = GEAR_CONFIG[g];
+                return (
+                  <button
+                    key={g}
+                    className={`${styles.pillBtn} ${gear === g ? styles.pillActive : ''} ${gear === g ? cfg.colorClass : ''}`}
+                    onClick={() => changeGear(g)}
+                  >
+                    {cfg.renderIcon()} {cfg.label}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              className={styles.audioBtn}
+              onClick={toggleSound}
+              title={isMuted ? 'Nyalakan Efek Suara' : 'Matikan Efek Suara'}
+            >
+              {isMuted ? <SoundOffIcon /> : <SoundOnIcon />}
+            </button>
           </div>
         </div>
 
         {/* ── KEYBOARD SHORTCUT GUIDE ── */}
         <div className={styles.keyboardGuide}>
-          <div>
-            <span className={styles.kbdBadge}>W/S</span> Tuas Kiri
-          </div>
-          <div>
-            <span className={styles.kbdBadge}>E/D</span> Tuas Kanan
-          </div>
-          <div>
-            <span className={styles.kbdBadge}>WASD / ◄▲▼►</span> Analog Stick
-          </div>
-          <div>
-            <span className={styles.kbdBadge}>SPASI</span> E-Stop
-          </div>
-          <div>
-            <span className={styles.kbdBadge}>H</span> Klakson
-          </div>
-          <div>
-            <span className={styles.kbdBadge}>1 / 2 / 3</span> Gigi Speed
-          </div>
+          <div><span className={styles.kbdBadge}>W/S</span> Tuas Kiri / Maju-Mundur</div>
+          <div><span className={styles.kbdBadge}>E/D</span> Tuas Kanan</div>
+          <div><span className={styles.kbdBadge}>WASD / ◄▲▼►</span> Analog Stick</div>
+          <div><span className={styles.kbdBadge}>Spasi / X</span> E-Stop</div>
+          <div><span className={styles.kbdBadge}>H / L1</span> Klakson</div>
+          <div><span className={styles.kbdBadge}>1 / 2 / 3</span> Gear Speed</div>
+          <div><span className={styles.kbdBadge}>R</span> Reset Arena</div>
         </div>
       </div>
     </ControlLayout>
   );
 }
+
+// ── SVG Icon Components ──
+
+function DpadArrow({ dir }: { dir: 'up' | 'down' | 'left' | 'right' }) {
+  const rot = { up: 0, right: 90, down: 180, left: 270 }[dir];
+  return (
+    <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style={{ transform: `rotate(${rot}deg)` }}>
+      <path d="M12 4l-6 7h4v9h4v-9h4z" />
+    </svg>
+  );
+}
+
