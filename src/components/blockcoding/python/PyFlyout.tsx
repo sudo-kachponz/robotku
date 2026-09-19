@@ -13,19 +13,31 @@ import styles from './PyFlyout.module.css';
 
 const DRAG_MIME = 'application/x-robotku-snippet';
 
-function Icon({ name }: { name: string }) {
+function CategoryIcon({ name, className }: { name: string; className?: string }) {
+  if (name === 'Search') {
+    return (
+      <svg
+        className={className}
+        viewBox="0 0 24 24"
+        width="18"
+        height="18"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="11" cy="11" r="8" />
+        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      </svg>
+    );
+  }
   const markup = categoryIconSvg(name);
   if (!markup) return <span className={styles.dot} />;
   return (
-    <svg
-      viewBox="0 0 24 24"
-      width="100%"
-      height="100%"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <span
+      className={className}
+      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
       dangerouslySetInnerHTML={{ __html: markup }}
     />
   );
@@ -46,7 +58,9 @@ export default function PyFlyout({
 
   const isOpen = searching || activeCat !== null;
   const currentCategory = activeCat || SNIPPET_CATEGORIES[0];
-  const catColor = getCategoryColor(currentCategory, currentTheme);
+  const catColor = searching
+    ? (currentTheme === 'space' ? '#38BDF8' : '#EC2D8F')
+    : getCategoryColor(currentCategory, currentTheme);
 
   const cards = searching
     ? SNIPPETS.filter(
@@ -123,25 +137,67 @@ export default function PyFlyout({
     <div className={styles.flyout}>
       {/* Category Rail (Toolbox) */}
       <div className={styles.rail}>
-        {SNIPPET_CATEGORIES.map((c) => {
-          const isSelected = c === activeCat;
-          const color = getCategoryColor(c, currentTheme);
-          return (
+        {/* Search Bar at top of rail */}
+        <div className={styles.railSearch}>
+          <input
+            type="text"
+            className={styles.railSearchInput}
+            placeholder="Search..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            aria-label="Cari blok Python"
+          />
+          {q ? (
             <button
-              key={c}
-              className={`${styles.railBtn} ${isSelected ? styles.railActive : ''}`}
-              style={{ ['--cat' as string]: color }}
-              onClick={() => handleCategoryClick(c)}
-              title={`Kategori ${c}`}
-              aria-expanded={isSelected}
+              type="button"
+              className={styles.railSearchClear}
+              onClick={() => setQ('')}
+              aria-label="Hapus pencarian"
+              title="Hapus"
             >
-              <span className={styles.railIcon}>
-                <Icon name={c} />
-              </span>
-              <span className={styles.railLabel}>{c}</span>
+              ✕
             </button>
-          );
-        })}
+          ) : (
+            <svg
+              className={styles.railSearchIcon}
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          )}
+        </div>
+
+        {/* Categories List */}
+        <div className={styles.railList}>
+          {SNIPPET_CATEGORIES.map((c) => {
+            const isSelected = !searching && c === activeCat;
+            const color = getCategoryColor(c, currentTheme);
+            return (
+              <button
+                key={c}
+                className={`${styles.railBtn} ${isSelected ? styles.railActive : ''}`}
+                style={{ ['--cat' as string]: color }}
+                onClick={() => handleCategoryClick(c)}
+                title={`Kategori ${c}`}
+                aria-expanded={isSelected}
+              >
+                <span className={styles.railIcon}>
+                  <CategoryIcon name={c} />
+                </span>
+                <span className={styles.railLabel}>{c}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Flyout Drawer / Panel */}
@@ -152,26 +208,30 @@ export default function PyFlyout({
             <div className={styles.drawerHead}>
               <div className={styles.drawerTitleRow}>
                 <div className={styles.drawerTitle}>
-                  <Icon name={searching ? 'Search' : currentCategory} />
-                  <span>{searching ? `Hasil Pencarian ("${q}")` : currentCategory}</span>
+                  <span className={styles.drawerIcon}>
+                    <CategoryIcon name={searching ? 'Search' : currentCategory} />
+                  </span>
+                  <span className={styles.drawerTitleText}>
+                    {searching ? `Pencarian ("${q}")` : currentCategory}
+                  </span>
+                  <span className={styles.drawerCount}>{cards.length}</span>
                 </div>
-                <button className={styles.closeBtn} onClick={handleClose} aria-label="Tutup panel blok" title="Tutup">
+                <button
+                  className={styles.closeBtn}
+                  onClick={handleClose}
+                  aria-label="Tutup panel blok"
+                  title="Tutup"
+                >
                   ✕
                 </button>
               </div>
-
-              <input
-                className={styles.search}
-                placeholder="🔍 Cari blok & fungsi Python…"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                autoFocus={searching}
-              />
             </div>
 
             <div className={styles.cards}>
               {cards.length === 0 ? (
-                <div className={styles.noResult}>Tidak ada blok yang cocok.</div>
+                <div className={styles.noResult}>
+                  {searching ? `Tidak ada blok yang cocok dengan "${q}".` : 'Tidak ada blok dalam kategori ini.'}
+                </div>
               ) : (
                 cards.map(renderCard)
               )}

@@ -58,12 +58,14 @@ interface BlockCodingProps {
   viewMode?: 'blocks' | 'python';
   setViewMode?: (m: 'blocks' | 'python') => void;
   canLeavePythonRef?: { current: () => boolean };
+  canLeaveBlocksRef?: { current: () => boolean };
 }
 
 export default function BlockCodingWrapper({
   viewMode = 'blocks',
   setViewMode,
   canLeavePythonRef,
+  canLeaveBlocksRef,
 }: BlockCodingProps) {
   return (
     <ErrorBoundary fallbackTitle="Kendala pada Editor Blockly">
@@ -71,12 +73,18 @@ export default function BlockCodingWrapper({
         viewMode={viewMode}
         setViewMode={setViewMode}
         canLeavePythonRef={canLeavePythonRef}
+        canLeaveBlocksRef={canLeaveBlocksRef}
       />
     </ErrorBoundary>
   );
 }
 
-function BlockCodingInner({ viewMode, setViewMode, canLeavePythonRef }: BlockCodingProps) {
+function BlockCodingInner({
+  viewMode,
+  setViewMode,
+  canLeavePythonRef,
+  canLeaveBlocksRef,
+}: BlockCodingProps) {
   const { connState, robotInfo } = useConnection();
   const connected = connState === 'connected';
 
@@ -131,7 +139,10 @@ function BlockCodingInner({ viewMode, setViewMode, canLeavePythonRef }: BlockCod
   const [pyCopied, setPyCopied] = useState(false);
   const pyApiRef = useRef<PyEditorApi | null>(null);
   const [docsSnippet, setDocsSnippet] = useState<Snippet | null>(null);
-  const [showSwitchWarn, setShowSwitchWarn] = useState(false);
+  const [conversionWarn, setConversionWarn] = useState<{
+    from: 'blocks' | 'python';
+    to: 'blocks' | 'python';
+  } | null>(null);
   const { theme: currentTheme, setTheme: setAppTheme, themes } = useAppTheme();
   const [showThemePicker, setShowThemePicker] = useState(false);
   // Re-seed Python from blocks ONLY when the blocks actually changed (in Blocks
@@ -239,8 +250,23 @@ function BlockCodingInner({ viewMode, setViewMode, canLeavePythonRef }: BlockCod
   if (canLeavePythonRef) {
     canLeavePythonRef.current = () => {
       if (pyHasError) {
-        setShowSwitchWarn(true);
+        setConversionWarn({ from: 'python', to: 'blocks' });
         return false;
+      }
+      return true;
+    };
+  }
+
+  if (canLeaveBlocksRef) {
+    canLeaveBlocksRef.current = () => {
+      const ws = workspaceRef.current;
+      if (ws) {
+        try {
+          generatePython(ws);
+        } catch {
+          setConversionWarn({ from: 'blocks', to: 'python' });
+          return false;
+        }
       }
       return true;
     };
@@ -815,26 +841,57 @@ function BlockCodingInner({ viewMode, setViewMode, canLeavePythonRef }: BlockCod
           </div>
         )}
 
-        {showSwitchWarn && (
-          <div className={styles.switchWarn} onClick={() => setShowSwitchWarn(false)}>
-            <div className={styles.switchWarnCard} onClick={(e) => e.stopPropagation()}>
-              <h3>⚠ Kode Python belum valid</h3>
-              <p>
-                Ada error di kode Python-mu, jadi belum bisa diubah jadi blok. Kalau lanjut, mode
-                Blocks menampilkan versi valid terakhir dan editan yang error tidak ikut.
-              </p>
-              <div className={styles.switchWarnActions}>
-                <button className={styles.swCancel} onClick={() => setShowSwitchWarn(false)}>
-                  Perbaiki dulu
-                </button>
+        {conversionWarn && (
+          <div className={styles.conversionOverlay} onClick={() => setConversionWarn(null)}>
+            <div className={styles.conversionModal} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.conversionHeader}>
+                <h3>Oops, there is a problem converting your code.</h3>
+              </div>
+              <div className={styles.conversionBody}>
+                <p>
+                  {conversionWarn.from === 'python'
+                    ? 'We are unable to convert your Python code back to blocks. You can keep working in Python or discard your changes and go back to the previous Blocks version.'
+                    : 'We are unable to convert your Blocks code to Python. You can keep working in Blocks or discard your changes and proceed to Python.'}
+                </p>
+              </div>
+              <div className={styles.conversionActions}>
                 <button
-                  className={styles.swGo}
+                  type="button"
+                  className={styles.conversionDiscardBtn}
                   onClick={() => {
-                    setShowSwitchWarn(false);
-                    setViewMode?.('blocks');
+                    const warn = conversionWarn;
+                    setConversionWarn(null);
+                    if (warn.from === 'python') {
+                      const ws = workspaceRef.current;
+                      if (ws) {
+                        try {
+                          const py = generatePython(ws);
+                          setPyBuffer(py);
+                        } catch {}
+                        setPyProblems([]);
+                      }
+                      setViewMode?.('blocks');
+                    } else {
+                      setViewMode?.('python');
+                    }
                   }}
                 >
-                  Lanjut ke Blocks
+                  <span>
+                    {conversionWarn.from === 'python'
+                      ? 'Discard and go to Blocks'
+                      : 'Discard and go to Python'}
+                  </span>
+                  <span className={styles.btnIcon}>✕</span>
+                </button>
+                <button
+                  type="button"
+                  className={styles.conversionStayBtn}
+                  onClick={() => setConversionWarn(null)}
+                >
+                  <span>
+                    {conversionWarn.from === 'python' ? 'Stay in Python' : 'Stay in Blocks'}
+                  </span>
+                  <span className={styles.btnIcon}>✓</span>
                 </button>
               </div>
             </div>
