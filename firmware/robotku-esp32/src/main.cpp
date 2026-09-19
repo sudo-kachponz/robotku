@@ -42,7 +42,7 @@
 #include "config.h"
 
 // ------------------------------------------------------------------ Identity
-#define FW_VERSION   "2.0.0-joy6"
+#define FW_VERSION   "2.1.0-py1"
 #define BOARD_NAME   "Robotku ESP32"
 #define PROTOCOL_ID  "robotku-v1"
 #define BLE_NAME     "Robotku"
