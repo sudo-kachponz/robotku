@@ -38,6 +38,9 @@ export abstract class BaseTransport implements RobotTransport {
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private heartbeatSeq = 0;
   private lastRxTime = 0;
+  // Successful outbound writes also prove the link is alive — a long bitmap send keeps
+  // us mid-TX (the board is busy receiving, not dead), so the watchdog must not trip.
+  private lastTxTime = 0;
 
   private helloResolve: ((info: RobotInfo) => void) | null = null;
 
@@ -194,8 +197,10 @@ export abstract class BaseTransport implements RobotTransport {
     this.stopHeartbeat();
     this.heartbeatSeq = 0;
     this.heartbeatTimer = setInterval(() => {
-      // Watchdog: no inbound frame within the timeout window -> failsafe.
-      if (Date.now() - this.lastRxTime > HEARTBEAT_TIMEOUT_MS) {
+      // Watchdog: link is dead only if neither an inbound frame NOR a successful
+      // outbound write happened within the window. (A big DISPLAY_BITMAP keeps us
+      // writing for ~1s while the board is too busy to ACK — that's alive, not dead.)
+      if (Date.now() - Math.max(this.lastRxTime, this.lastTxTime) > HEARTBEAT_TIMEOUT_MS) {
         console.warn('[transport] heartbeat watchdog tripped');
         this.setState('error');
         void this.estop();
@@ -263,27 +268,33 @@ export abstract class BaseTransport implements RobotTransport {
       if (cmdBytes.length > MAX_CHUNK) {
         // Oversized single command: flush batch, then hard-split the command.
         if (batch) {
-          await this.writeChunk(this.encoder.encode(batch));
+          await this.chunk(this.encoder.encode(batch));
           batch = '';
         }
         await this.writeRawChunks(cmdBytes);
         continue;
       }
       if (this.encoder.encode(batch + cmd).length > MAX_CHUNK) {
-        await this.writeChunk(this.encoder.encode(batch));
+        await this.chunk(this.encoder.encode(batch));
         batch = cmd;
       } else {
         batch += cmd;
       }
     }
     if (batch) {
-      await this.writeChunk(this.encoder.encode(batch));
+      await this.chunk(this.encoder.encode(batch));
     }
+  }
+
+  /** Write one chunk and mark the link alive (TX activity feeds the watchdog). */
+  private async chunk(bytes: Uint8Array): Promise<void> {
+    await this.writeChunk(bytes);
+    this.lastTxTime = Date.now();
   }
 
   private async writeRawChunks(bytes: Uint8Array): Promise<void> {
     for (let i = 0; i < bytes.length; i += MAX_CHUNK) {
-      await this.writeChunk(bytes.slice(i, i + MAX_CHUNK));
+      await this.chunk(bytes.slice(i, i + MAX_CHUNK));
     }
   }
 }
