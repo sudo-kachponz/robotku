@@ -34,20 +34,72 @@ export function dispatchTelemetry(msg: any): void {
   for (const cb of telemetryCbs) cb(msg);
 }
 
+// ── Persistent-connection state ──────────────────────────────────────────────
+// Once connected, the link must survive page navigation and transient drops — only
+// an explicit user disconnect ends it. Serial reuses getPorts(); BLE reuses
+// getDevices() (see BleTransport), so both reconnect with NO user gesture.
+let lastKind: TransportKind | null = null;
+let userDisconnected = false;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let reconnectAttempts = 0;
+const MAX_RECONNECT = 30;
+
+function clearReconnect(): void {
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+}
+
+/** Schedule a silent reconnect after an UNEXPECTED drop (never after a user disconnect). */
+function scheduleReconnect(): void {
+  if (userDisconnected || lastKind == null) return;
+  const st = getState();
+  if (st.connState === 'connected' || st.connState === 'connecting') return;
+  if (reconnectAttempts >= MAX_RECONNECT) return;
+  clearReconnect();
+  const delay = Math.min(800 + reconnectAttempts * 400, 4000);
+  reconnectTimer = setTimeout(() => {
+    reconnectAttempts += 1;
+    connect(lastKind!, true).catch(() => scheduleReconnect());
+  }, delay);
+}
+
+/** Tear down the active transport WITHOUT marking it a user disconnect. */
+async function teardown(): Promise<void> {
+  const { transport } = getState();
+  if (!transport) return;
+  await transport.disconnect().catch(() => {});
+  runnerSetTransport(null);
+  storeSetTransport(null);
+}
+
 /** Connect via the chosen transport, run the handshake, publish to the store. */
-export async function connect(kind: TransportKind): Promise<RobotInfo> {
-  // Tear down any previous connection first.
-  await disconnect();
+export async function connect(kind: TransportKind, isReconnect = false): Promise<RobotInfo> {
+  clearReconnect();
+  if (!isReconnect) {
+    userDisconnected = false;
+    reconnectAttempts = 0;
+  }
+  lastKind = kind;
+  await teardown();
 
   const transport = createTransport(kind);
 
   transport.onState((s: ConnState) => {
     setConnState(s);
-    if (s === 'error') {
-      showToast('Connection lost — robot stopped (failsafe).', 'error');
+    if (s === 'connected') {
+      reconnectAttempts = 0;
+    } else if (s === 'error') {
+      runnerSetTransport(null);
+      if (!userDisconnected) {
+        showToast('Koneksi terputus — menyambung ulang…', 'warn');
+        scheduleReconnect();
+      }
     } else if (s === 'disconnected') {
       runnerSetTransport(null);
       storeSetTransport(null);
+      if (!userDisconnected) scheduleReconnect();
     }
   });
 
@@ -60,18 +112,21 @@ export async function connect(kind: TransportKind): Promise<RobotInfo> {
     runnerSetTransport(transport);
     setRobotInfo(info);
     setConnState('connected');
-    showToast(`Connected · ${info.board} · fw ${info.fwVersion}`, 'success');
+    reconnectAttempts = 0;
+    if (!isReconnect) showToast(`Connected · ${info.board} · fw ${info.fwVersion}`, 'success');
     return info;
   } catch (err) {
     runnerSetTransport(null);
     storeSetTransport(null);
     setConnState('disconnected');
     const message = err instanceof Error ? err.message : String(err);
-    // A user cancelling the picker throws a NotFoundError — keep that quiet-ish.
+    // A user cancelling the picker throws a NotFoundError — keep that quiet-ish and
+    // don't retry (they chose not to pick a device).
     if (/cancel|NotFound|no device selected/i.test(message)) {
-      showToast('No device selected.', 'info');
+      if (!isReconnect) showToast('No device selected.', 'info');
     } else {
-      showToast(`Connection failed: ${message}`, 'error');
+      if (!isReconnect) showToast(`Connection failed: ${message}`, 'error');
+      scheduleReconnect(); // transient failure (board booting/out of range) → keep trying
     }
     throw err;
   }
@@ -112,13 +167,11 @@ export async function autoConnect(): Promise<boolean> {
   }
 }
 
-/** Disconnect the active transport (if any). */
+/** Disconnect the active transport (if any) — USER-initiated, so no auto-reconnect. */
 export async function disconnect(): Promise<void> {
-  const { transport } = getState();
-  if (!transport) return;
-  await transport.disconnect().catch(() => {});
-  runnerSetTransport(null);
-  storeSetTransport(null);
+  userDisconnected = true;
+  clearReconnect();
+  await teardown();
 }
 
 /** Emergency stop through the active transport, if connected. */
