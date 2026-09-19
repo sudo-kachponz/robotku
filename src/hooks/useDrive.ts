@@ -73,7 +73,11 @@ export function useDrive(): DriveApi {
   }, []);
 
   const sendCommand = useCallback((command: string, params: Record<string, unknown> = {}) => {
-    sendLine(encodeCommand({ command, ...params } as Parameters<typeof encodeCommand>[0]));
+    // Nest under `params` — the SAME shape the Block Coding runner (TransportSink)
+    // sends and the firmware's LED/bitmap/tone handlers read (doc["params"]["…"]).
+    // Spreading flat put r/g/b/pixels at the top level, so a board that reads only
+    // the nested form saw empty params: LED stayed off and the OLED image never drew.
+    sendLine(encodeCommand({ command, params } as Parameters<typeof encodeCommand>[0]));
   }, []);
 
   return { setPort, driveGroup, driveDirect, setGripper, setLed, stopGroup, sendCommand };
