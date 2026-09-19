@@ -9,11 +9,6 @@ import { generateProgramJson } from '../../blockcoding/generateProgram';
 import { cvStore } from '../../ai/cvStore';
 import { estop, autoConnect } from '../../app/connection';
 import { getState } from '../../app/store';
-// three.js is a ~600 KB dependency used ONLY by the opt-in 3D beta (default OFF),
-// so Simulator/SimulatorSequencer are imported lazily inside the use3D effect and
-// kept as type-only imports here to stay off the editor's critical path.
-import type { Simulator } from '../../simulator';
-import type { SimulatorSequencer } from '../../simulator_sequencer';
 import SimStage from './SimStage';
 import { ProgramRunner, type RobotSink } from '../../runtime/ProgramRunner';
 import { SimSink, closeSharedAudio } from '../../runtime/SimSink';
@@ -44,7 +39,8 @@ import { generateProgram } from '../../blockcoding/generateProgram';
 import { unsupportedOpcodesInProgram } from '../../blockcoding/blockOpcodes';
 import type { PyProblem, PyEditorApi } from './python/PyEditor';
 import type { Snippet } from '../../pythongen/snippets';
-import { CopyIcon, CheckIcon } from './sim/SimIcons';
+import { CopyIcon, CheckIcon, SearchIcon } from './sim/SimIcons';
+import { searchToolboxBlocks } from '../../blockcoding/searchBlocks';
 import { useAppTheme } from '../../theme/themeManager';
 import styles from './BlockCoding.module.css';
 
@@ -95,12 +91,8 @@ function BlockCodingInner({
   }, []);
 
   const blocklyDivRef = useRef<HTMLDivElement | null>(null);
-  const simDivRef = useRef<HTMLDivElement | null>(null);
   const { workspaceRef, telemetry, setTelemetry, showToolbox, toggleToolbox } =
     useBlocklyWorkspace(blocklyDivRef);
-
-  const simulatorRef = useRef<Simulator | null>(null);
-  const sequencerRef = useRef<SimulatorSequencer | null>(null);
 
   const simSinkRef = useRef<SimSink | null>(null);
   if (!simSinkRef.current) simSinkRef.current = new SimSink();
@@ -129,9 +121,36 @@ function BlockCodingInner({
   const [showSim, setShowSim] = useState(
     () => typeof window !== 'undefined' && window.innerWidth >= 1024,
   );
-  const [use3D, setUse3D] = useState(false);
-  const [simError, setSimError] = useState(false);
-  const [sim3DLoading, setSim3DLoading] = useState(false);
+  const DEFAULT_SIM_WIDTH = 520;
+  const MIN_SIM_WIDTH = 340;
+  const [simWidth, setSimWidth] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('rk_sim_width');
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed >= 320 && parsed <= 1200) return parsed;
+      }
+    }
+    return DEFAULT_SIM_WIDTH;
+  });
+  const [isResizing, setIsResizing] = useState(false);
+
+  const DEFAULT_TOOLBOX_WIDTH = 320;
+  const MIN_TOOLBOX_WIDTH = 180;
+  const MAX_TOOLBOX_WIDTH = 560;
+  const [toolboxWidth, setToolboxWidth] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('rk_tb_width');
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed >= MIN_TOOLBOX_WIDTH && parsed <= MAX_TOOLBOX_WIDTH) {
+          return parsed;
+        }
+      }
+    }
+    return DEFAULT_TOOLBOX_WIDTH;
+  });
+  const [isTbResizing, setIsTbResizing] = useState(false);
   const [reduced, setReduced] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutLang, setTutLang] = useState<'id' | 'en'>('id');
@@ -146,6 +165,59 @@ function BlockCodingInner({
   } | null>(null);
   const { theme: currentTheme, setTheme: setAppTheme, themes } = useAppTheme();
   const [showThemePicker, setShowThemePicker] = useState(false);
+  const [blockSearchQuery, setBlockSearchQuery] = useState('');
+
+  const handleBlockSearch = useCallback(
+    (query: string) => {
+      setBlockSearchQuery(query);
+      const ws = workspaceRef.current;
+      if (!ws) return;
+
+      const flyout = ws.getFlyout?.() || (ws.getToolbox?.() as any)?.getFlyout?.();
+      const q = query.trim();
+
+      if (!q) {
+        if (flyout) {
+          flyout.hide?.();
+        }
+        return;
+      }
+
+      const profile =
+        connected && robotInfo
+          ? profileFromHello(robotInfo.capabilities, robotInfo.ports)
+          : robotkuEsp32V3;
+
+      const results = searchToolboxBlocks(q, profile);
+      if (flyout) {
+        if (results.length > 0) {
+          flyout.show([
+            { kind: 'label', text: `Pencarian "${q}" (${results.length} blok)` },
+            ...results,
+          ]);
+        } else {
+          flyout.show([
+            { kind: 'label', text: `Tidak ada blok yang cocok dengan "${q}"` },
+          ]);
+        }
+      }
+    },
+    [workspaceRef, connected, robotInfo],
+  );
+
+  // Clear block search query when a category is explicitly clicked
+  useEffect(() => {
+    const ws = workspaceRef.current;
+    if (!ws) return;
+    const onToolboxSelect = (event: Blockly.Events.Abstract) => {
+      if (event.type === Blockly.Events.TOOLBOX_ITEM_SELECT) {
+        setBlockSearchQuery('');
+      }
+    };
+    ws.addChangeListener(onToolboxSelect);
+    return () => ws.removeChangeListener(onToolboxSelect);
+  }, [workspaceRef]);
+
   // Re-seed Python from blocks ONLY when the blocks actually changed (in Blocks
   // mode) — never clobber the user's typed Python on a plain toggle round-trip (§H).
   const blocksDirtyRef = useRef(true);
@@ -312,10 +384,10 @@ function BlockCodingInner({
     const transport = getState().transport;
     if (connected && transport) {
       const t = new TransportSink(transport);
-      return showSim && !use3D ? new FanOutSink([t, simSinkRef.current!]) : t;
+      return showSim ? new FanOutSink([t, simSinkRef.current!]) : t;
     }
     return simSinkRef.current!;
-  }, [connected, showSim, use3D]);
+  }, [connected, showSim]);
 
   // Re-fit Blockly when the sim panel opens/closes — on mobile the sim sheet shrinks
   // the Blockly area (blocklySimOpen) so they stack; wait out the sheet transition,
@@ -343,6 +415,27 @@ function BlockCodingInner({
   // Let OLED Animator & LED Panel insert block sequences directly into Blockly.
   useEffect(() => {
     setLcdBlockInserter((program, label) => {
+      // Python mode: convert the same block program to Python and drop it in the
+      // editor, so OLED/LED "Pasang ke Blok Code" works identically in Python.
+      if (viewMode === 'python') {
+        const api = pyApiRef.current;
+        if (!api) {
+          showToast('Buka tab Python dulu!', 'warn');
+          return;
+        }
+        try {
+          const tmp = new Blockly.Workspace();
+          Blockly.serialization.workspaces.load(buildTemplateWorkspace(program) as any, tmp);
+          const py = generatePython(tmp).trim();
+          tmp.dispose();
+          api.insertSnippet(py + '\n');
+          showToast(label ?? 'Kode Python berhasil dipasang!', 'success');
+        } catch (err) {
+          console.error('Failed to insert python:', err);
+          showToast('Gagal memasang kode Python', 'error');
+        }
+        return;
+      }
       const ws = workspaceRef.current;
       if (!ws) {
         showToast('Buka tab Blok Kode untuk memasang blok!', 'warn');
@@ -358,7 +451,7 @@ function BlockCodingInner({
       }
     });
     return () => setLcdBlockInserter(null);
-  }, [workspaceRef]);
+  }, [workspaceRef, viewMode]);
 
   // Camera on? (drives the AI button's live dot). Stop the camera on unmount so a
   // forgotten MediaStream can never leave the webcam LED on.
@@ -375,55 +468,110 @@ function BlockCodingInner({
     [],
   );
 
-  // Lazy 3D Simulator (opt-in). three.js (~600 KB) is dynamically imported HERE so
-  // it never ships to a child who just uses the 2D sim (the default).
-  useEffect(() => {
-    if (!showSim || !use3D) return;
-    const container = simDivRef.current;
-    if (!container || simulatorRef.current) return;
+  // Resizable simulator drawer handle (Drag border to widen/shrink)
+  const handleResizeStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    const isDesktop = window.innerWidth >= 1024;
 
-    let simulator: Simulator | null = null;
-    let cancelled = false;
-    setSim3DLoading(true);
-
-    (async () => {
-      const [{ Simulator }, { SimulatorSequencer }] = await Promise.all([
-        import('../../simulator'),
-        import('../../simulator_sequencer'),
-      ]);
-      if (cancelled || !simDivRef.current) return;
-
-      try {
-        simulator = new Simulator(container);
-      } catch {
-        setSimError(true);
-        setSim3DLoading(false);
-        return;
+    const onMove = (moveEvent: MouseEvent | TouchEvent) => {
+      const clientX = 'touches' in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX;
+      const maxW = Math.min(1200, window.innerWidth - 420);
+      let newW: number;
+      if (isDesktop) {
+        newW = Math.max(MIN_SIM_WIDTH, Math.min(maxW, clientX - 16));
+      } else {
+        newW = Math.max(MIN_SIM_WIDTH, Math.min(maxW, window.innerWidth - clientX - 76));
       }
-      if (simulator.initFailed) {
-        setSimError(true);
-        setSim3DLoading(false);
-        simulator.dispose();
-        return;
+      setSimWidth(newW);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('rk_sim_width', newW.toString());
       }
-      setSimError(false);
-      setSim3DLoading(false);
-      simulator.onContextLost = () => setSimError(true);
-      simulator.loadRobotModel('/sim3d/Asteria-DashMinimal.glb').catch(() => {});
-
-      const sequencer = new SimulatorSequencer(simulator);
-      simulator.sequencerVirtualPosition = sequencer.virtualPosition;
-      simulatorRef.current = simulator;
-      sequencerRef.current = sequencer;
-    })();
-
-    return () => {
-      cancelled = true;
-      simulator?.dispose();
-      simulatorRef.current = null;
-      sequencerRef.current = null;
+      if (workspaceRef.current) {
+        Blockly.svgResize(workspaceRef.current);
+      }
     };
-  }, [showSim, use3D]);
+
+    const onEnd = () => {
+      setIsResizing(false);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onEnd);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onEnd);
+      if (workspaceRef.current) {
+        Blockly.svgResize(workspaceRef.current);
+      }
+      window.dispatchEvent(new Event('resize'));
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchmove', onMove);
+    window.addEventListener('touchend', onEnd);
+  }, [workspaceRef]);
+
+  const handleResetSimWidth = useCallback(() => {
+    setSimWidth(DEFAULT_SIM_WIDTH);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('rk_sim_width', DEFAULT_SIM_WIDTH.toString());
+    }
+    if (workspaceRef.current) {
+      setTimeout(() => Blockly.svgResize(workspaceRef.current!), 50);
+    }
+    window.dispatchEvent(new Event('resize'));
+  }, [workspaceRef]);
+
+  // Resizable category toolbox / sidebar handle (Drag right border to stretch/shrink)
+  const handleTbResizeStart = useCallback(
+    (e: React.MouseEvent | React.TouchEvent) => {
+      e.preventDefault();
+      setIsTbResizing(true);
+      const startX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const initialWidth = toolboxWidth;
+
+      const onMove = (moveEvent: MouseEvent | TouchEvent) => {
+        const clientX = 'touches' in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX;
+        const deltaX = clientX - startX;
+        const maxW = Math.min(MAX_TOOLBOX_WIDTH, window.innerWidth - 300);
+        const newW = Math.max(MIN_TOOLBOX_WIDTH, Math.min(maxW, initialWidth + deltaX));
+        setToolboxWidth(newW);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('rk_tb_width', newW.toString());
+        }
+        if (workspaceRef.current) {
+          Blockly.svgResize(workspaceRef.current);
+        }
+      };
+
+      const onEnd = () => {
+        setIsTbResizing(false);
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onEnd);
+        window.removeEventListener('touchmove', onMove);
+        window.removeEventListener('touchend', onEnd);
+        if (workspaceRef.current) {
+          Blockly.svgResize(workspaceRef.current);
+        }
+        window.dispatchEvent(new Event('resize'));
+      };
+
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onEnd);
+      window.addEventListener('touchmove', onMove);
+      window.addEventListener('touchend', onEnd);
+    },
+    [toolboxWidth, workspaceRef],
+  );
+
+  const handleTbResetWidth = useCallback(() => {
+    setToolboxWidth(DEFAULT_TOOLBOX_WIDTH);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('rk_tb_width', DEFAULT_TOOLBOX_WIDTH.toString());
+    }
+    if (workspaceRef.current) {
+      setTimeout(() => Blockly.svgResize(workspaceRef.current!), 50);
+    }
+  }, [workspaceRef]);
 
   // Unsaved work guard
   useEffect(() => {
@@ -466,12 +614,6 @@ function BlockCodingInner({
       ]);
     }
 
-    if (use3D && showSim && sequencerRef.current) {
-      setRunning(true);
-      sequencerRef.current.runCommandSequence(commands).finally(() => setRunning(false));
-      return;
-    }
-
     if (runnerRef.current?.isRunning) runnerRef.current.stop();
 
     const runner = new ProgramRunner(pickSink());
@@ -490,7 +632,7 @@ function BlockCodingInner({
         simSinkRef.current?.setStatus(null);
       }
     });
-  }, [generateCode, showSim, use3D, pickSink, attachRunner, speed]);
+  }, [generateCode, showSim, pickSink, attachRunner, speed]);
 
   const handleStop = useCallback(() => {
     void estop();
@@ -498,7 +640,6 @@ function BlockCodingInner({
     simSinkRef.current?.stopAll();
     simSinkRef.current?.setRunning(false);
     simSinkRef.current?.setStatus(null);
-    sequencerRef.current?.stopSequence();
     setRunning(false);
     setPaused(false);
   }, []);
@@ -667,9 +808,66 @@ function BlockCodingInner({
   return (
     <div className={styles.wrap}>
       <div
-        className={`${styles.editor} ${showSim ? styles.simOpen : ''} ${showToolbox ? styles.toolboxOpen : ''} ${viewMode === 'python' ? styles.pythonMode : ''}`}
+        className={`${styles.editor} ${showSim ? styles.simOpen : ''} ${showToolbox ? styles.toolboxOpen : ''} ${viewMode === 'python' ? styles.pythonMode : ''} ${isTbResizing ? styles.tbResizing : ''} ${isResizing ? styles.resizing : ''}`}
+        style={{
+          '--tb-w': `${toolboxWidth}px`,
+          '--sim-w': `${simWidth}px`,
+        } as React.CSSProperties}
       >
         <div ref={blocklyDivRef} className={`${styles.blockly} ${showSim ? styles.blocklySimOpen : ''}`} />
+
+        {/* Right Resize Drag Handle for Category Sidebar / Toolbox (Drag right to stretch) */}
+        {showToolbox && (
+          <div
+            className={`${styles.tbResizeHandle} ${isTbResizing ? styles.tbResizing : ''}`}
+            onMouseDown={handleTbResizeStart}
+            onTouchStart={handleTbResizeStart}
+            onDoubleClick={handleTbResetWidth}
+            title="Tarik ke kanan untuk memperlebar daftar kategori (Klik ganda untuk reset)"
+          />
+        )}
+
+        {viewMode === 'blocks' && showToolbox && (
+          <div className={styles.blocksSearch}>
+            <div className={styles.blocksSearchInputWrap}>
+              <input
+                type="text"
+                className={styles.blocksSearchInput}
+                placeholder="Search..."
+                value={blockSearchQuery}
+                onChange={(e) => handleBlockSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    handleBlockSearch('');
+                  }
+                }}
+                aria-label="Cari blok kode"
+              />
+              {blockSearchQuery ? (
+                <button
+                  type="button"
+                  className={styles.blocksSearchClear}
+                  onClick={() => handleBlockSearch('')}
+                  aria-label="Hapus pencarian"
+                  title="Hapus"
+                >
+                  ✕
+                </button>
+              ) : (
+                <SearchIcon className={styles.blocksSearchIcon} size={15} />
+              )}
+            </div>
+            <button
+              type="button"
+              className={styles.sidebarCollapseBtn}
+              onClick={toggleToolbox}
+              title="Sembunyikan Kategori (–)"
+              aria-label="Sembunyikan Kategori"
+            >
+              –
+            </button>
+          </div>
+        )}
 
         {viewMode === 'python' && (
           <div className={styles.pyPanel}>
@@ -695,7 +893,10 @@ function BlockCodingInner({
             <div className={styles.pyBody}>
               {showToolbox && (
                 <div className={styles.pyFlyoutWrap}>
-                  <PyFlyout onInsert={(py) => pyApiRef.current?.insertSnippet(py)} />
+                  <PyFlyout
+                    onInsert={(py) => pyApiRef.current?.insertSnippet(py)}
+                    onToggleCollapse={toggleToolbox}
+                  />
                 </div>
               )}
               <div className={styles.pyEditorWrap}>
@@ -720,15 +921,17 @@ function BlockCodingInner({
           </div>
         )}
 
-        {/* Minus/Plus button to collapse or expand the Blockly Categories Sidebar (matching .simToggle) */}
-        <button
-          className={`${styles.toolboxToggle} ${showToolbox ? styles.toolboxToggleOpen : styles.toolboxToggleClosed}`}
-          onClick={toggleToolbox}
-          title={showToolbox ? 'Sembunyikan Kategori Blok (–)' : 'Tampilkan Kategori Blok (+)'}
-          aria-label={showToolbox ? 'Sembunyikan Kategori Blok' : 'Tampilkan Kategori Blok'}
-        >
-          {showToolbox ? '–' : '+'}
-        </button>
+        {/* Plus button to expand the Blockly Categories Sidebar when closed */}
+        {!showToolbox && (
+          <button
+            className={`${styles.toolboxToggle} ${styles.toolboxToggleClosed}`}
+            onClick={toggleToolbox}
+            title="Tampilkan Kategori Blok (+)"
+            aria-label="Tampilkan Kategori Blok"
+          >
+            +
+          </button>
+        )}
 
         <div className={styles.toolbar}>
           <button
@@ -924,20 +1127,41 @@ function BlockCodingInner({
           />
         )}
 
-        <div className={`${styles.simCard} ${showSim ? '' : styles.simHidden}`} data-tour="sim-panel">
+        <div
+          className={`${styles.simCard} ${showSim ? '' : styles.simHidden} ${isResizing ? styles.resizing : ''}`}
+          style={{ '--sim-w': `${simWidth}px` } as React.CSSProperties}
+          data-tour="sim-panel"
+        >
+          {/* Resize Drag Handle */}
+          {showSim && (
+            <div
+              className={styles.simResizeHandle}
+              onMouseDown={handleResizeStart}
+              onTouchStart={handleResizeStart}
+              onDoubleClick={handleResetSimWidth}
+              title="Tarik untuk memperlebar / memperkecil simulator (Klik ganda untuk reset)"
+            >
+              <div className={styles.simResizeBadge}>
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="8 18 2 12 8 6" />
+                  <polyline points="16 6 22 12 16 18" />
+                </svg>
+              </div>
+            </div>
+          )}
+
           <div className={styles.simHead}>
             <span>{connected ? `Robot · ${robotInfo?.board ?? ''}` : 'Simulator'}</span>
             <div className={styles.simHeadActions}>
-              {showSim && (
-                <label className={styles.simSwitch} title="Simulator 3D (beta, memakai WebGL)">
-                  <input
-                    type="checkbox"
-                    checked={use3D}
-                    onChange={(e) => setUse3D(e.target.checked)}
-                  />
-                  <span>3D (beta)</span>
-                </label>
-              )}
               <button
                 className={styles.simToggle}
                 onClick={() => setShowSim((v) => !v)}
@@ -947,32 +1171,21 @@ function BlockCodingInner({
               </button>
             </div>
           </div>
-          {showSim &&
-            (use3D ? (
-              simError ? (
-                <div className={styles.simError}>
-                  Simulator 3D tidak tersedia (WebGL). Program tetap berjalan di 2D.
-                </div>
-              ) : (
-                <>
-                  <div ref={simDivRef} className={styles.simCanvas} />
-                  {sim3DLoading && <div className={styles.simError}>Menyiapkan 3D…</div>}
-                </>
-              )
-            ) : (
-              <SimStage
-                sink={simSinkRef.current!}
-                reduced={reduced}
-                running={running}
-                paused={paused}
-                speed={speed}
-                scope={scope}
-                onSpeed={handleSpeed}
-                onPauseToggle={handlePauseToggle}
-                onStepOne={handleStepOne}
-                onReset={handleReset}
-              />
-            ))}
+
+          {showSim && (
+            <SimStage
+              sink={simSinkRef.current!}
+              reduced={reduced}
+              running={running}
+              paused={paused}
+              speed={speed}
+              scope={scope}
+              onSpeed={handleSpeed}
+              onPauseToggle={handlePauseToggle}
+              onStepOne={handleStepOne}
+              onReset={handleReset}
+            />
+          )}
         </div>
 
         <TemplateGallery

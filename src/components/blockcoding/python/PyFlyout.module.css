@@ -8,7 +8,7 @@
 
 /* Category Rail on the left - matches .blocklyToolboxDiv */
 .rail {
-  width: 280px;
+  width: var(--tb-w, 320px);
   height: 100%;
   background: var(--surface);
   display: flex;
@@ -24,6 +24,16 @@
   flex-shrink: 0;
   background: var(--surface);
   border-bottom: 1px solid var(--line-soft);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.railSearchInputWrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
 }
 
 .railSearchInput {
@@ -56,7 +66,7 @@
 
 .railSearchIcon {
   position: absolute;
-  right: 20px;
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--ink-400);
@@ -65,7 +75,7 @@
 
 .railSearchClear {
   position: absolute;
-  right: 18px;
+  right: 8px;
   top: 50%;
   transform: translateY(-50%);
   border: none;
@@ -87,6 +97,33 @@
   color: #fff;
 }
 
+.railCollapseBtn {
+  border: 1px solid var(--line);
+  background: var(--line-soft);
+  color: var(--ink-700);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.railCollapseBtn:hover {
+  background: var(--pink-500);
+  border-color: var(--pink-500);
+  color: #ffffff;
+}
+
 .railList {
   flex: 1;
   overflow-y: auto;
@@ -102,10 +139,10 @@
   align-items: center;
   justify-content: flex-start;
   height: auto;
-  min-height: 48px;
-  padding: 10px 14px;
-  border-left: 6px solid var(--cat, #4f46e5);
-  margin-bottom: 6px;
+  min-height: 54px;
+  padding: 12px 16px;
+  border-left: 8px solid var(--cat, #4f46e5);
+  margin-bottom: 8px;
   border-radius: 0;
   border-top: none;
   border-right: none;
@@ -113,7 +150,7 @@
   background: transparent;
   cursor: pointer;
   width: 100%;
-  gap: 10px;
+  gap: 12px;
   text-align: left;
   transition:
     background-color 0.15s ease,
@@ -143,22 +180,22 @@
   justify-content: center;
   background: none;
   border: none;
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
   color: var(--cat, #4f46e5);
   transition: color 0.15s ease;
 }
 
 .railIcon svg {
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
 }
 
 .railLabel {
   color: var(--cat, #4f46e5);
-  font-size: clamp(14px, 1.3vw, 17px);
-  font-weight: 700;
+  font-size: clamp(16px, 3.5vw, 26px);
+  font-weight: 800;
   font-family: var(--font);
   margin: 0;
   text-align: left;
@@ -176,37 +213,26 @@
   background: currentColor;
 }
 
-/* Backdrop for closing flyout when clicking editor */
-.backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 28;
-  background: rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(1px);
-}
-
-/* Flyout Drawer / Panel opening next to rail */
+/* Flyout Drawer / Panel opening inline next to rail (shifts Python editor to right) */
 .drawer {
-  position: absolute;
-  left: 100%;
-  top: 0;
-  bottom: 0;
+  position: relative;
   width: 380px;
-  max-width: calc(100vw - 300px);
+  max-width: 480px;
+  flex-shrink: 0;
+  height: 100%;
   background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-left: none;
-  box-shadow: 16px 0 48px rgba(0, 0, 0, 0.35);
+  border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  z-index: 30;
+  z-index: 20;
+  overflow: hidden;
   animation: slideDrawer 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes slideDrawer {
   from {
     opacity: 0;
-    transform: translateX(-14px);
+    transform: translateX(-10px);
   }
   to {
     opacity: 1;
@@ -682,14 +708,14 @@
 /* Tablet (768px to 1023px) */
 @media (min-width: 768px) and (max-width: 1023px) {
   .rail {
-    width: 220px;
+    width: 240px;
   }
   .railLabel {
     font-size: 15px;
   }
   .drawer {
     width: 320px;
-    max-width: calc(100vw - 230px);
+    max-width: calc(100vw - 250px);
   }
 }
 
@@ -700,43 +726,49 @@
   }
   .railSearch {
     padding: 6px 6px 4px;
+    gap: 4px;
   }
   .railSearchInput {
     height: 32px;
     font-size: 12px;
-    padding: 0 24px 0 8px;
+    padding: 0 22px 0 8px;
   }
   .railSearchIcon {
-    right: 14px;
+    right: 6px;
     width: 13px;
     height: 13px;
   }
   .railSearchClear {
-    right: 12px;
+    right: 4px;
     width: 16px;
     height: 16px;
     font-size: 9px;
+  }
+  .railCollapseBtn {
+    width: 26px;
+    height: 26px;
+    font-size: 14px;
   }
   .railList {
     padding: 4px 4px 8px;
   }
   .railBtn {
-    min-height: 38px;
-    padding: 6px 8px;
-    border-left-width: 5px;
+    min-height: 40px;
+    padding: 7px 10px;
+    border-left-width: 6px;
     margin-bottom: 4px;
     gap: 6px;
   }
   .railIcon {
+    width: 20px;
+    height: 20px;
+  }
+  .railIcon svg {
     width: 18px;
     height: 18px;
   }
-  .railIcon svg {
-    width: 16px;
-    height: 16px;
-  }
   .railLabel {
-    font-size: 12.5px !important;
+    font-size: 13px !important;
   }
   .drawer {
     width: calc(100vw - 130px);
@@ -761,9 +793,9 @@
 /* Small Phone (<480px) */
 @media (max-width: 480px) {
   .rail {
-    width: 115px;
+    width: 125px;
   }
   .drawer {
-    width: calc(100vw - 120px);
+    width: calc(100vw - 130px);
   }
 }

@@ -171,18 +171,88 @@
   top: calc(20px + var(--safe-t));
   bottom: calc(20px + var(--safe-b));
   z-index: 25;
-  width: 680px;
-  max-width: min(780px, calc(100vw - 90px));
+  width: var(--sim-w, 520px);
+  max-width: min(1200px, calc(100vw - 90px));
+  min-width: 340px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 20px;
   box-shadow: var(--shadow-lg);
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   transition:
     transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
     opacity 0.25s ease;
+}
+
+.simCard.resizing {
+  transition: none !important;
+  user-select: none !important;
+}
+
+.simResizeHandle {
+  position: absolute;
+  left: -12px;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  cursor: col-resize;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  user-select: none;
+}
+
+.simResizeHandle::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  background: transparent;
+  transition: background 0.15s ease;
+  pointer-events: none;
+}
+
+.simResizeHandle:hover::after,
+.simCard.resizing .simResizeHandle::after {
+  background: var(--pink-500, #ec2d8f);
+}
+
+.simResizeBadge {
+  position: relative;
+  z-index: 2;
+  width: 22px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  color: var(--ink-700);
+  box-shadow: 0 3px 10px rgba(27, 24, 64, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: col-resize;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.simResizeHandle:hover .simResizeBadge,
+.simCard.resizing .simResizeBadge {
+  background: var(--pink-500, #ec2d8f);
+  border-color: var(--pink-500, #ec2d8f);
+  color: #ffffff;
+  transform: scale(1.08);
+  box-shadow: 0 4px 14px rgba(236, 45, 143, 0.35);
 }
 
 .simHidden {
@@ -195,34 +265,22 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 18px;
+  padding: 10px 16px;
   font-size: 13.5px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--ink-900);
   background: var(--surface-2);
   border-bottom: 1px solid var(--line);
   flex-shrink: 0;
+  padding-left: 20px;
+  border-top-left-radius: 19px;
+  border-top-right-radius: 19px;
 }
 
 .simHeadActions {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-.simSwitch {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--ink-700);
-  cursor: pointer;
-  user-select: none;
-}
-.simSwitch input {
-  accent-color: var(--pink-500);
-  cursor: pointer;
+  gap: 8px;
 }
 
 .simToggle {
@@ -232,8 +290,8 @@
   font-size: 16px;
   line-height: 1;
   cursor: pointer;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -390,8 +448,165 @@
   background-color: var(--surface);
   border-right: 1px solid var(--line);
   box-shadow: var(--shadow-sm);
-  width: 320px !important;
+  width: var(--tb-w, 320px) !important;
   z-index: 20 !important;
+  padding-top: 56px !important;
+  box-sizing: border-box !important;
+}
+
+/* Right Resize Drag Handle for Category Sidebar (Blockly and Python) */
+.tbResizeHandle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--tb-w, 320px) - 4px);
+  width: 10px;
+  cursor: col-resize;
+  z-index: 25;
+  background: transparent;
+  touch-action: none;
+  transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tbResizeHandle::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 2px;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+
+.tbResizeHandle:hover::after,
+.tbResizeHandle.tbResizing::after {
+  background: var(--pink-500, #ec2d8f);
+}
+
+.tbResizing {
+  user-select: none !important;
+  cursor: col-resize !important;
+}
+
+.resizing,
+.resizing * {
+  transition: none !important;
+  user-select: none !important;
+}
+
+/* Pinned search bar above Blockly category rail */
+.blocksSearch {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--tb-w, 320px);
+  height: 56px;
+  box-sizing: border-box;
+  padding: 10px 10px 8px;
+  background: var(--surface);
+  border-right: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  z-index: 22;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.blocksSearchInputWrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.blocksSearchInput {
+  width: 100%;
+  height: 36px;
+  box-sizing: border-box;
+  background: var(--surface-2);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-md, 8px);
+  padding: 0 32px 0 12px;
+  font-family: var(--font, 'Plus Jakarta Sans', system-ui, sans-serif);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-900);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.blocksSearchInput::placeholder {
+  color: var(--ink-400);
+  font-family: var(--font, 'Plus Jakarta Sans', system-ui, sans-serif);
+}
+
+.blocksSearchInput:focus {
+  outline: none;
+  border-color: var(--pink-500, #ec2d8f);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pink-500, #ec2d8f) 20%, transparent);
+}
+
+.blocksSearchIcon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-400);
+  pointer-events: none;
+}
+
+.blocksSearchClear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: var(--line);
+  color: var(--ink-600);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  transition: all 0.12s ease;
+}
+
+.blocksSearchClear:hover {
+  background: var(--pink-500);
+  color: #fff;
+}
+
+.sidebarCollapseBtn {
+  border: 1px solid var(--line);
+  background: var(--line-soft);
+  color: var(--ink-700);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.sidebarCollapseBtn:hover {
+  background: var(--pink-500);
+  border-color: var(--pink-500);
+  color: #ffffff;
 }
 
 .blockly :global(.blocklyFlyout) {
@@ -414,6 +629,10 @@
   }
   .blockly :global(.blocklyToolboxDiv) {
     width: 240px !important;
+    padding-top: 56px !important;
+  }
+  .blocksSearch {
+    width: 240px;
   }
   .toolboxToggleOpen {
     left: calc(240px - 16px);
@@ -484,6 +703,34 @@
   .blockly :global(.blocklyToolboxDiv) {
     width: 125px !important;
     max-width: 38vw !important;
+    padding-top: 44px !important;
+  }
+  .blocksSearch {
+    width: 125px;
+    height: 44px;
+    padding: 6px 6px 4px;
+    gap: 4px;
+  }
+  .blocksSearchInput {
+    height: 32px;
+    font-size: 12px;
+    padding: 0 22px 0 8px;
+  }
+  .blocksSearchIcon {
+    right: 6px;
+    width: 13px;
+    height: 13px;
+  }
+  .blocksSearchClear {
+    right: 4px;
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
+  }
+  .sidebarCollapseBtn {
+    width: 26px;
+    height: 26px;
+    font-size: 14px;
   }
 
   .simCard {
@@ -498,6 +745,10 @@
     z-index: 30;
     border-radius: 18px;
     box-shadow: 0 8px 30px rgba(27, 24, 64, 0.18);
+  }
+
+  .simResizeHandle {
+    display: none;
   }
 
   /* Blockly stays full width (white canvas) so the floating toolbar's white buttons
@@ -609,15 +860,22 @@
    di tengah->kanan dan tidak terjepit dua panel. --sim-dock = titik mulai area Blockly. --- */
 @media (min-width: 1024px) {
   .simOpen {
-    --sim-dock: calc(16px + 360px + 20px + var(--safe-l)); /* offset + lebar sim + jarak */
+    --sim-dock: calc(16px + var(--sim-w, 520px) + 16px + var(--safe-l)); /* offset + lebar sim + jarak */
   }
 
   .simCard {
     left: calc(16px + var(--safe-l));
     right: auto;
-    width: 360px;
-    max-width: none;
+    width: var(--sim-w, 520px);
+    max-width: calc(100vw - 420px);
     box-shadow: 0 16px 44px rgba(27, 24, 64, 0.1);
+  }
+
+  .simResizeHandle {
+    left: auto;
+    right: -12px;
+    width: 24px;
+    cursor: col-resize;
   }
 
   /* panel meluncur keluar ke KIRI saat disembunyikan */
@@ -634,24 +892,21 @@
     left: var(--sim-dock, 0px);
   }
 
-  /* tombol toggle toolbox + serial monitor ikut bergeser mengikuti area Blockly */
+  /* search bar, tombol toggle toolbox, divider stretch + serial monitor ikut bergeser mengikuti area Blockly */
+  .simOpen .blocksSearch {
+    left: var(--sim-dock, 0px);
+  }
+  .simOpen .tbResizeHandle {
+    left: calc(var(--sim-dock, 0px) + var(--tb-w, 320px) - 4px);
+  }
   .simOpen .toolboxToggleOpen {
-    left: calc(var(--sim-dock, 0px) + 320px - 16px);
+    left: calc(var(--sim-dock, 0px) + var(--tb-w, 320px) - 16px);
   }
   .simOpen .toolboxToggleClosed {
     left: calc(var(--sim-dock, 0px) + 14px);
   }
   .simOpen .monitor {
     left: calc(var(--sim-dock, 0px) + 8px);
-  }
-}
-
-@media (min-width: 1440px) {
-  .simOpen {
-    --sim-dock: calc(16px + 440px + 20px + var(--safe-l));
-  }
-  .simCard {
-    width: 440px;
   }
 }
 

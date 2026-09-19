@@ -93,9 +93,11 @@ function highlightPythonLine(line: string) {
 export default function PyFlyout({
   onInsert,
   onDocs,
+  onToggleCollapse,
 }: {
   onInsert: (py: string) => void;
   onDocs?: (s: Snippet) => void;
+  onToggleCollapse?: () => void;
 }) {
   const { theme: currentTheme } = useAppTheme();
   const [activeCat, setActiveCat] = useState<string | null>(null);
@@ -316,26 +318,39 @@ export default function PyFlyout({
       <div className={styles.rail}>
         {/* Search Bar at top of rail */}
         <div className={styles.railSearch}>
-          <input
-            type="text"
-            className={styles.railSearchInput}
-            placeholder="Search..."
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            aria-label="Cari blok Python"
-          />
-          {q ? (
+          <div className={styles.railSearchInputWrap}>
+            <input
+              type="text"
+              className={styles.railSearchInput}
+              placeholder="Search..."
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              aria-label="Cari blok Python"
+            />
+            {q ? (
+              <button
+                type="button"
+                className={styles.railSearchClear}
+                onClick={() => setQ('')}
+                aria-label="Hapus pencarian"
+                title="Hapus"
+              >
+                ✕
+              </button>
+            ) : (
+              <SearchIcon className={styles.railSearchIcon} size={15} />
+            )}
+          </div>
+          {onToggleCollapse && (
             <button
               type="button"
-              className={styles.railSearchClear}
-              onClick={() => setQ('')}
-              aria-label="Hapus pencarian"
-              title="Hapus"
+              className={styles.railCollapseBtn}
+              onClick={onToggleCollapse}
+              title="Sembunyikan Kategori (–)"
+              aria-label="Sembunyikan Kategori"
             >
-              ✕
+              –
             </button>
-          ) : (
-            <SearchIcon className={styles.railSearchIcon} size={15} />
           )}
         </div>
 
@@ -365,10 +380,8 @@ export default function PyFlyout({
 
       {/* Flyout Drawer / Panel */}
       {isOpen && (
-        <>
-          <div className={styles.backdrop} onClick={handleClose} />
-          <div className={styles.drawer} style={{ ['--cat' as string]: catColor }}>
-            <div className={styles.drawerHead}>
+        <div className={styles.drawer} style={{ ['--cat' as string]: catColor }}>
+          <div className={styles.drawerHead}>
               <div className={styles.drawerTitleRow}>
                 <div className={styles.drawerTitle}>
                   <span className={styles.drawerIcon}>
@@ -402,7 +415,6 @@ export default function PyFlyout({
               )}
             </div>
           </div>
-        </>
       )}
     </div>
   );

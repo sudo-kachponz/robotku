@@ -431,7 +431,7 @@ export default function OledModule({
   };
 
   return (
-    <div style={{ display: 'grid', gap: 12, opacity: dimmed ? 0.5 : 1 }}>
+    <div style={{ display: 'grid', gap: 12, opacity: dimmed ? 0.5 : 1, fontFamily: 'var(--font)' }}>
       {/* ── Wokwi Animator Header & Breadcrumbs ── */}
       <div
         style={{
@@ -963,6 +963,7 @@ export default function OledModule({
             onClick={handleInsertToBlockly}
             style={{
               width: '100%',
+              fontFamily: 'var(--font)',
               fontSize: 12.5,
               fontWeight: 800,
               padding: '9px 12px',
