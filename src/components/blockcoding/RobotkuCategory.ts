@@ -67,4 +67,15 @@ export class RobotkuCategory extends Blockly.ToolboxCategory {
       document.documentElement.style.setProperty('--flyout-bg-color', tint);
     }
   }
+
+  override refreshTheme() {
+    super.refreshTheme();
+    if (this.rowDiv_) {
+      this.rowDiv_.style.setProperty('--cat-color', this.colour_);
+    }
+    if (this.iconEl_ && !categoryIconSvg(((this as any).name_ as string) || '')) {
+      this.iconEl_.style.backgroundColor = this.colour_;
+    }
+  }
 }
+

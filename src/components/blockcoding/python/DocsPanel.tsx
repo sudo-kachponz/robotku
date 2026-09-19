@@ -4,6 +4,7 @@
 // around the shared DocsBody so the panel and the /docs/reference page stay identical.
 
 import { useState } from 'react';
+import { useAppTheme } from '../../../theme/themeManager';
 import { getCategoryColor } from '../../../visual/categoryColors';
 import { getDoc } from '../../../pythongen/docs/registry';
 import DocsBody from '../../docs/DocsBody';
@@ -20,6 +21,7 @@ export default function DocsPanel({
   onClose: () => void;
   onRunExample?: (blocks: BlockSpec[]) => void;
 }) {
+  const { theme: currentTheme } = useAppTheme();
   const [slug, setSlug] = useState(snippet.docs);
   const d = getDoc(slug);
   const category = d?.category ?? snippet.category;
@@ -28,7 +30,7 @@ export default function DocsPanel({
     <div className={styles.overlay} onClick={onClose}>
       <aside
         className={styles.panel}
-        style={{ ['--cat' as string]: getCategoryColor(category) }}
+        style={{ ['--cat' as string]: getCategoryColor(category, currentTheme) }}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-label={`Dokumentasi ${d?.title ?? snippet.label}`}
