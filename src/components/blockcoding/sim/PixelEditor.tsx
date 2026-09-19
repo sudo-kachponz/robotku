@@ -222,6 +222,7 @@ export default function PixelEditor({ onSend, onPreview }: { onSend?: (b: Bitmap
 
 function btn(primary: boolean): React.CSSProperties {
   return {
+    fontFamily: 'var(--font)',
     fontSize: 12,
     fontWeight: 700,
     padding: '5px 12px',

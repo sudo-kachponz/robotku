@@ -200,14 +200,49 @@ button {
   -webkit-backdrop-filter: blur(12px);
 }
 
-/* Simulator and Blockly typography strictly scoped to Plus Jakarta Sans */
+/* Simulator, Control panels, and Blockly typography strictly scoped to Plus Jakarta Sans */
+[class*="simCard"],
+[class*="simCard"] *,
+[class*="simCard"] button,
+[class*="simCard"] input,
+[class*="SimStage"],
+[class*="SimStage"] *,
+[class*="SimStage"] button,
+[class*="BoardPanel"],
+[class*="BoardPanel"] *,
+[class*="BoardPanel"] button,
+[class*="OledModule"],
+[class*="OledModule"] *,
+[class*="OledModule"] button,
+[class*="PixelEditor"],
+[class*="PixelEditor"] *,
+[class*="PixelEditor"] button,
+[class*="ProblemsPanel"],
+[class*="ProblemsPanel"] *,
+[class*="ProblemsPanel"] button,
+[class*="PyFlyout"],
+[class*="PyFlyout"] *,
+[class*="PyFlyout"] button,
+[class*="PyEditor"],
+[class*="PyEditor"] *,
+[class*="ModeControls"],
+[class*="ModeControls"] *,
+[class*="ModeControls"] button,
+[class*="JoystickMode"],
+[class*="JoystickMode"] *,
+[class*="JoystickMode"] button,
+.blocklyWidgetDiv,
+.blocklyWidgetDiv *,
+.blocklyDropDownDiv,
+.blocklyDropDownDiv *,
+.blocklyTooltipDiv,
 .blocklyText,
 .blocklyTreeLabel,
 .robotkuCategoryLabel,
 .blocklyFlyoutLabelText,
 .blocklyMenuItem,
 .blocklyHtmlInput {
-  font-family: var(--font) !important;
+  font-family: var(--font, 'Plus Jakarta Sans', system-ui, sans-serif) !important;
 }
 
 @media (max-width: 767px) {

@@ -14,6 +14,7 @@ export default function HoldButton({
   activeClassName,
   children,
   ariaLabel,
+  title,
 }: {
   onStart: () => void;
   onStop: () => void;
@@ -22,6 +23,7 @@ export default function HoldButton({
   activeClassName?: string;
   children: ReactNode;
   ariaLabel?: string;
+  title?: string;
 }) {
   const ref = useRef<HTMLButtonElement | null>(null);
   const heldRef = useRef(false);
@@ -69,6 +71,7 @@ export default function HoldButton({
       ref={ref}
       className={className}
       aria-label={ariaLabel}
+      title={title}
       onPointerDown={(e) => {
         e.preventDefault();
         (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
