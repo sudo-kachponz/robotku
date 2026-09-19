@@ -145,9 +145,9 @@ const MIKU_BRAILLE = [
 
 const TEMPLATES: Record<string, () => Uint8Array> = {
   '— Pilih Template —': blank,
-  '♥ Hati': () => fromStr(HEART_16, 16, 8),
-  '🎂 Happy Birthday': () => fromStr(CAKE_16, 16, 8),
-  '🎤 Hatsune Miku': () => fromBraille(MIKU_BRAILLE),
+  'Hati': () => fromStr(HEART_16, 16, 8),
+  'Happy Birthday': () => fromStr(CAKE_16, 16, 8),
+  'Hatsune Miku': () => fromBraille(MIKU_BRAILLE),
 };
 
 const BLANK_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';

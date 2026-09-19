@@ -105,7 +105,7 @@ export class SimulatorSequencer {
             color: white;
             padding: 12px 24px;
             border-radius: 8px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: var(--font, 'Plus Jakarta Sans', system-ui, sans-serif);
             font-size: 14px;
             font-weight: 500;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -298,7 +298,7 @@ export class SimulatorSequencer {
     if (commandName === 'TURN_TIMED') {
       const turningClearanceMultiplier = ROBOT_TURNING_RADIUS / ROBOT_LINEAR_RADIUS;
       if (this.isCollisionAt(this.virtualPosition, turningClearanceMultiplier)) {
-        this.showCollisionNotification('⚠️ Cannot turn - obstacle too close!');
+        this.showCollisionNotification('Cannot turn - obstacle too close!');
         this.stopAllMovement();
         setTimeout(() => resolve(), 200);
         return;
@@ -375,10 +375,10 @@ export class SimulatorSequencer {
             this.virtualPosition.copy(nextPosition);
           } else {
             if (this.isChallengeMode && this.currentLevel?.difficulty === 'hard') {
-              this.showCollisionNotification('💥 FAILED! Hard mode - no collisions allowed!');
+              this.showCollisionNotification('FAILED! Hard mode - no collisions allowed!');
               this.stopRequested = true;
             } else {
-              this.showCollisionNotification('🛑 Movement stopped - obstacle detected!');
+              this.showCollisionNotification('Movement stopped - obstacle detected!');
             }
             animationStopped = true;
             this.stopAllMovement();
