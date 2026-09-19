@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js';
 import { SOUND_MAPPING } from './sound_profile';
@@ -384,7 +383,7 @@ export class Simulator {
     return robot;
   }
 
-  public async loadRobotModel(url?: string): Promise<void> {
+  public async loadRobotModel(_url?: string): Promise<void> {
     if (this.initFailed || !this.renderer) return;
 
     try {
