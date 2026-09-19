@@ -8,15 +8,92 @@
 
 /* Category Rail on the left - matches .blocklyToolboxDiv */
 .rail {
-  width: 320px;
+  width: 280px;
   height: 100%;
-  overflow-y: auto;
   background: var(--surface);
-  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-right: 1px solid var(--line-soft);
+}
+
+/* Search bar at top of rail */
+.railSearch {
+  position: relative;
+  padding: 10px 10px 8px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.railSearchInput {
+  width: 100%;
+  height: 36px;
+  box-sizing: border-box;
+  background: var(--surface-2);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-md, 8px);
+  padding: 0 32px 0 12px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-900);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.railSearchInput::placeholder {
+  color: var(--ink-400);
+  font-family: var(--font);
+}
+
+.railSearchInput:focus {
+  outline: none;
+  border-color: var(--pink-500, #ec2d8f);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pink-500, #ec2d8f) 20%, transparent);
+}
+
+.railSearchIcon {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-400);
+  pointer-events: none;
+}
+
+.railSearchClear {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: var(--line);
+  color: var(--ink-600);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  transition: all 0.12s ease;
+}
+
+.railSearchClear:hover {
+  background: var(--pink-500);
+  color: #fff;
+}
+
+.railList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 8px 12px;
   display: flex;
   flex-direction: column;
   scrollbar-width: thin;
-  flex-shrink: 0;
 }
 
 .railBtn {
@@ -25,10 +102,10 @@
   align-items: center;
   justify-content: flex-start;
   height: auto;
-  min-height: 54px;
-  padding: 12px 16px;
-  border-left: 8px solid var(--cat, #4f46e5);
-  margin-bottom: 8px;
+  min-height: 48px;
+  padding: 10px 14px;
+  border-left: 6px solid var(--cat, #4f46e5);
+  margin-bottom: 6px;
   border-radius: 0;
   border-top: none;
   border-right: none;
@@ -36,7 +113,7 @@
   background: transparent;
   cursor: pointer;
   width: 100%;
-  gap: 12px;
+  gap: 10px;
   text-align: left;
   transition:
     background-color 0.15s ease,
@@ -66,23 +143,23 @@
   justify-content: center;
   background: none;
   border: none;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
   color: var(--cat, #4f46e5);
   transition: color 0.15s ease;
 }
 
 .railIcon svg {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
 }
 
 .railLabel {
   color: var(--cat, #4f46e5);
-  font-size: clamp(16px, 1.8vw, 24px);
-  font-weight: 800;
-  font-family: var(--font-display);
+  font-size: clamp(14px, 1.3vw, 17px);
+  font-weight: 700;
+  font-family: var(--font);
   margin: 0;
   text-align: left;
   line-height: 1.2;
@@ -93,8 +170,8 @@
 }
 
 .dot {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: currentColor;
 }
@@ -115,7 +192,7 @@
   top: 0;
   bottom: 0;
   width: 380px;
-  max-width: calc(100vw - 340px);
+  max-width: calc(100vw - 300px);
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-left: none;
@@ -138,12 +215,11 @@
 }
 
 .drawerHead {
-  padding: 14px 16px;
+  padding: 10px 14px;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  gap: 10px;
   flex-shrink: 0;
 }
 
@@ -157,23 +233,53 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 16px;
-  font-weight: 800;
-  font-family: var(--font-display);
+  font-size: 14.5px;
+  font-weight: 700;
+  font-family: var(--font);
   color: var(--cat, var(--ink-900));
+}
+
+.drawerIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--cat, currentColor);
+}
+
+.drawerIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.drawerTitleText {
+  font-weight: 700;
+  color: var(--ink-900);
+}
+
+.drawerCount {
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--line-soft);
+  color: var(--ink-600);
 }
 
 .closeBtn {
   border: none;
   background: var(--line-soft);
   color: var(--ink-700);
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   cursor: pointer;
   display: grid;
   place-items: center;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   transition: all 0.12s ease;
 }
@@ -183,35 +289,15 @@
   color: var(--ink-900);
 }
 
-.search {
-  width: 100%;
-  box-sizing: border-box;
-  border: 1.5px solid var(--line);
-  background: var(--surface-2);
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-size: 13.5px;
-  color: var(--ink-900);
-  font-family: inherit;
-}
-.search::placeholder {
-  color: var(--ink-400);
-}
-.search:focus {
-  outline: none;
-  border-color: var(--cat, var(--pink-500));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cat, var(--pink-500)) 20%, transparent);
-}
-
 /* Cards list */
 .cards {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 14px 16px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   scrollbar-width: thin;
 }
 
@@ -222,9 +308,9 @@
   gap: 12px;
   background: var(--surface);
   border: 1.5px solid var(--line);
-  border-left: 6px solid var(--cat, var(--indigo-600));
-  border-radius: 14px;
-  padding: 12px 14px;
+  border-left: 5px solid var(--cat, var(--indigo-600));
+  border-radius: 12px;
+  padding: 11px 13px;
   cursor: pointer;
   box-shadow: var(--shadow-xs);
   transition:
@@ -248,19 +334,20 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .chip {
   align-self: flex-start;
   background: var(--cat, var(--indigo-600));
   color: #ffffff;
-  font-weight: 800;
-  font-size: 14px;
-  font-family: var(--font-display);
-  padding: 4px 12px;
-  border-radius: 999px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  font-weight: 700;
+  font-size: 13px;
+  font-family: var(--font);
+  letter-spacing: 0.01em;
+  padding: 3px 10px;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
 :global([data-theme='space']) .chip,
@@ -277,9 +364,10 @@
 
 .cardDesc {
   color: var(--ink-700);
-  font-size: 13px;
+  font-size: 12.5px;
   line-height: 1.4;
-  font-weight: 600;
+  font-weight: 500;
+  font-family: var(--font);
 }
 
 .cardCode {
@@ -299,14 +387,14 @@
 
 .help {
   flex-shrink: 0;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   border: 1.5px solid var(--line);
   background: var(--line-soft);
   color: var(--ink-700);
   font-weight: 800;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   display: grid;
   place-items: center;
@@ -321,7 +409,8 @@
 
 .noResult {
   color: var(--ink-400);
-  font-size: 14px;
+  font-size: 13.5px;
+  font-family: var(--font);
   padding: 24px 8px;
   text-align: center;
 }
@@ -331,12 +420,13 @@
   position: fixed;
   top: -1000px;
   left: -1000px;
-  padding: 8px 18px;
-  border-radius: 999px;
+  padding: 6px 14px;
+  border-radius: 6px;
   background: var(--cat, var(--indigo-600));
   color: #fff;
-  font-weight: 800;
-  font-size: 14px;
+  font-weight: 700;
+  font-size: 13px;
+  font-family: var(--font);
   box-shadow: var(--shadow-lg, 0 6px 18px rgba(27, 24, 64, 0.3));
   white-space: nowrap;
 }
@@ -344,14 +434,14 @@
 /* Tablet (768px to 1023px) */
 @media (min-width: 768px) and (max-width: 1023px) {
   .rail {
-    width: 240px;
+    width: 220px;
   }
   .railLabel {
-    font-size: 17px;
+    font-size: 15px;
   }
   .drawer {
-    width: 340px;
-    max-width: calc(100vw - 250px);
+    width: 320px;
+    max-width: calc(100vw - 230px);
   }
 }
 
@@ -359,43 +449,64 @@
 @media (max-width: 767px) {
   .rail {
     width: 125px;
-    padding: 6px 4px;
+  }
+  .railSearch {
+    padding: 6px 6px 4px;
+  }
+  .railSearchInput {
+    height: 32px;
+    font-size: 12px;
+    padding: 0 24px 0 8px;
+  }
+  .railSearchIcon {
+    right: 14px;
+    width: 13px;
+    height: 13px;
+  }
+  .railSearchClear {
+    right: 12px;
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
+  }
+  .railList {
+    padding: 4px 4px 8px;
   }
   .railBtn {
-    min-height: 40px;
-    padding: 7px 10px;
-    border-left-width: 6px;
+    min-height: 38px;
+    padding: 6px 8px;
+    border-left-width: 5px;
     margin-bottom: 4px;
     gap: 6px;
   }
   .railIcon {
-    width: 20px;
-    height: 20px;
-  }
-  .railIcon svg {
     width: 18px;
     height: 18px;
   }
+  .railIcon svg {
+    width: 16px;
+    height: 16px;
+  }
   .railLabel {
-    font-size: 13px !important;
+    font-size: 12.5px !important;
   }
   .drawer {
     width: calc(100vw - 130px);
-    max-width: 320px;
+    max-width: 300px;
   }
   .drawerHead {
-    padding: 10px 12px;
+    padding: 8px 10px;
   }
   .cards {
-    padding: 10px 12px;
+    padding: 8px 10px;
     gap: 8px;
   }
   .chip {
-    font-size: 12.5px;
-    padding: 3px 9px;
+    font-size: 12px;
+    padding: 2px 8px;
   }
   .cardDesc {
-    font-size: 12px;
+    font-size: 11.5px;
   }
 }
 
@@ -403,7 +514,6 @@
 @media (max-width: 480px) {
   .rail {
     width: 115px;
-    padding: 4px 3px;
   }
   .drawer {
     width: calc(100vw - 120px);

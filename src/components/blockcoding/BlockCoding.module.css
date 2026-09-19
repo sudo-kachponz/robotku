@@ -754,55 +754,112 @@
     width: auto;
   }
 }
-.switchWarn {
+/* Conversion Warning Modal (MakeCode style) */
+.conversionOverlay {
   position: fixed;
   inset: 0;
-  z-index: 120;
-  background: rgba(20, 16, 60, 0.45);
-  backdrop-filter: blur(4px);
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
   display: grid;
   place-items: center;
   padding: 20px;
+  animation: fadeIn 0.15s ease;
 }
-.switchWarnCard {
-  width: min(440px, 100%);
+
+.conversionModal {
+  width: min(540px, 100%);
   background: var(--surface);
-  border-radius: 18px;
-  padding: 22px 24px;
-  box-shadow: var(--shadow-lg, 0 24px 60px rgba(20, 16, 60, 0.35));
+  border-radius: var(--r-md, 8px);
+  border: 1px solid var(--line);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: scaleIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.switchWarnCard h3 {
-  margin: 0 0 8px;
-  font-size: 18px;
-  color: var(--code-warn);
+
+.conversionHeader {
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
 }
-.switchWarnCard p {
-  margin: 0 0 18px;
-  color: var(--ink-700);
+
+.conversionHeader h3 {
+  margin: 0;
+  font-size: 16.5px;
+  font-weight: 700;
+  font-family: var(--font);
+  color: var(--ink-900);
+}
+
+.conversionBody {
+  padding: 18px 20px 22px;
+}
+
+.conversionBody p {
+  margin: 0;
   font-size: 14px;
   line-height: 1.55;
+  font-family: var(--font);
+  color: var(--ink-700);
 }
-.switchWarnActions {
+
+.conversionActions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px 18px;
 }
-.swCancel,
-.swGo {
+
+.conversionDiscardBtn {
   border: none;
-  border-radius: 10px;
-  font-weight: 800;
-  font-size: 14px;
-  padding: 10px 16px;
+  background: var(--line);
+  color: var(--ink-800);
+  padding: 9px 16px;
+  border-radius: var(--r-md, 6px);
+  font-family: var(--font);
+  font-size: 13.5px;
+  font-weight: 700;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.12s ease;
 }
-.swCancel {
-  background: var(--indigo-50);
-  color: var(--indigo-700);
+
+.conversionDiscardBtn:hover {
+  background: color-mix(in srgb, var(--line) 80%, black);
+  color: var(--ink-900);
 }
-.swGo {
-  background: var(--pink-500);
-  color: var(--surface);
+
+.conversionStayBtn {
+  border: none;
+  background: #16a34a;
+  color: #ffffff;
+  padding: 9px 18px;
+  border-radius: var(--r-md, 6px);
+  font-family: var(--font);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.3);
+  transition: all 0.12s ease;
+}
+
+.conversionStayBtn:hover {
+  background: #15803d;
+  box-shadow: 0 4px 10px rgba(22, 163, 74, 0.4);
+}
+
+.btnIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 900;
 }
 
 .pyHint {
