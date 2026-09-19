@@ -51,10 +51,10 @@ export const THEMES: ThemeDefinition[] = [
     label: 'Spring',
     name: 'Spring',
     mode: 'light',
-    desc: 'Nuansa musim semi dengan warna dedaunan segar, bunga mekar, dan langit cerah.',
-    swatch: ['#16A34A', '#EC2D8F', '#F0F9F4'],
+    desc: 'Nuansa musim semi bunga sakura dengan palet sakura rose pink, kelopak mekar lembut, dan sentuhan plum mauve.',
+    swatch: ['#DB2777', '#FBB0C4', '#FDF2F4'],
     categoryColors: {
-      Movement: '#15803D',
+      Movement: '#BE185D',
       Timing: '#B45309',
       Display: '#0369A1',
       Audio: '#C2410C',
@@ -65,7 +65,7 @@ export const THEMES: ThemeDefinition[] = [
       Variables: '#A21CAF',
       Functions: '#52525B',
       Templates: '#831843',
-      AI: '#BE185D',
+      AI: '#9F1239',
     },
   },
   {
