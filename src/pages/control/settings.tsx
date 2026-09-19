@@ -10,6 +10,7 @@ import { setSettings, resetSettings } from '../../app/settingsStore';
 import { cloneSettings, type RobotSettings, type Speed } from '../../domain/settings';
 import { showToast } from '../../ui/toast';
 import { useAppTheme } from '../../theme/themeManager';
+import FirmwarePanel from '../../components/control/FirmwarePanel';
 import guide1Svg from '../../assets/Guide1.svg';
 
 import guide2Svg from '../../assets/Guide2.svg';
@@ -20,7 +21,7 @@ const COMMUNITY_URL = 'https://robotku.id/#course';
 const SPEEDS: Speed[] = ['Fast', 'Medium', 'Slow'];
 
 export default function SettingsPage() {
-  const [tab, setTab] = useState<'settings' | 'guide'>('settings');
+  const [tab, setTab] = useState<'settings' | 'firmware' | 'guide'>('settings');
   const settings = useSettings();
 
   const edit = (fn: (s: RobotSettings) => void) => {
@@ -40,6 +41,12 @@ export default function SettingsPage() {
             Settings
           </button>
           <button
+            className={`${styles.tab} ${tab === 'firmware' ? styles.tabActive : ''}`}
+            onClick={() => setTab('firmware')}
+          >
+            Firmware
+          </button>
+          <button
             className={`${styles.tab} ${tab === 'guide' ? styles.tabActive : ''}`}
             onClick={() => setTab('guide')}
           >
@@ -47,7 +54,9 @@ export default function SettingsPage() {
           </button>
         </div>
 
-        {tab === 'settings' ? <SettingsTab settings={settings} edit={edit} /> : <GuideTab />}
+        {tab === 'settings' && <SettingsTab settings={settings} edit={edit} />}
+        {tab === 'firmware' && <FirmwarePanel />}
+        {tab === 'guide' && <GuideTab />}
       </div>
     </ControlLayout>
   );
