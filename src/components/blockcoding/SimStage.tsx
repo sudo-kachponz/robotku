@@ -13,6 +13,15 @@ import { SIM_STAGE, OBSTACLE_R, type SimSink, type SimState } from '../../runtim
 import { isSupported } from '../../domain/boardProfile';
 import BoardPanel from './sim/BoardPanel';
 import { cvStore } from '../../ai/cvStore';
+import {
+  PlayIcon,
+  PauseIcon,
+  RotateCcwIcon,
+  BrickIcon,
+  MusicIcon,
+  EyeIcon,
+  CollisionIcon,
+} from './sim/SimIcons';
 import styles from './SimStage.module.css';
 
 const MATRIX_ON = '#3B82F6'; // category-blue
@@ -116,7 +125,7 @@ function RunControls({
           disabled={!running}
           aria-label={paused ? 'Lanjutkan' : 'Jeda'}
         >
-          {paused ? '▶' : '⏸'}
+          {paused ? <PlayIcon size={13} /> : <PauseIcon size={13} />}
         </button>
         <button
           type="button"
@@ -132,7 +141,7 @@ function RunControls({
           onClick={onReset}
           aria-label="Reset simulator"
         >
-          ⟲
+          <RotateCcwIcon size={13} />
         </button>
       </div>
     </div>
@@ -171,7 +180,9 @@ function StatusStrip({
       <span className={styles.statusSep}>·</span>
       <span>{elapsed.toFixed(1)} s</span>
       <span className={styles.statusSep}>·</span>
-      <span>💥 {state.collisions}</span>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+        <CollisionIcon size={12} /> {state.collisions}
+      </span>
     </div>
   );
 }
@@ -275,14 +286,17 @@ function ArenaSection({
               fill="#F59E0B"
               opacity={0.9}
             />
-            <text
-              x={state.obstacle.x + half}
-              y={state.obstacle.y + half + 4}
-              textAnchor="middle"
-              fontSize={14}
+            <foreignObject
+              x={state.obstacle.x + half - 9}
+              y={state.obstacle.y + half - 9}
+              width={18}
+              height={18}
+              style={{ pointerEvents: 'none' }}
             >
-              🧱
-            </text>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', color: '#FFFFFF' }}>
+                <BrickIcon size={16} stroke="#FFFFFF" />
+              </div>
+            </foreignObject>
           </g>
         )}
       </svg>
@@ -386,10 +400,13 @@ function OutputPanelSection({
             style={{
               background: buzzing ? '#F265AE' : 'rgba(60,64,120,0.18)',
               transform: buzzing ? 'scale(1.15)' : 'scale(1)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
             aria-label={buzzing ? `Buzzer ${noteName} ${Math.round(state.buzzerHz)} Hz` : 'Buzzer'}
           >
-            ♪
+            <MusicIcon size={11} color={buzzing ? '#FFFFFF' : 'var(--ink-700)'} />
           </span>
           <span className={styles.chip}>
             {buzzing ? `${noteName} ${Math.round(state.buzzerHz)}Hz` : '—'}
@@ -757,9 +774,12 @@ function AiArenaOverlay({ robotX, robotY }: { robotX: number; robotY: number }) 
         whiteSpace: 'nowrap',
         pointerEvents: 'none',
         boxShadow: '0 4px 10px rgba(236,45,143,0.4)',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
       }}
     >
-      👁 {prettifyLabel(top)} {conf}%
+      <EyeIcon size={12} stroke="#FFFFFF" /> {prettifyLabel(top)} {conf}%
     </div>
   );
 }

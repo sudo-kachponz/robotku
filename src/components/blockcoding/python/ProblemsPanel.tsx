@@ -7,6 +7,13 @@
 
 import { useMemo, useState } from 'react';
 import type { PyProblem } from './PyEditor';
+import {
+  XCircleIcon,
+  AlertTriangleIcon,
+  SparklesIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+} from '../sim/SimIcons';
 import styles from './ProblemsPanel.module.css';
 
 interface Grouped {
@@ -46,7 +53,7 @@ export default function ProblemsPanel({
     <div key={`${g.severity}|${g.line}|${g.message}`} className={styles.row}>
       <button className={styles.rowMain} onClick={() => onJump(g.line)} type="button">
         <span className={g.severity === 'error' ? styles.icoErr : styles.icoWarn}>
-          {g.severity === 'error' ? '⛔' : '⚠'}
+          {g.severity === 'error' ? <XCircleIcon size={14} /> : <AlertTriangleIcon size={14} />}
         </span>
         <span className={styles.msg}>
           Baris {g.line}: {g.message}
@@ -59,7 +66,7 @@ export default function ProblemsPanel({
         type="button"
         title="Explain with AI"
       >
-        ✨ AI
+        <SparklesIcon size={13} /> AI
       </button>
     </div>
   );
@@ -67,10 +74,16 @@ export default function ProblemsPanel({
   return (
     <div className={styles.panel}>
       <button className={styles.header} onClick={() => setOpen((v) => !v)} type="button">
-        <span className={styles.chevron}>{open ? '▾' : '▸'}</span>
+        <span className={styles.chevron}>
+          {open ? <ChevronDownIcon size={13} /> : <ChevronUpIcon size={13} style={{ transform: 'rotate(90deg)' }} />}
+        </span>
         <span className={styles.title}>Problems</span>
         {errorCount > 0 && <span className={styles.badge}>{errorCount}</span>}
-        {warnings.length > 0 && <span className={styles.warnBadge}>{warnings.length} ⚠</span>}
+        {warnings.length > 0 && (
+          <span className={styles.warnBadge}>
+            <AlertTriangleIcon size={11} /> {warnings.length}
+          </span>
+        )}
       </button>
 
       {open && (
@@ -84,7 +97,9 @@ export default function ProblemsPanel({
       {explain && (
         <div className={styles.modal} onClick={() => setExplain(null)}>
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
-            <h3>✨ Explain with AI</h3>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <SparklesIcon size={18} /> Explain with AI
+            </h3>
             <p className={styles.modalMsg}>{explain}</p>
             <p className={styles.modalNote}>
               Penjelasan AI akan segera hadir di sini — fitur ini masih dalam pengembangan.

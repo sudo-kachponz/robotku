@@ -21,6 +21,14 @@ import {
 } from './oledAnimations';
 import { insertLcdBlock } from '../../../templates/galleryBridge';
 import type { BlockSpec } from '../../../templates/authoring';
+import {
+  PlayIcon,
+  PauseIcon,
+  TrashIcon,
+  PuzzleIcon,
+  SearchIcon,
+  InfoIcon,
+} from './SimIcons';
 import styles from './SimBoard.module.css';
 
 export interface Bitmap {
@@ -603,7 +611,6 @@ export default function OledModule({
                     gap: 4,
                   }}
                 >
-                  <span>{cat.icon}</span>
                   <span>{cat.label.split(' ')[0]}</span>
                 </button>
               );
@@ -612,16 +619,16 @@ export default function OledModule({
 
           {/* Search Box */}
           {activeCategory !== 'custom' && (
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <input
                 type="text"
-                placeholder="🔍 Cari animasi (folder, baterai, wifi, dll)..."
+                placeholder="Cari animasi (folder, baterai, wifi, dll)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
                   width: '100%',
                   fontSize: 11,
-                  padding: '5px 8px',
+                  padding: '5px 26px 5px 8px',
                   borderRadius: 6,
                   border: '1px solid var(--line)',
                   background: 'var(--surface-2)',
@@ -629,6 +636,9 @@ export default function OledModule({
                   boxSizing: 'border-box',
                 }}
               />
+              <span style={{ position: 'absolute', right: 8, color: 'var(--ink-400)', pointerEvents: 'none', display: 'inline-flex' }}>
+                <SearchIcon size={12} />
+              </span>
             </div>
           )}
 
@@ -735,8 +745,9 @@ export default function OledModule({
                   ))}
                 </select>
               </div>
-              <p style={{ margin: 0, fontSize: 10.5, color: 'var(--ink-600)', lineHeight: 1.4 }}>
-                💡 <em>Sentuh atau klik layar OLED di sebelah kanan untuk menggambar piksel bebas!</em>
+              <p style={{ margin: 0, fontSize: 10.5, color: 'var(--ink-600)', lineHeight: 1.4, display: 'flex', alignItems: 'center', gap: 5 }}>
+                <InfoIcon size={13} />
+                <em>Sentuh atau klik layar OLED di sebelah kanan untuk menggambar piksel bebas!</em>
               </p>
             </div>
           )}
@@ -773,9 +784,13 @@ export default function OledModule({
                   background: 'var(--surface)',
                   color: 'var(--ink-900)',
                   cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
                 }}
               >
-                {playing ? '⏸ Jeda' : '▶ Putar'}
+                {playing ? <PauseIcon size={11} /> : <PlayIcon size={11} />}
+                <span>{playing ? 'Jeda' : 'Putar'}</span>
               </button>
               <button
                 onClick={handleClear}
@@ -788,9 +803,13 @@ export default function OledModule({
                   background: 'var(--surface)',
                   color: 'var(--ink-700)',
                   cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
                 }}
               >
-                🧹 Bersihkan
+                <TrashIcon size={11} />
+                <span>Bersihkan</span>
               </button>
             </div>
           </div>
@@ -960,7 +979,7 @@ export default function OledModule({
               transition: 'transform 0.1s ease',
             }}
           >
-            <span>🧩</span>
+            <PuzzleIcon size={16} />
             <span>Pasang ke Blok Kode</span>
           </button>
         </div>

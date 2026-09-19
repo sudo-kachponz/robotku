@@ -303,15 +303,13 @@
 
 .card {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
+  gap: 8px;
   background: var(--surface);
   border: 1.5px solid var(--line);
   border-left: 5px solid var(--cat, var(--indigo-600));
   border-radius: 12px;
-  padding: 11px 13px;
-  cursor: pointer;
+  padding: 12px 14px;
   box-shadow: var(--shadow-xs);
   transition:
     transform 0.14s ease,
@@ -320,46 +318,52 @@
 }
 
 .card:hover {
-  transform: translateY(-2px);
   border-color: var(--cat, var(--pink-500));
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
 }
 
-.card:active {
-  transform: translateY(0);
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
-.cardMain {
+.cardTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
 }
 
-.chip {
-  align-self: flex-start;
-  background: var(--cat, var(--indigo-600));
-  color: #ffffff;
-  font-weight: 700;
-  font-size: 13px;
+.cardTitle {
   font-family: var(--font);
-  letter-spacing: 0.01em;
-  padding: 3px 10px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink-900);
+  line-height: 1.3;
+}
+
+.moreBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: transparent;
+  border: none;
+  color: var(--cat, var(--indigo-600));
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 3px 6px;
   border-radius: 6px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  transition: background-color 0.12s ease;
+  flex-shrink: 0;
 }
 
-:global([data-theme='space']) .chip,
-:global([data-theme='forest']) .chip,
-:global([data-theme='underwater']) .chip {
-  color: #0b0f19 !important;
-}
-
-:global([data-theme='space']) .ghost,
-:global([data-theme='forest']) .ghost,
-:global([data-theme='underwater']) .ghost {
-  color: #0b0f19 !important;
+.moreBtn:hover {
+  background: color-mix(in srgb, var(--cat, #4f46e5) 12%, transparent);
 }
 
 .cardDesc {
@@ -370,41 +374,285 @@
   font-family: var(--font);
 }
 
-.cardCode {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11.5px;
-  color: var(--ink-600);
-  background: var(--surface-2);
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--line-soft);
-  align-self: flex-start;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* Inline Documentation Box */
+.inlineDoc {
+  background: color-mix(in srgb, var(--cat, #4f46e5) 7%, var(--surface-2));
+  border: 1px solid color-mix(in srgb, var(--cat, #4f46e5) 20%, var(--line));
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  animation: fadeInDoc 0.16s ease-out;
 }
 
-.help {
-  flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 1.5px solid var(--line);
-  background: var(--line-soft);
-  color: var(--ink-700);
+@keyframes fadeInDoc {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.docDesc {
+  color: var(--ink-800);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.docSection {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.docSectionTitle {
+  font-size: 10.5px;
   font-weight: 800;
-  font-size: 13px;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  transition: all 0.14s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--cat, var(--indigo-600));
 }
 
-.help:hover {
-  background: var(--pink-500);
-  border-color: var(--pink-500);
+.docParams {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.docParamRow {
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  padding: 4px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.docParamHead {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.docParamName {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 11.5px;
+  color: var(--ink-900);
+}
+
+.docParamType {
+  font-size: 10.5px;
+  color: var(--ink-500);
+}
+
+.docParamDefault {
+  font-size: 10.5px;
+  color: var(--ink-400);
+  font-style: italic;
+}
+
+.docParamDetail {
+  font-size: 11px;
+  color: var(--ink-700);
+}
+
+.docReturn {
+  font-size: 11.5px;
+  color: var(--ink-800);
+}
+
+.docReturn code {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: var(--cat, var(--indigo-600));
+  background: var(--surface);
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--line-soft);
+}
+
+.docLink {
+  align-self: flex-start;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--cat, var(--indigo-600));
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.docLink:hover {
+  text-decoration: underline;
+}
+
+/* Interactive Code Box */
+.codeBox {
+  position: relative;
+  background: var(--surface-2);
+  border: 1.5px solid var(--line);
+  border-radius: 9px;
+  padding: 8px 10px 8px 30px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.codeBox:hover {
+  border-color: var(--cat, var(--indigo-500));
+  background: color-mix(in srgb, var(--cat, var(--indigo-500)) 6%, var(--surface-2));
+  box-shadow: var(--shadow-sm);
+}
+
+.dragGrip {
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-400);
+  cursor: grab;
+  padding: 4px 2px;
+}
+
+.dragGrip:hover {
+  color: var(--cat, var(--ink-900));
+}
+
+.codeContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.codeContent::-webkit-scrollbar {
+  display: none;
+}
+
+.codeActions {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.14s ease;
+}
+
+.codeBox:hover .codeActions {
+  opacity: 1;
+}
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--ink-700);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.12s ease;
+}
+
+.actionBtn:hover {
+  background: var(--cat, var(--indigo-600));
+  border-color: var(--cat, var(--indigo-600));
   color: #ffffff;
+}
+
+.actionBtnCopied {
+  background: #10b981 !important;
+  border-color: #10b981 !important;
+  color: #ffffff !important;
+}
+
+/* Indented Code Lines Styling */
+.codeLine {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink-900);
+  white-space: pre;
+  display: block;
+}
+
+.codeLineIndented {
+  background: color-mix(in srgb, var(--cat, #38bdf8) 12%, transparent);
+  border-left: 2px solid var(--cat, #38bdf8);
+  padding-left: 6px;
+  margin-left: 10px;
+  border-radius: 0 4px 4px 0;
+}
+
+.codeLineFirstIndent {
+  border-top: 1.5px solid var(--cat, #38bdf8);
+  border-top-left-radius: 3px;
+}
+
+.codeLineLastIndent {
+  border-bottom: 1.5px solid var(--cat, #38bdf8);
+  border-bottom-left-radius: 3px;
+}
+
+/* Code Syntax Tokens */
+.tokKeyword {
+  color: var(--code-keyword, #8b5cf6);
+  font-weight: 700;
+}
+
+.tokString {
+  color: var(--code-string, #10b981);
+}
+
+.tokNumber {
+  color: var(--code-number, #f59e0b);
+}
+
+.tokComment {
+  color: var(--code-comment, #9ca3af);
+  font-style: italic;
+}
+
+.tokIdent {
+  color: var(--code-ident, #38bdf8);
+}
+
+:global([data-theme='space']) .codeLineIndented {
+  background: rgba(56, 189, 248, 0.10);
+  border-left-color: #38bdf8;
+}
+
+:global([data-theme='forest']) .codeLineIndented {
+  background: rgba(16, 185, 129, 0.10);
+  border-left-color: #10b981;
+}
+
+:global([data-theme='underwater']) .codeLineIndented {
+  background: rgba(6, 182, 212, 0.10);
+  border-left-color: #06b6d4;
 }
 
 .noResult {
