@@ -5,35 +5,46 @@
 // Bilingual (ID/EN). No dependency — the "spotlight" is a box with a huge
 // box-shadow spread that dims everything except the highlighted element.
 
-import { useCallback, useEffect, useLayoutEffect, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  SparklesIcon,
+  MonitorIcon,
+  PuzzleIcon,
+  PlayIcon,
+  StopIcon,
+  EyeIcon,
+  BookOpenIcon,
+  CopyIcon,
+  PlugIcon,
+} from './sim/SimIcons';
 import styles from './Tour.module.css';
 
-type Step = { sel?: string; icon: string; title: string; body: string };
+type Step = { sel?: string; icon: ReactNode; title: string; body: string };
 
 const STEPS: Record<'id' | 'en', Step[]> = {
   id: [
-    { icon: '👋', title: 'Yuk kenalan!', body: 'Tur singkat ± 30 detik biar kamu tau tiap bagian buat apa. Tekan "Lanjut".' },
-    { sel: '[data-tour="sim-panel"]', icon: '🤖', title: 'Simulator (kiri)', body: 'Robot virtual. Program yang kamu buat langsung dicoba di sini tanpa alat fisik.' },
-    { sel: '.blocklyToolboxDiv', icon: '🧩', title: 'Blok Perintah (tengah)', body: 'Daftar blok. Klik kategori (Movement, Logic, dll), lalu seret blok ke area program di kanan.' },
-    { sel: '[data-tour="run"]', icon: '▶️', title: 'Run', body: 'Jalankan programmu — robot di simulator langsung bergerak mengikuti blok.' },
-    { sel: '[data-tour="stop"]', icon: '⏹️', title: 'Stop', body: 'Hentikan program kapan saja. Tombol darurat (failsafe).' },
-    { sel: '[data-tour="simulator"]', icon: '🖥️', title: 'Tombol Simulator', body: 'Tampilkan atau sembunyikan panel simulator di kiri.' },
-    { sel: '[data-tour="ai"]', icon: '🎥', title: 'AI', body: 'Nyalakan kamera untuk deteksi objek & warna, lalu pakai hasilnya di blok.' },
-    { sel: '[data-tour="templates"]', icon: '🗂️', title: 'Templates', body: 'Contoh program siap pakai — tinggal coba dan pelajari.' },
-    { sel: '[data-tour="save"]', icon: '💾', title: 'Simpan', body: 'Save ke Projects, Share (salin), atau Download sebagai file .rbk.' },
-    { icon: '🔌', title: 'Robot Asli', body: 'Hubungkan robot lewat tombol power (kanan bawah) via USB / Bluetooth. Tekan tombol "?" kapan saja untuk membuka tur ini lagi.' },
+    { icon: <SparklesIcon size={20} />, title: 'Yuk kenalan!', body: 'Tur singkat ± 30 detik biar kamu tau tiap bagian buat apa. Tekan "Lanjut".' },
+    { sel: '[data-tour="sim-panel"]', icon: <MonitorIcon size={20} />, title: 'Simulator (kiri)', body: 'Robot virtual. Program yang kamu buat langsung dicoba di sini tanpa alat fisik.' },
+    { sel: '.blocklyToolboxDiv', icon: <PuzzleIcon size={20} />, title: 'Blok Perintah (tengah)', body: 'Daftar blok. Klik kategori (Movement, Logic, dll), lalu seret blok ke area program di kanan.' },
+    { sel: '[data-tour="run"]', icon: <PlayIcon size={20} />, title: 'Run', body: 'Jalankan programmu — robot di simulator langsung bergerak mengikuti blok.' },
+    { sel: '[data-tour="stop"]', icon: <StopIcon size={20} />, title: 'Stop', body: 'Hentikan program kapan saja. Tombol darurat (failsafe).' },
+    { sel: '[data-tour="simulator"]', icon: <MonitorIcon size={20} />, title: 'Tombol Simulator', body: 'Tampilkan atau sembunyikan panel simulator di kiri.' },
+    { sel: '[data-tour="ai"]', icon: <EyeIcon size={20} />, title: 'AI', body: 'Nyalakan kamera untuk deteksi objek & warna, lalu pakai hasilnya di blok.' },
+    { sel: '[data-tour="templates"]', icon: <BookOpenIcon size={20} />, title: 'Templates', body: 'Contoh program siap pakai — tinggal coba dan pelajari.' },
+    { sel: '[data-tour="save"]', icon: <CopyIcon size={20} />, title: 'Simpan', body: 'Save ke Projects, Share (salin), atau Download sebagai file .rbk.' },
+    { icon: <PlugIcon size={20} />, title: 'Robot Asli', body: 'Hubungkan robot lewat tombol power (kanan bawah) via USB / Bluetooth. Tekan tombol "?" kapan saja untuk membuka tur ini lagi.' },
   ],
   en: [
-    { icon: '👋', title: 'Quick tour!', body: 'A ± 30-second tour so you know what each part does. Press "Next".' },
-    { sel: '[data-tour="sim-panel"]', icon: '🤖', title: 'Simulator (left)', body: 'A virtual robot. Your program runs here instantly — no hardware needed.' },
-    { sel: '.blocklyToolboxDiv', icon: '🧩', title: 'Command Blocks (center)', body: 'The block list. Click a category (Movement, Logic, …), then drag blocks to the program area on the right.' },
-    { sel: '[data-tour="run"]', icon: '▶️', title: 'Run', body: 'Run your program — the simulator robot moves along with your blocks.' },
-    { sel: '[data-tour="stop"]', icon: '⏹️', title: 'Stop', body: 'Stop the program anytime. An emergency (failsafe) button.' },
-    { sel: '[data-tour="simulator"]', icon: '🖥️', title: 'Simulator button', body: 'Show or hide the simulator panel on the left.' },
-    { sel: '[data-tour="ai"]', icon: '🎥', title: 'AI', body: 'Turn on the camera for object & color detection, then use it in your blocks.' },
-    { sel: '[data-tour="templates"]', icon: '🗂️', title: 'Templates', body: 'Ready-made example programs — just try and learn from them.' },
-    { sel: '[data-tour="save"]', icon: '💾', title: 'Save', body: 'Save to Projects, Share (copy), or Download as a .rbk file.' },
-    { icon: '🔌', title: 'Real Robot', body: 'Connect a robot via the power button (bottom-right) over USB / Bluetooth. Press the "?" button anytime to reopen this tour.' },
+    { icon: <SparklesIcon size={20} />, title: 'Quick tour!', body: 'A ± 30-second tour so you know what each part does. Press "Next".' },
+    { sel: '[data-tour="sim-panel"]', icon: <MonitorIcon size={20} />, title: 'Simulator (left)', body: 'A virtual robot. Your program runs here instantly — no hardware needed.' },
+    { sel: '.blocklyToolboxDiv', icon: <PuzzleIcon size={20} />, title: 'Command Blocks (center)', body: 'The block list. Click a category (Movement, Logic, …), then drag blocks to the program area on the right.' },
+    { sel: '[data-tour="run"]', icon: <PlayIcon size={20} />, title: 'Run', body: 'Run your program — the simulator robot moves along with your blocks.' },
+    { sel: '[data-tour="stop"]', icon: <StopIcon size={20} />, title: 'Stop', body: 'Stop the program anytime. An emergency (failsafe) button.' },
+    { sel: '[data-tour="simulator"]', icon: <MonitorIcon size={20} />, title: 'Simulator button', body: 'Show or hide the simulator panel on the left.' },
+    { sel: '[data-tour="ai"]', icon: <EyeIcon size={20} />, title: 'AI', body: 'Turn on the camera for object & color detection, then use it in your blocks.' },
+    { sel: '[data-tour="templates"]', icon: <BookOpenIcon size={20} />, title: 'Templates', body: 'Ready-made example programs — just try and learn from them.' },
+    { sel: '[data-tour="save"]', icon: <CopyIcon size={20} />, title: 'Save', body: 'Save to Projects, Share (copy), or Download as a .rbk file.' },
+    { icon: <PlugIcon size={20} />, title: 'Real Robot', body: 'Connect a robot via the power button (bottom-right) over USB / Bluetooth. Press the "?" button anytime to reopen this tour.' },
   ],
 };
 

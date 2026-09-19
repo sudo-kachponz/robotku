@@ -14,6 +14,21 @@ import { PWM_PORTS, I2C_PORTS } from '../../../domain/hardware';
 import { loadSimModules, persistSimModules, type SimModules } from '../../../app/persistence';
 import type { SimState } from '../../../runtime/SimSink';
 import { insertLcdBlock } from '../../../templates/galleryBridge';
+import {
+  PlugIcon,
+  ZapIcon,
+  InfoIcon,
+  LightbulbIcon,
+  CircuitIcon,
+  RotateCcwIcon,
+  BookOpenIcon,
+  MonitorIcon,
+  CogIcon,
+  SlidersIcon,
+  ClockIcon,
+  PuzzleIcon,
+  PlayIcon,
+} from './SimIcons';
 
 function parseRgb(s: string | null): { r: number; g: number; b: number } | null {
   if (!s) return null;
@@ -195,7 +210,7 @@ export default function BoardPanel({ state }: { state: SimState }) {
           inputs: { DURATION: dur },
         },
       ],
-      `🧩 Blok LED (${selectedName || selectedHex}, ${dur}s) dipasang!`
+      `Blok LED (${selectedName || selectedHex}, ${dur}s) dipasang!`
     );
   };
 
@@ -226,20 +241,22 @@ export default function BoardPanel({ state }: { state: SimState }) {
           boxShadow: 'var(--shadow-xs)',
         }}
       >
-        <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-900)' }}>🔌 Pasang Modul:</span>
+        <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-900)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <PlugIcon size={16} /> Pasang Modul:
+        </span>
         <button
           onClick={() => setPending(pending === 'servo' ? null : 'servo')}
           aria-pressed={pending === 'servo'}
           style={btn(pending === 'servo')}
         >
-          {pending === 'servo' ? '👉 Pilih Port P1-P5...' : '+ Servo SG90'}
+          {pending === 'servo' ? 'Pilih Port P1-P5...' : '+ Servo SG90'}
         </button>
         <button
           onClick={() => setPending(pending === 'oled' ? null : 'oled')}
           aria-pressed={pending === 'oled'}
           style={btn(pending === 'oled')}
         >
-          {pending === 'oled' ? '👉 Pilih Port I1-I5...' : '+ Layar OLED'}
+          {pending === 'oled' ? 'Pilih Port I1-I5...' : '+ Layar OLED'}
         </button>
 
         <label
@@ -261,7 +278,7 @@ export default function BoardPanel({ state }: { state: SimState }) {
             aria-label="Tampilkan kabel schematics"
             style={{ cursor: 'pointer' }}
           />
-          ⚡ Tampilkan Kabel Skematik
+          <ZapIcon size={14} /> Tampilkan Kabel Skematik
         </label>
       </div>
 
@@ -280,7 +297,7 @@ export default function BoardPanel({ state }: { state: SimState }) {
             gap: 6,
           }}
         >
-          <span>💡</span>
+          <InfoIcon size={16} />
           <span>
             Klik pin header <strong>{pending === 'servo' ? 'PWM (Bawah: P1 - P5)' : 'I2C (Atas: I1 - I5)'}</strong> di
             papan untuk menancapkan kabel {pending === 'servo' ? 'Servo SG90' : 'Layar OLED SSD1306'}.
@@ -313,7 +330,9 @@ export default function BoardPanel({ state }: { state: SimState }) {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-900)' }}>📐 Skema Rangkaian Interaktif</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-900)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              <CircuitIcon size={16} /> Skema Rangkaian Interaktif
+            </span>
             <span
               style={{
                 fontSize: 10,
@@ -347,7 +366,7 @@ export default function BoardPanel({ state }: { state: SimState }) {
               }}
               title="Kembalikan tata letak semua modul dan papan ke posisi awal"
             >
-              <span>↺</span>
+              <RotateCcwIcon size={12} />
               <span>Reset Posisi</span>
             </button>
 
@@ -370,10 +389,12 @@ export default function BoardPanel({ state }: { state: SimState }) {
               }}
               title="Klik untuk melihat arti warna kabel & fungsi pin"
             >
-              <span>📚</span>
+              <BookOpenIcon size={13} />
               <span>{showPinHint ? 'Tutup Kamus Pin' : 'Kamus Pinout'}</span>
             </button>
-            <span style={{ fontSize: 11, color: 'var(--ink-500)' }}>💡 Klik port untuk pasang/cabut | ✋ Drag untuk geser modul bebas</span>
+            <span style={{ fontSize: 11, color: 'var(--ink-500)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <InfoIcon size={13} /> Klik port untuk pasang/cabut | Drag untuk geser modul bebas
+            </span>
           </div>
         </div>
 
@@ -390,8 +411,8 @@ export default function BoardPanel({ state }: { state: SimState }) {
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--ink-900)' }}>
-                📚 Kamus Jalur Kabel & Pinout (Biar Anak Paham Port):
+              <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--ink-900)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <BookOpenIcon size={14} /> Kamus Jalur Kabel & Pinout:
               </span>
               <button
                 onClick={() => setShowPinHint(false)}
@@ -413,8 +434,9 @@ export default function BoardPanel({ state }: { state: SimState }) {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8 }}>
               {/* I2C Column */}
               <div style={{ background: 'var(--surface-2)', padding: 8, borderRadius: 6, border: '1px solid var(--line)' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--blue)', marginBottom: 4 }}>
-                  🟦 Port I2C (I1 - I5) ➔ Layar OLED 0.96&quot;
+                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--blue)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: 'var(--blue)' }} />
+                  <span>Port I2C (I1 - I5) → Layar OLED 0.96&quot;</span>
                 </div>
                 <div style={{ display: 'grid', gap: 3.5, fontSize: 10.5, color: 'var(--ink-700)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -438,8 +460,9 @@ export default function BoardPanel({ state }: { state: SimState }) {
 
               {/* PWM Column */}
               <div style={{ background: 'var(--surface-2)', padding: 8, borderRadius: 6, border: '1px solid var(--line)' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--amber)', marginBottom: 4 }}>
-                  🟧 Port PWM (P1 - P5) ➔ Motor Servo SG90
+                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--amber)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: 'var(--amber)' }} />
+                  <span>Port PWM (P1 - P5) → Motor Servo SG90</span>
                 </div>
                 <div style={{ display: 'grid', gap: 3.5, fontSize: 10.5, color: 'var(--ink-700)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -482,7 +505,9 @@ export default function BoardPanel({ state }: { state: SimState }) {
       {plugged.filter(([, k]) => k === 'oled').map(([id]) => (
         <div key={id} style={{ ...box, padding: 12, background: 'var(--surface)', boxShadow: 'var(--shadow-xs)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-900)' }}>📺 Layar OLED 0.96&quot; ({id})</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-900)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <MonitorIcon size={16} /> Layar OLED 0.96&quot; ({id})
+            </span>
             <button onClick={() => attach(id)} style={cabutBtn} title="Cabut modul ini">
               Cabut
             </button>
@@ -503,7 +528,9 @@ export default function BoardPanel({ state }: { state: SimState }) {
           {plugged.filter(([, k]) => k === 'servo').map(([id]) => (
             <div key={id} style={{ ...box, padding: 10, background: 'var(--surface)', boxShadow: 'var(--shadow-xs)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink-900)' }}>⚙️ Servo SG90 ({id})</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink-900)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <CogIcon size={15} /> Servo SG90 ({id})
+                </span>
                 <button onClick={() => attach(id)} style={cabutBtn} title="Cabut modul ini">
                   Cabut
                 </button>
@@ -516,8 +543,9 @@ export default function BoardPanel({ state }: { state: SimState }) {
 
       {/* No OLED attached: point the user to attach one to draw/animate. */}
       {!plugged.some(([, k]) => k === 'oled') && (
-        <div style={{ ...box, background: 'var(--surface)', fontSize: 12, color: 'var(--ink-500)' }}>
-          🖼️ Pasang <strong>Layar OLED</strong> (port I1–I5) untuk menggambar pixel & memainkan animasi di layarnya.
+        <div style={{ ...box, background: 'var(--surface)', fontSize: 12, color: 'var(--ink-500)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <MonitorIcon size={15} />
+          <span>Pasang <strong>Layar OLED</strong> (port I1–I5) untuk menggambar pixel & memainkan animasi di layarnya.</span>
         </div>
       )}
 
@@ -537,7 +565,9 @@ export default function BoardPanel({ state }: { state: SimState }) {
         {/* Header with Title & Current Status */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 16 }}>💡</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--pink-500)' }}>
+              <LightbulbIcon size={18} />
+            </span>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-900)' }}>
                 Kontrol Warna LED (RGB)
@@ -715,11 +745,12 @@ export default function BoardPanel({ state }: { state: SimState }) {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 4,
+                gap: 5,
               }}
               title="Buka penggeser Red, Green, Blue di halaman"
             >
-              <span>🎨 Slider RGB</span>
+              <SlidersIcon size={14} />
+              <span>Slider RGB</span>
             </button>
           </div>
         </div>
@@ -800,7 +831,9 @@ export default function BoardPanel({ state }: { state: SimState }) {
         >
           {/* Duration Selector */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-700)', fontWeight: 600 }}>
-            <span>⏱️ Durasi:</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <ClockIcon size={14} /> Durasi:
+            </span>
             <input
               type="number"
               min="0.1"
@@ -846,7 +879,8 @@ export default function BoardPanel({ state }: { state: SimState }) {
               }}
               title="Pasang blok kode Set LED Color ke lembar kerja Blockly"
             >
-              <span>🧩 Pasang Blok LED</span>
+              <PuzzleIcon size={14} />
+              <span>Pasang Blok LED</span>
             </button>
 
             {/* Test directly on Robot & Simulator */}
@@ -869,7 +903,8 @@ export default function BoardPanel({ state }: { state: SimState }) {
               }}
               title="Kirim perintah langsung ke simulator dan LED robot fisik"
             >
-              <span>🚀 Tes Nyala</span>
+              <PlayIcon size={13} />
+              <span>Tes Nyala</span>
             </button>
 
             {/* Turn Off LED */}

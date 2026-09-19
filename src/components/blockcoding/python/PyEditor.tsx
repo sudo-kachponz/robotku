@@ -6,8 +6,20 @@
 // 4-space indent, basic dialect highlighting, and diagnostics from the compiler.
 
 import { useEffect, useRef } from 'react';
-import { EditorState, Compartment, type Extension } from '@codemirror/state';
-import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter, dropCursor, hoverTooltip } from '@codemirror/view';
+import { EditorState, Compartment, RangeSetBuilder, type Extension } from '@codemirror/state';
+import {
+  EditorView,
+  keymap,
+  lineNumbers,
+  highlightActiveLine,
+  highlightActiveLineGutter,
+  dropCursor,
+  hoverTooltip,
+  Decoration,
+  type DecorationSet,
+  ViewPlugin,
+  type ViewUpdate,
+} from '@codemirror/view';
 import { allDocs, getDoc } from '../../../pythongen/docs/registry';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { StreamLanguage, HighlightStyle, syntaxHighlighting, indentUnit } from '@codemirror/language';
@@ -92,6 +104,71 @@ function apiHoverTooltip(onOpenDocs?: (slug: string) => void) {
     return null;
   });
 }
+
+const indentDeco = (level: number, isFirst: boolean, isLast: boolean) =>
+  Decoration.line({
+    attributes: {
+      class: `cm-py-indent-line cm-py-indent-${Math.min(level, 4)}${isFirst ? ' cm-py-indent-first' : ''}${isLast ? ' cm-py-indent-last' : ''}`,
+    },
+  });
+
+const pythonIndentGuidesPlugin = ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet;
+    constructor(view: EditorView) {
+      this.decorations = this.buildDecorations(view);
+    }
+    update(update: ViewUpdate) {
+      if (update.docChanged || update.viewportChanged) {
+        this.decorations = this.buildDecorations(update.view);
+      }
+    }
+    buildDecorations(view: EditorView) {
+      const builder = new RangeSetBuilder<Decoration>();
+      const doc = view.state.doc;
+      for (const { from, to } of view.visibleRanges) {
+        const startLine = doc.lineAt(from).number;
+        const endLine = doc.lineAt(to).number;
+
+        for (let l = startLine; l <= endLine; l++) {
+          const line = doc.line(l);
+          const text = line.text;
+          const match = /^(\s+)/.exec(text);
+          if (match && text.trim().length > 0) {
+            const spaces = match[1].replace(/\t/g, '    ').length;
+            const level = Math.floor(spaces / 4);
+            if (level > 0) {
+              const prevText = l > 1 ? doc.line(l - 1).text : '';
+              const prevMatch = /^(\s+)/.exec(prevText);
+              const prevSpaces =
+                prevMatch && prevText.trim().length > 0
+                  ? prevMatch[1].replace(/\t/g, '    ').length
+                  : 0;
+              const prevLevel = Math.floor(prevSpaces / 4);
+
+              const nextText = l < doc.lines ? doc.line(l + 1).text : '';
+              const nextMatch = /^(\s+)/.exec(nextText);
+              const nextSpaces =
+                nextMatch && nextText.trim().length > 0
+                  ? nextMatch[1].replace(/\t/g, '    ').length
+                  : 0;
+              const nextLevel = Math.floor(nextSpaces / 4);
+
+              const isFirst = level > prevLevel;
+              const isLast = level > nextLevel;
+
+              builder.add(line.from, line.from, indentDeco(level, isFirst, isLast));
+            }
+          }
+        }
+      }
+      return builder.finish();
+    }
+  },
+  {
+    decorations: (v) => v.decorations,
+  },
+);
 
 const KEYWORDS = /^(while|for|if|elif|else|def|return|break|continue|pass|and|or|not|in|range|True|False|None)\b/;
 
@@ -207,6 +284,7 @@ export default function PyEditor({
         dropCursor(),
         keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
         dialect,
+        pythonIndentGuidesPlugin,
         lintGutter(),
         linter(() => []), // diagnostics are pushed via setDiagnostics on `problems` change
         apiHoverTooltip(onOpenDocs),

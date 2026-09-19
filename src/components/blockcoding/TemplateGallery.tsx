@@ -244,7 +244,7 @@ export default function TemplateGallery({ open, onClose, onUse, onTry, aiEnabled
             <div className={styles.grid}>
               {filtered.length === 0 ? (
                 <div className={styles.empty}>
-                  Tidak ada template yang cocok. Coba kata kunci lain 🤖
+                  Tidak ada template yang cocok. Coba kata kunci lain.
                 </div>
               ) : (
                 filtered.map((t) => (

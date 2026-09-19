@@ -44,6 +44,7 @@ import { generateProgram } from '../../blockcoding/generateProgram';
 import { unsupportedOpcodesInProgram } from '../../blockcoding/blockOpcodes';
 import type { PyProblem, PyEditorApi } from './python/PyEditor';
 import type { Snippet } from '../../pythongen/snippets';
+import { CopyIcon, CheckIcon } from './sim/SimIcons';
 import { useAppTheme } from '../../theme/themeManager';
 import styles from './BlockCoding.module.css';
 
@@ -350,7 +351,7 @@ function BlockCodingInner({
       try {
         const wsJson = buildTemplateWorkspace(program);
         insertTemplate(ws, wsJson as any, 'append');
-        showToast(label ?? '🧩 Blok berhasil dipasang ke Blok Kode!', 'success');
+        showToast(label ?? 'Blok berhasil dipasang ke Blok Kode!', 'success');
       } catch (err) {
         console.error('Failed to insert block sequence:', err);
         showToast('Gagal memasang blok ke Blok Kode', 'error');
@@ -674,12 +675,27 @@ function BlockCodingInner({
           <div className={styles.pyPanel}>
             <div className={styles.pyHead}>
               <span>main.py</span>
-              <button onClick={copyPython}>{pyCopied ? '✓ Disalin' : 'Copy'}</button>
+              <button
+                onClick={copyPython}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              >
+                {pyCopied ? (
+                  <>
+                    <CheckIcon size={12} />
+                    <span>Disalin</span>
+                  </>
+                ) : (
+                  <>
+                    <CopyIcon size={12} />
+                    <span>Copy</span>
+                  </>
+                )}
+              </button>
             </div>
             <div className={styles.pyBody}>
               {showToolbox && (
                 <div className={styles.pyFlyoutWrap}>
-                  <PyFlyout onInsert={(py) => pyApiRef.current?.insertSnippet(py)} onDocs={setDocsSnippet} />
+                  <PyFlyout onInsert={(py) => pyApiRef.current?.insertSnippet(py)} />
                 </div>
               )}
               <div className={styles.pyEditorWrap}>

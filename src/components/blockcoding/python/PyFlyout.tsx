@@ -2,35 +2,30 @@
 //
 // HTML flyout for Python mode (matches Blockly's flyout behavior:
 // rail stays visible; clicking a category or searching opens a spacious flyout drawer next to it).
-// Each card: click to insert snippet, drag to drop into editor, or press "?" for docs.
+// Each card: inline overview/docs ("More ∨"), syntax preview with indentation guides,
+// drag handle (⠿), and "Copy Code" option.
 
 import { useState } from 'react';
 import { useAppTheme } from '../../../theme/themeManager';
 import { getCategoryColor } from '../../../visual/categoryColors';
 import { categoryIconSvg } from '../../../visual/categoryIcons';
 import { SNIPPETS, SNIPPET_CATEGORIES, type Snippet } from '../../../pythongen/snippets';
+import { getDoc } from '../../../pythongen/docs/registry';
+import {
+  DragDotsIcon,
+  CopyIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  SearchIcon,
+} from '../sim/SimIcons';
 import styles from './PyFlyout.module.css';
 
 const DRAG_MIME = 'application/x-robotku-snippet';
 
 function CategoryIcon({ name, className }: { name: string; className?: string }) {
   if (name === 'Search') {
-    return (
-      <svg
-        className={className}
-        viewBox="0 0 24 24"
-        width="18"
-        height="18"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <circle cx="11" cy="11" r="8" />
-        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-      </svg>
-    );
+    return <SearchIcon className={className} size={18} />;
   }
   const markup = categoryIconSvg(name);
   if (!markup) return <span className={styles.dot} />;
@@ -43,15 +38,69 @@ function CategoryIcon({ name, className }: { name: string; className?: string })
   );
 }
 
+function highlightPythonLine(line: string) {
+  const parts: React.ReactNode[] = [];
+  const regex = /(#[^\n]*)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|\b(while|for|if|elif|else|def|return|break|continue|pass|and|or|not|in|range|True|False|None)\b|(\b\d+(?:\.\d+)?\b)|(\b[A-Za-z_][\w.]*\b)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(line)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(line.slice(lastIndex, match.index));
+    }
+    const [full, comment, str, keyword, num, ident] = match;
+    if (comment) {
+      parts.push(
+        <span key={match.index} className={styles.tokComment}>
+          {full}
+        </span>,
+      );
+    } else if (str) {
+      parts.push(
+        <span key={match.index} className={styles.tokString}>
+          {full}
+        </span>,
+      );
+    } else if (keyword) {
+      parts.push(
+        <span key={match.index} className={styles.tokKeyword}>
+          {full}
+        </span>,
+      );
+    } else if (num) {
+      parts.push(
+        <span key={match.index} className={styles.tokNumber}>
+          {full}
+        </span>,
+      );
+    } else if (ident) {
+      parts.push(
+        <span key={match.index} className={styles.tokIdent}>
+          {full}
+        </span>,
+      );
+    } else {
+      parts.push(full);
+    }
+    lastIndex = regex.lastIndex;
+  }
+  if (lastIndex < line.length) {
+    parts.push(line.slice(lastIndex));
+  }
+  return parts.length > 0 ? parts : line;
+}
+
 export default function PyFlyout({
   onInsert,
   onDocs,
 }: {
   onInsert: (py: string) => void;
-  onDocs: (s: Snippet) => void;
+  onDocs?: (s: Snippet) => void;
 }) {
   const { theme: currentTheme } = useAppTheme();
   const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [q, setQ] = useState('');
   const query = q.trim().toLowerCase();
   const searching = query.length > 0;
@@ -59,7 +108,9 @@ export default function PyFlyout({
   const isOpen = searching || activeCat !== null;
   const currentCategory = activeCat || SNIPPET_CATEGORIES[0];
   const catColor = searching
-    ? (currentTheme === 'space' ? '#38BDF8' : '#EC2D8F')
+    ? currentTheme === 'space'
+      ? '#38BDF8'
+      : '#EC2D8F'
     : getCategoryColor(currentCategory, currentTheme);
 
   const cards = searching
@@ -87,48 +138,174 @@ export default function PyFlyout({
     setQ('');
   };
 
-  const formatCodePreview = (code: string) => {
-    return code.replace(/\$\{\d+:([^}]+)\}/g, '$1');
+  const handleCopyCode = async (code: string, id: string) => {
+    const clean = code.replace(/\$\{\d+:([^}]+)\}/g, '$1').replace(/\t/g, '    ');
+    try {
+      await navigator.clipboard.writeText(clean);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 1800);
+    } catch {
+      // ignore
+    }
+  };
+
+  const toggleExpand = (id: string, s: Snippet) => {
+    setExpandedId((prev) => (prev === id ? null : id));
+    onDocs?.(s);
+  };
+
+  const renderSnippetCode = (pyCode: string) => {
+    const cleanCode = pyCode.replace(/\$\{\d+:([^}]+)\}/g, '$1').replace(/\t/g, '    ');
+    const lines = cleanCode.split('\n');
+
+    return lines.map((line, idx) => {
+      const isIndented = /^(\s{2,}|\t)/.test(line);
+      const prevIndented = idx > 0 && /^(\s{2,}|\t)/.test(lines[idx - 1]);
+      const nextIndented = idx < lines.length - 1 && /^(\s{2,}|\t)/.test(lines[idx + 1]);
+
+      const isFirstIndent = isIndented && !prevIndented;
+      const isLastIndent = isIndented && !nextIndented;
+
+      return (
+        <span
+          key={idx}
+          className={`${styles.codeLine} ${isIndented ? styles.codeLineIndented : ''} ${isFirstIndent ? styles.codeLineFirstIndent : ''} ${isLastIndent ? styles.codeLineLastIndent : ''}`}
+        >
+          {highlightPythonLine(line)}
+        </span>
+      );
+    });
   };
 
   const renderCard = (s: Snippet) => {
     const c = getCategoryColor(s.category, currentTheme);
+    const isExpanded = expandedId === s.id;
+    const isCopied = copiedId === s.id;
+    const doc = getDoc(s.docs);
+
     return (
       <div
         key={s.id}
         className={styles.card}
         style={{ ['--cat' as string]: c }}
-        draggable
-        onDragStart={(e) => {
-          e.dataTransfer.setData(DRAG_MIME, s.py);
-          e.dataTransfer.effectAllowed = 'copy';
-          const ghost = document.createElement('div');
-          ghost.textContent = s.label;
-          ghost.className = styles.ghost;
-          ghost.style.setProperty('--cat', c);
-          document.body.appendChild(ghost);
-          e.dataTransfer.setDragImage(ghost, 12, 12);
-          setTimeout(() => ghost.remove(), 0);
-        }}
-        onClick={() => onInsert(s.py)}
-        title="Klik untuk menyisipkan · seret ke editor"
       >
-        <div className={styles.cardMain}>
-          <span className={styles.chip}>{s.label}</span>
-          <span className={styles.cardDesc}>{s.desc}</span>
-          <code className={styles.cardCode}>{formatCodePreview(s.py)}</code>
+        {/* Card Header */}
+        <div className={styles.cardHeader}>
+          <div className={styles.cardTitleGroup}>
+            <span className={styles.cardTitle}>{s.label}</span>
+          </div>
+          <button
+            type="button"
+            className={styles.moreBtn}
+            onClick={() => toggleExpand(s.id, s)}
+            title={isExpanded ? 'Sembunyikan dokumentasi' : 'Buka dokumentasi'}
+            aria-expanded={isExpanded}
+          >
+            <span>{isExpanded ? 'Less' : 'More'}</span>
+            {isExpanded ? <ChevronUpIcon size={12} /> : <ChevronDownIcon size={12} />}
+          </button>
         </div>
-        <button
-          className={styles.help}
-          onClick={(e) => {
-            e.stopPropagation();
-            onDocs(s);
+
+        {/* Short Description */}
+        <div className={styles.cardDesc}>{s.desc}</div>
+
+        {/* Inline Overview / Documentation Accordion */}
+        {isExpanded && doc && (
+          <div className={styles.inlineDoc}>
+            <div className={styles.docDesc}>{doc.description || doc.summary}</div>
+
+            {doc.params && doc.params.length > 0 && (
+              <div className={styles.docSection}>
+                <div className={styles.docSectionTitle}>Parameter</div>
+                <div className={styles.docParams}>
+                  {doc.params.map((p) => (
+                    <div key={p.name} className={styles.docParamRow}>
+                      <div className={styles.docParamHead}>
+                        <span className={styles.docParamName}>{p.name}</span>
+                        <span className={styles.docParamType}>({p.type})</span>
+                        {p.default && (
+                          <span className={styles.docParamDefault}>= {p.default}</span>
+                        )}
+                      </div>
+                      <div className={styles.docParamDetail}>{p.desc}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {doc.returns && (
+              <div className={styles.docSection}>
+                <div className={styles.docSectionTitle}>Kembalian</div>
+                <div className={styles.docReturn}>
+                  <code>{doc.returns.type}</code> — {doc.returns.desc}
+                </div>
+              </div>
+            )}
+
+            <a
+              href={`/docs/reference/${doc.slug}/`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.docLink}
+              title="Buka panduan lengkap di tab baru"
+            >
+              Buka referensi lengkap ↗
+            </a>
+          </div>
+        )}
+
+        {/* Interactive Code Box (Draggable, Clickable, Copyable) */}
+        <div
+          className={styles.codeBox}
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.setData(DRAG_MIME, s.py);
+            e.dataTransfer.effectAllowed = 'copy';
+            const ghost = document.createElement('div');
+            ghost.textContent = s.label;
+            ghost.className = styles.ghost;
+            ghost.style.setProperty('--cat', c);
+            document.body.appendChild(ghost);
+            e.dataTransfer.setDragImage(ghost, 12, 12);
+            setTimeout(() => ghost.remove(), 0);
           }}
-          title="Bantuan / dokumentasi"
-          aria-label={`Bantuan ${s.label}`}
+          onClick={() => onInsert(s.py)}
+          title="Klik untuk menyisipkan ke editor · Tarik untuk meletakkan"
         >
-          ?
-        </button>
+          {/* Drag Handle on Left */}
+          <div className={styles.dragGrip} title="Tarik ke editor">
+            <DragDotsIcon size={14} />
+          </div>
+
+          {/* Code Content */}
+          <div className={styles.codeContent}>{renderSnippetCode(s.py)}</div>
+
+          {/* Action buttons on top-right */}
+          <div className={styles.codeActions}>
+            <button
+              type="button"
+              className={`${styles.actionBtn} ${isCopied ? styles.actionBtnCopied : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCopyCode(s.py, s.id);
+              }}
+              title="Salin kode Python"
+            >
+              {isCopied ? (
+                <>
+                  <CheckIcon size={11} />
+                  <span>Disalin</span>
+                </>
+              ) : (
+                <>
+                  <CopyIcon size={11} />
+                  <span>Copy</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
     );
   };
@@ -158,21 +335,7 @@ export default function PyFlyout({
               ✕
             </button>
           ) : (
-            <svg
-              className={styles.railSearchIcon}
-              viewBox="0 0 24 24"
-              width="16"
-              height="16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
+            <SearchIcon className={styles.railSearchIcon} size={15} />
           )}
         </div>
 
@@ -230,7 +393,9 @@ export default function PyFlyout({
             <div className={styles.cards}>
               {cards.length === 0 ? (
                 <div className={styles.noResult}>
-                  {searching ? `Tidak ada blok yang cocok dengan "${q}".` : 'Tidak ada blok dalam kategori ini.'}
+                  {searching
+                    ? `Tidak ada blok yang cocok dengan "${q}".`
+                    : 'Tidak ada blok dalam kategori ini.'}
                 </div>
               ) : (
                 cards.map(renderCard)
@@ -242,3 +407,4 @@ export default function PyFlyout({
     </div>
   );
 }
+
