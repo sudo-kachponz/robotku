@@ -1,0 +1,56 @@
+/* src/theme/themes/autumn.css
+ *
+ * Theme: Autumn (Harvest & Terracotta Light)
+ * Rustic parchment, copper, rich maple amber, and warm cider.
+ */
+
+:root[data-theme='autumn'] {
+  color-scheme: light;
+
+  /* Surfaces & backgrounds */
+  --surface: #ffffff;
+  --surface-2: #fcf9f5;
+  --bg: #f7f1e8;
+  --line: #eadbc8;
+  --line-soft: #f4ece2;
+
+  /* Ink scale */
+  --ink-900: #2c1b10;
+  --ink-800: #422a19;
+  --ink-700: #5a3a24;
+  --ink-600: #755138;
+  --ink-500: #946e52;
+  --ink-400: #b8947b;
+  --ink-300: #dac4b2;
+
+  /* Semantic colors */
+  --blue: #0369a1;
+  --blue-bg: #f0f9ff;
+  --green: #15803d;
+  --green-bg: #f0fdf4;
+  --amber: #c2410c;
+  --amber-bg: #fff7ed;
+  --purple: #7e22ce;
+  --purple-bg: #faf5ff;
+  --red: #b91c1c;
+  --red-bg: #fef2f2;
+
+  /* Code editor (Python mode) */
+  --code-bg: #ffffff;
+  --code-fg: #2c1b10;
+  --code-gutter-bg: #f4ece2;
+  --code-gutter-fg: #946e52;
+  --code-active-line: #f2e4d2;
+  --code-selection: #e8d0b5;
+  --code-keyword: #991b1b;
+  --code-string: #9a3412;
+  --code-number: #a16207;
+  --code-comment: #946e52;
+  --code-ident: #2c1b10;
+  --code-fn: #0369a1;
+  --code-error: #991b1b;
+  --code-warn: #9a3412;
+
+  /* Flyout */
+  --flyout-bg-color: rgba(247, 241, 232, 0.75);
+}

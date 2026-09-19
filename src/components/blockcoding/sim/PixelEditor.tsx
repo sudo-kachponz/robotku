@@ -169,7 +169,7 @@ export default function PixelEditor({ onSend, onPreview }: { onSend?: (b: Bitmap
           redraw();
           preview();
         }}
-        style={{ fontSize: 12, fontWeight: 700, padding: '5px 10px', marginBottom: 8, borderRadius: 6, border: '1px solid #c6caff', background: '#ffffff', color: '#1b1840', cursor: 'pointer' }}
+        style={{ fontSize: 12, fontWeight: 700, padding: '5px 10px', marginBottom: 8, borderRadius: 6, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink-900)', cursor: 'pointer' }}
       >
         {Object.keys(TEMPLATES).map((name) => (
           <option key={name} value={name}>
@@ -199,7 +199,7 @@ export default function PixelEditor({ onSend, onPreview }: { onSend?: (b: Bitmap
           if (painting.current) preview();
           painting.current = false;
         }}
-        style={{ width: '100%', maxWidth: 512, height: 'auto', imageRendering: 'pixelated', background: OFF, borderRadius: 6, border: '1px solid #c6caff', touchAction: 'none', cursor: 'crosshair', display: 'block' }}
+        style={{ width: '100%', maxWidth: 512, height: 'auto', imageRendering: 'pixelated', background: OFF, borderRadius: 6, border: '1px solid var(--line)', touchAction: 'none', cursor: 'crosshair', display: 'block' }}
       />
       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
         <button onClick={send} style={btn(true)}>
@@ -226,10 +226,10 @@ function btn(primary: boolean): React.CSSProperties {
     fontWeight: 700,
     padding: '5px 12px',
     borderRadius: 8,
-    border: `1px solid ${primary ? '#4f46e5' : '#e0e3ff'}`,
-    background: primary ? '#4f46e5' : '#ffffff',
-    color: primary ? '#ffffff' : '#403c6b',
+    border: `1px solid ${primary ? 'var(--pink-500)' : 'var(--line)'}`,
+    background: primary ? 'var(--pink-500)' : 'var(--surface)',
+    color: primary ? '#ffffff' : 'var(--ink-700)',
     cursor: 'pointer',
-    boxShadow: '0 1px 3px rgba(27,24,64,0.06)',
+    boxShadow: 'var(--shadow-xs)',
   };
 }

@@ -1,0 +1,56 @@
+/* src/theme/themes/space.css
+ *
+ * Theme: Space (Cosmic Nebula Dark)
+ * Deep void, celestial midnight surface, neon starlight purple and glowing cyan.
+ */
+
+:root[data-theme='space'] {
+  color-scheme: dark;
+
+  /* Surfaces & backgrounds */
+  --surface: #131826;
+  --surface-2: #1c2438;
+  --bg: #0b0f19;
+  --line: #26314d;
+  --line-soft: #1d253a;
+
+  /* Ink scale (contrast against #131826: #f8fafc -> 15.6:1, #e2e8f0 -> 12.5:1) */
+  --ink-900: #f8fafc;
+  --ink-800: #f1f5f9;
+  --ink-700: #e2e8f0;
+  --ink-600: #cbd5e1;
+  --ink-500: #94a3b8;
+  --ink-400: #64748b;
+  --ink-300: #475569;
+
+  /* Semantic colors */
+  --blue: #60a5fa;
+  --blue-bg: #172554;
+  --green: #4ade80;
+  --green-bg: #052e16;
+  --amber: #fbbf24;
+  --amber-bg: #451a03;
+  --purple: #c084fc;
+  --purple-bg: #3b0764;
+  --red: #f87171;
+  --red-bg: #450a0a;
+
+  /* Code editor (Python mode) */
+  --code-bg: #0e1320;
+  --code-fg: #f8fafc;
+  --code-gutter-bg: #0b0f19;
+  --code-gutter-fg: #64748b;
+  --code-active-line: #1c2438;
+  --code-selection: #334155;
+  --code-keyword: #c084fc;
+  --code-string: #34d399;
+  --code-number: #fbbf24;
+  --code-comment: #64748b;
+  --code-ident: #f8fafc;
+  --code-fn: #38bdf8;
+  --code-error: #f87171;
+  --code-warn: #fbbf24;
+
+  /* Flyout */
+  --flyout-bg-color: rgba(19, 24, 38, 0.88);
+}

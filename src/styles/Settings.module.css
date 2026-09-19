@@ -213,7 +213,133 @@
   font-weight: 600;
 }
 
+/* Theme selector styles */
+.themeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.themeCard {
+  background: var(--rk-surface-2, rgba(255, 255, 255, 0.08));
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--rk-r-lg, 16px);
+  padding: 14px 16px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.themeCard:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.themeCardActive {
+  border-color: #ec2d8f !important;
+  background: rgba(236, 45, 143, 0.12) !important;
+  box-shadow: 0 6px 20px rgba(236, 45, 143, 0.35) !important;
+}
+
+.themeCardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.themeCardName {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--rk-on);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.themeModeBadge {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--rk-on);
+}
+
+.themeModeBadgeDark {
+  background: #1e1b4b;
+  color: #c084fc;
+}
+
+.themeSwatchRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatchCircle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.themeCardDesc {
+  font-size: 12.5px;
+  color: var(--rk-on-muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.themeMiniPreview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  font-size: 11.5px;
+}
+
+.themeBlockChip {
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.themeCodeTag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+.themeCheck {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ec2d8f;
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .footer {
+
   display: flex;
   align-items: center;
   justify-content: space-between;

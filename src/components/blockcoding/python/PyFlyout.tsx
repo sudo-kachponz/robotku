@@ -1,8 +1,8 @@
 // src/components/blockcoding/python/PyFlyout.tsx
 //
-// HTML flyout for Python mode (Blockly's SVG flyout can't drop into a text editor).
-// Reuses the block category colours + icons. Each card: click to insert its Python
-// snippet at the cursor, drag to drop it into the editor, or press "?" for docs.
+// HTML flyout for Python mode (matches Blockly's flyout behavior:
+// rail stays visible; clicking a category or searching opens a spacious flyout drawer next to it).
+// Each card: click to insert snippet, drag to drop into editor, or press "?" for docs.
 
 import { useState } from 'react';
 import { getCategoryColor } from '../../../visual/categoryColors';
@@ -18,8 +18,8 @@ function Icon({ name }: { name: string }) {
   return (
     <svg
       viewBox="0 0 24 24"
-      width="18"
-      height="18"
+      width="100%"
+      height="100%"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
@@ -37,10 +37,14 @@ export default function PyFlyout({
   onInsert: (py: string) => void;
   onDocs: (s: Snippet) => void;
 }) {
-  const [cat, setCat] = useState<string>(SNIPPET_CATEGORIES[0]);
+  const [activeCat, setActiveCat] = useState<string | null>(null);
   const [q, setQ] = useState('');
   const query = q.trim().toLowerCase();
   const searching = query.length > 0;
+
+  const isOpen = searching || activeCat !== null;
+  const currentCategory = activeCat || SNIPPET_CATEGORIES[0];
+  const catColor = getCategoryColor(currentCategory);
 
   const cards = searching
     ? SNIPPETS.filter(
@@ -49,7 +53,27 @@ export default function PyFlyout({
           s.desc.toLowerCase().includes(query) ||
           s.py.toLowerCase().includes(query),
       )
-    : SNIPPETS.filter((s) => s.category === cat);
+    : activeCat
+      ? SNIPPETS.filter((s) => s.category === activeCat)
+      : [];
+
+  const handleCategoryClick = (c: string) => {
+    if (activeCat === c && !searching) {
+      setActiveCat(null);
+    } else {
+      setActiveCat(c);
+      setQ('');
+    }
+  };
+
+  const handleClose = () => {
+    setActiveCat(null);
+    setQ('');
+  };
+
+  const formatCodePreview = (code: string) => {
+    return code.replace(/\$\{\d+:([^}]+)\}/g, '$1');
+  };
 
   const renderCard = (s: Snippet) => {
     const c = getCategoryColor(s.category);
@@ -76,6 +100,7 @@ export default function PyFlyout({
         <div className={styles.cardMain}>
           <span className={styles.chip}>{s.label}</span>
           <span className={styles.cardDesc}>{s.desc}</span>
+          <code className={styles.cardCode}>{formatCodePreview(s.py)}</code>
         </div>
         <button
           className={styles.help}
@@ -94,48 +119,64 @@ export default function PyFlyout({
 
   return (
     <div className={styles.flyout}>
-      {!searching && (
-        <div className={styles.rail}>
-          {SNIPPET_CATEGORIES.map((c) => (
+      {/* Category Rail (Toolbox) */}
+      <div className={styles.rail}>
+        {SNIPPET_CATEGORIES.map((c) => {
+          const isSelected = c === activeCat;
+          const color = getCategoryColor(c);
+          return (
             <button
               key={c}
-              className={`${styles.railBtn} ${c === cat ? styles.railActive : ''}`}
-              style={{ ['--cat' as string]: getCategoryColor(c) }}
-              onClick={() => setCat(c)}
-              title={c}
+              className={`${styles.railBtn} ${isSelected ? styles.railActive : ''}`}
+              style={{ ['--cat' as string]: color }}
+              onClick={() => handleCategoryClick(c)}
+              title={`Kategori ${c}`}
+              aria-expanded={isSelected}
             >
               <span className={styles.railIcon}>
                 <Icon name={c} />
               </span>
               <span className={styles.railLabel}>{c}</span>
             </button>
-          ))}
-        </div>
-      )}
-
-      <div className={styles.right}>
-        <form
-          className={styles.searchRow}
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (cards[0]) onDocs(cards[0]);
-          }}
-        >
-          <input
-            className={styles.search}
-            placeholder="Cari blok…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-        </form>
-        <div className={styles.cards} style={{ ['--cat' as string]: getCategoryColor(cat) }}>
-          {cards.length === 0 ? (
-            <div className={styles.noResult}>Tidak ada hasil.</div>
-          ) : (
-            cards.map(renderCard)
-          )}
-        </div>
+          );
+        })}
       </div>
+
+      {/* Flyout Drawer / Panel */}
+      {isOpen && (
+        <>
+          <div className={styles.backdrop} onClick={handleClose} />
+          <div className={styles.drawer} style={{ ['--cat' as string]: catColor }}>
+            <div className={styles.drawerHead}>
+              <div className={styles.drawerTitleRow}>
+                <div className={styles.drawerTitle}>
+                  <Icon name={searching ? 'Search' : currentCategory} />
+                  <span>{searching ? `Hasil Pencarian ("${q}")` : currentCategory}</span>
+                </div>
+                <button className={styles.closeBtn} onClick={handleClose} aria-label="Tutup panel blok" title="Tutup">
+                  ✕
+                </button>
+              </div>
+
+              <input
+                className={styles.search}
+                placeholder="🔍 Cari blok & fungsi Python…"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                autoFocus={searching}
+              />
+            </div>
+
+            <div className={styles.cards}>
+              {cards.length === 0 ? (
+                <div className={styles.noResult}>Tidak ada blok yang cocok.</div>
+              ) : (
+                cards.map(renderCard)
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

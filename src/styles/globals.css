@@ -6,6 +6,15 @@
 
 @import '../theme/tokens.css';
 @import '../theme/breakpoints.css';
+@import '../theme/themes/robotku.css';
+@import '../theme/themes/spring.css';
+@import '../theme/themes/summer.css';
+@import '../theme/themes/autumn.css';
+@import '../theme/themes/winter.css';
+@import '../theme/themes/space.css';
+@import '../theme/themes/forest.css';
+@import '../theme/themes/underwater.css';
+
 
 :root {
   --safe-t: env(safe-area-inset-top, 0px);
