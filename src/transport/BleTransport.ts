@@ -18,7 +18,6 @@ export class BleTransport extends BaseTransport {
   private rxChar: BluetoothRemoteGATTCharacteristic | null = null;
   private txChar: BluetoothRemoteGATTCharacteristic | null = null;
   private decoder = new TextDecoder();
-  private canWriteWithoutResponse = true;
 
   private onGattDisconnected = () => {
     this.rxChar = null;
@@ -57,9 +56,6 @@ export class BleTransport extends BaseTransport {
     this.rxChar = await service.getCharacteristic(NUS_RX_WRITE);
     this.txChar = await service.getCharacteristic(NUS_TX_NOTIFY);
 
-    // Prefer writeWithoutResponse when the characteristic supports it.
-    this.canWriteWithoutResponse = this.rxChar.properties.writeWithoutResponse;
-
     this.txChar.addEventListener('characteristicvaluechanged', this.onNotify);
     await this.txChar.startNotifications();
   }
@@ -88,10 +84,13 @@ export class BleTransport extends BaseTransport {
     if (!this.rxChar) throw new Error('BLE not connected');
     // Copy into a fresh ArrayBuffer-backed view to satisfy BufferSource typing.
     const buf = new Uint8Array(bytes);
-    if (this.canWriteWithoutResponse) {
-      await this.rxChar.writeValueWithoutResponse(buf);
-    } else {
+    // Use WITH-response writes: each waits for the board's ACK, giving flow control.
+    // writeWithoutResponse let a big DISPLAY_BITMAP (~46 chunks) flood the ESP32's BLE
+    // buffer and drop the link — response writes pace themselves and stay stable.
+    if (this.rxChar.properties.write) {
       await this.rxChar.writeValueWithResponse(buf);
+    } else {
+      await this.rxChar.writeValueWithoutResponse(buf);
     }
   }
 
