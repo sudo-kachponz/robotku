@@ -50,7 +50,7 @@ export class BleTransport extends BaseTransport {
 
     this.device.addEventListener('gattserverdisconnected', this.onGattDisconnected);
 
-    const server = await this.device.gatt!.connect();
+    const server = await this.gattConnect(this.device);
     const service = await server.getPrimaryService(NUS_SERVICE);
 
     this.rxChar = await service.getCharacteristic(NUS_RX_WRITE);
@@ -58,6 +58,33 @@ export class BleTransport extends BaseTransport {
 
     this.txChar.addEventListener('characteristicvaluechanged', this.onNotify);
     await this.txChar.startNotifications();
+  }
+
+  /**
+   * Connect the GATT server, tolerating "GATT Error Unknown". After an unexpected
+   * drop the ESP32's NimBLE stack needs ~1s to free the old link before it will
+   * accept a new one; reconnecting sooner throws a bare GATT error. Start from a
+   * clean slate (disconnect any half-open gatt) and retry a couple of times with a
+   * pause — this turns the flaky reconnect into a reliable one.
+   */
+  private async gattConnect(device: BluetoothDevice): Promise<BluetoothRemoteGATTServer> {
+    if (device.gatt?.connected) {
+      try {
+        device.gatt.disconnect();
+      } catch {
+        /* ignore */
+      }
+    }
+    let lastErr: unknown;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, 700));
+      try {
+        return await device.gatt!.connect();
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+    throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
   }
 
   protected async closeTransport(): Promise<void> {

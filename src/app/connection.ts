@@ -42,6 +42,9 @@ let lastKind: TransportKind | null = null;
 let userDisconnected = false;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let reconnectAttempts = 0;
+// Show the "menyambung ulang…" toast once per drop episode, not once per retry —
+// a BLE reconnect can take several GATT-error attempts and the spam is alarming.
+let reconnectToastShown = false;
 const MAX_RECONNECT = 30;
 
 function clearReconnect(): void {
@@ -58,7 +61,9 @@ function scheduleReconnect(): void {
   if (st.connState === 'connected' || st.connState === 'connecting') return;
   if (reconnectAttempts >= MAX_RECONNECT) return;
   clearReconnect();
-  const delay = Math.min(800 + reconnectAttempts * 400, 4000);
+  // First retry waits ~1.5s: after a BLE drop the ESP32 needs ~1s to free the old
+  // link before it re-advertises, so reconnecting sooner just hits "GATT Error Unknown".
+  const delay = Math.min(1500 + reconnectAttempts * 600, 6000);
   reconnectTimer = setTimeout(() => {
     reconnectAttempts += 1;
     connect(lastKind!, true).catch(() => scheduleReconnect());
@@ -80,6 +85,7 @@ export async function connect(kind: TransportKind, isReconnect = false): Promise
   if (!isReconnect) {
     userDisconnected = false;
     reconnectAttempts = 0;
+    reconnectToastShown = false;
   }
   lastKind = kind;
   await teardown();
@@ -90,10 +96,14 @@ export async function connect(kind: TransportKind, isReconnect = false): Promise
     setConnState(s);
     if (s === 'connected') {
       reconnectAttempts = 0;
+      reconnectToastShown = false;
     } else if (s === 'error') {
       runnerSetTransport(null);
       if (!userDisconnected) {
-        showToast('Koneksi terputus — menyambung ulang…', 'warn');
+        if (!reconnectToastShown) {
+          showToast('Koneksi terputus — menyambung ulang…', 'warn');
+          reconnectToastShown = true;
+        }
         scheduleReconnect();
       }
     } else if (s === 'disconnected') {
@@ -125,7 +135,15 @@ export async function connect(kind: TransportKind, isReconnect = false): Promise
     if (/cancel|NotFound|no device selected/i.test(message)) {
       if (!isReconnect) showToast('No device selected.', 'info');
     } else {
-      if (!isReconnect) showToast(`Connection failed: ${message}`, 'error');
+      // GATT errors are transient (board mid-cleanup / busy) — don't scare the user with
+      // "GATT Error Unknown"; just say we're retrying, and only once per episode.
+      const friendly = /GATT/i.test(message)
+        ? 'Bluetooth sibuk — mencoba menyambung lagi…'
+        : `Gagal menyambung: ${message}`;
+      if (!isReconnect && !reconnectToastShown) {
+        showToast(friendly, 'warn');
+        reconnectToastShown = true;
+      }
       scheduleReconnect(); // transient failure (board booting/out of range) → keep trying
     }
     throw err;

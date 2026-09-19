@@ -11,14 +11,17 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+type Choice = { label: string; value: string; variant?: 'primary' | 'neutral' | 'danger' };
+
 type DialogRequest = {
   id: number;
-  kind: 'confirm' | 'prompt';
+  kind: 'confirm' | 'prompt' | 'choice';
   message: string;
   title?: string;
   defaultValue?: string;
   confirmLabel?: string;
   danger?: boolean;
+  choices?: Choice[];
   resolve: (value: string | boolean | null) => void;
 };
 
@@ -45,6 +48,14 @@ export function confirmDialog(
   opts: { title?: string; confirmLabel?: string; danger?: boolean } = {},
 ): Promise<boolean> {
   return open({ ...opts, message, kind: 'confirm' }) as Promise<boolean>;
+}
+
+/** Offer several branded buttons. Resolves the chosen `value`, or null if cancelled. */
+export function choiceDialog(
+  message: string,
+  opts: { title?: string; choices: Choice[] },
+): Promise<string | null> {
+  return open({ ...opts, message, kind: 'choice' }) as Promise<string | null>;
 }
 
 /** Ask the user for text. Resolves the trimmed string, or null if cancelled/empty. */
@@ -152,41 +163,82 @@ export function DialogHost() {
           />
         )}
 
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '18px' }}>
-          <button
-            onClick={cancel}
-            style={{
-              padding: '9px 16px',
-              fontSize: '14px',
-              fontWeight: 700,
-              fontFamily: 'inherit',
-              borderRadius: '10px',
-              border: '1.5px solid #E2E8F0',
-              background: '#fff',
-              color: '#475569',
-              cursor: 'pointer',
-            }}
-          >
-            Batal
-          </button>
-          <button
-            autoFocus={req.kind === 'confirm'}
-            onClick={accept}
-            style={{
-              padding: '9px 16px',
-              fontSize: '14px',
-              fontWeight: 700,
-              fontFamily: 'inherit',
-              borderRadius: '10px',
-              border: 'none',
-              background: accent,
-              color: '#fff',
-              cursor: 'pointer',
-            }}
-          >
-            {req.confirmLabel ?? (req.danger ? 'Hapus' : 'OK')}
-          </button>
-        </div>
+        {req.kind === 'choice' ? (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'flex-end', marginTop: '18px' }}>
+            <button
+              onClick={cancel}
+              style={{
+                padding: '9px 16px',
+                fontSize: '14px',
+                fontWeight: 700,
+                fontFamily: 'inherit',
+                borderRadius: '10px',
+                border: '1.5px solid #E2E8F0',
+                background: '#fff',
+                color: '#475569',
+                cursor: 'pointer',
+              }}
+            >
+              Batal
+            </button>
+            {req.choices?.map((c) => (
+              <button
+                key={c.value}
+                onClick={() => settle(c.value)}
+                style={{
+                  padding: '9px 16px',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  fontFamily: 'inherit',
+                  borderRadius: '10px',
+                  border: c.variant === 'neutral' ? '1.5px solid #C7D2FE' : 'none',
+                  background:
+                    c.variant === 'neutral' ? '#EEF2FF' : c.variant === 'danger' ? '#EF4444' : '#4F46E5',
+                  color: c.variant === 'neutral' ? '#4338CA' : '#fff',
+                  cursor: 'pointer',
+                }}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '18px' }}>
+            <button
+              onClick={cancel}
+              style={{
+                padding: '9px 16px',
+                fontSize: '14px',
+                fontWeight: 700,
+                fontFamily: 'inherit',
+                borderRadius: '10px',
+                border: '1.5px solid #E2E8F0',
+                background: '#fff',
+                color: '#475569',
+                cursor: 'pointer',
+              }}
+            >
+              Batal
+            </button>
+            <button
+              autoFocus={req.kind === 'confirm'}
+              onClick={accept}
+              style={{
+                padding: '9px 16px',
+                fontSize: '14px',
+                fontWeight: 700,
+                fontFamily: 'inherit',
+                borderRadius: '10px',
+                border: 'none',
+                background: accent,
+                color: '#fff',
+                cursor: 'pointer',
+              }}
+            >
+              {req.confirmLabel ?? (req.danger ? 'Hapus' : 'OK')}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

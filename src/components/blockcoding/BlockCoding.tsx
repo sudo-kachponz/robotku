@@ -24,6 +24,7 @@ import {
   type RbkProject,
 } from '../../app/persistence';
 import { showToast } from '../../ui/toast';
+import { choiceDialog, promptDialog } from '../../ui/dialog';
 import { useBlocklyWorkspace } from './hooks/useBlocklyWorkspace';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 import TemplateGallery from './TemplateGallery';
@@ -704,7 +705,10 @@ function BlockCodingInner({
   const handleSave = useCallback(async () => {
     const workspace = workspaceRef.current;
     if (!workspace) return;
-    const name = window.prompt('Nama project:', 'Program Robotku');
+    const name = await promptDialog('Nama project:', {
+      title: 'Simpan project',
+      defaultValue: 'Program Robotku',
+    });
     if (!name) return;
     const project: RbkProject = {
       id: `p_${Date.now()}`,
@@ -731,15 +735,20 @@ function BlockCodingInner({
 
   // --- Templates ---------------------------------------------------------
   const handleUseTemplate = useCallback(
-    (workspaceJson: object, name: string) => {
+    async (workspaceJson: object, name: string) => {
       const ws = workspaceRef.current;
       if (!ws) return;
       let mode: 'replace' | 'append' = 'replace';
       if (ws.getAllBlocks(false).length > 1) {
-        const replace = window.confirm(
-          `Muat "${name}"?\n\nOK = Ganti program yang ada\nBatal = Tambahkan di samping`,
-        );
-        mode = replace ? 'replace' : 'append';
+        const choice = await choiceDialog('Kamu sudah punya program di kanvas.', {
+          title: `Muat "${name}"?`,
+          choices: [
+            { label: 'Ganti program', value: 'replace' },
+            { label: 'Tambah di samping', value: 'append', variant: 'neutral' },
+          ],
+        });
+        if (!choice) return; // Batal → jangan muat apa pun
+        mode = choice as 'replace' | 'append';
       }
       insertTemplate(ws, workspaceJson, mode);
       showToast(`Template dimuat: ${name}`, 'success');
@@ -761,16 +770,20 @@ function BlockCodingInner({
   // ▶ on a docs example: load its blocks (confirm if a program exists) then run in the
   // simulator, reusing the existing insertTemplate + run path (no new runtime).
   const runDocExample = useCallback(
-    (blocks: BlockSpec[]) => {
+    async (blocks: BlockSpec[]) => {
       const ws = workspaceRef.current;
       if (!ws) return;
       let mode: 'replace' | 'append' = 'replace';
       if (ws.getAllBlocks(false).length > 1) {
-        mode = window.confirm(
-          'Muat contoh ini?\n\nOK = Ganti program yang ada\nBatal = Tambahkan di samping',
-        )
-          ? 'replace'
-          : 'append';
+        const choice = await choiceDialog('Kamu sudah punya program di kanvas.', {
+          title: 'Muat contoh ini?',
+          choices: [
+            { label: 'Ganti program', value: 'replace' },
+            { label: 'Tambah di samping', value: 'append', variant: 'neutral' },
+          ],
+        });
+        if (!choice) return; // Batal → jangan muat apa pun
+        mode = choice as 'replace' | 'append';
       }
       insertTemplate(ws, buildTemplateWorkspace(blocks), mode);
       setDocsSnippet(null);
@@ -789,7 +802,10 @@ function BlockCodingInner({
       showToast('Pilih satu blok dulu untuk disimpan sebagai template', 'info');
       return;
     }
-    const name = window.prompt('Nama template:', 'Template Saya');
+    const name = await promptDialog('Nama template:', {
+      title: 'Simpan sebagai template',
+      defaultValue: 'Template Saya',
+    });
     if (!name) return;
     const savedBlock = Blockly.serialization.blocks.save(selected, { addNextBlocks: true });
     const full = Blockly.serialization.workspaces.save(ws) as { variables?: unknown[] };
