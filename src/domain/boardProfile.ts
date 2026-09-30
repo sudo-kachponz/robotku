@@ -34,6 +34,10 @@ export interface BoardProfile {
     servoR: boolean;
     buzzer: boolean;
     rgbLed: boolean;
+    /** Addressable WS2812B strip (Makerkit V1.2). Distinct from the V3 discrete rgbLed. */
+    neopixel: boolean;
+    /** I2S speaker MAX98357A (Makerkit V1.2) — PCM playback + synthesized tones. */
+    speaker: boolean;
     oled: boolean;
     gripper: boolean;
   };
@@ -43,6 +47,8 @@ export interface BoardProfile {
     humidity: boolean;
     light: boolean;
     heading: boolean;
+    /** I2S microphone INMP441 (Makerkit V1.2) — level / clap / record. */
+    mic: boolean;
   };
 }
 
@@ -99,6 +105,24 @@ const ROBOTKU_V3_OPCODES: ReadonlySet<string> = new Set<string>([
   OP.displayText,
 ]);
 
+// Device opcodes the Makerkit V1.2 PCB can drive: everything V3 does (same drive
+// servos, buzzer, OLED, and SET_LED_COLOR — now steering the WS2812B) PLUS the two
+// new I2S peripherals and the addressable strip. GET_SENSOR_DATA is enabled so the
+// mic reporters (level/clap, resolved host-side) can run. See docs/pin.md.
+const ROBOTKU_MAKERKIT_V12_OPCODES: ReadonlySet<string> = new Set<string>([
+  ...ROBOTKU_V3_OPCODES,
+  // I2S speaker
+  OP.speakerPlayPcm,
+  OP.speakerTone,
+  // I2S mic
+  OP.micRecord,
+  OP.micPlayback,
+  OP.getSensorData,
+  // WS2812B NeoPixel
+  OP.neopixelSet,
+  OP.neopixelEffect,
+]);
+
 /**
  * Default static profile — matches the FAKTA HARDWARE table 1:1 for a fully-built
  * Robotku V3 (both drive servos populated). A one-servo bench board reports the
@@ -111,13 +135,52 @@ export const robotkuEsp32V3: BoardProfile = {
   ports: {
     1: { gpio: 33, role: 'drive-left', wired: true },
     2: { gpio: 25, role: 'drive-right', wired: true },
-    3: { gpio: 26, role: 'aux-pwm', wired: false },
-    4: { gpio: 27, role: 'aux-pwm', wired: false },
-    5: { gpio: 14, role: 'aux-pwm', wired: false },
+    // K2 fix (see docs/pin.md): GPIO26 belongs to PORT 5 (the accessory positional
+    // servo, PIN_SERVO_AUX=26 / SERVO_AUX_PORT=5 in config.h), NOT port 3. Port 3's
+    // GPIO is not assigned on the V3 schematic — marked -1 (unknown) rather than guessed.
+    3: { gpio: -1, role: 'aux-pwm', wired: false },
+    4: { gpio: -1, role: 'aux-pwm', wired: false },
+    5: { gpio: 26, role: 'aux-servo', wired: false },
   },
-  actuators: { servoL: true, servoR: true, buzzer: true, rgbLed: true, oled: true, gripper: false },
-  sensors: { ultrasonic: false, temperature: false, humidity: false, light: false, heading: false },
+  actuators: { servoL: true, servoR: true, buzzer: true, rgbLed: true, neopixel: false, speaker: false, oled: true, gripper: false },
+  sensors: { ultrasonic: false, temperature: false, humidity: false, light: false, heading: false, mic: false },
 };
+
+/**
+ * Makerkit V1.2 — successor PCB of V3. SAME peripherals (2 drive servos, aux servo,
+ * OLED, buzzer) but the discrete RGB is replaced by a WS2812B strip and it gains an
+ * I2S mic + speaker. Physical GPIOs are unconfirmed pending the schematic (see
+ * docs/pin.md / pins_makerkit.h) — the static port GPIOs are -1 here and the live
+ * HELLO_ACK ports[] fill in what's really wired. Selected by board name (below).
+ */
+export const robotkuMakerkitV12: BoardProfile = {
+  id: 'robotku-makerkit-v1.2',
+  name: 'Robotku Makerkit V1.2',
+  opcodes: ROBOTKU_MAKERKIT_V12_OPCODES,
+  ports: {
+    1: { gpio: -1, role: 'drive-left', wired: true },
+    2: { gpio: -1, role: 'drive-right', wired: true },
+    3: { gpio: -1, role: 'aux-pwm', wired: false },
+    4: { gpio: -1, role: 'aux-pwm', wired: false },
+    5: { gpio: -1, role: 'aux-servo', wired: true },
+  },
+  actuators: { servoL: true, servoR: true, buzzer: true, rgbLed: false, neopixel: true, speaker: true, oled: true, gripper: false },
+  sensors: { ultrasonic: false, temperature: false, humidity: false, light: false, heading: false, mic: true },
+};
+
+/** All known static board profiles, keyed by id. Fallbacks for offline/guest/sim. */
+export const BOARD_PROFILES: readonly BoardProfile[] = [robotkuEsp32V3, robotkuMakerkitV12];
+
+/**
+ * Pick the STATIC base profile from a HELLO_ACK identity (§7: differentiate by the
+ * `board` field). The connected board still wins overall — profileFromHello() then
+ * overlays its advertised caps/ports on top of this base. Unknown/old boards fall
+ * back to V3, which is the backward-compat guarantee for firmware already in the field.
+ */
+export function baseProfileForBoard(board?: string): BoardProfile {
+  if (board && /makerkit/i.test(board)) return robotkuMakerkitV12;
+  return robotkuEsp32V3;
+}
 
 /** Is `opcode` runnable on this board? Host/meta opcodes are always true. */
 export function isSupported(opcode: string, profile: BoardProfile = robotkuEsp32V3): boolean {

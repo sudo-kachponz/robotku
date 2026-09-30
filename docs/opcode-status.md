@@ -16,7 +16,7 @@
 |---|---|---|
 | `CLAW_TIMED` | unsupported-by-profile | move_claw |
 | `DISPLAY_TEXT` | handled | display_text, display_kaomoji |
-| `GET_SENSOR_DATA` | unsupported-by-profile | sensor_button1, sensor_button2, sensor_is_recording, sensor_get_analog, sensor_get_digital, sensor_ultrasonic, sensor_temperature, sensor_humidity, sensor_light, sensor_distance, sensor_heading |
+| `GET_SENSOR_DATA` | handled | sensor_button1, sensor_button2, sensor_is_recording, sensor_get_analog, sensor_get_digital, sensor_ultrasonic, sensor_temperature, sensor_humidity, sensor_light, sensor_distance, sensor_heading |
 | `LCD_CLEAR` | unsupported-by-profile | lcd_clear |
 | `LCD_SHAPE` | unsupported-by-profile | lcd_shape |
 | `LCD_TEXT` | unsupported-by-profile | lcd_text |
