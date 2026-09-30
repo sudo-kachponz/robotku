@@ -91,6 +91,21 @@ const PROGRAMS: Record<string, BlockSpec[]> = {
     ] } },
     { type: 'procedures_callnoreturn', fields: { NAME: 'maju' } },
   ],
+  'makerkit peripherals: neopixel + speaker + mic': [
+    { type: 'neopixel_set', fields: { INDEX: 'all', COLOR: '#ff0000' } },
+    { type: 'neopixel_effect', fields: { EFFECT: 'rainbow' }, inputs: { DURATION: 2 } },
+    { type: 'speaker_play_clip', fields: { CLIP: 'welcome' } },
+    { type: 'controls_if', extraState: { elseIfCount: 1, hasElse: false },
+      inputs: {
+        IF0: { type: 'sensor_mic_clap' },
+        IF1: { type: 'logic_compare', fields: { OP: 'GT' },
+          inputs: { A: { type: 'sensor_mic_level' }, B: 5000 } },
+      },
+      statements: {
+        DO0: [{ type: 'speaker_play_clip', fields: { CLIP: 'welcome' } }],
+        DO1: [{ type: 'neopixel_set', fields: { INDEX: '0', COLOR: '#0000ff' } }],
+      } },
+  ],
 };
 
 describe('Python parity: blocks -> commands === blocks -> python -> commands', () => {

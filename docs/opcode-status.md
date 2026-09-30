@@ -16,11 +16,13 @@
 |---|---|---|
 | `CLAW_TIMED` | unsupported-by-profile | move_claw |
 | `DISPLAY_TEXT` | handled | display_text, display_kaomoji |
-| `GET_SENSOR_DATA` | handled | sensor_button1, sensor_button2, sensor_is_recording, sensor_get_analog, sensor_get_digital, sensor_ultrasonic, sensor_temperature, sensor_humidity, sensor_light, sensor_distance, sensor_heading |
+| `GET_SENSOR_DATA` | handled | sensor_button1, sensor_mic_level, sensor_mic_clap, sensor_button2, sensor_is_recording, sensor_get_analog, sensor_get_digital, sensor_ultrasonic, sensor_temperature, sensor_humidity, sensor_light, sensor_distance, sensor_heading |
 | `LCD_CLEAR` | unsupported-by-profile | lcd_clear |
 | `LCD_SHAPE` | unsupported-by-profile | lcd_shape |
 | `LCD_TEXT` | unsupported-by-profile | lcd_text |
 | `MOVE_TIMED` | handled | move_forward, move_reverse |
+| `NEOPIXEL_EFFECT` | handled | neopixel_effect |
+| `NEOPIXEL_SET` | handled | neopixel_set |
 | `PLAY_RECORDING` | unsupported-by-profile | audio_play_recording |
 | `PLAY_SOUND_EFFECT` | unsupported-by-profile | audio_sound_effect |
 | `PLAY_TONE` | handled | audio_play_tone_sec, audio_play_tone_beat, audio_play_melody |
@@ -35,6 +37,7 @@
 | `SET_LED_BRIGHTNESS` | handled | display_set_brightness |
 | `SET_LED_COLOR` | handled | set_led_color |
 | `SET_VOLUME` | unsupported-by-profile | audio_set_volume |
+| `SPEAKER_PLAY_PCM` | handled | speaker_play_clip |
 | `STEER_TIMED` | handled | move_steer |
 | `STOP` | handled | move_stop |
 | `STOP_ALL` | handled | move_stop_all |

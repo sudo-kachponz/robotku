@@ -171,6 +171,19 @@ defineOnce([
     style: 'audio_blocks',
     inputsInline: true,
   },
+  // --- Speaker (I2S PCM, Makerkit V1.2) ---
+  {
+    type: 'speaker_play_clip',
+    message0: 'Play sound clip %1',
+    args0: [
+      { type: 'field_dropdown', name: 'CLIP', options: [['Welcome', 'welcome']] },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    style: 'audio_blocks',
+    inputsInline: true,
+    tooltip: 'Putar klip suara pra-rekam lewat speaker I2S (Makerkit).',
+  },
 ]);
 
 const num = (
@@ -266,6 +279,14 @@ javascriptGenerator.forBlock['audio_set_bpm'] = function (block) {
     }) + ';'
   );
 };
+javascriptGenerator.forBlock['speaker_play_clip'] = function (block) {
+  return (
+    JSON.stringify({
+      command: astroidV2.commands.speakerPlayPcm,
+      params: { clip: block.getFieldValue('CLIP') },
+    }) + ';'
+  );
+};
 
 const durShadow = { DURATION: { shadow: { type: 'math_number', fields: { NUM: 1 } } } };
 const beatShadow = { BEATS: { shadow: { type: 'math_number', fields: { NUM: 1 } } } };
@@ -290,5 +311,7 @@ export const audioCategory = {
     { kind: 'block', type: 'audio_stop_sounds' },
     { kind: 'label', text: 'Tempo' },
     { kind: 'block', type: 'audio_set_bpm' },
+    { kind: 'label', text: 'Speaker' },
+    { kind: 'block', type: 'speaker_play_clip' },
   ],
 };

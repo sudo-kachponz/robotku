@@ -485,6 +485,7 @@ export default function BoardPanel({ state }: { state: SimState }) {
 
         <BoardSvg
           rgb={rgb}
+          neoPixels={state.neoPixels}
           buzzerActive={buzzerActive}
           linkState="off"
           ports={ports}

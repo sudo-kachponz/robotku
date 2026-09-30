@@ -45,6 +45,21 @@ defineOnce([
     output: 'Boolean',
     style: 'sensors_blocks',
   },
+  // --- Microphone (INMP441, Makerkit V1.2) ---
+  {
+    type: 'sensor_mic_level',
+    message0: 'Mic sound level',
+    output: 'Number',
+    style: 'sensors_blocks',
+    tooltip: 'Tingkat suara yang terdengar mikrofon (0-32767).',
+  },
+  {
+    type: 'sensor_mic_clap',
+    message0: 'Clap detected?',
+    output: 'Boolean',
+    style: 'sensors_blocks',
+    tooltip: 'Benar jika baru saja terdengar tepukan tangan.',
+  },
 
   // --- Pin I/O (statements + reporters) ---
   {
@@ -187,6 +202,8 @@ function boolReporter(sensor: string) {
 javascriptGenerator.forBlock['sensor_button1'] = boolReporter('button1');
 javascriptGenerator.forBlock['sensor_button2'] = boolReporter('button2');
 javascriptGenerator.forBlock['sensor_is_recording'] = boolReporter('recording');
+javascriptGenerator.forBlock['sensor_mic_level'] = reporter('mic_level');
+javascriptGenerator.forBlock['sensor_mic_clap'] = boolReporter('mic_clap');
 
 javascriptGenerator.forBlock['sensor_get_analog'] = reporter('analog');
 javascriptGenerator.forBlock['sensor_get_digital'] = reporter('digital');
@@ -243,6 +260,9 @@ export const sensorsCategory = {
     { kind: 'block', type: 'sensor_button1' },
     { kind: 'block', type: 'sensor_button2' },
     { kind: 'block', type: 'sensor_is_recording' },
+    { kind: 'label', text: 'Microphone' },
+    { kind: 'block', type: 'sensor_mic_level' },
+    { kind: 'block', type: 'sensor_mic_clap' },
     { kind: 'block', type: 'sensor_set_analog' },
     { kind: 'block', type: 'sensor_get_analog' },
     { kind: 'block', type: 'sensor_set_digital' },
