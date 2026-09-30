@@ -1,57 +1,38 @@
 /* ============================================================================
- * config.h — Robotku ESP32 pin map, port table, servo calibration, timing.
- * ONE place to change hardware wiring. The .ino never hardcodes a GPIO.
+ * config.h — ONE firmware, TWO board variants (V3 and Makerkit V1.2).
  * ----------------------------------------------------------------------------
- * ESP32 GPIO rules (read before moving a pin):
- *   - 6..11   : wired to on-board SPI flash — DO NOT USE.
- *   - 34..39  : INPUT-ONLY, no output/PWM — never put an actuator here (a servo
- *               on GPIO34 just sits silent and you waste an afternoon).
- *   - 0,2,12,15 : strapping pins — avoid for outputs (boot glitches).
- * Pins below are chosen to respect all of the above.
+ * This file selects a PIN MAP by build flag, then holds every NON-pin constant
+ * that BOTH variants share (OLED geometry, servo calibration, deadband, trim,
+ * port table, timing, clap thresholds). Peripherals are identical across the two
+ * boards — only the wiring differs — so main.cpp must branch on HAS_* flags and
+ * pin names ONLY, never on `#ifdef BOARD_*`.
+ *
+ * Build:
+ *   pio run -e v3          (-D BOARD_V3)        -> pins_v3.h
+ *   pio run -e makerkit    (-D BOARD_MAKERKIT)  -> pins_makerkit.h
+ * Arduino IDE / bare `pio run` (no flag) defaults to V3 (the shipping board).
  * ==========================================================================*/
 #pragma once
 
-// ------------------------------------------------------------------- OLED
-// SSD1306 128x64 over I2C (proven on bench test1). Splash + status live here.
-#define PIN_OLED_SDA   21
-#define PIN_OLED_SCL   22
-#define OLED_ADDR      0x3C
+// ------------------------------------------------------ Pin map selection
+#if defined(BOARD_MAKERKIT)
+  #include "pins_makerkit.h"
+#elif defined(BOARD_V3)
+  #include "pins_v3.h"
+#else
+  #warning "No BOARD_* build flag set; defaulting to BOARD_V3 (Arduino IDE / bare pio run). Pass -D BOARD_MAKERKIT for the Makerkit V1.2 PCB."
+  #include "pins_v3.h"
+#endif
+
+// ------------------------------------------------------------------- OLED geometry
+// (address + I2C pins are per-board and live in pins_*.h; geometry is shared.)
 #define OLED_WIDTH     128
 #define OLED_HEIGHT    64
 
-// ----------------------------------------------------------------- Buzzer
-// Passive buzzer driven with tone()/noTone(). tone() is async on ESP32.
-// FW-02: schematic net BUZZ is GPIO13, not 26 (26 is PWM3 aux header). Was wrong.
-#define PIN_BUZZER     13
-
-// ----------------------------------------------------------------- RGB LED
-// FW-06: common-cathode RGB LED via 100Ω, schematic nets LED1/LED2/LED3.
-// Driven ON/OFF (8 colors) — NOT PWM. PROVEN on hardware: any PWM/LEDC approach
-// (raw ledc AND the ESP32PWM-coordinated allocator) stutters servo 2 and/or leaves
-// the LED dark — two servos + PWM RGB can't share this chip's timers. Digital keeps
-// both servos smooth; the web color wheel picks any hex, snapping to nearest-8 here.
-#define PIN_LED_R      16
-#define PIN_LED_G      17
-#define PIN_LED_B      5
-#define HAS_RGB        1       // 0 = no RGB LED -> firmware answers UNSUPPORTED
-
-// ------------------------------------------------------------------ Servos
-// SG90 CONTINUOUS rotation servos (ESP32Servo):
+// ------------------------------------------------------------------ Servo calibration
+// SG90 CONTINUOUS drive servos (ESP32Servo):
 //   setPeriodHertz(50), attach(pin, SERVO_MIN_US, SERVO_MAX_US)
 //   write(90) = stop, write(180) = full one way, write(0) = full the other.
-#define PIN_SERVO_L    33      // LEFT drive  — proven working on bench test1
-#define PIN_SERVO_R    25      // RIGHT drive — TODO: confirm GPIO25 is free on
-                               //               your board BEFORE you solder it.
-
-// Is the RIGHT servo physically soldered and tested? THE ONE switch for it.
-// 0 = one-servo board (the current ControllerV1 bench build: GPIO33 only).
-//     The board then reports ports:[1] in HELLO_ACK and answers UNSUPPORTED to
-//     SET_PORT on port 2, so the web app can say WHY the right stick is dead
-//     instead of just going quiet — which reads to a tester as "the web is broken".
-// 1 = second servo really attached & verified. Flip this, reflash, done: the
-//     port table and HELLO_ACK both follow from here, nothing else to edit.
-#define HAS_SERVO_R    1
-
 #define SERVO_MIN_US   500
 #define SERVO_MAX_US   2400
 #define SERVO_STOP_DEG 90      // continuous-servo neutral
@@ -63,24 +44,17 @@
 
 // A continuous SG90 almost never truly stops at exactly 90°. Trim (in degrees,
 // may be negative) shifts each side's neutral so value 0 = actually still.
-// Calibrate on the bench: send SET_PORT value 0 and nudge until it stops.
 #define SERVO_L_TRIM   0
 #define SERVO_R_TRIM   0
 
 // Released joystick / idle: treat |value| below this as "stop" so the pulses are
 // CUT (servo.detach), not held at ~90 where a continuous SG90 keeps creeping.
-// This is the knob for "servo selalu berputar": raise it if the servo still drifts.
 #define SERVO_DEADBAND 3
 
-// ---------------------------------------------------- Accessory (positional) servo
-// The schematic's detachable "Servo SG90" module lives on port P5. Unlike the two
-// CONTINUOUS drive servos, this one is POSITIONAL: it holds an angle (head/arm),
-// so value -100..100 maps to 0..180 deg and value 0 = centre (held, not detached).
-//   GPIO26 = the free "PWM3 aux header" (see the buzzer note above).
-// ponytail: a 3rd ESP32Servo claims another LEDC timer; 2 drives + buzzer + this
-// still fit the 4 timers, but if the aux servo jitters, that contention is the suspect.
-#define PIN_SERVO_AUX  26
-#define HAS_SERVO_AUX  1       // 0 = no accessory servo -> P5 answers UNSUPPORTED
+// -------------------------------------------------- Accessory (positional) servo
+// The detachable "Servo SG90" module lives on web port P5. Unlike the two
+// CONTINUOUS drive servos, this one is POSITIONAL: value -100..100 -> 0..180 deg,
+// value 0 = centre (held). Its GPIO is per-board (PIN_SERVO_AUX in pins_*.h).
 #define SERVO_AUX_CH   2       // third channel index (0=left,1=right,2=aux)
 #define SERVO_AUX_PORT 5       // which web port drives it (matches P5 in the UI)
 
@@ -90,7 +64,7 @@
 //   value 0  = LEFT servo channel
 //   value 1  = RIGHT servo channel
 //   value -1 = not wired  -> firmware replies UNSUPPORTED (never silent).
-// Port 2 is derived from HAS_SERVO_R — do NOT hardcode it here and in HELLO_ACK.
+// Derived from the per-board HAS_SERVO_R / HAS_SERVO_AUX flags — do NOT hardcode.
 static const int PORT_CHANNEL[9] = {
   -1,                        // [0] unused — ports are 1-based
    0,                        // port 1 -> LEFT  (PIN_SERVO_L)
@@ -115,5 +89,11 @@ static const int PORT_CHANNEL[9] = {
 
 // Timed moves set a firmware deadline = browser-requested duration + this margin.
 // The browser is the real timekeeper; this deadline is only a SAFETY NET for a
-// lost STOP. The margin keeps the two from racing (see FIX 3 in the .ino).
+// lost STOP. The margin keeps the two from racing (see FIX 3 in main.cpp).
 #define MOTION_SAFETY_MARGIN_MS  300
+
+// ---------------------------------------------------------------- Audio / clap (Makerkit)
+// Proven starting points from ESP32 Robotku_Makerkit-V1.2/test/testClap-Response.cpp.
+// Kept here so they can be calibrated in ONE place. Only used when HAS_MIC.
+#define CLAP_THRESHOLD    9000   // peak |sample| that counts as a clap
+#define CLAP_COOLDOWN_MS  2000   // ignore further claps for this long after one

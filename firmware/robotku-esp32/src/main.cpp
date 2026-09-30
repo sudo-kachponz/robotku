@@ -41,9 +41,22 @@
 
 #include "config.h"
 
+#if HAS_NEOPIXEL
+#include <Adafruit_NeoPixel.h>   // WS2812B strip on the Makerkit variant (RMT, not LEDC)
+#endif
+
+#if HAS_SPEAKER || HAS_MIC
+#include <driver/i2s.h>          // legacy I2S API (ESP32 Arduino core 2.0.x)
+#endif
+#if HAS_SPEAKER
+#include <math.h>
+#include "welcome_audio.h"       // const int16_t welcomeAudio[] in FLASH (.rodata), 16 kHz mono
+#endif
+
 // ------------------------------------------------------------------ Identity
+// BOARD_NAME / BOARD_ID come from the selected pin map (pins_*.h) so HELLO_ACK
+// tells the web which variant connected — no #ifdef BOARD_* here (see config.h).
 #define FW_VERSION   "2.1.0-py1"
-#define BOARD_NAME   "Robotku ESP32"
 #define PROTOCOL_ID  "robotku-v1"
 #define BLE_NAME     "Robotku"
 
@@ -62,6 +75,37 @@ ESP32PWM buzzerPwm;   // buzzer via the SAME allocator as the servos -> its own 
 unsigned long buzzerOffMs = 0;   // 0 = silent; else stop the tone at this millis()
 Adafruit_SSD1306 oled(OLED_WIDTH, OLED_HEIGHT, &Wire, -1);
 bool oledOk = false;
+
+#if HAS_NEOPIXEL
+Adafruit_NeoPixel strip(NEOPIXEL_COUNT, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
+uint8_t  neoActiveEffect = 0;      // 0=none, 1=rainbow, 2=chase
+unsigned long neoEffectEndsMs = 0; // 0 = run forever; else stop at this millis()
+unsigned long neoLastStepMs = 0;
+uint16_t neoEffectPhase = 0;
+#endif
+
+#if HAS_SPEAKER
+// I2S speaker (MAX98357A) on I2S_NUM_1. Audio plays on a dedicated FreeRTOS task
+// so the command path / heartbeat NEVER block (FIX 3). The command handlers only
+// flip these flags; the task streams samples. Single-writer/single-reader — no mutex.
+#define SPK_SR          16000
+#define SPK_AMPLITUDE   3000
+volatile int           spkToneFreq  = 0;      // >0 = play this tone
+volatile bool          spkToneSquare = false; // wave shape
+volatile unsigned long spkToneEndMs = 0;      // stop the tone at this millis()
+volatile bool          spkPcmPlay   = false;  // true = stream the welcome clip once
+volatile bool          spkStop      = false;  // request: silence everything now
+bool                   spkReady     = false;  // I2S TX installed OK
+#endif
+
+#if HAS_MIC
+// I2S microphone (INMP441) on I2S_NUM_0. A task keeps a rolling peak level and a
+// latched clap flag; GET_SENSOR_DATA reads them. CLAP_THRESHOLD/COOLDOWN in config.h.
+#define MIC_SR  16000
+volatile int  micLevel = 0;      // last block peak, 0..32767
+volatile bool micClap  = false;  // latched clap; cleared on read
+bool          micReady = false;  // I2S RX installed OK
+#endif
 
 // ----------------------------------------------------- Non-blocking motion
 // FIX 3: the firmware NEVER blocks. A timed command sets the actuators and
@@ -253,6 +297,158 @@ void setLedColor(int r, int g, int b) {
   (void)r; (void)g; (void)b;
 #endif
 }
+
+#if HAS_NEOPIXEL
+// WS2812B strip. index -1 = all pixels; else that single pixel. 24-bit, no snap.
+void neoSetPixel(int index, uint8_t r, uint8_t g, uint8_t b) {
+  if (index < 0) {
+    for (int i = 0; i < NEOPIXEL_COUNT; i++) strip.setPixelColor(i, strip.Color(r, g, b));
+  } else if (index < NEOPIXEL_COUNT) {
+    strip.setPixelColor(index, strip.Color(r, g, b));
+  }
+  strip.show();
+}
+
+// Non-blocking effect stepper, called from loop(). Rainbow/chase advance ~25 fps;
+// a deadline (neoEffectEndsMs) clears the strip when the effect's time is up.
+void neoTick() {
+  if (neoActiveEffect == 0) return;
+  if (neoEffectEndsMs != 0 && (long)(millis() - neoEffectEndsMs) >= 0) {
+    neoActiveEffect = 0;
+    strip.clear();
+    strip.show();
+    return;
+  }
+  if (millis() - neoLastStepMs < 40) return;
+  neoLastStepMs = millis();
+  neoEffectPhase++;
+  if (neoActiveEffect == 1) {            // rainbow
+    for (int i = 0; i < NEOPIXEL_COUNT; i++) {
+      uint16_t hue = (uint16_t)(neoEffectPhase * 512 + i * (65536L / NEOPIXEL_COUNT));
+      strip.setPixelColor(i, strip.gamma32(strip.ColorHSV(hue)));
+    }
+  } else {                                // chase
+    strip.clear();
+    strip.setPixelColor(neoEffectPhase % NEOPIXEL_COUNT, strip.Color(0, 150, 255));
+  }
+  strip.show();
+}
+#endif
+
+#if HAS_SPEAKER
+// Bring up I2S_NUM_1 as a 16 kHz mono TX master for the MAX98357A.
+void i2sSpeakerInit() {
+  i2s_config_t cfg = {};
+  cfg.mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX);
+  cfg.sample_rate = SPK_SR;
+  cfg.bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT;
+  cfg.channel_format = I2S_CHANNEL_FMT_ONLY_LEFT;
+  cfg.communication_format = I2S_COMM_FORMAT_STAND_I2S;
+  cfg.intr_alloc_flags = ESP_INTR_FLAG_LEVEL1;
+  cfg.dma_buf_count = 6;
+  cfg.dma_buf_len = 256;
+  cfg.use_apll = false;
+  cfg.tx_desc_auto_clear = true;
+  cfg.fixed_mclk = 0;
+  esp_err_t e1 = i2s_driver_install(I2S_NUM_1, &cfg, 0, NULL);
+  Serial.printf("[i2s spk] install=%d\n", (int)e1);
+  if (e1 != ESP_OK) return;               // don't touch pins on a failed driver
+  i2s_pin_config_t pins = {};
+  pins.mck_io_num  = I2S_PIN_NO_CHANGE;   // MUST be explicit — {} would leave it GPIO0
+  pins.bck_io_num  = PIN_SPK_BCLK;
+  pins.ws_io_num   = PIN_SPK_LRC;
+  pins.data_out_num = PIN_SPK_DIN;
+  pins.data_in_num  = I2S_PIN_NO_CHANGE;
+  esp_err_t e2 = i2s_set_pin(I2S_NUM_1, &pins);
+  Serial.printf("[i2s spk] set_pin=%d\n", (int)e2);
+  i2s_zero_dma_buffer(I2S_NUM_1);
+  spkReady = (e2 == ESP_OK);
+}
+
+// Dedicated audio task: streams either a synthesized tone or the welcome PCM clip.
+// It blocks on i2s_write (which only waits for DMA space), never on the command path.
+void audioTask(void*) {
+  static int16_t buf[256];
+  float phase = 0.0f;
+  for (;;) {
+    if (spkStop) { spkToneFreq = 0; spkPcmPlay = false; spkStop = false; i2s_zero_dma_buffer(I2S_NUM_1); }
+
+    if (spkToneFreq > 0) {
+      if ((long)(millis() - spkToneEndMs) >= 0) { spkToneFreq = 0; i2s_zero_dma_buffer(I2S_NUM_1); vTaskDelay(1); continue; }
+      const float inc = 2.0f * PI * spkToneFreq / SPK_SR;
+      for (int i = 0; i < 256; i++) {
+        int16_t s = spkToneSquare ? (phase < PI ? SPK_AMPLITUDE : -SPK_AMPLITUDE)
+                                  : (int16_t)(SPK_AMPLITUDE * sinf(phase));
+        buf[i] = s;
+        phase += inc; if (phase >= 2.0f * PI) phase -= 2.0f * PI;
+      }
+      size_t wr; i2s_write(I2S_NUM_1, buf, sizeof(buf), &wr, portMAX_DELAY);
+    } else if (spkPcmPlay) {
+      // Stream welcomeAudio straight from FLASH in 256-sample chunks (never copied to RAM).
+      size_t off = 0, wr;
+      while (off < (size_t)welcomeAudioLength && spkPcmPlay && !spkStop) {
+        size_t n = (size_t)welcomeAudioLength - off; if (n > 256) n = 256;
+        i2s_write(I2S_NUM_1, &welcomeAudio[off], n * sizeof(int16_t), &wr, portMAX_DELAY);
+        off += n;
+      }
+      spkPcmPlay = false;
+      i2s_zero_dma_buffer(I2S_NUM_1);
+    } else {
+      vTaskDelay(5);
+    }
+  }
+}
+#endif
+
+#if HAS_MIC
+void i2sMicInit() {
+  i2s_config_t cfg = {};
+  cfg.mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX);
+  cfg.sample_rate = MIC_SR;
+  cfg.bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT;
+  cfg.channel_format = I2S_CHANNEL_FMT_ONLY_LEFT;
+  cfg.communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_I2S_MSB);
+  cfg.intr_alloc_flags = ESP_INTR_FLAG_LEVEL1;
+  cfg.dma_buf_count = 4;
+  cfg.dma_buf_len = 1024;
+  cfg.use_apll = false;
+  cfg.tx_desc_auto_clear = false;
+  cfg.fixed_mclk = 0;
+  esp_err_t e1 = i2s_driver_install(I2S_NUM_0, &cfg, 0, NULL);
+  Serial.printf("[i2s mic] install=%d\n", (int)e1);
+  if (e1 != ESP_OK) return;
+  i2s_pin_config_t pins = {};
+  pins.mck_io_num  = I2S_PIN_NO_CHANGE;
+  pins.bck_io_num  = PIN_MIC_SCK;
+  pins.ws_io_num   = PIN_MIC_WS;
+  pins.data_out_num = I2S_PIN_NO_CHANGE;
+  pins.data_in_num  = PIN_MIC_SD;
+  esp_err_t e2 = i2s_set_pin(I2S_NUM_0, &pins);
+  Serial.printf("[i2s mic] set_pin=%d\n", (int)e2);
+  micReady = (e2 == ESP_OK);
+}
+
+// Continuously read the mic, track block peak + detect claps (threshold/cooldown
+// from config.h). Runs on its own task so i2s_read blocking never stalls loop().
+void micTask(void*) {
+  static int16_t samples[512];
+  unsigned long lastClapMs = 0;
+  for (;;) {
+    size_t nbytes = 0;
+    if (i2s_read(I2S_NUM_0, samples, sizeof(samples), &nbytes, portMAX_DELAY) != ESP_OK || nbytes == 0) {
+      vTaskDelay(2); continue;
+    }
+    int n = nbytes / sizeof(int16_t);
+    int peak = 0;
+    for (int i = 0; i < n; i++) { int a = abs(samples[i]); if (a > peak) peak = a; }
+    micLevel = peak;
+    if (peak >= CLAP_THRESHOLD && (millis() - lastClapMs) > CLAP_COOLDOWN_MS) {
+      lastClapMs = millis();
+      micClap = true;   // latched until GET_SENSOR_DATA reads it
+    }
+  }
+}
+#endif
 
 // =============================================================== OLED
 // "BLE" | "USB" | "Terputus" — what the board is actually talking to.
@@ -473,6 +669,18 @@ void handleCommand(const String& jsonLine) {
 #if HAS_RGB
     caps.add("SET_LED_COLOR");   // FW-06 RGB LED (GPIO16/17/5)
 #endif
+#if HAS_NEOPIXEL
+    caps.add("SET_LED_COLOR");   // drives the WS2812B strip (24-bit)
+    caps.add("NEOPIXEL_SET");
+    caps.add("NEOPIXEL_EFFECT");
+#endif
+#if HAS_SPEAKER
+    caps.add("SPEAKER_TONE");
+    caps.add("SPEAKER_PLAY_PCM");
+#endif
+#if HAS_MIC
+    caps.add("GET_SENSOR_DATA");   // mic level / clap reporters
+#endif
     if (oledOk) caps.add("DISPLAY_TEXT");   // OLED text — only if the panel answered
     if (oledOk) caps.add("DISPLAY_BITMAP"); // OLED pixel-art
     if (oledOk) caps.add("SET_LED_BRIGHTNESS"); // OLED contrast/brightness
@@ -484,10 +692,13 @@ void handleCommand(const String& jsonLine) {
       if (PORT_CHANNEL[i] >= 0) ports.add(i);
     }
     ack["driveMode"] = "servo";
-    ack["hasBuzzer"] = true;
-    ack["hasOled"]   = oledOk;                  // real I2C detection (0x3C), not a claim
-    ack["hasRgbLed"] = (bool)HAS_RGB;
-    ack["boardId"]   = "esp32-controller-v3";
+    ack["hasBuzzer"]   = true;
+    ack["hasOled"]     = oledOk;                // real I2C detection (0x3C), not a claim
+    ack["hasRgbLed"]   = (bool)HAS_RGB;
+    ack["hasNeoPixel"] = (bool)HAS_NEOPIXEL;
+    ack["hasSpeaker"]  = (bool)HAS_SPEAKER;
+    ack["hasMic"]      = (bool)HAS_MIC;
+    ack["boardId"]     = BOARD_ID;
     // Modules actually detected on the bus so the web can enable their blocks.
     if (oledOk) {
       JsonArray periph = ack["peripherals"].to<JsonArray>();
@@ -623,17 +834,102 @@ void handleCommand(const String& jsonLine) {
     else                           freq = 440;
     long ms = readDurationMs(p);
     if (ms <= 0) ms = 300;
+#if HAS_SPEAKER
+    // K5: route tones to the I2S speaker (better quality). Buzzer is the fallback
+    // only on boards without a speaker (V3), where HAS_SPEAKER is 0.
+    spkToneSquare = false; spkToneFreq = freq; spkToneEndMs = millis() + ms;
+#else
     buzzerTone(freq, ms);   // non-blocking; loop() silences at the deadline
+#endif
     lastStatus = "Nada";
     return;
   }
 
-  // --- Block: RGB LED color (FW-06) ---------------------------------------
-  if (strcmp(cmd, "SET_LED_COLOR") == 0) {
-#if HAS_RGB
+  // --- Block: Speaker tone (Makerkit I2S) ---------------------------------
+  if (strcmp(cmd, "SPEAKER_TONE") == 0) {
+#if HAS_SPEAKER
+    int freq = !p["freq"].isNull() ? p["freq"].as<int>()
+             : !p["frequency"].isNull() ? p["frequency"].as<int>() : 440;
+    long ms = readDurationMs(p); if (ms <= 0) ms = 300;
+    const char* wave = p["wave"] | "sine";
+    spkToneSquare = (strcmp(wave, "square") == 0);
+    spkToneFreq = freq; spkToneEndMs = millis() + ms;
+    lastStatus = "Nada";
+#else
+    sendUnsupported("SPEAKER_TONE");
+#endif
+    return;
+  }
+
+  // --- Block: Speaker play PCM clip (Makerkit) ----------------------------
+  if (strcmp(cmd, "SPEAKER_PLAY_PCM") == 0) {
+#if HAS_SPEAKER
+    // Only the built-in "welcome" clip for now; ignore unknown clip names gracefully.
+    spkToneFreq = 0;
+    spkPcmPlay = true;
+    lastStatus = "Audio";
+#else
+    sendUnsupported("SPEAKER_PLAY_PCM");
+#endif
+    return;
+  }
+
+  // --- Reporter: mic level / clap (Makerkit) — replies with a TELEMETRY frame ---
+  if (strcmp(cmd, "GET_SENSOR_DATA") == 0) {
+#if HAS_MIC
+    const char* sensor = p["sensor"] | "";
+    JsonDocument r;
+    r["command"] = "TELEMETRY";
+    r["sensor"]  = sensor;
+    if (strcmp(sensor, "mic_level") == 0) {
+      r["value"] = micLevel;
+    } else if (strcmp(sensor, "mic_clap") == 0) {
+      r["value"] = micClap ? 1 : 0;
+      micClap = false;   // latch cleared on read
+    } else {
+      sendUnsupported("GET_SENSOR_DATA");   // unknown sensor on this board
+      return;
+    }
+    sendJson(r);
+#else
+    sendUnsupported("GET_SENSOR_DATA");
+#endif
+    return;
+  }
+
+  // --- Block: LED color -----------------------------------------------------
+  // V3: digital RGB (8-color). Makerkit: WS2812B, full 24-bit, optional `index`
+  // (0..3 | "all"). A manual color cancels any running strip effect.
+  if (strcmp(cmd, "SET_LED_COLOR") == 0 || strcmp(cmd, "NEOPIXEL_SET") == 0) {
+#if HAS_NEOPIXEL
+    neoActiveEffect = 0;
+    int idx = -1;   // no index -> all pixels
+    if (!p["index"].isNull()) {
+      if (p["index"].is<int>()) idx = p["index"].as<int>();
+      else { const char* s = p["index"].as<const char*>(); if (s && strcmp(s, "all") != 0) idx = atoi(s); }
+    }
+    neoSetPixel(idx, p["r"] | 0, p["g"] | 0, p["b"] | 0);
+    lastStatus = "LED";
+#elif HAS_RGB
     setLedColor(p["r"] | 0, p["g"] | 0, p["b"] | 0);
 #else
-    sendUnsupported("SET_LED_COLOR");   // no RGB LED on this board (FIX 4)
+    sendUnsupported(cmd);   // no LED on this board (FIX 4)
+#endif
+    return;
+  }
+
+  // --- Block: NeoPixel effect (Makerkit) ----------------------------------
+  if (strcmp(cmd, "NEOPIXEL_EFFECT") == 0) {
+#if HAS_NEOPIXEL
+    const char* eff = p["effect"] | "off";
+    long ms = readDurationMs(p);
+    if      (strcmp(eff, "rainbow") == 0) neoActiveEffect = 1;
+    else if (strcmp(eff, "chase")   == 0) neoActiveEffect = 2;
+    else    { neoActiveEffect = 0; strip.clear(); strip.show(); }
+    neoEffectEndsMs = (neoActiveEffect && ms > 0) ? millis() + ms : 0;
+    lastStatus = "NeoPixel";
+#else
+    sendUnsupported("NEOPIXEL_EFFECT");
 #endif
     return;
   }
@@ -903,6 +1199,25 @@ void setup() {
   setLedColor(0, 0, 0);   // start dark
 #endif
 
+#if HAS_NEOPIXEL
+  strip.begin();
+  strip.setBrightness(60);   // 0-255; keep modest so 4 LEDs don't brown out USB
+  strip.clear();
+  strip.show();              // start dark
+#endif
+
+#if HAS_SPEAKER
+  i2sSpeakerInit();
+  // Audio runs on core 0 (Arduino loop() is core 1) so i2s_write can't stall the
+  // command path. Only start the streamer if the I2S driver actually installed.
+  if (spkReady) xTaskCreatePinnedToCore(audioTask, "audio", 4096, NULL, 1, NULL, 0);
+#endif
+
+#if HAS_MIC
+  i2sMicInit();
+  if (micReady) xTaskCreatePinnedToCore(micTask, "mic", 4096, NULL, 1, NULL, 0);
+#endif
+
   // OLED
   Wire.begin(PIN_OLED_SDA, PIN_OLED_SCL);
   oledOk = oled.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
@@ -929,6 +1244,11 @@ void loop() {
 
   // 2b) Non-blocking buzzer deadline: silence the tone when its duration expires.
   if (buzzerOffMs != 0 && (long)(millis() - buzzerOffMs) >= 0) buzzerOff();
+
+#if HAS_NEOPIXEL
+  // 2c) Step any running WS2812B effect (non-blocking; clears at its deadline).
+  neoTick();
+#endif
 
   // 3) Heartbeat watchdog (FIX 6): only after HELLO; trip once when link quiet.
   if (watchdogArmed && !failsafeEngaged &&

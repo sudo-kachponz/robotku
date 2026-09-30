@@ -52,6 +52,16 @@ export interface RobotProfile {
     setBpm: 'SET_BPM';
     playInternalSound: 'PLAY_INTERNAL_SOUND';
 
+    // Audio & LED — Makerkit V1.2 only (I2S speaker/mic + WS2812B NeoPixel).
+    // Not runnable on V3 (no I2S, no strip); the toolbox greys these unless the
+    // connected board advertises them in HELLO_ACK.
+    speakerPlayPcm: 'SPEAKER_PLAY_PCM';
+    speakerTone: 'SPEAKER_TONE';
+    micRecord: 'MIC_RECORD';
+    micPlayback: 'MIC_PLAYBACK';
+    neopixelSet: 'NEOPIXEL_SET';
+    neopixelEffect: 'NEOPIXEL_EFFECT';
+
     // Sensors & Data (v1.1)
     getSensorData: 'GET_SENSOR_DATA';
     setAnalog: 'SET_ANALOG';
@@ -98,6 +108,13 @@ export const astroidV2: RobotProfile = {
     stopSounds: 'STOP_SOUNDS',
     setBpm: 'SET_BPM',
     playInternalSound: 'PLAY_INTERNAL_SOUND',
+    // Makerkit V1.2 — I2S speaker/mic + WS2812B NeoPixel
+    speakerPlayPcm: 'SPEAKER_PLAY_PCM',
+    speakerTone: 'SPEAKER_TONE',
+    micRecord: 'MIC_RECORD',
+    micPlayback: 'MIC_PLAYBACK',
+    neopixelSet: 'NEOPIXEL_SET',
+    neopixelEffect: 'NEOPIXEL_EFFECT',
     // Sensors
     getSensorData: 'GET_SENSOR_DATA',
     setAnalog: 'SET_ANALOG',
