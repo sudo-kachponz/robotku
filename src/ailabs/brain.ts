@@ -1,0 +1,102 @@
+// src/ailabs/brain.ts
+//
+// Otak Fira — memanggil LLM lewat PROXY server (server/fira-proxy.mjs), bukan Netra
+// langsung. Alasan: kunci API disimpan di SERVER, TAK pernah di browser, dan user
+// TAK perlu input (arahan user + AI-LABS.md §5). Browser hanya mengirim giliran
+// percakapan; proxy yang menambahkan kunci + persona + batas. Streaming SSE ala
+// OpenAI (delta.content = jawaban, delta.reasoning = "berpikir"). Kalau proxy tak
+// tersedia (mis. dev tanpa proxy) → mode DEMO (kelas WiFi jelek tak boleh mati total).
+
+const PROXY_URL =
+  (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_FIRA_PROXY_URL) || '/api/fira/chat';
+
+export interface ChatMsg {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+export interface StreamCallbacks {
+  onReasoning?: (delta: string) => void; // Fira "berpikir"
+  onContent?: (delta: string) => void; // Fira "bicara" (jawaban tampil huruf demi huruf)
+}
+
+export interface ChatResult {
+  content: string;
+  demo: boolean;
+}
+
+const DEMO_REPLIES = [
+  'Halo! Aku Fira mode demo — server AI belum tersambung, jadi ini jawaban siap pakai.',
+  'Seru! Tapi otak AI-ku belum online. Coba lagi saat proxy Fira aktif ya.',
+  'Aku dengar kamu! Untuk jawaban AI asli, server Fira harus jalan dulu.',
+  'Wah, pertanyaan bagus. Server AI-ku sedang tidak aktif — nanti aku jawab sungguhan.',
+];
+
+function demoReply(history: ChatMsg[]): string {
+  const n = history.filter((m) => m.role === 'user').length;
+  return DEMO_REPLIES[(n - 1 + DEMO_REPLIES.length) % DEMO_REPLIES.length];
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+/** Kirim riwayat percakapan ke proxy; stream jawaban. Fallback demo bila proxy mati. */
+export async function firaChat(
+  history: ChatMsg[],
+  cb: StreamCallbacks = {},
+  signal?: AbortSignal,
+): Promise<ChatResult> {
+  // Browser hanya kirim giliran user/assistant — persona & kunci ada di server.
+  const messages = history.filter((m) => m.role === 'user' || m.role === 'assistant');
+  try {
+    const res = await fetch(PROXY_URL, {
+      method: 'POST',
+      signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages }),
+    });
+    if (!res.ok || !res.body) throw new Error('proxy ' + res.status);
+
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    let content = '';
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let nl: number;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl).trim();
+        buf = buf.slice(nl + 1);
+        if (!line.startsWith('data:')) continue;
+        const data = line.slice(5).trim();
+        if (data === '[DONE]') continue;
+        try {
+          const j = JSON.parse(data) as {
+            choices?: { delta?: { content?: string; reasoning?: string } }[];
+          };
+          const d = j.choices?.[0]?.delta;
+          if (d?.reasoning) cb.onReasoning?.(d.reasoning);
+          if (d?.content) {
+            content += d.content;
+            cb.onContent?.(d.content);
+          }
+        } catch {
+          // fragmen JSON belum lengkap — abaikan
+        }
+      }
+    }
+    return { content, demo: false };
+  } catch {
+    // Proxy tak tersedia → mode demo (streaming palsu supaya UX tetap sama).
+    const reply = demoReply(history);
+    for (const ch of reply) {
+      if (signal?.aborted) break;
+      cb.onContent?.(ch);
+      await sleep(14);
+    }
+    return { content: reply, demo: true };
+  }
+}

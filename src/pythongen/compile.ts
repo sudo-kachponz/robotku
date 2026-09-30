@@ -280,6 +280,9 @@ function buildStatement(fn: string, a: CallArgs, line: number): BlockSpec {
     case 'ai.wait_until_seen': return { type: 'ai_wait_until_seen', fields: { LABEL: a.pos[0] ? asField(a.pos[0], line) : 'any' } };
     case 'camera.on': return { type: 'ai_camera_on', fields: { STATE: 'on' } };
     case 'camera.off': return { type: 'ai_camera_on', fields: { STATE: 'off' } };
+    case 'fira.speak': return { type: 'fira_speak', fields: { TEXT: asField(a.pos[0], line) } };
+    case 'fira.ask': return { type: 'fira_ask', fields: { QUESTION: asField(a.pos[0], line) } };
+    case 'fira.converse': return { type: 'fira_converse' };
     default: throw new CompileError(line, `can't find called function '${fn}'`);
   }
 }
@@ -292,7 +295,7 @@ export const KNOWN_STATEMENT_FNS = [
   'led.color', 'neopixel.set', 'neopixel.effect', 'lcd.shape', 'lcd.text', 'lcd.clear',
   'audio.record', 'audio.play_recording', 'audio.sound_effect', 'audio.tone', 'audio.tone_beat', 'audio.melody', 'audio.volume', 'audio.stop', 'audio.bpm', 'speaker.play_clip',
   'sensors.set_analog', 'sensors.set_digital', 'sensors.reset_distance', 'sensors.reset_heading',
-  'ai.use_model', 'ai.wait_until_seen', 'camera.on', 'camera.off',
+  'ai.use_model', 'ai.wait_until_seen', 'camera.on', 'camera.off', 'fira.speak', 'fira.ask', 'fira.converse',
 ] as const;
 
 // ----------------------------------------------------------------------------
