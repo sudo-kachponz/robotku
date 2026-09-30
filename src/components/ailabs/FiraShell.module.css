@@ -1,0 +1,277 @@
+/* FiraShell.module.css — cangkang telur Tamagotchi, di-port dari mametchi-monitor.html.
+   Cangkang = CSS 3D; isi layar = canvas piksel (jangan diubah, docs/AI-LABS.md §1/§4). */
+
+.wrap {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: env(safe-area-inset-top, 0) 12px env(safe-area-inset-bottom, 0);
+  background: var(--rk-bg-gradient, #0f1117);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.stage {
+  position: relative;
+  width: min(92vw, 340px);
+  aspect-ratio: 340 / 420;
+  filter: drop-shadow(0 26px 34px rgba(40, 50, 70, 0.34));
+  --btn: #f5a9bc;
+  --btn-d: #d97e96;
+}
+
+/* ---- cangkang telur ---- */
+.egg {
+  position: absolute;
+  inset: 0;
+  border-radius: 50% 50% 47% 47% / 54% 54% 46% 46%;
+  background:
+    radial-gradient(90% 60% at 26% 12%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.45) 34%, rgba(255, 255, 255, 0) 62%),
+    conic-gradient(
+      from 210deg at 50% 46%,
+      #cff3e6 0deg,
+      #cde6fa 60deg,
+      #d9d8f7 120deg,
+      #f5d3e8 190deg,
+      #fbe0cc 250deg,
+      #faf0c9 300deg,
+      #cff3e6 360deg
+    );
+  box-shadow:
+    inset 0 6px 12px rgba(255, 255, 255, 0.95),
+    inset 0 -24px 36px rgba(150, 160, 180, 0.26),
+    inset 16px 0 30px rgba(255, 255, 255, 0.62),
+    inset -16px 0 30px rgba(160, 170, 190, 0.18),
+    0 2px 1px rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+}
+.egg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 40% at 22% 18%, rgba(160, 230, 255, 0.3), transparent 62%),
+    radial-gradient(50% 36% at 78% 26%, rgba(255, 190, 235, 0.28), transparent 64%),
+    radial-gradient(56% 40% at 66% 78%, rgba(255, 226, 170, 0.26), transparent 66%),
+    radial-gradient(48% 34% at 26% 76%, rgba(178, 255, 214, 0.24), transparent 64%);
+  mix-blend-mode: screen;
+  opacity: 0.85;
+  animation: slick 14s ease-in-out infinite alternate;
+}
+@keyframes slick {
+  from {
+    transform: translate3d(-1.5%, -1%, 0) scale(1.02);
+  }
+  to {
+    transform: translate3d(1.5%, 1%, 0) scale(1.05);
+  }
+}
+.egg::after {
+  content: '';
+  position: absolute;
+  left: 11%;
+  top: 5%;
+  width: 44%;
+  height: 26%;
+  border-radius: 50%;
+  pointer-events: none;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.12) 62%, transparent 78%);
+  filter: blur(3px);
+}
+.rim {
+  position: absolute;
+  inset: 2.4%;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 0 11px rgba(255, 255, 255, 0.97),
+    inset 0 0 0 12.5px rgba(196, 205, 220, 0.45),
+    inset 0 10px 18px rgba(255, 255, 255, 0.85),
+    inset 0 -14px 22px rgba(160, 170, 190, 0.28);
+  border-radius: 50% 50% 47% 47% / 54% 54% 46% 46%;
+}
+
+/* ---- teks cangkang ---- */
+.brand {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 14.5%;
+  text-align: center;
+  font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', 'Segoe Print', 'Trebuchet MS', cursive;
+  font-size: clamp(12px, 4.1vw, 17px);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #5d6675;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.95), 0 -1px 0 rgba(120, 130, 150, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  user-select: none;
+}
+.oglyph {
+  display: inline-grid;
+  place-items: center;
+  width: 0.86em;
+  height: 0.86em;
+  border-radius: 3px;
+  background: linear-gradient(140deg, #8fa0b5, #66707f);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.75);
+  position: relative;
+  top: 0.06em;
+}
+.oglyph i {
+  width: 0.42em;
+  height: 0.42em;
+  background: #eaf3f0;
+  display: block;
+  border-radius: 1px;
+  box-shadow: 0 0 0 1px rgba(40, 50, 60, 0.35) inset;
+}
+
+/* ---- layar ---- */
+.screenWrap {
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  transform: translate(-50%, -50%);
+  width: 55%;
+  aspect-ratio: 1 / 1;
+  border-radius: 20px;
+  padding: 9px;
+  background: linear-gradient(160deg, #ffffff, #e7ecf3 60%, #d2dae6);
+  box-shadow:
+    inset 0 2px 4px rgba(255, 255, 255, 0.95),
+    0 10px 18px rgba(120, 132, 155, 0.3),
+    0 1px 0 rgba(255, 255, 255, 0.9);
+}
+.screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 13px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #bff0e2 0%, #bee3f6 24%, #cfd6f6 48%, #f3cfe8 72%, #fbdfc6 100%);
+  box-shadow: inset 0 3px 9px rgba(60, 70, 90, 0.32), inset 0 -2px 6px rgba(255, 255, 255, 0.55);
+}
+.screen::before {
+  content: '';
+  position: absolute;
+  inset: -30%;
+  pointer-events: none;
+  z-index: 2;
+  background: repeating-linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0.34) 0 6px,
+    rgba(255, 255, 255, 0) 6px 26px,
+    rgba(255, 255, 255, 0.16) 26px 30px,
+    rgba(255, 255, 255, 0) 30px 64px
+  );
+  animation: streak 9s linear infinite;
+  mix-blend-mode: screen;
+  opacity: 0.75;
+}
+@keyframes streak {
+  from {
+    transform: translateX(-12%);
+  }
+  to {
+    transform: translateX(12%);
+  }
+}
+.glass {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  border-radius: 13px;
+  background: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.62) 0%,
+    rgba(255, 255, 255, 0.16) 26%,
+    rgba(255, 255, 255, 0) 46%,
+    rgba(255, 255, 255, 0.1) 78%,
+    rgba(255, 255, 255, 0.3) 100%
+  );
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+.glass::after {
+  content: '';
+  position: absolute;
+  left: -14%;
+  top: -40%;
+  width: 62%;
+  height: 120%;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0));
+  transform: rotate(18deg);
+  filter: blur(5px);
+}
+.lcd {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+.screen.dim .lcd {
+  opacity: 0.55;
+}
+.screen.dim::before {
+  opacity: 0.3;
+}
+
+/* ---- tombol ---- */
+.btns {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 74%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(14px, 5.4vw, 26px);
+}
+.btn {
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 50%;
+  background: radial-gradient(70% 60% at 34% 26%, #ffd3df 0%, var(--btn) 46%, var(--btn-d) 100%);
+  box-shadow:
+    inset 0 2px 3px rgba(255, 255, 255, 0.85),
+    inset 0 -3px 5px rgba(160, 70, 95, 0.45),
+    0 3px 5px rgba(120, 80, 95, 0.35),
+    0 0 0 4px rgba(255, 255, 255, 0.75);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.sm {
+  width: clamp(22px, 7.2vw, 30px);
+  aspect-ratio: 1;
+}
+.lg {
+  width: clamp(32px, 10.4vw, 44px);
+  aspect-ratio: 1;
+}
+.btn:active {
+  transform: translateY(2px) scale(0.97);
+  box-shadow:
+    inset 0 3px 6px rgba(150, 60, 85, 0.55),
+    0 1px 2px rgba(120, 80, 95, 0.3),
+    0 0 0 4px rgba(255, 255, 255, 0.7);
+}
+.btn:focus-visible {
+  outline: 3px solid #7fb0ff;
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .egg::before,
+  .screen::before {
+    animation: none;
+  }
+}

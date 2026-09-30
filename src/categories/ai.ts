@@ -139,6 +139,36 @@ defineOnce([
     inputsInline: true,
     tooltip: 'Benar jika objek ini terlihat kamera.',
   },
+  // --- Fira (AI Labs): TTS + LLM, host-executed di browser ---
+  {
+    type: 'fira_speak',
+    message0: 'Fira bicara %1',
+    args0: [{ type: 'field_input', name: 'TEXT', text: 'Halo, aku Fira!' }],
+    previousStatement: null,
+    nextStatement: null,
+    style: 'ai_blocks',
+    inputsInline: true,
+    tooltip: 'Fira mengucapkan teks (text-to-speech di browser).',
+  },
+  {
+    type: 'fira_ask',
+    message0: 'tanya Fira %1',
+    args0: [{ type: 'field_input', name: 'QUESTION', text: 'kenapa langit biru?' }],
+    previousStatement: null,
+    nextStatement: null,
+    style: 'ai_blocks',
+    inputsInline: true,
+    tooltip: 'Fira memikirkan pertanyaan lalu menjawab dengan suara (LLM). Butuh API key.',
+  },
+  {
+    type: 'fira_converse',
+    message0: 'Fira: dengar lalu jawab',
+    previousStatement: null,
+    nextStatement: null,
+    style: 'ai_blocks',
+    inputsInline: true,
+    tooltip: 'Fira mendengarkan ucapanmu (STT), memikirkannya (LLM), lalu menjawab dengan suara (TTS). STT butuh Chrome/Edge + internet + izin mikrofon.',
+  },
 ]);
 
 // --- Generators -----------------------------------------------------------
@@ -181,6 +211,20 @@ javascriptGenerator.forBlock['ai_use_model'] = function (block) {
     JSON.stringify({ command: 'AI_SET_MODEL', params: { model: block.getFieldValue('MODEL') } }) +
     ';'
   );
+};
+
+javascriptGenerator.forBlock['fira_speak'] = function (block) {
+  return JSON.stringify({ command: 'AI_SPEAK', params: { text: block.getFieldValue('TEXT') } }) + ';';
+};
+
+javascriptGenerator.forBlock['fira_ask'] = function (block) {
+  return (
+    JSON.stringify({ command: 'AI_ASK', params: { question: block.getFieldValue('QUESTION') } }) + ';'
+  );
+};
+
+javascriptGenerator.forBlock['fira_converse'] = function () {
+  return JSON.stringify({ command: 'AI_CONVERSE', params: {} }) + ';';
 };
 
 javascriptGenerator.forBlock['ai_wait_until_seen'] = function (block) {
@@ -239,5 +283,9 @@ export const aiCategory = {
     { kind: 'block', type: 'ai_object_count' },
     { kind: 'block', type: 'ai_bbox' },
     { kind: 'block', type: 'ai_wait_until_seen' },
+    { kind: 'label', text: 'Fira' },
+    { kind: 'block', type: 'fira_speak' },
+    { kind: 'block', type: 'fira_ask' },
+    { kind: 'block', type: 'fira_converse' },
   ],
 };

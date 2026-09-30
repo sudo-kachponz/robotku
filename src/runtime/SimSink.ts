@@ -11,6 +11,8 @@ import type { RuntimeCommand, CommandParams } from '../domain/protocol';
 import { portIndex, NUM_PORTS } from '../domain/ports';
 import { isSupported, robotkuEsp32V3, type BoardProfile } from '../domain/boardProfile';
 import { cvStore } from '../ai/cvStore';
+import { speak, listenOnce, sttSupported } from '../ailabs/speech';
+import { firaChat } from '../ailabs/brain';
 
 // Virtual arena — pose is kept in px inside a square stage, clamped to ±42% of the
 // half-extent exactly like BaseMode's clamp(). SimStage renders in this same space.
@@ -307,6 +309,55 @@ export class SimSink implements RobotSink {
         // The virtual robot can't play the PCM clip, but cue that audio happened.
         this.beep(600, 400);
         break;
+      case 'AI_SPEAK': {
+        // Fira TTS — host-executed in the browser (no-op in tests without speechSynthesis).
+        const text = String(params.text ?? '');
+        if (text) {
+          speak(text);
+          this.commit({ simConsole: [...this.state.simConsole, 'Fira: ' + text] }, true);
+        }
+        break;
+      }
+      case 'AI_ASK': {
+        // Fira LLM (Netra) — ask, then speak the reply. Demo reply when no API key.
+        const q = String(params.question ?? '');
+        if (!q) break;
+        this.commit({ simConsole: [...this.state.simConsole, 'Kamu: ' + q] }, true);
+        try {
+          const res = await firaChat([{ role: 'user', content: q }]);
+          speak(res.content);
+          this.commit({ simConsole: [...this.state.simConsole, 'Fira: ' + res.content] }, true);
+        } catch (e) {
+          const m = e instanceof Error ? e.message : 'kendala';
+          this.commit({ simConsole: [...this.state.simConsole, 'Fira: (' + m + ')'] }, true);
+        }
+        break;
+      }
+      case 'AI_CONVERSE': {
+        // Rantai penuh STT -> LLM -> TTS (tahap 4). STT hanya Chrome/Edge.
+        if (!sttSupported()) {
+          this.commit(
+            { simConsole: [...this.state.simConsole, 'Fira: (STT tak didukung — pakai Chrome/Edge, atau ketik di chat)'] },
+            true,
+          );
+          break;
+        }
+        const heard = await listenOnce();
+        if (!heard.ok || !heard.text) {
+          this.commit({ simConsole: [...this.state.simConsole, 'Fira: (tidak mendengar apa-apa)'] }, true);
+          break;
+        }
+        this.commit({ simConsole: [...this.state.simConsole, 'Kamu: ' + heard.text] }, true);
+        try {
+          const res = await firaChat([{ role: 'user', content: heard.text }]);
+          speak(res.content);
+          this.commit({ simConsole: [...this.state.simConsole, 'Fira: ' + res.content] }, true);
+        } catch (e) {
+          const m = e instanceof Error ? e.message : 'kendala';
+          this.commit({ simConsole: [...this.state.simConsole, 'Fira: (' + m + ')'] }, true);
+        }
+        break;
+      }
       case 'PLAY_TONE': {
         const hz = NOTE_HZ[String(params.note)] ?? 440;
         // `beats` resolves against BPM: ms = beats * 60000 / bpm.

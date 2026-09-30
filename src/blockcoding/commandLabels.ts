@@ -47,6 +47,9 @@ const LABELS: Partial<Record<Opcode, string>> = {
   AI_CAMERA: 'Kamera AI',
   AI_SET_MODEL: 'Pilih Model AI',
   GET_AI_DATA: 'Baca AI',
+  AI_SPEAK: 'Fira Bicara',
+  AI_ASK: 'Tanya Fira',
+  AI_CONVERSE: 'Fira Dengar & Jawab',
 };
 
 /** Human label for an opcode; falls back to the raw opcode string. */

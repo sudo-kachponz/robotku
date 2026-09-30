@@ -168,6 +168,9 @@ export const API: ApiEntry[] = [
   { block: 'ai_object_count', category: 'AI', kind: 'reporter', opcode: 'GET_AI_DATA', docs: 'ai/object-count', py: rep((b) => `ai.object_count(${label(b)})`) },
   { block: 'ai_bbox', category: 'AI', kind: 'reporter', opcode: 'GET_AI_DATA', docs: 'ai/bbox', py: rep((b) => `ai.bbox(${q(fld(b, 'LABEL'))}, ${q(fld(b, 'PART'))})`) },
   { block: 'ai_wait_until_seen', category: 'AI', kind: 'statement', opcode: 'WAIT_UNTIL', docs: 'ai/wait-until-seen', py: stmt((b) => `ai.wait_until_seen(${label(b)})`) },
+  { block: 'fira_speak', category: 'AI', kind: 'statement', opcode: 'AI_SPEAK', py: stmt((b) => `fira.speak(${q(fld(b, 'TEXT'))})`) },
+  { block: 'fira_ask', category: 'AI', kind: 'statement', opcode: 'AI_ASK', py: stmt((b) => `fira.ask(${q(fld(b, 'QUESTION'))})`) },
+  { block: 'fira_converse', category: 'AI', kind: 'statement', opcode: 'AI_CONVERSE', py: () => 'fira.converse()\n' },
   // legacy, load-only (kept so old .rbk still generate Python without throwing)
   { block: 'ai_object_detected', category: 'AI', kind: 'reporter', opcode: 'GET_AI_DATA', docs: 'ai/detected', py: rep((b) => `ai.detected(${q(fld(b, 'LABEL'))})`) },
   { block: 'ai_capture_frame', category: 'AI', kind: 'statement', docs: 'ai/detected', py: () => '' },
