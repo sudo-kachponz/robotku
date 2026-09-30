@@ -44,6 +44,7 @@ export interface SimState {
   lcdText: string;
   lcdShape: string | null;
   ledColor: string | null;
+  neoPixels: string[]; // 4 WS2812B pixels (CSS colors), Makerkit
   buzzerHz: number;
   buzzerPulse: number; // performance.now() of last beep
   bpm: number;
@@ -99,6 +100,7 @@ function initialState(): SimState {
     lcdText: '',
     lcdShape: null,
     ledColor: null,
+    neoPixels: Array(4).fill('rgb(0, 0, 0)'),
     buzzerHz: 0,
     buzzerPulse: 0,
     bpm: 120,
@@ -277,6 +279,34 @@ export class SimSink implements RobotSink {
       case 'DISPLAY_ICON':
         this.commit({ lcdShape: String(params.icon_name ?? params.icon ?? '') }, true);
         break;
+      case 'NEOPIXEL_SET': {
+        const r = Number(params.r) || 0;
+        const g = Number(params.g) || 0;
+        const b = Number(params.b) || 0;
+        const col = `rgb(${r | 0}, ${g | 0}, ${b | 0})`;
+        const px = [...this.state.neoPixels];
+        const idx = params.index;
+        if (idx === 'all' || idx == null) px.fill(col);
+        else {
+          const i = Number(idx);
+          if (i >= 0 && i < px.length) px[i] = col;
+        }
+        this.commit({ neoPixels: px }, true);
+        break;
+      }
+      case 'NEOPIXEL_EFFECT': {
+        const eff = String(params.effect ?? 'off');
+        let px: string[];
+        if (eff === 'rainbow') px = ['rgb(255, 0, 0)', 'rgb(0, 200, 0)', 'rgb(0, 120, 255)', 'rgb(255, 200, 0)'];
+        else if (eff === 'chase') px = ['rgb(0, 150, 255)', 'rgb(0, 0, 0)', 'rgb(0, 0, 0)', 'rgb(0, 0, 0)'];
+        else px = Array(4).fill('rgb(0, 0, 0)');
+        this.commit({ neoPixels: px }, true);
+        break;
+      }
+      case 'SPEAKER_PLAY_PCM':
+        // The virtual robot can't play the PCM clip, but cue that audio happened.
+        this.beep(600, 400);
+        break;
       case 'PLAY_TONE': {
         const hz = NOTE_HZ[String(params.note)] ?? 440;
         // `beats` resolves against BPM: ms = beats * 60000 / bpm.
@@ -406,6 +436,11 @@ export class SimSink implements RobotSink {
         return s.button2;
       case 'recording':
         return this.state.recording;
+      case 'mic_level':
+        // No real mic offline — return a plausible ambient level (louder while a tone plays).
+        return Math.round((this.state.buzzerHz > 0 ? 6000 : 400) + Math.random() * 400);
+      case 'mic_clap':
+        return 0;
       case 'analog': {
         const idx = portIndex(port ?? null);
         return idx != null ? this.state.analogPorts[idx] : 0;

@@ -7,7 +7,7 @@ import * as Blockly from 'blockly/core';
 import { defineOnce } from './_defineOnce';
 import { javascriptGenerator } from 'blockly/javascript';
 import { astroidV2 } from '../robotProfiles';
-import { numArg, type NumOrExpr } from './_args';
+import { numArg, mulNum, type NumOrExpr } from './_args';
 
 defineOnce([
   {
@@ -121,6 +121,51 @@ defineOnce([
     inputsInline: true,
     tooltip: 'Light the RGB LED a color, held for N seconds.',
   },
+  // --- NeoPixel (WS2812B strip, Makerkit V1.2) ---
+  {
+    type: 'neopixel_set',
+    message0: 'Set NeoPixel %1 to %2',
+    args0: [
+      {
+        type: 'field_dropdown',
+        name: 'INDEX',
+        options: [
+          ['all', 'all'],
+          ['1', '0'],
+          ['2', '1'],
+          ['3', '2'],
+          ['4', '3'],
+        ],
+      },
+      { type: 'field_colour', name: 'COLOR', colour: '#EF4444' },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    style: 'looks_blocks',
+    inputsInline: true,
+    tooltip: 'Nyalakan satu atau semua NeoPixel dengan warna penuh (24-bit).',
+  },
+  {
+    type: 'neopixel_effect',
+    message0: 'NeoPixel effect %1 for %2 sec',
+    args0: [
+      {
+        type: 'field_dropdown',
+        name: 'EFFECT',
+        options: [
+          ['Rainbow', 'rainbow'],
+          ['Chase', 'chase'],
+          ['Off', 'off'],
+        ],
+      },
+      { type: 'input_value', name: 'DURATION', check: 'Number' },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    style: 'looks_blocks',
+    inputsInline: true,
+    tooltip: 'Jalankan efek animasi pada strip NeoPixel selama N detik.',
+  },
   // --- LCD Screen ---
   {
     type: 'lcd_shape',
@@ -223,6 +268,39 @@ javascriptGenerator.forBlock['set_led_color'] = function (block, gen) {
   );
 };
 
+// Parse a #rgb / #rrggbb colour field into 0..255 channels.
+function hexRgb(raw: string): { r: number; g: number; b: number } {
+  const s = String(raw || '#000000').replace('#', '');
+  const h = s.length === 3 ? s.split('').map((c) => c + c).join('') : s;
+  return {
+    r: parseInt(h.slice(0, 2), 16) || 0,
+    g: parseInt(h.slice(2, 4), 16) || 0,
+    b: parseInt(h.slice(4, 6), 16) || 0,
+  };
+}
+
+javascriptGenerator.forBlock['neopixel_set'] = function (block) {
+  const { r, g, b } = hexRgb(block.getFieldValue('COLOR'));
+  return (
+    JSON.stringify({
+      command: astroidV2.commands.neopixelSet,
+      params: { index: block.getFieldValue('INDEX'), r, g, b },
+    }) + ';'
+  );
+};
+
+javascriptGenerator.forBlock['neopixel_effect'] = function (block, gen) {
+  return (
+    JSON.stringify({
+      command: astroidV2.commands.neopixelEffect,
+      params: {
+        effect: block.getFieldValue('EFFECT'),
+        duration_ms: mulNum(numArg(block, gen, 'DURATION', 1), 1000),
+      },
+    }) + ';'
+  );
+};
+
 javascriptGenerator.forBlock['lcd_shape'] = function (block, gen) {
   return (
     JSON.stringify({
@@ -259,6 +337,9 @@ export const looksCategory = {
     { kind: 'block', type: 'display_set_brightness' },
     { kind: 'label', text: 'RGB LED' },
     { kind: 'block', type: 'set_led_color', inputs: durShadow },
+    { kind: 'label', text: 'NeoPixel' },
+    { kind: 'block', type: 'neopixel_set' },
+    { kind: 'block', type: 'neopixel_effect', inputs: durShadow },
     { kind: 'label', text: 'LCD Screen' },
     { kind: 'block', type: 'lcd_shape', inputs: durShadow },
     { kind: 'block', type: 'lcd_text', inputs: durShadow },

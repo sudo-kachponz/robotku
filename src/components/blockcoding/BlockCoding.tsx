@@ -12,7 +12,7 @@ import { getState } from '../../app/store';
 import SimStage from './SimStage';
 import { ProgramRunner, type RobotSink } from '../../runtime/ProgramRunner';
 import { SimSink, closeSharedAudio } from '../../runtime/SimSink';
-import { profileFromHello, robotkuEsp32V3 } from '../../domain/boardProfile';
+import { profileFromHello, robotkuEsp32V3, baseProfileForBoard } from '../../domain/boardProfile';
 import { TransportSink } from '../../runtime/TransportSink';
 import { FanOutSink } from '../../runtime/FanOutSink';
 import { useConnection } from '../../hooks/useConnection';
@@ -106,7 +106,7 @@ function BlockCodingInner({
   useEffect(() => {
     simSinkRef.current?.setProfile(
       connected && robotInfo
-        ? profileFromHello(robotInfo.capabilities, robotInfo.ports)
+        ? profileFromHello(robotInfo.capabilities, robotInfo.ports, baseProfileForBoard(robotInfo.board))
         : robotkuEsp32V3,
     );
   }, [connected, robotInfo]);
@@ -186,7 +186,7 @@ function BlockCodingInner({
 
       const profile =
         connected && robotInfo
-          ? profileFromHello(robotInfo.capabilities, robotInfo.ports)
+          ? profileFromHello(robotInfo.capabilities, robotInfo.ports, baseProfileForBoard(robotInfo.board))
           : robotkuEsp32V3;
 
       const results = searchToolboxBlocks(q, profile);
@@ -267,7 +267,7 @@ function BlockCodingInner({
         }
         const profile =
           connected && robotInfo
-            ? profileFromHello(robotInfo.capabilities, robotInfo.ports)
+            ? profileFromHello(robotInfo.capabilities, robotInfo.ports, baseProfileForBoard(robotInfo.board))
             : robotkuEsp32V3;
         const unsupported = unsupportedOpcodesInProgram(generateProgram(ws), profile);
         setPyProblems(

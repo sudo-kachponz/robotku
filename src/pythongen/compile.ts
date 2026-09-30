@@ -213,6 +213,8 @@ function buildReporter(fn: string, a: CallArgs, line: number): BlockSpec {
     case 'sensors.button1': return { type: 'sensor_button1' };
     case 'sensors.button2': return { type: 'sensor_button2' };
     case 'sensors.is_recording': return { type: 'sensor_is_recording' };
+    case 'sensors.mic_level': return { type: 'sensor_mic_level' };
+    case 'sensors.clap_detected': return { type: 'sensor_mic_clap' };
     case 'sensors.analog': return { type: 'sensor_get_analog', fields: { PORT: asField(a.pos[0], line) } };
     case 'sensors.digital': return { type: 'sensor_get_digital', fields: { PORT: asField(a.pos[0], line) } };
     case 'sensors.ultrasonic': return { type: 'sensor_ultrasonic', fields: { PORT: asField(kw('port') ?? a.pos[0], line), UNIT: asField(kw('unit') ?? a.pos[1], line) } };
@@ -255,6 +257,9 @@ function buildStatement(fn: string, a: CallArgs, line: number): BlockSpec {
     case 'display.face': return { type: 'display_kaomoji', fields: { FACE: asField(a.pos[0], line) } };
     case 'display.brightness': return { type: 'display_set_brightness', fields: { VALUE: asField(a.pos[0], line) } };
     case 'led.color': return { type: 'set_led_color', fields: { COLOR: asField(a.pos[0], line) }, inputs: { DURATION: a.pos[1] ?? 1 } };
+    case 'neopixel.set': return { type: 'neopixel_set', fields: { INDEX: asField(a.pos[0], line), COLOR: asField(a.pos[1], line) } };
+    case 'neopixel.effect': return { type: 'neopixel_effect', fields: { EFFECT: asField(a.pos[0], line) }, inputs: { DURATION: a.pos[1] ?? 1 } };
+    case 'speaker.play_clip': return { type: 'speaker_play_clip', fields: { CLIP: asField(a.pos[0], line) } };
     case 'lcd.shape': return { type: 'lcd_shape', fields: { SHAPE: asField(a.pos[0], line) }, inputs: { DURATION: a.pos[1] ?? 1 } };
     case 'lcd.text': return { type: 'lcd_text', fields: { TEXT: asField(a.pos[0], line) }, inputs: { DURATION: a.pos[1] ?? 1 } };
     case 'lcd.clear': return { type: 'lcd_clear' };
@@ -284,8 +289,8 @@ export const KNOWN_STATEMENT_FNS = [
   'robot.forward', 'robot.reverse', 'robot.turn', 'robot.steer', 'robot.claw', 'robot.stop', 'robot.stop_all',
   'robot.servo', 'robot.head', 'robot.gripper', 'wait', 'wait_until',
   'display.text', 'display.face', 'display.brightness',
-  'led.color', 'lcd.shape', 'lcd.text', 'lcd.clear',
-  'audio.record', 'audio.play_recording', 'audio.sound_effect', 'audio.tone', 'audio.tone_beat', 'audio.melody', 'audio.volume', 'audio.stop', 'audio.bpm',
+  'led.color', 'neopixel.set', 'neopixel.effect', 'lcd.shape', 'lcd.text', 'lcd.clear',
+  'audio.record', 'audio.play_recording', 'audio.sound_effect', 'audio.tone', 'audio.tone_beat', 'audio.melody', 'audio.volume', 'audio.stop', 'audio.bpm', 'speaker.play_clip',
   'sensors.set_analog', 'sensors.set_digital', 'sensors.reset_distance', 'sensors.reset_heading',
   'ai.use_model', 'ai.wait_until_seen', 'camera.on', 'camera.off',
 ] as const;

@@ -72,6 +72,8 @@ export const PWM_COL_X = [160, 184, 208, 232, 256];
 
 interface Props {
   rgb: { r: number; g: number; b: number } | null;
+  /** 4 WS2812B pixels (CSS colors) on the Makerkit variant; empty on V3. */
+  neoPixels?: string[];
   buzzerActive: boolean;
   linkState: 'usb' | 'ble' | 'off';
   ports: PortVisual[];
@@ -99,6 +101,7 @@ export interface PlacedModule {
 
 export default function BoardSvg({
   rgb,
+  neoPixels = [],
   buzzerActive,
   linkState,
   ports,
@@ -713,6 +716,26 @@ export default function BoardSvg({
         <text x={150} y={148} textAnchor="middle" fontSize={6.5} fontWeight={800} fill={C.silkDim}>
           RGB
         </text>
+
+        {/* NeoPixel strip (Makerkit V1.2) — 4 WS2812B pixels */}
+        {neoPixels.length > 0 && (
+          <g>
+            {neoPixels.slice(0, 4).map((col, i) => {
+              const cx = 108 + i * 28;
+              const lit = col && col !== 'rgb(0, 0, 0)';
+              return (
+                <g key={i}>
+                  {lit && <circle cx={cx} cy={96} r={12} fill={col} opacity={0.55} />}
+                  <rect x={cx - 7} y={89} width={14} height={14} rx={2}
+                        fill={lit ? col : 'rgba(215, 225, 240, 0.35)'} stroke="#CBD5E1" strokeWidth={1} />
+                </g>
+              );
+            })}
+            <text x={150} y={116} textAnchor="middle" fontSize={6.5} fontWeight={800} fill={C.silkDim}>
+              NEOPIXEL
+            </text>
+          </g>
+        )}
 
         {/* Buzzer */}
         {buzzerActive && (
