@@ -91,6 +91,11 @@ const PROGRAMS: Record<string, BlockSpec[]> = {
     ] } },
     { type: 'procedures_callnoreturn', fields: { NAME: 'maju' } },
   ],
+  'fira ai blocks: speak + ask + converse': [
+    { type: 'fira_speak', fields: { TEXT: 'Halo teman' } },
+    { type: 'fira_ask', fields: { QUESTION: 'kenapa langit biru' } },
+    { type: 'fira_converse' },
+  ],
   'makerkit peripherals: neopixel + speaker + mic': [
     { type: 'neopixel_set', fields: { INDEX: 'all', COLOR: '#ff0000' } },
     { type: 'neopixel_effect', fields: { EFFECT: 'rainbow' }, inputs: { DURATION: 2 } },

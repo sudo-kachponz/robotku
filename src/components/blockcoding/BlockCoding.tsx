@@ -51,6 +51,7 @@ const DocsPanel = dynamic(() => import('./python/DocsPanel'), { ssr: false });
 
 // Client-only: the CV panel pulls in camera + (lazily) ML libs.
 const CvPanel = dynamic(() => import('./CvPanel'), { ssr: false });
+const FiraPanel = dynamic(() => import('../ailabs/FiraPanel'), { ssr: false });
 
 interface BlockCodingProps {
   viewMode?: 'blocks' | 'python';
@@ -118,6 +119,7 @@ function BlockCodingInner({
   const [showMonitor, setShowMonitor] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [showCvPanel, setShowCvPanel] = useState(false);
+  const [showFiraPanel, setShowFiraPanel] = useState(false);
   const aiNoticeShownRef = useRef(false);
   const [showSim, setShowSim] = useState(
     () => typeof window !== 'undefined' && window.innerWidth >= 1024,
@@ -992,6 +994,19 @@ function BlockCodingInner({
             {cameraOn && <span className={styles.tbLiveDot} />}
           </button>
           <button
+            className={`${styles.tbBtn} ${showFiraPanel ? styles.tbActive : ''}`}
+            onClick={() => setShowFiraPanel((v) => !v)}
+            title="Fira — asisten AI (chat)"
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+              <ellipse cx="12" cy="13" rx="7.5" ry="9" fill="none" stroke="currentColor" strokeWidth="2" />
+              <circle cx="9.3" cy="12" r="1.2" fill="currentColor" />
+              <circle cx="14.7" cy="12" r="1.2" fill="currentColor" />
+              <path d="M9.5 16 Q12 18 14.5 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>{' '}
+            <span>Fira</span>
+          </button>
+          <button
             className={`${styles.tbBtn} ${showGallery ? styles.tbActive : ''}`}
             onClick={() => setShowGallery(true)}
             title="Galeri Template"
@@ -1213,6 +1228,8 @@ function BlockCodingInner({
         />
 
         <CvPanel open={showCvPanel} onClose={() => setShowCvPanel(false)} />
+
+        <FiraPanel open={showFiraPanel} onClose={() => setShowFiraPanel(false)} />
 
         {showMonitor && (
           <div className={styles.monitor}>

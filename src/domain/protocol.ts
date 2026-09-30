@@ -43,6 +43,10 @@ export const RUNTIME_OPCODES = {
   GET_AI_DATA: 'GET_AI_DATA',
   AI_CAMERA: 'AI_CAMERA',
   AI_SET_MODEL: 'AI_SET_MODEL',
+  // Fira (AI Labs) — host-executed too: TTS + LLM (Netra) in the browser.
+  AI_SPEAK: 'AI_SPEAK',
+  AI_ASK: 'AI_ASK',
+  AI_CONVERSE: 'AI_CONVERSE', // STT -> LLM -> TTS (rantai penuh, tahap 4)
   // META control flow (interpreted, not streamed)
   META_SET_VAR: 'META_SET_VAR',
   META_FUNC_DEF: 'META_FUNC_DEF',

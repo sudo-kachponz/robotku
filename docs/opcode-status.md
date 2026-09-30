@@ -48,8 +48,11 @@
 
 | Opcode | Status | Blocks |
 |---|---|---|
+| `AI_ASK` | host-only | — |
 | `AI_CAMERA` | host-only | — |
+| `AI_CONVERSE` | host-only | — |
 | `AI_SET_MODEL` | host-only | — |
+| `AI_SPEAK` | host-only | — |
 | `GET_AI_DATA` | host-only | — |
 | `META_BREAK_LOOP` | host-only | — |
 | `META_CALL` | host-only | — |
