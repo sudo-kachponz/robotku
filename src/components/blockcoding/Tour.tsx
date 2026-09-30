@@ -25,7 +25,7 @@ const STEPS: Record<'id' | 'en', Step[]> = {
   id: [
     { icon: <SparklesIcon size={20} />, title: 'Yuk kenalan!', body: 'Tur singkat ± 30 detik biar kamu tau tiap bagian buat apa. Tekan "Lanjut".' },
     { sel: '[data-tour="sim-panel"]', icon: <MonitorIcon size={20} />, title: 'Simulator (kiri)', body: 'Robot virtual. Program yang kamu buat langsung dicoba di sini tanpa alat fisik.' },
-    { sel: '.blocklyToolboxDiv', icon: <PuzzleIcon size={20} />, title: 'Blok Perintah (tengah)', body: 'Daftar blok. Klik kategori (Movement, Logic, dll), lalu seret blok ke area program di kanan.' },
+    { sel: '.blocklyToolbox', icon: <PuzzleIcon size={20} />, title: 'Blok Perintah (tengah)', body: 'Daftar blok. Klik kategori (Movement, Logic, dll), lalu seret blok ke area program di kanan.' },
     { sel: '[data-tour="run"]', icon: <PlayIcon size={20} />, title: 'Run', body: 'Jalankan programmu — robot di simulator langsung bergerak mengikuti blok.' },
     { sel: '[data-tour="stop"]', icon: <StopIcon size={20} />, title: 'Stop', body: 'Hentikan program kapan saja. Tombol darurat (failsafe).' },
     { sel: '[data-tour="simulator"]', icon: <MonitorIcon size={20} />, title: 'Tombol Simulator', body: 'Tampilkan atau sembunyikan panel simulator di kiri.' },
@@ -37,7 +37,7 @@ const STEPS: Record<'id' | 'en', Step[]> = {
   en: [
     { icon: <SparklesIcon size={20} />, title: 'Quick tour!', body: 'A ± 30-second tour so you know what each part does. Press "Next".' },
     { sel: '[data-tour="sim-panel"]', icon: <MonitorIcon size={20} />, title: 'Simulator (left)', body: 'A virtual robot. Your program runs here instantly — no hardware needed.' },
-    { sel: '.blocklyToolboxDiv', icon: <PuzzleIcon size={20} />, title: 'Command Blocks (center)', body: 'The block list. Click a category (Movement, Logic, …), then drag blocks to the program area on the right.' },
+    { sel: '.blocklyToolbox', icon: <PuzzleIcon size={20} />, title: 'Command Blocks (center)', body: 'The block list. Click a category (Movement, Logic, …), then drag blocks to the program area on the right.' },
     { sel: '[data-tour="run"]', icon: <PlayIcon size={20} />, title: 'Run', body: 'Run your program — the simulator robot moves along with your blocks.' },
     { sel: '[data-tour="stop"]', icon: <StopIcon size={20} />, title: 'Stop', body: 'Stop the program anytime. An emergency (failsafe) button.' },
     { sel: '[data-tour="simulator"]', icon: <MonitorIcon size={20} />, title: 'Simulator button', body: 'Show or hide the simulator panel on the left.' },
