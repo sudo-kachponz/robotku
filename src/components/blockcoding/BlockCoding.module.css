@@ -444,7 +444,7 @@
 }
 
 /* --- Blockly Continuous Toolbox Responsive Rules --- */
-.blockly :global(.blocklyToolboxDiv) {
+.blockly :global(.blocklyToolbox) {
   background-color: var(--surface);
   border-right: 1px solid var(--line);
   box-shadow: var(--shadow-sm);
@@ -627,7 +627,7 @@
   .editor {
     --tb-w: 240px;
   }
-  .blockly :global(.blocklyToolboxDiv) {
+  .blockly :global(.blocklyToolbox) {
     width: 240px !important;
     padding-top: 56px !important;
   }
@@ -700,7 +700,7 @@
   .editor {
     --tb-w: 125px;
   }
-  .blockly :global(.blocklyToolboxDiv) {
+  .blockly :global(.blocklyToolbox) {
     width: 125px !important;
     max-width: 38vw !important;
     padding-top: 44px !important;
@@ -781,7 +781,7 @@
   .toolboxToggleOpen {
     left: calc(115px - 14px);
   }
-  .blockly :global(.blocklyToolboxDiv) {
+  .blockly :global(.blocklyToolbox) {
     width: 115px !important;
     max-width: 34vw !important;
   }
@@ -832,7 +832,7 @@
     min-height: 34px;
   }
 
-  .blockly :global(.blocklyToolboxDiv) {
+  .blockly :global(.blocklyToolbox) {
     width: 140px !important;
     max-width: 32vw !important;
   }

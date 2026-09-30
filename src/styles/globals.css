@@ -189,7 +189,7 @@ button {
   fill: var(--bg, #f4f5fb) !important;
 }
 
-.blocklyToolboxDiv {
+.blocklyToolbox {
   background-color: var(--surface, #ffffff) !important;
   color: var(--ink-900) !important;
 }
