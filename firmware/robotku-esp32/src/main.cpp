@@ -554,11 +554,13 @@ void oledSplash() {
 // Buzzer on its OWN LEDC channel/timer (ledc API), isolated from the servo timer
 // pool. ms<=0 = play until the next call; else loop() silences it at the deadline.
 void buzzerTone(int freq, long ms) {
-  if (freq > 0) ledcWriteTone(BUZZER_LEDC_CH, freq);   // 50% duty at `freq`
+  // Buzzer temporarily disabled (LEDC use destabilised the servo). No-op so the
+  // command path / PLAY_TONE still succeed without touching any LEDC timer.
+  (void)freq;
   buzzerOffMs = (ms > 0) ? (millis() + ms) : 0;
 }
 void buzzerOff() {
-  ledcWrite(BUZZER_LEDC_CH, 0);   // duty 0 = silent
+  digitalWrite(PIN_BUZZER, LOW);
   buzzerOffMs = 0;
 }
 
@@ -1176,13 +1178,15 @@ void setupBle() {
 void setup() {
   Serial.begin(115200);
 
-  // Servos (ESP32Servo) draw LEDC timers ONLY from this pool: 0-2 (one per servo,
-  // up to 3). Timer 3 is deliberately LEFT OUT so the buzzer can own it exclusively
-  // (see BUZZER_LEDC_CH) — this is what actually stops a servo inheriting the 2 kHz
-  // buzzer timer and humming instead of turning.
+  // Servos (ESP32Servo) get the FULL 4-timer LEDC pool — the exact config proven
+  // reliable on hardware by the pure servo-sweep sketch. Sharing ANY timer with the
+  // buzzer made the servo hum/stall intermittently, so the buzzer is disabled for
+  // now (see buzzerTone/buzzerOff) — servo drive is the priority; the buzzer is not
+  // a reported defect and will be re-added on a dedicated non-LEDC path later.
   ESP32PWM::allocateTimer(0);
   ESP32PWM::allocateTimer(1);
   ESP32PWM::allocateTimer(2);
+  ESP32PWM::allocateTimer(3);
 
   // Servos (ESP32Servo): 50 Hz SG90. We do NOT attach here — a channel attaches
   // lazily on its first real drive and detaches at idle / on "cabut", so a bench
@@ -1193,10 +1197,11 @@ void setup() {
   if (HAS_SERVO_AUX) { pinMode(PIN_SERVO_AUX, OUTPUT); digitalWrite(PIN_SERVO_AUX, LOW); }
   stopAllActuators();   // clears any deadline; channels already detached
 
-  // Buzzer: dedicated LEDC channel 6 (-> timer 3), isolated from the servo pool.
-  ledcSetup(BUZZER_LEDC_CH, 2000, 10);
-  ledcAttachPin(PIN_BUZZER, BUZZER_LEDC_CH);
-  buzzerOff();
+  // Buzzer DISABLED: any LEDC use here destabilised the servo. Park the pin LOW so
+  // it stays silent and can't float. Re-enable on a non-LEDC path once servo drive
+  // is locked in (firmware-only change, no web impact).
+  pinMode(PIN_BUZZER, OUTPUT);
+  digitalWrite(PIN_BUZZER, LOW);
 
 #if HAS_RGB
   pinMode(PIN_LED_R, OUTPUT);

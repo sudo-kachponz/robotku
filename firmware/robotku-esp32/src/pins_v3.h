@@ -45,8 +45,9 @@
 
 // ------------------------------------------------------------------ Servos
 // SG90 CONTINUOUS drive servos (write 90=stop). Calibration lives in config.h.
-#define PIN_SERVO_L    33      // LEFT drive  — proven on bench test1
-#define PIN_SERVO_R    25      // RIGHT drive
+#define PIN_SERVO_L    33      // LEFT drive  — physical port 1 (PWM header), proven
+#define PIN_SERVO_R    27      // RIGHT drive — physical port 2 (PWM2 header). Was 25
+                               // (PWM4 = physical port 4); servos plug into ports 1&2.
 #define HAS_SERVO_R    1       // 1 = right servo soldered & tested; 0 = one-servo board
 
 // Accessory POSITIONAL servo on web port 5 (see SERVO_AUX_PORT in config.h).
