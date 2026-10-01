@@ -71,12 +71,21 @@ Servo servoL;
 Servo servoR;
 Servo servoAux;       // accessory positional servo on P5 (config.h)
 // Buzzer on a DEDICATED LEDC channel whose timer the servos can NEVER allocate.
-// Sharing the ESP32PWM timer pool let a servo inherit the buzzer's 2 kHz timer, so
-// it HUMMED instead of turning (verified on hardware: a pure servo sketch moved the
-// servo; adding the ESP32PWM buzzer froze it). Servos take LEDC timers 0-2 via the
-// allocator; the buzzer uses channel 6 -> timer 3, fully isolated.
-#define BUZZER_LEDC_CH   6
-unsigned long buzzerOffMs = 0;   // 0 = silent; else stop the tone at this millis()
+// Passive buzzer (pin 13) driven by a GENERAL-PURPOSE hardware timer that toggles
+// the pin in its ISR — deliberately NOT LEDC. ESP32Servo owns the LEDC timer pool;
+// if the buzzer shares an LEDC timer a servo inherits its frequency and hums instead
+// of turning (verified on hardware). A hw timer is a separate peripheral, so the
+// servos (LEDC) and the buzzer (hw timer) both work at the same time.
+hw_timer_t*   buzzerTimer   = nullptr;
+volatile bool buzzerPinHigh = false;
+unsigned long buzzerOffMs   = 0;   // 0 = silent/continuous; else stop the tone at this millis()
+
+void IRAM_ATTR buzzerISR() {
+  buzzerPinHigh = !buzzerPinHigh;
+  // Direct GPIO register write — IRAM-safe inside an ISR (digitalWrite is not).
+  if (buzzerPinHigh) GPIO.out_w1ts = (1u << PIN_BUZZER);
+  else               GPIO.out_w1tc = (1u << PIN_BUZZER);
+}
 Adafruit_SSD1306 oled(OLED_WIDTH, OLED_HEIGHT, &Wire, -1);
 bool oledOk = false;
 
@@ -550,16 +559,21 @@ void oledSplash() {
   oled.display();
 }
 
-// Startup chirp — happens in setup(), so delay() here is fine (not the cmd path).
-// Buzzer on its OWN LEDC channel/timer (ledc API), isolated from the servo timer
-// pool. ms<=0 = play until the next call; else loop() silences it at the deadline.
+// buzzerTone/buzzerOff: passive-buzzer tone via the hardware timer set up in setup().
+// ms<=0 = play until the next call; else loop() silences it at the deadline.
+void buzzerOff();   // forward decl — buzzerTone() calls buzzerOff() before its definition
 void buzzerTone(int freq, long ms) {
-  // Buzzer temporarily disabled (LEDC use destabilised the servo). No-op so the
-  // command path / PLAY_TONE still succeed without touching any LEDC timer.
-  (void)freq;
+  if (!buzzerTimer || freq <= 0) { buzzerOff(); return; }
+  // Timer ticks at 1 MHz (see setup); alarm = half the wave period in µs.
+  uint32_t halfUs = 500000UL / (uint32_t)freq;
+  if (halfUs < 1) halfUs = 1;
+  timerAlarmWrite(buzzerTimer, halfUs, true);
+  timerAlarmEnable(buzzerTimer);
   buzzerOffMs = (ms > 0) ? (millis() + ms) : 0;
 }
 void buzzerOff() {
+  if (buzzerTimer) timerAlarmDisable(buzzerTimer);
+  buzzerPinHigh = false;
   digitalWrite(PIN_BUZZER, LOW);
   buzzerOffMs = 0;
 }
@@ -1126,12 +1140,14 @@ class ServerCallbacks : public NimBLEServerCallbacks {
     (void)server;
     bleConnected = true;
     lastRxMs = millis();
+    setLedColor(0, 255, 0);   // #2: green RGB = "BLE connected" indicator
   }
   void onDisconnect(NimBLEServer* server) override {
     bleConnected = false;
     bleMtu = 23;
     stopAllActuators();          // failsafe on link loss
     watchdogArmed = false;       // disarm until the next HELLO (FIX 6)
+    setLedColor(0, 0, 0);        // #2: BLE indicator off when disconnected
     lastStatus = "Terputus";
     oledStatus("Terputus", "menunggu...");
     server->startAdvertising();  // allow reconnection
@@ -1197,11 +1213,13 @@ void setup() {
   if (HAS_SERVO_AUX) { pinMode(PIN_SERVO_AUX, OUTPUT); digitalWrite(PIN_SERVO_AUX, LOW); }
   stopAllActuators();   // clears any deadline; channels already detached
 
-  // Buzzer DISABLED: any LEDC use here destabilised the servo. Park the pin LOW so
-  // it stays silent and can't float. Re-enable on a non-LEDC path once servo drive
-  // is locked in (firmware-only change, no web impact).
+  // Passive buzzer on a GENERAL-PURPOSE hardware timer (timer 0, prescaler 80 ->
+  // 1 MHz tick). NOT LEDC, so it cannot disturb the servos. The ISR toggles the pin;
+  // buzzerTone() sets the alarm half-period. Silent until the first tone.
   pinMode(PIN_BUZZER, OUTPUT);
   digitalWrite(PIN_BUZZER, LOW);
+  buzzerTimer = timerBegin(0, 80, true);
+  timerAttachInterrupt(buzzerTimer, &buzzerISR, true);
 
 #if HAS_RGB
   pinMode(PIN_LED_R, OUTPUT);
