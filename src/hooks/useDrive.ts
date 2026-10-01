@@ -17,6 +17,61 @@ function sendLine(line: string): Promise<void> {
   return transport.sendLine(line).catch((err) => console.warn('[drive] send failed', err));
 }
 
+// --- Live-drive coalescer (servo.md §5) -------------------------------------
+// Pointer/joystick events fire at 60-240 Hz, but BLE drains far slower. Sending
+// every event floods the write chain so commands pile up stale and the congested
+// link eventually drops (the "joystick/OLED bikin disconnect" symptom). SET_PORT
+// and DRIVE_DIRECT are idempotent — only the LATEST value matters — so we keep
+// just the newest value per target and flush at most every DRIVE_MIN_INTERVAL_MS
+// (latest-wins; intermediate stick positions are dropped on purpose). This caps
+// the wire at ~20 Hz regardless of how fast the UI moves. One-shot commands
+// (LED, tone, bitmap) and the program runner do NOT go through here.
+const DRIVE_MIN_INTERVAL_MS = 50; // 20 Hz — smooth to a human, safe for BLE
+const pendingPort = new Map<number, number>(); // port -> latest tuned value
+let pendingDirect: [number, number] | null = null; // latest driveDirect(l,r)
+let flushTimer: ReturnType<typeof setTimeout> | null = null;
+let lastFlush = 0;
+
+function flushDrive(): void {
+  flushTimer = null;
+  lastFlush = Date.now();
+  for (const [port, value] of pendingPort) sendLine(setPortLine(port, value));
+  pendingPort.clear();
+  if (pendingDirect) {
+    sendLine(driveDirectLine(pendingDirect[0], pendingDirect[1]));
+    pendingDirect = null;
+  }
+}
+
+function scheduleFlush(): void {
+  if (flushTimer) return; // a flush is already pending; the latest value will ride it
+  const wait = Math.max(0, DRIVE_MIN_INTERVAL_MS - (Date.now() - lastFlush));
+  flushTimer = setTimeout(flushDrive, wait);
+}
+
+// Exported for the coalescer unit test (not part of the hook API). Call sites
+// should use the DriveApi from useDrive().
+export function queuePort(port: number, value: number): void {
+  pendingPort.set(port, value);
+  scheduleFlush();
+}
+
+export function queueDirect(left: number, right: number): void {
+  pendingDirect = [left, right];
+  scheduleFlush();
+}
+
+/** Test-only: clear module-level coalescer state between cases. */
+export function __resetDriveCoalescer(): void {
+  if (flushTimer) clearTimeout(flushTimer);
+  flushTimer = null;
+  lastFlush = 0;
+  pendingPort.clear();
+  pendingDirect = null;
+}
+
+export const __DRIVE_MIN_INTERVAL_MS = DRIVE_MIN_INTERVAL_MS;
+
 export function useSettings(): RobotSettings {
   return useSyncExternalStore(subscribeSettings, getSettings, getSettings);
 }
@@ -47,7 +102,7 @@ export function useDrive(): DriveApi {
   const setPort = useCallback(
     (port: number, value: number) => {
       const tuned = applyPortTuning(value, settings.ports[port]);
-      sendLine(setPortLine(port, tuned));
+      queuePort(port, tuned); // coalesced to ~20 Hz — see DRIVE_MIN_INTERVAL_MS
     },
     [settings],
   );
@@ -60,11 +115,11 @@ export function useDrive(): DriveApi {
   );
 
   const stopGroup = useCallback((ports: number[]) => {
-    for (const p of ports) sendLine(setPortLine(p, 0));
+    for (const p of ports) queuePort(p, 0);
   }, []);
 
   const driveDirect = useCallback((left: number, right: number) => {
-    sendLine(driveDirectLine(left, right));
+    queueDirect(left, right);
   }, []);
 
   const setGripper = useCallback((open: boolean) => {
