@@ -70,8 +70,12 @@
 Servo servoL;
 Servo servoR;
 Servo servoAux;       // accessory positional servo on P5 (config.h)
-ESP32PWM buzzerPwm;   // buzzer via the SAME allocator as the servos -> its own timer
-                      // (Arduino tone() stole a servo's timer, making the servo "sing")
+// Buzzer on a DEDICATED LEDC channel whose timer the servos can NEVER allocate.
+// Sharing the ESP32PWM timer pool let a servo inherit the buzzer's 2 kHz timer, so
+// it HUMMED instead of turning (verified on hardware: a pure servo sketch moved the
+// servo; adding the ESP32PWM buzzer froze it). Servos take LEDC timers 0-2 via the
+// allocator; the buzzer uses channel 6 -> timer 3, fully isolated.
+#define BUZZER_LEDC_CH   6
 unsigned long buzzerOffMs = 0;   // 0 = silent; else stop the tone at this millis()
 Adafruit_SSD1306 oled(OLED_WIDTH, OLED_HEIGHT, &Wire, -1);
 bool oledOk = false;
@@ -547,15 +551,14 @@ void oledSplash() {
 }
 
 // Startup chirp — happens in setup(), so delay() here is fine (not the cmd path).
-// Buzzer via ESP32PWM (own timer, coordinated with servos). ms<=0 = play until the
-// next call; else loop() silences it at the deadline. Replaces Arduino tone(), whose
-// LEDC channel clashed with a servo timer (servo hummed the melody).
+// Buzzer on its OWN LEDC channel/timer (ledc API), isolated from the servo timer
+// pool. ms<=0 = play until the next call; else loop() silences it at the deadline.
 void buzzerTone(int freq, long ms) {
-  buzzerPwm.writeTone(freq);
+  if (freq > 0) ledcWriteTone(BUZZER_LEDC_CH, freq);   // 50% duty at `freq`
   buzzerOffMs = (ms > 0) ? (millis() + ms) : 0;
 }
 void buzzerOff() {
-  buzzerPwm.write(0);   // duty 0 = silent
+  ledcWrite(BUZZER_LEDC_CH, 0);   // duty 0 = silent
   buzzerOffMs = 0;
 }
 
@@ -1173,12 +1176,13 @@ void setupBle() {
 void setup() {
   Serial.begin(115200);
 
-  // One coordinated allocator for servos + buzzer so no two share a timer (2 servos
-  // + 1 buzzer = 3 of the 4 LEDC timers — fits; this is what stops the servo "singing").
+  // Servos (ESP32Servo) draw LEDC timers ONLY from this pool: 0-2 (one per servo,
+  // up to 3). Timer 3 is deliberately LEFT OUT so the buzzer can own it exclusively
+  // (see BUZZER_LEDC_CH) — this is what actually stops a servo inheriting the 2 kHz
+  // buzzer timer and humming instead of turning.
   ESP32PWM::allocateTimer(0);
   ESP32PWM::allocateTimer(1);
   ESP32PWM::allocateTimer(2);
-  ESP32PWM::allocateTimer(3);
 
   // Servos (ESP32Servo): 50 Hz SG90. We do NOT attach here — a channel attaches
   // lazily on its first real drive and detaches at idle / on "cabut", so a bench
@@ -1189,7 +1193,9 @@ void setup() {
   if (HAS_SERVO_AUX) { pinMode(PIN_SERVO_AUX, OUTPUT); digitalWrite(PIN_SERVO_AUX, LOW); }
   stopAllActuators();   // clears any deadline; channels already detached
 
-  buzzerPwm.attachPin(PIN_BUZZER, 2000, 10);   // own LEDC timer via the allocator
+  // Buzzer: dedicated LEDC channel 6 (-> timer 3), isolated from the servo pool.
+  ledcSetup(BUZZER_LEDC_CH, 2000, 10);
+  ledcAttachPin(PIN_BUZZER, BUZZER_LEDC_CH);
   buzzerOff();
 
 #if HAS_RGB
