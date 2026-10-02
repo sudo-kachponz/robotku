@@ -14,6 +14,7 @@ import { Lcd, PETW } from './lcd/engine';
 import { PET_COLORS, type Mood } from './lcd/sprites';
 import { firaChat, type ChatMsg } from '../../ailabs/brain';
 import { speak, stopSpeaking, ttsSupported, voiceLabel, listenOnce, sttSupported } from '../../ailabs/speech';
+import { speakViaRobot } from '../../ailabs/robotVoice';
 import styles from './FiraPanel.module.css';
 
 type Face = 'idle' | 'thinking' | 'speaking';
@@ -153,7 +154,11 @@ export default function FiraPanel({ open, onClose }: { open: boolean; onClose: (
         },
       });
       setDemo(res.demo);
-      if (ttsSupported()) speak(res.content || acc);
+      // Prefer the ROBOT's speaker (so it physically talks); fall back to the
+      // laptop/phone speaker only when no robot with TTS is connected.
+      const reply = res.content || acc;
+      const spokeOnRobot = await speakViaRobot(reply);
+      if (!spokeOnRobot && ttsSupported()) speak(reply);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'error tak dikenal';
       setMessages((m) => {
