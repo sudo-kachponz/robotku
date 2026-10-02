@@ -55,8 +55,8 @@ export default [
     },
   },
   {
-    // Build/deploy scripts log to stdout on purpose.
-    files: ['scripts/**/*.{mjs,js}'],
+    // Build/deploy scripts and the standalone Node proxy log to stdout on purpose.
+    files: ['scripts/**/*.{mjs,js}', 'server/**/*.{mjs,js}'],
     rules: { 'no-console': 'off' },
   },
   prettier,
