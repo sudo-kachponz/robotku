@@ -1140,7 +1140,13 @@ class ServerCallbacks : public NimBLEServerCallbacks {
     (void)server;
     bleConnected = true;
     lastRxMs = millis();
-    setLedColor(0, 255, 0);   // #2: green RGB = "BLE connected" indicator
+    setLedColor(0, 255, 0);   // #2: green RGB = "BLE connected" (V3 discrete LED)
+#if HAS_NEOPIXEL
+    neoActiveEffect = 0;              // #2: makerkit has no discrete RGB — light the
+    neoSetPixel(-1, 0, 255, 0);       //     4 WS2812B NeoPixels green instead
+#endif
+    buzzerTone(1320, 140);    // #7: chirp on BLE connect too (USB only beeped because
+                              //     plugging in resets the board -> startup tone)
   }
   void onDisconnect(NimBLEServer* server) override {
     bleConnected = false;
@@ -1148,6 +1154,10 @@ class ServerCallbacks : public NimBLEServerCallbacks {
     stopAllActuators();          // failsafe on link loss
     watchdogArmed = false;       // disarm until the next HELLO (FIX 6)
     setLedColor(0, 0, 0);        // #2: BLE indicator off when disconnected
+#if HAS_NEOPIXEL
+    neoActiveEffect = 0;
+    neoSetPixel(-1, 0, 0, 0);     // makerkit: NeoPixels off on disconnect
+#endif
     lastStatus = "Terputus";
     oledStatus("Terputus", "menunggu...");
     server->startAdvertising();  // allow reconnection
