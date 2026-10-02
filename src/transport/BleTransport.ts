@@ -41,8 +41,15 @@ export class BleTransport extends BaseTransport {
       /* getDevices unsupported (no flag) → fall through to the picker */
     }
     if (!device) {
+      // Match by NAME *or* service UUID. Many ESP32/NimBLE builds advertise the
+      // device name ("Robotku") but NOT the NUS service UUID in the advertisement
+      // packet — so a services-only filter leaves the robot invisible on some
+      // phones (e.g. Samsung A52s) and for already-bonded devices (which stop
+      // re-advertising the service). The namePrefix filter catches it regardless;
+      // optionalServices still grants access to NUS once connected. This means NO
+      // manual Android pairing is needed — connect straight from the web.
       device = await navigator.bluetooth.requestDevice({
-        filters: [{ services: [NUS_SERVICE] }],
+        filters: [{ namePrefix: 'Robotku' }, { services: [NUS_SERVICE] }],
         optionalServices: [NUS_SERVICE],
       });
     }
