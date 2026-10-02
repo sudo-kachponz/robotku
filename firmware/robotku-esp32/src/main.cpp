@@ -57,7 +57,7 @@
 // ------------------------------------------------------------------ Identity
 // BOARD_NAME / BOARD_ID come from the selected pin map (pins_*.h) so HELLO_ACK
 // tells the web which variant connected — no #ifdef BOARD_* here (see config.h).
-#define FW_VERSION   "2.2.5-mk"
+#define FW_VERSION   "2.2.6-mk"
 #define PROTOCOL_ID  "robotku-v1"
 #define BLE_NAME     "Robotku"
 
@@ -122,7 +122,12 @@ bool                   spkReady     = false;  // I2S TX installed OK
 // play it (buffer-then-play) because BLE is too slow for reliable real-time.
 // 8-bit @ 8 kHz = 8 KB/s — matches BLE throughput and halves RAM vs 16-bit.
 #define PCM_STREAM_CAP  32000              // 4 s @ 8 kHz, 8-bit (32 KB DRAM)
-uint8_t                pcmStreamBuf[PCM_STREAM_CAP];
+// LAZY-allocated on the first TTS, NOT a 32 KB always-on .bss array: a permanent
+// 32 KB static buffer shrank the heap the BLE stack needs and regressed connect
+// (2.2.3 stable, 2.2.4/2.2.5 connect-then-drop). Null until the robot first
+// speaks, so idle/connect RAM == the stable 2.2.3; kept allocated after (reused,
+// no free -> no race with the audio task).
+uint8_t*               pcmStreamBuf  = nullptr;
 volatile size_t        pcmStreamLen  = 0;   // bytes buffered so far
 volatile bool          pcmStreamRecv = false; // between TTS_BEGIN and TTS_END
 volatile bool          pcmStreamPlay = false; // audioTask: play the buffer once
@@ -423,7 +428,7 @@ void audioTask(void*) {
       }
       spkPcmPlay = false;
       i2s_zero_dma_buffer(I2S_NUM_1);
-    } else if (pcmStreamPlay) {
+    } else if (pcmStreamPlay && pcmStreamBuf) {
       // Play the buffered TTS clip: 8 kHz 8-bit unsigned -> 16 kHz 16-bit signed.
       // u8 center is 128; (b-128)<<8 maps to full int16 range. Each 8 kHz sample
       // is written twice (crude x2 upsample) to match the 16 kHz I2S clock.
@@ -939,6 +944,8 @@ void handleCommand(const String& jsonLine) {
     spkToneFreq = 0; spkPcmPlay = false;   // interrupt any current audio
     pcmStreamPlay = false;
     pcmStreamLen = 0;
+    if (!pcmStreamBuf) pcmStreamBuf = (uint8_t*)malloc(PCM_STREAM_CAP);
+    if (!pcmStreamBuf) { sendUnsupported("TTS_BEGIN"); return; }  // OOM -> skip, don't crash
     pcmStreamRecv = true;
     lastStatus = "Bicara";
 #else
@@ -948,7 +955,7 @@ void handleCommand(const String& jsonLine) {
   }
   if (strcmp(cmd, "TTS_CHUNK") == 0) {
 #if HAS_SPEAKER
-    if (pcmStreamRecv) {
+    if (pcmStreamRecv && pcmStreamBuf) {
       const char* b64 = p["data"] | "";
       size_t avail = PCM_STREAM_CAP - pcmStreamLen;
       size_t olen = 0;
