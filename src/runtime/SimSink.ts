@@ -314,7 +314,7 @@ export class SimSink implements RobotSink {
         const text = String(params.text ?? '');
         if (text) {
           speak(text);
-          this.commit({ simConsole: [...this.state.simConsole, 'Fira: ' + text] }, true);
+          this.commit({ simConsole: [...this.state.simConsole, 'Robotku AI: ' + text] }, true);
         }
         break;
       }
@@ -326,10 +326,10 @@ export class SimSink implements RobotSink {
         try {
           const res = await firaChat([{ role: 'user', content: q }]);
           speak(res.content);
-          this.commit({ simConsole: [...this.state.simConsole, 'Fira: ' + res.content] }, true);
+          this.commit({ simConsole: [...this.state.simConsole, 'Robotku AI: ' + res.content] }, true);
         } catch (e) {
           const m = e instanceof Error ? e.message : 'kendala';
-          this.commit({ simConsole: [...this.state.simConsole, 'Fira: (' + m + ')'] }, true);
+          this.commit({ simConsole: [...this.state.simConsole, 'Robotku AI: (' + m + ')'] }, true);
         }
         break;
       }
@@ -337,24 +337,24 @@ export class SimSink implements RobotSink {
         // Rantai penuh STT -> LLM -> TTS (tahap 4). STT hanya Chrome/Edge.
         if (!sttSupported()) {
           this.commit(
-            { simConsole: [...this.state.simConsole, 'Fira: (STT tak didukung — pakai Chrome/Edge, atau ketik di chat)'] },
+            { simConsole: [...this.state.simConsole, 'Robotku AI: (STT tak didukung — pakai Chrome/Edge, atau ketik di chat)'] },
             true,
           );
           break;
         }
         const heard = await listenOnce();
         if (!heard.ok || !heard.text) {
-          this.commit({ simConsole: [...this.state.simConsole, 'Fira: (tidak mendengar apa-apa)'] }, true);
+          this.commit({ simConsole: [...this.state.simConsole, 'Robotku AI: (tidak mendengar apa-apa)'] }, true);
           break;
         }
         this.commit({ simConsole: [...this.state.simConsole, 'Kamu: ' + heard.text] }, true);
         try {
           const res = await firaChat([{ role: 'user', content: heard.text }]);
           speak(res.content);
-          this.commit({ simConsole: [...this.state.simConsole, 'Fira: ' + res.content] }, true);
+          this.commit({ simConsole: [...this.state.simConsole, 'Robotku AI: ' + res.content] }, true);
         } catch (e) {
           const m = e instanceof Error ? e.message : 'kendala';
-          this.commit({ simConsole: [...this.state.simConsole, 'Fira: (' + m + ')'] }, true);
+          this.commit({ simConsole: [...this.state.simConsole, 'Robotku AI: (' + m + ')'] }, true);
         }
         break;
       }
