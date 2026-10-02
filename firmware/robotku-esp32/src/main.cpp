@@ -57,7 +57,7 @@
 // ------------------------------------------------------------------ Identity
 // BOARD_NAME / BOARD_ID come from the selected pin map (pins_*.h) so HELLO_ACK
 // tells the web which variant connected — no #ifdef BOARD_* here (see config.h).
-#define FW_VERSION   "2.2.4-mk"
+#define FW_VERSION   "2.2.5-mk"
 #define PROTOCOL_ID  "robotku-v1"
 #define BLE_NAME     "Robotku"
 
@@ -431,7 +431,10 @@ void audioTask(void*) {
       while (off < pcmStreamLen && pcmStreamPlay && !spkStop) {
         int n = 0;
         while (n <= 254 && off < pcmStreamLen) {
-          int16_t s = (int16_t)(((int)pcmStreamBuf[off] - 128) << 8);
+          // u8 (centre 128) -> s16 at HALF scale (<<7, not <<8): still far louder
+          // than the old tone, but leaves current headroom so a long reply doesn't
+          // brown the board out on USB. Bump toward <<8 if you run on battery.
+          int16_t s = (int16_t)(((int)pcmStreamBuf[off] - 128) << 7);
           buf[n++] = s;
           buf[n++] = s;
           off++;
@@ -1226,13 +1229,11 @@ class ServerCallbacks : public NimBLEServerCallbacks {
 #endif
     buzzerTone(1320, 140);    // #7: chirp on BLE connect too (USB only beeped because
                               //     plugging in resets the board -> startup tone)
-#if HAS_SPEAKER
-    // Speaker self-test: a short 880 Hz blip over the MAX98357A so a successful
-    // connect audibly proves the I2S speaker path (buzzer is a separate piezo on
-    // GPIO13 — a working buzzer tells you nothing about the speaker). This is the
-    // only thing that drives spkTone* in normal use.
-    if (spkReady) { spkToneSquare = false; spkToneFreq = 880; spkToneEndMs = millis() + 180; }
-#endif
+    // NOTE: a loud speaker self-test blip USED to fire here, but on USB the
+    // NeoPixel + buzzer + speaker current spike browned the board out at connect
+    // -> reset -> reconnect loop ("putus-nyambung"). Removed: real TTS playback
+    // exercises the speaker now, so the blip was redundant. The buzzer chirp above
+    // (low current) still gives an audible "connected" cue.
   }
   void onDisconnect(NimBLEServer* server) override {
     bleConnected = false;
