@@ -12,7 +12,7 @@ import { disconnect } from '../../app/connection';
 import { showToast } from '../../ui/toast';
 import styles from '../../styles/Settings.module.css';
 
-const LATEST_FW = '2.2.6-mk';
+const LATEST_FW = '2.2.3-mk';
 const MANIFEST = '/firmware/manifest.json';
 const BIN_URL = `/firmware/robotku-${LATEST_FW}.bin`;
 const ESP_WEB_TOOLS = 'https://unpkg.com/esp-web-tools@10/dist/web/install-button.js';
