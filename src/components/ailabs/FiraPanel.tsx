@@ -1,14 +1,14 @@
 // src/components/ailabs/FiraPanel.tsx
 //
 // Robotku AI di editor blok — panel/drawer kanan: avatar Tamagotchi (piksel
-// canvas) + UI chat ala ChatGPT. Otak memanggil LLM LANGSUNG dari browser
-// (brain.ts), kunci diisi sekali lewat ⚙ (localStorage). Tanpa kunci → mode
-// demo. Client-only (canvas + fetch streaming).
+// canvas) + UI chat ala ChatGPT. Otak memanggil BACKEND (Cloudflare Worker via
+// brain.ts) yang pegang kunci di server — user TAK perlu input apa pun. Tanpa
+// backend → mode demo. Client-only (canvas + fetch streaming).
 
 import { useEffect, useRef, useState } from 'react';
 import { Lcd, PETW } from './lcd/engine';
 import { PET_COLORS, type Mood } from './lcd/sprites';
-import { firaChat, getAiKey, setAiKey, hasAiKey, type ChatMsg } from '../../ailabs/brain';
+import { firaChat, type ChatMsg } from '../../ailabs/brain';
 import { speak, stopSpeaking, ttsSupported, voiceLabel, listenOnce, sttSupported } from '../../ailabs/speech';
 import styles from './FiraPanel.module.css';
 
@@ -28,20 +28,6 @@ export default function FiraPanel({ open, onClose }: { open: boolean; onClose: (
   const [demo, setDemo] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [listening, setListening] = useState(false);
-  const [keyInput, setKeyInput] = useState('');
-  const [aiOn, setAiOn] = useState(false);
-
-  // Read the saved key on mount (client-only) so the header shows AI aktif/demo.
-  useEffect(() => {
-    setAiOn(hasAiKey());
-    setKeyInput(getAiKey());
-  }, []);
-
-  function saveKey() {
-    setAiKey(keyInput);
-    setAiOn(hasAiKey());
-    setShowInfo(false);
-  }
 
   // avatar loop
   useEffect(() => {
@@ -134,15 +120,9 @@ export default function FiraPanel({ open, onClose }: { open: boolean; onClose: (
         <canvas ref={avatarRef} width={96} height={96} className={styles.avatar} />
         <div className={styles.title}>
           <b>Robotku AI</b>
-          <span className={styles.sub}>
-            {aiOn
-              ? demo
-                ? 'kunci/jaringan bermasalah'
-                : 'AI aktif'
-              : 'mode demo — isi kunci di ⚙'}
-          </span>
+          <span className={styles.sub}>{demo ? 'mode demo (server AI mati)' : 'AI aktif'}</span>
         </div>
-        <button className={styles.icon} onClick={() => setShowInfo((v) => !v)} title="Setel kunci AI">
+        <button className={styles.icon} onClick={() => setShowInfo((v) => !v)} title="Info">
           ⚙
         </button>
         <button className={styles.icon} onClick={onClose} title="Tutup" aria-label="Tutup">
@@ -152,26 +132,9 @@ export default function FiraPanel({ open, onClose }: { open: boolean; onClose: (
 
       {showInfo && (
         <div className={styles.keyBox}>
-          <div className={styles.keyRow}>
-            <input
-              className={styles.keyInput}
-              type="password"
-              value={keyInput}
-              onChange={(e) => setKeyInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') saveKey();
-              }}
-              placeholder="Tempel kunci AI di sini…"
-              aria-label="Kunci AI"
-            />
-            <button className={styles.send} onClick={saveKey}>
-              Simpan
-            </button>
-          </div>
           <p className={styles.warn}>
-            🔑 Kunci disimpan di browser ini saja (localStorage) dan dipakai langsung ke LLM — tanpa
-            server. Pakai kunci khusus yang dibatasi biaya & bisa dicabut. Kosongkan lalu Simpan untuk
-            menghapus. Suara: {ttsSupported() ? voiceLabel() : 'tak didukung browser ini'}.
+            🤖 Robotku AI jalan lewat server — kamu tak perlu memasukkan apa pun, dan kunci tidak pernah
+            ada di browser. Suara: {ttsSupported() ? voiceLabel() : 'tak didukung browser ini'}.
           </p>
         </div>
       )}
