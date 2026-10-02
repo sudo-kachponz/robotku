@@ -44,8 +44,14 @@ const GEAR_CONFIG: Record<
   GearLevel,
   { label: string; renderIcon: () => React.ReactNode; factor: number; colorClass: string }
 > = {
-  ECO: { label: 'Pelan', renderIcon: () => <SpeedSlowIcon />, factor: 0.4, colorClass: styles.gearEco },
-  NORMAL: { label: 'Normal', renderIcon: () => <SpeedNormalIcon />, factor: 0.75, colorClass: styles.gearNormal },
+  // factor scales the -100..100 drive value BEFORE SET_PORT. Firmware maps it to
+  // servo angle: 90 + value*90/100. A continuous SG90 saturates around ±35-40°
+  // offset (value ~40), so the old 0.4/0.75/1.0 all ran the servo flat-out and
+  // felt identical (Fajrisya: "gear speed difference not noticeable"). Pull ECO
+  // and NORMAL down into the linear band so the three gears are actually
+  // distinct; TURBO stays full. Calibration knob — tune per-build on hardware.
+  ECO: { label: 'Pelan', renderIcon: () => <SpeedSlowIcon />, factor: 0.25, colorClass: styles.gearEco },
+  NORMAL: { label: 'Normal', renderIcon: () => <SpeedNormalIcon />, factor: 0.5, colorClass: styles.gearNormal },
   TURBO: { label: 'Turbo', renderIcon: () => <SpeedTurboIcon />, factor: 1.0, colorClass: styles.gearTurbo },
 };
 
