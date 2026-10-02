@@ -37,7 +37,7 @@ export const CLAPS_TO_ADVANCE = 5;
 const KEY = 'robotku.fira';
 
 function fresh(): Progress {
-  return { stage: 0, claps: 0, phrases: 0, transcripts: 0, convos: 0, name: 'Fira', createdAt: Date.now() };
+  return { stage: 0, claps: 0, phrases: 0, transcripts: 0, convos: 0, name: 'Robotku AI', createdAt: Date.now() };
 }
 
 export function loadProgress(): Progress {

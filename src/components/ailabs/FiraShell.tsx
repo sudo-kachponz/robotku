@@ -26,7 +26,7 @@ export default function FiraShell() {
   const screenRef = useRef<HTMLDivElement>(null);
 
   // Loop-read state in refs so button clicks never re-render — canvas is the output.
-  const progressRef = useRef<Progress>({ stage: 0, claps: 0, phrases: 0, transcripts: 0, convos: 0, name: 'Fira', createdAt: 0 });
+  const progressRef = useRef<Progress>({ stage: 0, claps: 0, phrases: 0, transcripts: 0, convos: 0, name: 'Robotku AI', createdAt: 0 });
   const modeRef = useRef<FiraMode>('wajah');
   const powerSaveRef = useRef(false);
   const flashRef = useRef(0);
@@ -229,7 +229,7 @@ export default function FiraShell() {
     else flashRef.current = 4;
   }
   function resetEgg() {
-    if (typeof window !== 'undefined' && window.confirm('Mulai telur baru? Progres Fira akan hilang.')) {
+    if (typeof window !== 'undefined' && window.confirm('Mulai telur baru? Progres Robotku AI akan hilang.')) {
       progressRef.current = resetProgress();
       modeRef.current = 'wajah';
       flashRef.current = 8;
@@ -248,11 +248,8 @@ export default function FiraShell() {
         <div className={styles.egg} />
         <div className={styles.rim} />
 
-        <div className={styles.brand} aria-label="Fira">
-          Fir
-          <span className={styles.oglyph} aria-hidden="true">
-            <i />
-          </span>
+        <div className={styles.brand} aria-label="Robotku AI">
+          Robotku AI
         </div>
 
         <div className={styles.screenWrap}>

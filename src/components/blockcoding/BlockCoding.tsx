@@ -996,7 +996,7 @@ function BlockCodingInner({
           <button
             className={`${styles.tbBtn} ${showFiraPanel ? styles.tbActive : ''}`}
             onClick={() => setShowFiraPanel((v) => !v)}
-            title="Fira — asisten AI (chat)"
+            title="Robotku AI — asisten AI (chat)"
           >
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
               <ellipse cx="12" cy="13" rx="7.5" ry="9" fill="none" stroke="currentColor" strokeWidth="2" />
@@ -1004,7 +1004,7 @@ function BlockCodingInner({
               <circle cx="14.7" cy="12" r="1.2" fill="currentColor" />
               <path d="M9.5 16 Q12 18 14.5 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
             </svg>{' '}
-            <span>Fira</span>
+            <span>Robotku AI</span>
           </button>
           <button
             className={`${styles.tbBtn} ${showGallery ? styles.tbActive : ''}`}
