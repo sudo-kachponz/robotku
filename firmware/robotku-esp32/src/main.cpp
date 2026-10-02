@@ -56,7 +56,7 @@
 // ------------------------------------------------------------------ Identity
 // BOARD_NAME / BOARD_ID come from the selected pin map (pins_*.h) so HELLO_ACK
 // tells the web which variant connected — no #ifdef BOARD_* here (see config.h).
-#define FW_VERSION   "2.2.2-mk"
+#define FW_VERSION   "2.2.3-mk"
 #define PROTOCOL_ID  "robotku-v1"
 #define BLE_NAME     "Robotku"
 
@@ -102,7 +102,12 @@ uint16_t neoEffectPhase = 0;
 // so the command path / heartbeat NEVER block (FIX 3). The command handlers only
 // flip these flags; the task streams samples. Single-writer/single-reader — no mutex.
 #define SPK_SR          16000
-#define SPK_AMPLITUDE   3000
+// Peak amplitude for synthesized tones (int16 full scale = 32767). 3000 was only
+// ~9% FS (~-21 dB) -> blip barely audible (Fajrisya: "suara e kecil banget"). A
+// sine never clips below 32767, so 18000 (~55% FS) is loud with headroom. If still
+// too quiet it's the MAX98357A GAIN pin (floating = 9 dB; tie to GND = 12 dB, or
+// via 100k to VDD = 15 dB) — a hardware knob this can't reach.
+#define SPK_AMPLITUDE   18000
 volatile int           spkToneFreq  = 0;      // >0 = play this tone
 volatile bool          spkToneSquare = false; // wave shape
 volatile unsigned long spkToneEndMs = 0;      // stop the tone at this millis()

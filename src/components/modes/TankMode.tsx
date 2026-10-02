@@ -92,7 +92,7 @@ export default function TankMode() {
               value={leftT}
               onChange={(e) => applyLeft(Number(e.target.value))}
             />
-            <span className={styles.throttleLabel}>Kiri (W/S)</span>
+            <span className={styles.throttleLabel}>Kiri</span>
             <span className={styles.readout}>{leftT}</span>
           </div>
 
@@ -104,7 +104,7 @@ export default function TankMode() {
               onStart={() => setPort(turret[0], -100)}
               onStop={() => stopGroup(turret)}
             >
-              ⟲ CCW (Q)
+              ⟲ CCW
             </HoldButton>
             <HoldButton
               className={`${styles.ctrlBtn} ${styles.turretBtn}`}
@@ -113,7 +113,7 @@ export default function TankMode() {
               onStart={() => setPort(turret[0], 100)}
               onStop={() => stopGroup(turret)}
             >
-              ⟳ CW (R)
+              ⟳ CW
             </HoldButton>
             <div style={{ display: 'flex', gap: 8 }}>
               <HoldButton
@@ -144,7 +144,7 @@ export default function TankMode() {
               value={rightT}
               onChange={(e) => applyRight(Number(e.target.value))}
             />
-            <span className={styles.throttleLabel}>Kanan (E/D)</span>
+            <span className={styles.throttleLabel}>Kanan</span>
             <span className={styles.readout}>{rightT}</span>
           </div>
         </div>
