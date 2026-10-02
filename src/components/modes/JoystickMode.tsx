@@ -23,10 +23,7 @@ import { ActionButtons } from './joystick/ActionButtons';
 import { AnalogStick } from './joystick/AnalogStick';
 import { LAYOUT } from './joystick/layoutConfig';
 import {
-  LightbulbIcon,
-  MuteIcon,
   RobotKuLogoIcon,
-  SoundIcon,
   SpeedNormalIcon,
   SpeedSlowIcon,
   SpeedTurboIcon,
@@ -804,71 +801,6 @@ export default function JoystickMode() {
           </div>
         </div>
 
-        {/* ── ACCESSORY TRAY (LED Palette, Gears, Audio) ── */}
-        <div className={styles.accessoryTray}>
-          {/* LED Swatches */}
-          <div className={styles.trayGroup}>
-            <span className={styles.trayLabel}>
-              <LightbulbIcon /> LED:
-            </span>
-            <div className={styles.ledColorPicker}>
-              {LED_PRESETS.map((p) => (
-                <button
-                  key={p.name}
-                  type="button"
-                  className={`${styles.ledDotBtn} ${selectedLed === p.rgb ? styles.ledDotSelected : ''}`}
-                  style={{ backgroundColor: p.color, color: p.color }}
-                  onClick={() => handleSelectLed(p.rgb)}
-                  title={`Lampu LED ${p.name}`}
-                  aria-label={`Lampu LED ${p.name}`}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Speed Gear Pills */}
-          <div className={styles.trayGroup}>
-            <span className={styles.trayLabel}>GEAR:</span>
-            <div className={styles.pillGroup}>
-              {(['ECO', 'NORMAL', 'TURBO'] as GearLevel[]).map((g) => {
-                const cfg = GEAR_CONFIG[g];
-                return (
-                  <button
-                    key={g}
-                    type="button"
-                    className={`${styles.pillBtn} ${gear === g ? styles.pillActive : ''} ${gear === g ? cfg.colorClass : ''}`}
-                    onClick={() => changeGear(g)}
-                  >
-                    {cfg.renderIcon()} {cfg.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Sound Mute Button */}
-          <button
-            type="button"
-            className={styles.audioBtn}
-            onClick={toggleSound}
-            title={isMuted ? 'Nyalakan Efek Suara' : 'Matikan Efek Suara'}
-            aria-label="Toggle Audio"
-          >
-            {isMuted ? <MuteIcon /> : <SoundIcon />}
-          </button>
-        </div>
-
-        {/* ── KEYBOARD SHORTCUT GUIDE ── */}
-        <div className={styles.keyboardGuide}>
-          <div><span className={styles.kbdBadge}>WASD / ◄▲▼►</span> D-Pad & Kemudi Analog</div>
-          <div><span className={styles.kbdBadge}>Spasi</span> E-Stop Rem Darurat</div>
-          <div><span className={styles.kbdBadge}>H</span> Klakson</div>
-          <div><span className={styles.kbdBadge}>Q / E</span> Putar Kiri / Kanan</div>
-          <div><span className={styles.kbdBadge}>L</span> Ganti Warna LED</div>
-          <div><span className={styles.kbdBadge}>1 / 2 / 3 / Tab</span> Ganti Kecepatan</div>
-          <div><span className={styles.kbdBadge}>M</span> Suara</div>
-          <div><span className={styles.kbdBadge}>R</span> Reset Posisi Arena</div>
-        </div>
       </div>
     </ControlLayout>
   );
