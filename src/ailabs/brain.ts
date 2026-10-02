@@ -1,22 +1,14 @@
 // src/ailabs/brain.ts
 //
-// Otak Robotku AI — memanggil LLM (Netra / DeepSeek, OpenAI-compatible) LANGSUNG
-// dari browser, tanpa proxy. Kunci API diambil dari localStorage (diisi sekali
-// lewat tombol ⚙ di panel chat) atau dari NEXT_PUBLIC_NETRA_API_KEY saat build.
-// Tanpa kunci → mode DEMO (jawaban siap pakai, UX tetap jalan).
-//
-// CATATAN KEAMANAN: kunci ada di browser (localStorage). Siapa pun yang pakai
-// perangkat itu bisa membacanya. Pakai kunci khusus yang DIBATASI biaya & bisa
-// dicabut — jangan kunci utama. (Ini trade-off "yang penting jalan dulu".)
+// Otak Robotku AI — memanggil BACKEND (Cloudflare Worker, lihat ../../robotku-ai-backend)
+// yang menyimpan kunci Netra di server. Browser HANYA mengirim giliran percakapan;
+// kunci TAK pernah ada di bundle browser dan user TAK perlu input. Streaming SSE ala
+// OpenAI (delta.content = jawaban, delta.reasoning = "berpikir"). Kalau backend tak
+// tersedia → mode DEMO (kelas WiFi jelek tak boleh mati total).
 
-const NETRA_URL = 'https://api.netraruntime.com/v1/chat/completions';
-const MODEL = 'deepseek/deepseek-v4-flash-0731';
-const KEY_STORAGE = 'robotku.ai.key';
-
-const PERSONA =
-  'Kamu "Robotku AI", asisten robot yang ramah untuk anak-anak yang sedang belajar ' +
-  'coding dan AI. Jawab singkat, hangat, dan mudah dimengerti dalam Bahasa Indonesia. ' +
-  'Boleh pakai emoji sesekali. Kalau ditanya hal teknis, jelaskan sesederhana mungkin.';
+const PROXY_URL =
+  (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_FIRA_PROXY_URL) ||
+  'https://robotku-ai.hubrobotku.workers.dev/chat';
 
 export interface ChatMsg {
   role: 'system' | 'user' | 'assistant';
@@ -33,37 +25,11 @@ export interface ChatResult {
   demo: boolean;
 }
 
-/** Kunci API: localStorage dulu, lalu env build-time. Kosong = mode demo. */
-export function getAiKey(): string {
-  try {
-    const k = typeof localStorage !== 'undefined' ? localStorage.getItem(KEY_STORAGE) : null;
-    if (k && k.trim()) return k.trim();
-  } catch {
-    /* localStorage tak tersedia (SSR) */
-  }
-  const env =
-    typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_NETRA_API_KEY : undefined;
-  return (env || '').trim();
-}
-
-export function setAiKey(key: string): void {
-  try {
-    if (key.trim()) localStorage.setItem(KEY_STORAGE, key.trim());
-    else localStorage.removeItem(KEY_STORAGE);
-  } catch {
-    /* ignore */
-  }
-}
-
-export function hasAiKey(): boolean {
-  return getAiKey().length > 0;
-}
-
 const DEMO_REPLIES = [
-  'Halo! Aku Robotku AI mode demo — kunci AI belum diisi, jadi ini jawaban siap pakai.',
-  'Seru! Tapi otak AI-ku belum aktif. Isi kunci AI di tombol ⚙ ya biar aku jawab sungguhan.',
-  'Aku dengar kamu! Untuk jawaban AI asli, masukkan kunci AI dulu lewat ⚙.',
-  'Wah, pertanyaan bagus. Kunci AI-ku belum dipasang — isi dulu di ⚙, nanti aku jawab beneran.',
+  'Halo! Aku Robotku AI mode demo — server AI belum tersambung, jadi ini jawaban siap pakai.',
+  'Seru! Tapi otak AI-ku belum online. Coba lagi sebentar ya.',
+  'Aku dengar kamu! Untuk jawaban AI asli, server Robotku AI harus aktif dulu.',
+  'Wah, pertanyaan bagus. Server AI-ku sedang tidak aktif — nanti aku jawab sungguhan.',
 ];
 
 function demoReply(history: ChatMsg[]): string {
@@ -89,37 +55,22 @@ async function demoStream(
   return { content: reply, demo: true };
 }
 
-/** Kirim riwayat ke Netra langsung; stream jawaban. Tanpa kunci / error → demo. */
+/** Kirim riwayat ke backend; stream jawaban. Fallback demo bila backend mati. */
 export async function firaChat(
   history: ChatMsg[],
   cb: StreamCallbacks = {},
   signal?: AbortSignal,
 ): Promise<ChatResult> {
-  const key = getAiKey();
-  if (!key) return demoStream(history, cb, signal);
-
-  const convo = history.filter((m) => m.role === 'user' || m.role === 'assistant');
-  const messages: ChatMsg[] = [{ role: 'system', content: PERSONA }, ...convo];
-
+  // Browser hanya kirim giliran user/assistant — persona & kunci ada di server.
+  const messages = history.filter((m) => m.role === 'user' || m.role === 'assistant');
   try {
-    const res = await fetch(NETRA_URL, {
+    const res = await fetch(PROXY_URL, {
       method: 'POST',
       signal,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${key}`,
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages,
-        stream: true,
-        // DeepSeek V4 Flash adalah model reasoning: butuh ruang token yang cukup,
-        // kalau terlalu kecil `content` bisa kosong. reasoning effort 'low' = cepat.
-        max_tokens: 500,
-        reasoning: { effort: 'low' },
-      }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages }),
     });
-    if (!res.ok || !res.body) throw new Error('netra ' + res.status);
+    if (!res.ok || !res.body) throw new Error('backend ' + res.status);
 
     const reader = res.body.getReader();
     const dec = new TextDecoder();
@@ -154,7 +105,7 @@ export async function firaChat(
     if (!content) throw new Error('empty');
     return { content, demo: false };
   } catch {
-    // Kunci salah / CORS / jaringan → jangan mati total, pakai demo.
+    // Backend tak tersedia → mode demo (streaming palsu supaya UX tetap sama).
     return demoStream(history, cb, signal);
   }
 }
