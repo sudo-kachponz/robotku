@@ -686,7 +686,7 @@ export default function JoystickMode() {
                 type="button"
                 className={styles.robotkuHomeBtn}
                 onClick={toggleSound}
-                title={isMuted ? 'Nyalakan Efek Suara (M)' : 'Matikan Efek Suara (M)'}
+                title={isMuted ? 'Nyalakan Efek Suara' : 'Matikan Efek Suara'}
                 aria-label="RobotKu Home Audio Button"
               >
                 <RobotKuLogoIcon />
@@ -707,7 +707,7 @@ export default function JoystickMode() {
                 type="button"
                 className={styles.sidePillBtn}
                 onClick={cycleGear}
-                title={`Gear: ${gear} (Tekan Tab untuk ganti)`}
+                title={`Gear: ${gear} — ketuk untuk ganti`}
                 aria-label="Cycle Gear"
               >
                 {gear.slice(0, 3)}
@@ -752,7 +752,7 @@ export default function JoystickMode() {
                 type="button"
                 className={styles.shoulderBumperBtn}
                 onClick={() => changeGear('ECO')}
-                title="Bumper Kiri (L): Mode Pelan Eco (1)"
+                title="Bumper Kiri: Mode Pelan Eco"
                 aria-label="Left Shoulder Bumper"
               />
             </div>
@@ -773,7 +773,7 @@ export default function JoystickMode() {
                   changeGear('TURBO');
                   performStunt('BOOST');
                 }}
-                title="Bumper Kanan (R): Turbo Boost (3 / Space)"
+                title="Bumper Kanan: Turbo Boost"
                 aria-label="Right Shoulder Bumper"
               />
             </div>
@@ -792,7 +792,7 @@ export default function JoystickMode() {
                 type="button"
                 className={styles.estopPillBtn}
                 onClick={stopAll}
-                title="E-STOP: Hentikan semua motor seketika (Space)"
+                title="E-STOP: Hentikan semua motor seketika"
                 aria-label="Emergency Stop"
               >
                 <span className={styles.estopText}>E-STOP</span>
