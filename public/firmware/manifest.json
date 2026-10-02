@@ -1,7 +1,7 @@
 {
   "name": "Robotku Firmware",
   "version": "2.2.5-mk",
-  "new_install_prompt_erase": false,
+  "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32",
