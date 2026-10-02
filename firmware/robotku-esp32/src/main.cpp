@@ -50,13 +50,14 @@
 #endif
 #if HAS_SPEAKER
 #include <math.h>
+#include "mbedtls/base64.h"      // decode base64 TTS PCM chunks (bundled with ESP-IDF)
 #include "welcome_audio.h"       // const int16_t welcomeAudio[] in FLASH (.rodata), 16 kHz mono
 #endif
 
 // ------------------------------------------------------------------ Identity
 // BOARD_NAME / BOARD_ID come from the selected pin map (pins_*.h) so HELLO_ACK
 // tells the web which variant connected — no #ifdef BOARD_* here (see config.h).
-#define FW_VERSION   "2.2.3-mk"
+#define FW_VERSION   "2.2.4-mk"
 #define PROTOCOL_ID  "robotku-v1"
 #define BLE_NAME     "Robotku"
 
@@ -114,6 +115,17 @@ volatile unsigned long spkToneEndMs = 0;      // stop the tone at this millis()
 volatile bool          spkPcmPlay   = false;  // true = stream the welcome clip once
 volatile bool          spkStop      = false;  // request: silence everything now
 bool                   spkReady     = false;  // I2S TX installed OK
+
+// ---- Streamed TTS playback (robot "speaks" the AI reply) --------------------
+// The browser sends the AI reply as 8 kHz 8-bit unsigned mono PCM in base64
+// chunks (TTS_BEGIN / TTS_CHUNK*/ TTS_END). We buffer the WHOLE clip in RAM then
+// play it (buffer-then-play) because BLE is too slow for reliable real-time.
+// 8-bit @ 8 kHz = 8 KB/s — matches BLE throughput and halves RAM vs 16-bit.
+#define PCM_STREAM_CAP  32000              // 4 s @ 8 kHz, 8-bit (32 KB DRAM)
+uint8_t                pcmStreamBuf[PCM_STREAM_CAP];
+volatile size_t        pcmStreamLen  = 0;   // bytes buffered so far
+volatile bool          pcmStreamRecv = false; // between TTS_BEGIN and TTS_END
+volatile bool          pcmStreamPlay = false; // audioTask: play the buffer once
 #endif
 
 #if HAS_MIC
@@ -411,6 +423,23 @@ void audioTask(void*) {
       }
       spkPcmPlay = false;
       i2s_zero_dma_buffer(I2S_NUM_1);
+    } else if (pcmStreamPlay) {
+      // Play the buffered TTS clip: 8 kHz 8-bit unsigned -> 16 kHz 16-bit signed.
+      // u8 center is 128; (b-128)<<8 maps to full int16 range. Each 8 kHz sample
+      // is written twice (crude x2 upsample) to match the 16 kHz I2S clock.
+      size_t off = 0, wr;
+      while (off < pcmStreamLen && pcmStreamPlay && !spkStop) {
+        int n = 0;
+        while (n <= 254 && off < pcmStreamLen) {
+          int16_t s = (int16_t)(((int)pcmStreamBuf[off] - 128) << 8);
+          buf[n++] = s;
+          buf[n++] = s;
+          off++;
+        }
+        i2s_write(I2S_NUM_1, buf, n * sizeof(int16_t), &wr, portMAX_DELAY);
+      }
+      pcmStreamPlay = false;
+      i2s_zero_dma_buffer(I2S_NUM_1);
     } else {
       vTaskDelay(5);
     }
@@ -701,6 +730,9 @@ void handleCommand(const String& jsonLine) {
 #if HAS_SPEAKER
     caps.add("SPEAKER_TONE");
     caps.add("SPEAKER_PLAY_PCM");
+    caps.add("TTS_BEGIN");        // robot speaks streamed AI-reply PCM
+    caps.add("TTS_CHUNK");
+    caps.add("TTS_END");
 #endif
 #if HAS_MIC
     caps.add("GET_SENSOR_DATA");   // mic level / clap reporters
@@ -894,6 +926,48 @@ void handleCommand(const String& jsonLine) {
     lastStatus = "Audio";
 #else
     sendUnsupported("SPEAKER_PLAY_PCM");
+#endif
+    return;
+  }
+
+  // --- Streamed TTS: robot speaks the AI reply (TTS_BEGIN/CHUNK/END) ---------
+  if (strcmp(cmd, "TTS_BEGIN") == 0) {
+#if HAS_SPEAKER
+    spkToneFreq = 0; spkPcmPlay = false;   // interrupt any current audio
+    pcmStreamPlay = false;
+    pcmStreamLen = 0;
+    pcmStreamRecv = true;
+    lastStatus = "Bicara";
+#else
+    sendUnsupported("TTS_BEGIN");
+#endif
+    return;
+  }
+  if (strcmp(cmd, "TTS_CHUNK") == 0) {
+#if HAS_SPEAKER
+    if (pcmStreamRecv) {
+      const char* b64 = p["data"] | "";
+      size_t avail = PCM_STREAM_CAP - pcmStreamLen;
+      size_t olen = 0;
+      // Overflow is silent-by-design: once the 4 s buffer is full we drop the
+      // tail rather than reject the whole clip (keeps a long reply partly audible).
+      if (avail > 0 &&
+          mbedtls_base64_decode(pcmStreamBuf + pcmStreamLen, avail, &olen,
+                                (const unsigned char*)b64, strlen(b64)) == 0) {
+        pcmStreamLen += olen;
+      }
+    }
+#else
+    sendUnsupported("TTS_CHUNK");
+#endif
+    return;
+  }
+  if (strcmp(cmd, "TTS_END") == 0) {
+#if HAS_SPEAKER
+    pcmStreamRecv = false;
+    if (pcmStreamLen > 0) pcmStreamPlay = true;   // audioTask streams it out
+#else
+    sendUnsupported("TTS_END");
 #endif
     return;
   }
@@ -1164,6 +1238,10 @@ class ServerCallbacks : public NimBLEServerCallbacks {
     bleConnected = false;
     bleMtu = 23;
     stopAllActuators();          // failsafe on link loss
+#if HAS_SPEAKER
+    pcmStreamRecv = false;       // drop any half-received TTS clip
+    pcmStreamPlay = false;       // and stop the robot mid-sentence on link loss
+#endif
     watchdogArmed = false;       // disarm until the next HELLO (FIX 6)
     setLedColor(0, 0, 0);        // #2: BLE indicator off when disconnected
 #if HAS_NEOPIXEL

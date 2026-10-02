@@ -1,11 +1,11 @@
 {
   "name": "Robotku Firmware",
-  "version": "2.2.3-mk",
+  "version": "2.2.4-mk",
   "new_install_prompt_erase": false,
   "builds": [
     {
       "chipFamily": "ESP32",
-      "parts": [{ "path": "robotku-2.2.3-mk.bin", "offset": 0 }]
+      "parts": [{ "path": "robotku-2.2.4-mk.bin", "offset": 0 }]
     }
   ]
 }

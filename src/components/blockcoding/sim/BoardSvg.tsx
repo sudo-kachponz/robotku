@@ -708,22 +708,23 @@ export default function BoardSvg({
           LED1
         </text>
 
-        {/* NeoPixel strip (Makerkit V1.2) — 4 WS2812B pixels (real board has no
-            discrete 5mm RGB; the single circle was removed per board revision). */}
+        {/* NeoPixel strip (Makerkit V1.2) — 4 WS2812B pixels in a row. Placed in the
+            open center-left band (y~132-146) so it clears the ESP-32 shield, LED1,
+            the I2C header grid and the ROBOTKU silk (the old y89 spot collided). */}
         {neoPixels.length > 0 && (
           <g>
             {neoPixels.slice(0, 4).map((col, i) => {
-              const cx = 108 + i * 28;
+              const cx = 130 + i * 22;
               const lit = col && col !== 'rgb(0, 0, 0)';
               return (
                 <g key={i}>
-                  {lit && <circle cx={cx} cy={96} r={12} fill={col} opacity={0.55} />}
-                  <rect x={cx - 7} y={89} width={14} height={14} rx={2}
+                  {lit && <circle cx={cx} cy={139} r={11} fill={col} opacity={0.55} />}
+                  <rect x={cx - 7} y={132} width={14} height={14} rx={2}
                         fill={lit ? col : 'rgba(215, 225, 240, 0.35)'} stroke="#CBD5E1" strokeWidth={1} />
                 </g>
               );
             })}
-            <text x={150} y={116} textAnchor="middle" fontSize={6.5} fontWeight={800} fill={C.silkDim}>
+            <text x={163} y={158} textAnchor="middle" fontSize={6.5} fontWeight={800} fill={C.silkDim}>
               NEOPIXEL
             </text>
           </g>
