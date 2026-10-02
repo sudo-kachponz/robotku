@@ -539,6 +539,8 @@ export default function JoystickMode() {
       <div className={styles.container}>
         <ConnectHint />
 
+        <div className={styles.rotateHint}>↻ Putar HP ke mode landscape untuk kontrol lebih besar</div>
+
         {/* ── 16:9 PROPORTIONAL ROBOTKU PAD STAGE ── */}
         <div className={styles.padOuterStage}>
           
