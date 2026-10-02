@@ -62,13 +62,18 @@
 
 // ------------------------------------------------------------------ Servos
 // SG90 CONTINUOUS drive servos (write 90=stop). Calibration is shared (config.h).
-#define PIN_SERVO_L    14      // PWM1 header -> web port 1 (drive left)
+// Per SCH_Schematic3 the PWM headers map: PWM1=IO33, PWM2=IO27, PWM3=IO26,
+// PWM4=IO25, PWM5=IO32. GPIO32 is the WS2812B strip here, so the accessory servo
+// moves off PWM5 onto PWM3 (GPIO26). FIX: PIN_SERVO_L was wrongly 14 (not a PWM
+// header) with aux on 33 (which IS PWM1) — so web port 1 never reached the left
+// drive servo and only port 2 moved. Left now = PWM1/GPIO33, aux = PWM3/GPIO26.
+#define PIN_SERVO_L    33      // PWM1 header -> web port 1 (drive left)
 #define PIN_SERVO_R    27      // PWM2 header -> web port 2 (drive right)
 #define HAS_SERVO_R    1       // Makerkit V1.2 = 2 drive servos (user-confirmed)
 
 // Accessory POSITIONAL servo on web port 5 (SERVO_AUX_PORT in config.h).
-#define PIN_SERVO_AUX  33      // PWM5 header -> web port 5 (accessory)
+#define PIN_SERVO_AUX  26      // PWM3 header -> web port 5 (accessory; PWM5/GPIO32 is NeoPixel)
 #define HAS_SERVO_AUX  1
 
-// Ports PWM3 (GPIO26) and PWM4 (GPIO25) are broken out on the PCB but unwired in
-// firmware (PORT_CHANNEL leaves them -1) — same as V3. Documented in docs/pin.md.
+// PWM4 (GPIO25) is broken out on the PCB but unwired in firmware (PORT_CHANNEL
+// leaves it -1). PWM5 (GPIO32) is used by the WS2812B strip. See docs/pin.md.
