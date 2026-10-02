@@ -5,6 +5,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;          /* centre the pad vertically so a short 16:9
+                                       stage isn't stranded at the top with a big
+                                       empty void below it (portrait "kacau" fix) */
+  min-height: calc(100svh - var(--pad-chrome, 190px));
   gap: 16px;
   width: 100%;
   max-width: 1400px;
@@ -14,6 +18,29 @@
   box-sizing: border-box;
   overflow-x: hidden;
   font-family: var(--font, 'Plus Jakarta Sans', system-ui, sans-serif);
+}
+
+/* Shown only on portrait phones: this controller is built for landscape, so a
+   16:9 pad is unavoidably small in portrait. Nudge the user to rotate. */
+.rotateHint {
+  display: none;
+}
+
+@media (orientation: portrait) and (max-width: 768px) {
+  .rotateHint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--indigo-300, #a3a8fb);
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: var(--rk-r-pill, 999px);
+    padding: 7px 16px;
+    text-align: center;
+    line-height: 1.3;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════
