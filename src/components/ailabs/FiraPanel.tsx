@@ -1,12 +1,16 @@
 // src/components/ailabs/FiraPanel.tsx
 //
-// Robotku AI di editor blok — panel/drawer kanan: avatar Tamagotchi (piksel
-// canvas) + UI chat ala ChatGPT. Otak memanggil BACKEND (Cloudflare Worker via
-// brain.ts) yang pegang kunci di server — user TAK perlu input apa pun. Tanpa
-// backend → mode demo. Client-only (canvas + fetch streaming).
+// Robotku AI di editor blok — drawer kanan dibelah dua:
+//   ATAS  : monitor Tamagotchi (cangkang telur + layar piksel) yang ekspresinya
+//           berubah mengikuti keadaan AI (siap / dengar / berpikir / bicara).
+//           Mesin gambar = Lcd (port 1:1 dari mametchi-monitor.html). Ini juga
+//           jadi basis animasi OLED robot nanti.
+//   BAWAH : kolom chat ala ChatGPT.
+// Otak lewat BACKEND (Cloudflare Worker via brain.ts) — kunci di server, user
+// tak input apa pun. Client-only (canvas + fetch streaming).
 
 import { useEffect, useRef, useState } from 'react';
-import { Lcd, PETW } from './lcd/engine';
+import { Lcd, PETW, INK } from './lcd/engine';
 import { PET_COLORS, type Mood } from './lcd/sprites';
 import { firaChat, type ChatMsg } from '../../ailabs/brain';
 import { speak, stopSpeaking, ttsSupported, voiceLabel, listenOnce, sttSupported } from '../../ailabs/speech';
@@ -15,8 +19,9 @@ import styles from './FiraPanel.module.css';
 type Face = 'idle' | 'thinking' | 'speaking';
 
 export default function FiraPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const avatarRef = useRef<HTMLCanvasElement>(null);
+  const lcdRef = useRef<HTMLCanvasElement>(null);
   const faceRef = useRef<Face>('idle');
+  const listeningRef = useRef(false);
   const tickRef = useRef(0);
   const logRef = useRef<HTMLDivElement>(null);
 
@@ -29,9 +34,9 @@ export default function FiraPanel({ open, onClose }: { open: boolean; onClose: (
   const [showInfo, setShowInfo] = useState(false);
   const [listening, setListening] = useState(false);
 
-  // avatar loop
+  // Tamagotchi monitor loop — the pet's mood + caption track the AI state.
   useEffect(() => {
-    const canvas = avatarRef.current;
+    const canvas = lcdRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -39,17 +44,39 @@ export default function FiraPanel({ open, onClose }: { open: boolean; onClose: (
     const { W, H } = lcd;
     let raf = 0;
     const loop = () => {
-      tickRef.current++;
+      const t = ++tickRef.current;
       lcd.clear();
-      lcd.ctx.fillStyle = 'rgba(190,227,246,.25)';
+      lcd.ctx.fillStyle = 'rgba(190,227,246,.22)';
       lcd.ctx.fillRect(0, 0, W, H);
       lcd.drawBackdrop();
+      lcd.drawChrome(false, 'ROBOTKU');
+
       const face = faceRef.current;
-      const m: Mood = face === 'speaking' ? 'happy' : face === 'thinking' ? 'tired' : 'ok';
-      const f = ((tickRef.current / 22) | 0) % 2;
-      lcd.drawPet(((W - PETW * 2) / 2) | 0, 6, 2, m, f);
-      const cap = face === 'thinking' ? 'BERPIKIR' : face === 'speaking' ? '...' : 'SIAP';
-      lcd.miniCenter(H - 12, cap, PET_COLORS.C_B, 1);
+      const lis = listeningRef.current;
+      const mood: Mood = lis
+        ? 'tired'
+        : face === 'speaking'
+          ? 'happy'
+          : face === 'thinking'
+            ? 'tired'
+            : 'ok';
+      const f = ((t / 22) | 0) % 2;
+      lcd.drawPet(((W - PETW * 2) / 2) | 0, 18, 2, mood, f);
+
+      const say = lis
+        ? 'DENGAR'
+        : face === 'thinking'
+          ? 'BERPIKIR'
+          : face === 'speaking'
+            ? 'BICARA'
+            : 'SIAP';
+      lcd.miniCenter(84, say, PET_COLORS.C_B, 2);
+
+      // animated dots while busy, so it reads as "alive"
+      if (lis || face === 'thinking' || face === 'speaking') {
+        const n = ((t / 14) | 0) % 4;
+        lcd.miniCenter(100, '.'.repeat(n) || ' ', INK, 2);
+      }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
@@ -63,6 +90,7 @@ export default function FiraPanel({ open, onClose }: { open: boolean; onClose: (
   async function handleMic() {
     if (listening || busy || !sttSupported()) return;
     setListening(true);
+    listeningRef.current = true;
     faceRef.current = 'thinking';
     try {
       const r = await listenOnce();
@@ -74,6 +102,7 @@ export default function FiraPanel({ open, onClose }: { open: boolean; onClose: (
         ]);
     } finally {
       setListening(false);
+      listeningRef.current = false;
       if (!busy) faceRef.current = 'idle';
     }
   }
@@ -116,8 +145,8 @@ export default function FiraPanel({ open, onClose }: { open: boolean; onClose: (
 
   return (
     <aside className={`${styles.panel} ${open ? styles.open : ''}`} aria-hidden={!open}>
+      {/* slim header */}
       <div className={styles.head}>
-        <canvas ref={avatarRef} width={96} height={96} className={styles.avatar} />
         <div className={styles.title}>
           <b>Robotku AI</b>
           <span className={styles.sub}>{demo ? 'mode demo (server AI mati)' : 'AI aktif'}</span>
@@ -139,6 +168,22 @@ export default function FiraPanel({ open, onClose }: { open: boolean; onClose: (
         </div>
       )}
 
+      {/* TOP: Tamagotchi monitor */}
+      <div className={styles.monitor}>
+        <div className={styles.egg}>
+          <div className={styles.eggBrand} aria-hidden="true">
+            Robotku AI
+          </div>
+          <div className={styles.screenWrap}>
+            <div className={styles.screen}>
+              <canvas ref={lcdRef} width={128} height={128} className={styles.lcd} />
+              <div className={styles.glass} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* BOTTOM: chat */}
       <div className={styles.log} ref={logRef}>
         {messages.map((m, i) => (
           <div key={i} className={m.role === 'user' ? styles.bubbleUser : styles.bubbleFira}>
