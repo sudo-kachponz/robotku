@@ -1,16 +1,16 @@
 // src/components/ailabs/FiraPanel.tsx
 //
 // Robotku AI di editor blok — drawer kanan dibelah dua:
-//   ATAS  : monitor Tamagotchi (cangkang telur + layar piksel) yang ekspresinya
-//           berubah mengikuti keadaan AI (siap / dengar / berpikir / bicara).
-//           Mesin gambar = Lcd (port 1:1 dari mametchi-monitor.html). Ini juga
-//           jadi basis animasi OLED robot nanti.
+//   ATAS  : monitor Tamagotchi 1:1 dari mametchi-monitor.html — cangkang telur
+//           (gradien + rim + kilau), brand "Tamag[o]tchi", layar piksel penuh
+//           (RAM/RUN/baterai, pet Mametchi, caption, bar RAM/CPU, tanggal+jam),
+//           dan 3 tombol pink. Ekspresi pet mengikuti keadaan AI. Ini juga basis
+//           animasi OLED robot nanti.
 //   BAWAH : kolom chat ala ChatGPT.
-// Otak lewat BACKEND (Cloudflare Worker via brain.ts) — kunci di server, user
-// tak input apa pun. Client-only (canvas + fetch streaming).
+// Otak lewat BACKEND (Cloudflare Worker via brain.ts) — kunci di server.
 
 import { useEffect, useRef, useState } from 'react';
-import { Lcd, PETW, INK } from './lcd/engine';
+import { Lcd, PETW } from './lcd/engine';
 import { PET_COLORS, type Mood } from './lcd/sprites';
 import { firaChat, type ChatMsg } from '../../ailabs/brain';
 import { speak, stopSpeaking, ttsSupported, voiceLabel, listenOnce, sttSupported } from '../../ailabs/speech';
@@ -18,11 +18,20 @@ import styles from './FiraPanel.module.css';
 
 type Face = 'idle' | 'thinking' | 'speaking';
 
+// Random-walk sim so the RAM/CPU bars feel alive (identik dgn mametchi-monitor).
+function drift(v: number, amt: number, lo: number, hi: number): number {
+  v += (Math.random() - 0.5) * amt;
+  v += (55 - v) * 0.008;
+  return Math.max(lo, Math.min(hi, v));
+}
+
 export default function FiraPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   const lcdRef = useRef<HTMLCanvasElement>(null);
   const faceRef = useRef<Face>('idle');
   const listeningRef = useRef(false);
   const tickRef = useRef(0);
+  const statsRef = useRef({ ram: 56, cpu: 22 });
+  const pokeRef = useRef(0); // happy flash until this timestamp (tombol dipencet)
   const logRef = useRef<HTMLDivElement>(null);
 
   const [messages, setMessages] = useState<ChatMsg[]>([
@@ -34,7 +43,17 @@ export default function FiraPanel({ open, onClose }: { open: boolean; onClose: (
   const [showInfo, setShowInfo] = useState(false);
   const [listening, setListening] = useState(false);
 
-  // Tamagotchi monitor loop — the pet's mood + caption track the AI state.
+  // drift the sim once a second
+  useEffect(() => {
+    const id = setInterval(() => {
+      const s = statsRef.current;
+      s.ram = drift(s.ram, 2.4, 18, 94);
+      s.cpu = drift(s.cpu, 9, 2, 99);
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // monitor loop — full pet view; pet mood/caption track the AI state.
   useEffect(() => {
     const canvas = lcdRef.current;
     if (!canvas) return;
@@ -49,34 +68,35 @@ export default function FiraPanel({ open, onClose }: { open: boolean; onClose: (
       lcd.ctx.fillStyle = 'rgba(190,227,246,.22)';
       lcd.ctx.fillRect(0, 0, W, H);
       lcd.drawBackdrop();
-      lcd.drawChrome(false, 'ROBOTKU');
+      lcd.drawChrome(false, 'RAM');
 
+      const s = statsRef.current;
+      const now = Date.now();
       const face = faceRef.current;
       const lis = listeningRef.current;
-      const mood: Mood = lis
-        ? 'tired'
-        : face === 'speaking'
-          ? 'happy'
-          : face === 'thinking'
-            ? 'tired'
-            : 'ok';
-      const f = ((t / 22) | 0) % 2;
-      lcd.drawPet(((W - PETW * 2) / 2) | 0, 18, 2, mood, f);
-
-      const say = lis
-        ? 'DENGAR'
-        : face === 'thinking'
-          ? 'BERPIKIR'
-          : face === 'speaking'
-            ? 'BICARA'
-            : 'SIAP';
-      lcd.miniCenter(84, say, PET_COLORS.C_B, 2);
-
-      // animated dots while busy, so it reads as "alive"
-      if (lis || face === 'thinking' || face === 'speaking') {
-        const n = ((t / 14) | 0) % 4;
-        lcd.miniCenter(100, '.'.repeat(n) || ' ', INK, 2);
+      let mood: Mood;
+      let say: string;
+      if (lis) {
+        mood = 'tired';
+        say = 'DENGAR';
+      } else if (face === 'thinking') {
+        mood = 'tired';
+        say = 'BERPIKIR';
+      } else if (face === 'speaking') {
+        mood = 'happy';
+        say = 'BICARA';
+      } else if (now < pokeRef.current) {
+        mood = 'happy';
+        say = 'LEGA!';
+      } else {
+        mood = s.cpu > 78 ? 'tired' : s.ram < 55 ? 'happy' : 'ok';
+        say = mood === 'happy' ? 'LEGA!' : mood === 'tired' ? 'BERAT' : 'SIAP';
       }
+      const f = ((t / 26) | 0) % 2;
+      lcd.drawPet(((W - PETW * 2) / 2) | 0, 14, 2, mood, f);
+      lcd.miniCenter(80, say, PET_COLORS.C_B, 2);
+      lcd.bar(5, 96, W - 10, 5, s.ram, 'RAM');
+      lcd.bar(5, 105, W - 10, 5, s.cpu, 'CPU');
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
@@ -86,6 +106,10 @@ export default function FiraPanel({ open, onClose }: { open: boolean; onClose: (
   useEffect(() => {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
   }, [messages]);
+
+  function poke() {
+    pokeRef.current = Date.now() + 2200; // pet senang sebentar
+  }
 
   async function handleMic() {
     if (listening || busy || !sttSupported()) return;
@@ -168,17 +192,28 @@ export default function FiraPanel({ open, onClose }: { open: boolean; onClose: (
         </div>
       )}
 
-      {/* TOP: Tamagotchi monitor */}
+      {/* TOP: Tamagotchi monitor (1:1 dari mametchi-monitor.html) */}
       <div className={styles.monitor}>
-        <div className={styles.egg}>
-          <div className={styles.eggBrand} aria-hidden="true">
-            Robotku AI
+        <div className={styles.stage}>
+          <div className={styles.egg} />
+          <div className={styles.rim} />
+          <div className={styles.brand} aria-label="Tamagotchi">
+            Tamag
+            <span className={styles.oglyph} aria-hidden="true">
+              <i />
+            </span>
+            tchi
           </div>
           <div className={styles.screenWrap}>
             <div className={styles.screen}>
               <canvas ref={lcdRef} width={128} height={128} className={styles.lcd} />
               <div className={styles.glass} />
             </div>
+          </div>
+          <div className={styles.btns}>
+            <button className={`${styles.btn} ${styles.sm}`} onClick={poke} aria-label="Tombol kiri" />
+            <button className={`${styles.btn} ${styles.lg}`} onClick={poke} aria-label="Tombol tengah" />
+            <button className={`${styles.btn} ${styles.sm}`} onClick={poke} aria-label="Tombol kanan" />
           </div>
         </div>
       </div>
