@@ -56,7 +56,7 @@
 // ------------------------------------------------------------------ Identity
 // BOARD_NAME / BOARD_ID come from the selected pin map (pins_*.h) so HELLO_ACK
 // tells the web which variant connected — no #ifdef BOARD_* here (see config.h).
-#define FW_VERSION   "2.2.1-mk"
+#define FW_VERSION   "2.2.2-mk"
 #define PROTOCOL_ID  "robotku-v1"
 #define BLE_NAME     "Robotku"
 
@@ -1147,6 +1147,13 @@ class ServerCallbacks : public NimBLEServerCallbacks {
 #endif
     buzzerTone(1320, 140);    // #7: chirp on BLE connect too (USB only beeped because
                               //     plugging in resets the board -> startup tone)
+#if HAS_SPEAKER
+    // Speaker self-test: a short 880 Hz blip over the MAX98357A so a successful
+    // connect audibly proves the I2S speaker path (buzzer is a separate piezo on
+    // GPIO13 — a working buzzer tells you nothing about the speaker). This is the
+    // only thing that drives spkTone* in normal use.
+    if (spkReady) { spkToneSquare = false; spkToneFreq = 880; spkToneEndMs = millis() + 180; }
+#endif
   }
   void onDisconnect(NimBLEServer* server) override {
     bleConnected = false;

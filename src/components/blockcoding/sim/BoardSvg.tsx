@@ -708,16 +708,8 @@ export default function BoardSvg({
           LED1
         </text>
 
-        {/* 5mm RGB LED */}
-        {led && <circle cx={150} cy={128} r={28} fill="url(#ledGlow)" />}
-        <circle cx={150} cy={128} r={10} fill={led ? led : 'rgba(215, 225, 240, 0.45)'} stroke="#CBD5E1" strokeWidth={1.2} />
-        <path d="M 147 125 L 149 130 H 153 L 155 125 Z" fill="#94A3B8" opacity={0.7} />
-        <circle cx={147} cy={124} r={2.8} fill="#FFFFFF" opacity={0.85} />
-        <text x={150} y={148} textAnchor="middle" fontSize={6.5} fontWeight={800} fill={C.silkDim}>
-          RGB
-        </text>
-
-        {/* NeoPixel strip (Makerkit V1.2) — 4 WS2812B pixels */}
+        {/* NeoPixel strip (Makerkit V1.2) — 4 WS2812B pixels (real board has no
+            discrete 5mm RGB; the single circle was removed per board revision). */}
         {neoPixels.length > 0 && (
           <g>
             {neoPixels.slice(0, 4).map((col, i) => {

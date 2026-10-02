@@ -49,7 +49,7 @@ export function ActionButtons({
           type="button"
           className={`${styles.actionBtnRound} ${styles.actionBtnTop} ${activeActions.horn ? styles.actionPressed : ''}`}
           onClick={handleAction(onHorn)}
-          title="Klakson / Horn (H)"
+          title="Klakson"
           aria-label="Klakson"
         >
           <HornIcon className={styles.actionIconSvg} />
@@ -60,7 +60,7 @@ export function ActionButtons({
           type="button"
           className={`${styles.actionBtnRound} ${styles.actionBtnLeft} ${activeActions.spinLeft ? styles.actionPressed : ''}`}
           onClick={handleAction(onSpinLeft)}
-          title="Putar Kiri 90° CCW (Q)"
+          title="Putar Kiri 90°"
           aria-label="Putar Kiri"
         >
           <RotateCcwIcon className={styles.actionIconSvg} />
@@ -74,7 +74,7 @@ export function ActionButtons({
           type="button"
           className={`${styles.actionBtnRound} ${styles.actionBtnRight} ${activeActions.spinRight ? styles.actionPressed : ''}`}
           onClick={handleAction(onSpinRight)}
-          title="Putar Kanan 90° CW (E)"
+          title="Putar Kanan 90°"
           aria-label="Putar Kanan"
         >
           <RotateCwIcon className={styles.actionIconSvg} />
@@ -85,7 +85,7 @@ export function ActionButtons({
           type="button"
           className={`${styles.actionBtnRound} ${styles.actionBtnBottom} ${activeActions.led ? styles.actionPressed : ''}`}
           onClick={handleAction(onCycleLed)}
-          title="Ganti Warna Lampu LED (L)"
+          title="Ganti Warna Lampu LED"
           aria-label="Lampu LED"
         >
           <LightbulbIcon className={styles.actionIconSvg} />

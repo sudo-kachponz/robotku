@@ -275,7 +275,11 @@ export class SimSink implements RobotSink {
         const r = Number(params.r) || 0;
         const g = Number(params.g) || 0;
         const b = Number(params.b) || 0;
-        this.commit({ ledColor: `rgb(${r | 0}, ${g | 0}, ${b | 0})` }, true);
+        const col = `rgb(${r | 0}, ${g | 0}, ${b | 0})`;
+        // Makerkit routes SET_LED_COLOR to ALL 4 WS2812B pixels (firmware:
+        // neoSetPixel -1). Light the whole strip so the sim matches the board;
+        // ledColor kept for the V3 discrete-LED case.
+        this.commit({ ledColor: col, neoPixels: Array(4).fill(col) }, true);
         break;
       }
       case 'DISPLAY_ICON':
