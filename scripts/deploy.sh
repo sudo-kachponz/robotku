@@ -31,8 +31,11 @@ if command -v lftp >/dev/null 2>&1 && [ "${USE_PYTHON_DEPLOY:-0}" != "1" ]; then
     lftp -c "set ftp:ssl-force false; \
              set ftp:ssl-allow false; \
              set ftp:passive-mode true; \
-             set net:timeout 30; \
+             set ftp:prefer-epsv false; \
+             set net:timeout 15; \
              set net:max-retries 3; \
+             set net:reconnect-interval-base 5; \
+             set xfer:timeout 25; \
              open -u \"$FTP_USER\",\"$FTP_PASS\" \"$FTP_HOST\"; \
              $1"
   }
