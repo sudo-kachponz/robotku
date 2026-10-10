@@ -24,6 +24,9 @@ export default [
       'next-env.d.ts',
       'public/**',
       'eslint.config.mjs',
+      // Vendored Cloudflare Worker backend — separate deployable (its own runtime
+      // + wrangler toolchain), not part of the Next app lint.
+      'server/robotku-ai-backend/**',
     ],
   },
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
