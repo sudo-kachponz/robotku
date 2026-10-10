@@ -1,0 +1,7 @@
+{
+  "name": "robotku-ai-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Robotku AI chat backend — Vercel Edge function proxying to Netra/DeepSeek (holds the API key server-side).",
+  "type": "module"
+}
