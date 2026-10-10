@@ -38,6 +38,10 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <WiFi.h>                 // Phase 1: WiFi STA transport for AI/audio
+#include <ESPmDNS.h>             // robotku.local
+#include <Preferences.h>         // persist WiFi creds in NVS
+#include <WebSocketsServer.h>    // links2004/WebSockets — WS server on :81
 
 #include "config.h"
 
@@ -57,7 +61,7 @@
 // ------------------------------------------------------------------ Identity
 // BOARD_NAME / BOARD_ID come from the selected pin map (pins_*.h) so HELLO_ACK
 // tells the web which variant connected — no #ifdef BOARD_* here (see config.h).
-#define FW_VERSION   "2.2.7-mk"
+#define FW_VERSION   "2.3.0-mk"
 #define PROTOCOL_ID  "robotku-v1"
 #define BLE_NAME     "Robotku"
 
@@ -170,6 +174,24 @@ uint16_t bleMtu = 23;               // updated on negotiation (FIX 5); 23 = BLE 
 // loop() sends it once MTU is negotiated. See docs/ai-firmware-rca.md (BUG B).
 bool helloPending = false;
 unsigned long helloRxMs = 0;
+
+// ---- WiFi + WebSocket transport (Phase 1) ----------------------------------
+// AI/audio needs far more than BLE's ~8KB/s. A WiFi STA + WebSocket server carries the
+// SAME JSON protocol (reuse feed()/handleCommand) so the web can drive + stream TTS over
+// WiFi at full quality. Creds provisioned via the SET_WIFI command (stored in NVS) so no
+// captive-portal lib is needed for bring-up. Mixed-content plan: ESP serves the UI over
+// http (same-origin) so ws:// is allowed — HTTP file server is a follow-up (Phase 1b).
+// See docs/ai-robot-voice.md. NOTE: compile-verified only — needs hardware testing for
+// WiFi+NimBLE+I2S coexistence (heap/radio) on the board.
+WebSocketsServer wsServer(81);
+Preferences wifiPrefs;
+bool          wifiOn       = false;   // STA started (creds present)
+bool          wifiUp       = false;   // associated + got IP (edge-reported once)
+uint8_t       wsClients    = 0;       // connected WebSocket clients
+String        wsBuffer;               // inbound line buffer for the WS parser
+// Forward decls (definitions live later in the file).
+void feed(String& buffer, char c, bool fromSerial);
+bool startWiFiSTA(const String& ssid, const String& pass);
 
 // Inbound line buffers (one per interface; both feed the same parser).
 String bleBuffer = "";
@@ -655,6 +677,7 @@ void sendTelemetry(const String& line) {
       delay(2);
     }
   }
+  if (wsClients > 0) wsServer.broadcastTXT(line.c_str(), line.length());   // WiFi transport (WS, no MTU chunking)
   Serial.print(line);   // mirror to USB serial
 }
 
@@ -718,6 +741,7 @@ void sendHelloAck() {
   if (HAS_SERVO_R) caps.add("STEER_TIMED");
   caps.add("WAIT");
   caps.add("PLAY_TONE");
+  caps.add("SET_WIFI");         // Phase 1: provision WiFi STA over BLE/Serial
 #if HAS_RGB
   caps.add("SET_LED_COLOR");   // FW-06 RGB LED (GPIO16/17/5)
 #endif
@@ -758,6 +782,12 @@ void sendHelloAck() {
   if (oledOk) {
     JsonArray periph = ack["peripherals"].to<JsonArray>();
     periph.add("oled-ssd1306");
+  }
+  // WiFi transport discovery: tell the web the robot's LAN address so it can open the
+  // WebSocket (Phase 1). Absent when WiFi isn't up — web falls back to BLE/Serial.
+  if (wifiUp) {
+    ack["wifiIp"] = WiFi.localIP().toString();
+    ack["wsPort"] = 81;
   }
   sendJson(ack);
   watchdogArmed = true;         // the link is live from here on
@@ -808,6 +838,25 @@ void handleCommand(const String& jsonLine) {
     ack["command"] = "ACK";
     ack["seq"] = doc["seq"] | 0;
     sendJson(ack);
+    return;
+  }
+
+  // --- WiFi provisioning (Phase 1): bootstrap WiFi via the existing BLE/Serial link.
+  // Web connects over BLE first, sends SET_WIFI, robot joins the LAN, then the web can
+  // switch to the WiFi (WebSocket) transport for AI/audio. Creds persist in NVS.
+  if (strcmp(cmd, "SET_WIFI") == 0) {
+    const char* ssid = p["ssid"] | "";
+    const char* pass = p["pass"] | "";
+    wifiPrefs.begin("robotku", false);
+    wifiPrefs.putString("ssid", ssid);
+    wifiPrefs.putString("pass", pass);
+    wifiPrefs.end();
+    startWiFiSTA(String(ssid), String(pass));
+    JsonDocument r;
+    r["command"] = "WIFI_STATUS";
+    r["connecting"] = true;
+    r["ssid"] = ssid;
+    sendJson(r);
     return;
   }
 
@@ -1328,6 +1377,41 @@ void setupBle() {
 }
 
 // =================================================================== SETUP
+// ---- WiFi + WebSocket (Phase 1) --------------------------------------------
+// WS frames carry the SAME ';'-terminated JSON as BLE/Serial, so we just pump bytes
+// through the shared feed()/handleCommand parser. Replies go out via sendTelemetry
+// (which now also broadcasts to WS clients).
+void onWsEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len) {
+  (void)num;
+  if (type == WStype_CONNECTED) { if (wsClients < 255) wsClients++; }
+  else if (type == WStype_DISCONNECTED) { if (wsClients) wsClients--; }
+  else if (type == WStype_TEXT) {
+    lastRxMs = millis();                       // WS traffic keeps the watchdog happy
+    for (size_t i = 0; i < len; i++) feed(wsBuffer, (char)payload[i], false);
+  }
+}
+
+bool startWiFiSTA(const String& ssid, const String& pass) {
+  if (ssid.length() == 0) return false;
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid.c_str(), pass.c_str());      // non-blocking; loop() reports when up
+  wifiOn = true;
+  wifiUp = false;
+  return true;
+}
+
+void setupWiFi() {
+  // WS server starts now; it serves once WiFi associates. Auto-join if a previous
+  // SET_WIFI stored creds in NVS.
+  wsServer.begin();
+  wsServer.onEvent(onWsEvent);
+  wifiPrefs.begin("robotku", true);            // read-only
+  String ssid = wifiPrefs.getString("ssid", "");
+  String pass = wifiPrefs.getString("pass", "");
+  wifiPrefs.end();
+  if (ssid.length()) startWiFiSTA(ssid, pass);
+}
+
 void setup() {
   Serial.begin(115200);
 
@@ -1392,6 +1476,7 @@ void setup() {
   startupTone();                  // "robot hidup" cue (delay() ok in setup)
 
   setupBle();
+  setupWiFi();   // Phase 1: WS server + auto-join saved WiFi (if any)
 
   oledStatus("Siap", "USB / Bluetooth");
 }
@@ -1400,6 +1485,25 @@ void setup() {
 void loop() {
   // 1) Drain USB serial.
   while (Serial.available() > 0) feed(serialBuffer, (char)Serial.read(), true);
+
+  // 1a) WiFi/WebSocket servicing (Phase 1). Pump the WS server and report once the
+  // STA associates (so the web learns the robot's IP for the WiFi transport).
+  if (wifiOn) {
+    wsServer.loop();
+    bool up = (WiFi.status() == WL_CONNECTED);
+    if (up && !wifiUp) {
+      wifiUp = true;
+      MDNS.begin("robotku");                   // http://robotku.local, ws://robotku.local:81
+      JsonDocument r;
+      r["command"]  = "WIFI_STATUS";
+      r["connected"] = true;
+      r["ip"]       = WiFi.localIP().toString();
+      r["wsPort"]   = 81;
+      sendJson(r);
+    } else if (!up && wifiUp) {
+      wifiUp = false;
+    }
+  }
 
   // 1b) Deferred HELLO_ACK (BUG B): send once the MTU is negotiated (>23), or
   // immediately for the serial path (no MTU) / after a short grace. This keeps the
