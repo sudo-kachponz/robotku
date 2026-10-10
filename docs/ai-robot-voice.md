@@ -41,6 +41,24 @@ reply text → Worker /tts → WAV → browser (decode+downsample 8 kHz) → BLE
 ## Shipping status (as of this commit)
 - Published firmware on the web flasher is **2.2.0-mk** (stable: servo both-sides + stable BLE) which **does NOT** advertise `TTS_BEGIN` → robot-speak auto-falls-back to the laptop. The TTS firmware source (2.2.x-mk, `TTS_*` handlers) is on `main` but its builds had a BLE connect-drop still under investigation (suspect: the 3 TTS opcodes added to the HELLO caps — the only connect-time delta vs the stable 2.2.0; or brownout from the connect speaker-blip, already removed).
 
+## Phase 1 (WiFi transport) — status + a hard flash constraint
+Implemented on branch **`wifi-phase1`** (NOT main; experimental, compile-verified only):
+- Firmware `2.3.0-mk`: WiFi STA + `SET_WIFI` provisioning (creds in NVS, bootstrapped over
+  the existing BLE/Serial link) + `WebSocketsServer` on :81 reusing `feed()`/`handleCommand`
+  (same JSON protocol) + mDNS `robotku.local`. `sendTelemetry` now also broadcasts to WS
+  clients; HELLO_ACK reports `wifiIp`/`wsPort`. Builds for `-e v3` and `-e makerkit`.
+- **⚠️ Flash wall:** with the WiFi+WS+mDNS stack, **makerkit = 97.9% of the 1.25 MB app
+  partition** (v3 = 86.8%). Consequences on this 4 MB board:
+  - **Serving the web app from the ESP** (the chosen mixed-content fix) has **no room** —
+    even a slim embedded page likely needs the `huge_app` partition (3 MB app, **no OTA**).
+  - **OTA (b.md)** needs dual app slots; at 97.9% of one slot there's no growth headroom.
+  - On 4 MB you can realistically have **WiFi + serve-page** OR **WiFi + OTA**, not both.
+  - This is the concrete point where a **bigger-flash ESP32 (S3, 8/16 MB + PSRAM)** pays off
+    (ties back to the earlier "do we need a better ESP32?" question).
+- **Not yet done / blocked:** HTTP file server to actually serve the UI (mixed-content fix),
+  the web `WiFiTransport.ts` (a.md), OTA (b.md), and WiFi+NimBLE+I2S coexistence testing on
+  real hardware (heap/radio contention is unproven).
+
 ## Tunable knobs (code pointers, for whatever comes next)
 - Audio rate/size/loudness: `TARGET_SR`, `MAX_BYTES`, `CHUNK` in `robotVoice.ts`; `PCM_STREAM_CAP` + the `<<7` playback scale + `SPK_AMPLITUDE` in `main.cpp`.
 - Language: `PERSONA` + `/tts` `lang` in `server/robotku-ai-backend/src/worker.js`.
