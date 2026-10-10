@@ -57,7 +57,7 @@
 // ------------------------------------------------------------------ Identity
 // BOARD_NAME / BOARD_ID come from the selected pin map (pins_*.h) so HELLO_ACK
 // tells the web which variant connected — no #ifdef BOARD_* here (see config.h).
-#define FW_VERSION   "2.2.6-mk"
+#define FW_VERSION   "2.2.7-mk"
 #define PROTOCOL_ID  "robotku-v1"
 #define BLE_NAME     "Robotku"
 
@@ -163,6 +163,13 @@ bool failsafeEngaged = false;
 NimBLECharacteristic* txChar = nullptr;
 bool bleConnected = false;
 uint16_t bleMtu = 23;               // updated on negotiation (FIX 5); 23 = BLE default
+
+// Deferred HELLO_ACK (BUG B fix): the 621-byte ack must NOT be sent from the onWrite
+// host-task at MTU 23 (= ~32 synchronous notifies -> NimBLE mbuf pool exhausts ->
+// dropped tail -> handshake never completes -> connect-drop loop). We flag it here and
+// loop() sends it once MTU is negotiated. See docs/ai-firmware-rca.md (BUG B).
+bool helloPending = false;
+unsigned long helloRxMs = 0;
 
 // Inbound line buffers (one per interface; both feed the same parser).
 String bleBuffer = "";
@@ -639,6 +646,13 @@ void sendTelemetry(const String& line) {
       String chunk = line.substring(i, i + maxChunk);
       txChar->setValue((uint8_t*)chunk.c_str(), chunk.length());
       txChar->notify();
+      // Flow control (BUG B): pace between notifies so the NimBLE host task can drain
+      // its mbuf pool. Firing a burst back-to-back (e.g. a 621-byte HELLO_ACK = many
+      // notifies at low MTU) exhausts the pool and silently drops the tail (the ';'
+      // terminator) -> corrupt frame -> connect-drop loop. notify() returns void in
+      // NimBLE 1.4.x so we can't check success — pacing is the lever. Also guards big
+      // frames like DISPLAY_BITMAP. See docs/ai-firmware-rca.md.
+      delay(2);
     }
   }
   Serial.print(line);   // mirror to USB serial
@@ -678,6 +692,79 @@ int noteToFreq(const char* note) {
   return 440;
 }
 
+// Build + send the HELLO_ACK. Called from loop() (NOT the onWrite host-task) once the
+// MTU is negotiated, so the ~621-byte ack goes out in ~3 notifies instead of ~32 at
+// MTU 23 — the notify storm that caused the connect-drop loop (docs/ai-firmware-rca.md).
+void sendHelloAck() {
+  // FIX 7 — advertise ONLY what actually compiles here.
+  JsonDocument ack;
+  ack["command"]  = "HELLO_ACK";
+  ack["fw"]       = FW_VERSION;
+  ack["board"]    = BOARD_NAME;
+  ack["protocol"] = PROTOCOL_ID;
+  JsonArray caps = ack["capabilities"].to<JsonArray>();
+  caps.add("SET_PORT");
+  caps.add("ATTACH");
+  caps.add("DETACH");
+#if HAS_SERVO_AUX
+  caps.add("SET_HEAD_POSITION");   // accessory positional servo on P5
+#endif
+  caps.add("STOP_ALL");
+  caps.add("STOP");
+  caps.add("MOVE_TIMED");
+  // Turning needs two independently driven sides. With HAS_SERVO_R = 0 there
+  // is only one, so don't advertise it — see the ports scan below.
+  if (HAS_SERVO_R) caps.add("TURN_TIMED");
+  if (HAS_SERVO_R) caps.add("STEER_TIMED");
+  caps.add("WAIT");
+  caps.add("PLAY_TONE");
+#if HAS_RGB
+  caps.add("SET_LED_COLOR");   // FW-06 RGB LED (GPIO16/17/5)
+#endif
+#if HAS_NEOPIXEL
+  caps.add("SET_LED_COLOR");   // drives the WS2812B strip (24-bit)
+  caps.add("NEOPIXEL_SET");
+  caps.add("NEOPIXEL_EFFECT");
+#endif
+#if HAS_SPEAKER
+  caps.add("SPEAKER_TONE");
+  caps.add("SPEAKER_PLAY_PCM");
+  caps.add("TTS_BEGIN");        // robot speaks streamed AI-reply PCM
+  caps.add("TTS_CHUNK");
+  caps.add("TTS_END");
+#endif
+#if HAS_MIC
+  caps.add("GET_SENSOR_DATA");   // mic level / clap reporters
+#endif
+  if (oledOk) caps.add("DISPLAY_TEXT");   // OLED text — only if the panel answered
+  if (oledOk) caps.add("DISPLAY_BITMAP"); // OLED pixel-art
+  if (oledOk) caps.add("SET_LED_BRIGHTNESS"); // OLED contrast/brightness
+  // Report the ports that are REALLY wired by scanning the config.h table —
+  // never a hardcoded list. A board claiming port 2 it doesn't have makes the
+  // right joystick axis die silently, which reads as "the web app is broken".
+  JsonArray ports = ack["ports"].to<JsonArray>();
+  for (int i = 1; i <= 8; i++) {
+    if (PORT_CHANNEL[i] >= 0) ports.add(i);
+  }
+  ack["driveMode"] = "servo";
+  ack["hasBuzzer"]   = true;
+  ack["hasOled"]     = oledOk;                // real I2C detection (0x3C), not a claim
+  ack["hasRgbLed"]   = (bool)HAS_RGB;
+  ack["hasNeoPixel"] = (bool)HAS_NEOPIXEL;
+  ack["hasSpeaker"]  = (bool)HAS_SPEAKER;
+  ack["hasMic"]      = (bool)HAS_MIC;
+  ack["boardId"]     = BOARD_ID;
+  // Modules actually detected on the bus so the web can enable their blocks.
+  if (oledOk) {
+    JsonArray periph = ack["peripherals"].to<JsonArray>();
+    periph.add("oled-ssd1306");
+  }
+  sendJson(ack);
+  watchdogArmed = true;         // the link is live from here on
+  lastStatus = "Terhubung";
+  oledStatus("Terhubung", bleConnected ? "via Bluetooth" : "via USB");
+}
+
 // =========================================================== COMMAND PARSER
 void handleCommand(const String& jsonLine) {
   JsonDocument doc;
@@ -705,75 +792,16 @@ void handleCommand(const String& jsonLine) {
 
   // --- System / handshake --------------------------------------------------
   if (strcmp(cmd, "HELLO") == 0) {
-    // FIX 7 — advertise ONLY what actually compiles here.
-    JsonDocument ack;
-    ack["command"]  = "HELLO_ACK";
-    ack["fw"]       = FW_VERSION;
-    ack["board"]    = BOARD_NAME;
-    ack["protocol"] = PROTOCOL_ID;
-    JsonArray caps = ack["capabilities"].to<JsonArray>();
-    caps.add("SET_PORT");
-    caps.add("ATTACH");
-    caps.add("DETACH");
-#if HAS_SERVO_AUX
-    caps.add("SET_HEAD_POSITION");   // accessory positional servo on P5
-#endif
-    caps.add("STOP_ALL");
-    caps.add("STOP");
-    caps.add("MOVE_TIMED");
-    // Turning needs two independently driven sides. With HAS_SERVO_R = 0 there
-    // is only one, so don't advertise it — see the ports scan below.
-    if (HAS_SERVO_R) caps.add("TURN_TIMED");
-    if (HAS_SERVO_R) caps.add("STEER_TIMED");
-    caps.add("WAIT");
-    caps.add("PLAY_TONE");
-#if HAS_RGB
-    caps.add("SET_LED_COLOR");   // FW-06 RGB LED (GPIO16/17/5)
-#endif
-#if HAS_NEOPIXEL
-    caps.add("SET_LED_COLOR");   // drives the WS2812B strip (24-bit)
-    caps.add("NEOPIXEL_SET");
-    caps.add("NEOPIXEL_EFFECT");
-#endif
-#if HAS_SPEAKER
-    caps.add("SPEAKER_TONE");
-    caps.add("SPEAKER_PLAY_PCM");
-    caps.add("TTS_BEGIN");        // robot speaks streamed AI-reply PCM
-    caps.add("TTS_CHUNK");
-    caps.add("TTS_END");
-#endif
-#if HAS_MIC
-    caps.add("GET_SENSOR_DATA");   // mic level / clap reporters
-#endif
-    if (oledOk) caps.add("DISPLAY_TEXT");   // OLED text — only if the panel answered
-    if (oledOk) caps.add("DISPLAY_BITMAP"); // OLED pixel-art
-    if (oledOk) caps.add("SET_LED_BRIGHTNESS"); // OLED contrast/brightness
-    // Report the ports that are REALLY wired by scanning the config.h table —
-    // never a hardcoded list. A board claiming port 2 it doesn't have makes the
-    // right joystick axis die silently, which reads as "the web app is broken".
-    JsonArray ports = ack["ports"].to<JsonArray>();
-    for (int i = 1; i <= 8; i++) {
-      if (PORT_CHANNEL[i] >= 0) ports.add(i);
-    }
-    ack["driveMode"] = "servo";
-    ack["hasBuzzer"]   = true;
-    ack["hasOled"]     = oledOk;                // real I2C detection (0x3C), not a claim
-    ack["hasRgbLed"]   = (bool)HAS_RGB;
-    ack["hasNeoPixel"] = (bool)HAS_NEOPIXEL;
-    ack["hasSpeaker"]  = (bool)HAS_SPEAKER;
-    ack["hasMic"]      = (bool)HAS_MIC;
-    ack["boardId"]     = BOARD_ID;
-    // Modules actually detected on the bus so the web can enable their blocks.
-    if (oledOk) {
-      JsonArray periph = ack["peripherals"].to<JsonArray>();
-      periph.add("oled-ssd1306");
-    }
-    sendJson(ack);
-    watchdogArmed = true;         // the link is live from here on
-    lastStatus = "Terhubung";
-    oledStatus("Terhubung", bleConnected ? "via Bluetooth" : "via USB");
+    // BUG B: do NOT build/send the 621-byte HELLO_ACK here — this runs in the onWrite
+    // host-task and at the default MTU 23 that's ~32 synchronous notify()s = NimBLE
+    // mbuf pool exhaustion -> dropped tail -> handshake never completes -> connect-drop
+    // loop. Flag it; loop() calls sendHelloAck() once MTU is negotiated (or after a
+    // short grace for serial). See docs/ai-firmware-rca.md (BUG B).
+    helloPending = true;
+    helloRxMs = millis();
     return;
   }
+
 
   if (strcmp(cmd, "HEARTBEAT") == 0) {
     JsonDocument ack;
@@ -1245,6 +1273,7 @@ class ServerCallbacks : public NimBLEServerCallbacks {
   void onDisconnect(NimBLEServer* server) override {
     bleConnected = false;
     bleMtu = 23;
+    helloPending = false;        // BUG B: drop any un-sent deferred HELLO_ACK
     stopAllActuators();          // failsafe on link loss
 #if HAS_SPEAKER
     pcmStreamRecv = false;       // drop any half-received TTS clip
@@ -1371,6 +1400,15 @@ void setup() {
 void loop() {
   // 1) Drain USB serial.
   while (Serial.available() > 0) feed(serialBuffer, (char)Serial.read(), true);
+
+  // 1b) Deferred HELLO_ACK (BUG B): send once the MTU is negotiated (>23), or
+  // immediately for the serial path (no MTU) / after a short grace. This keeps the
+  // 621-byte ack OFF the onWrite host-task, so it never fires ~32 notifies at the
+  // default MTU 23 (the storm that dropped the tail -> connect loop).
+  if (helloPending && (!bleConnected || bleMtu > 23 || (long)(millis() - helloRxMs) > 150)) {
+    sendHelloAck();
+    helloPending = false;
+  }
 
   // 2) Non-blocking motion deadline (FIX 3): stop when a timed move expires.
   if (motionEndsAtMs != 0 && (long)(millis() - motionEndsAtMs) >= 0) {

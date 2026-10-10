@@ -4,10 +4,10 @@ The AI/TTS firmware work (2.2.1→2.2.6-mk) introduced two regressions vs the st
 2.2.0-mk. All source is in git history — nothing was lost. This maps each version to
 its symptom + suspected cause so the RCA can be done by bisecting real commits.
 
-**Important:** `main` HEAD firmware source is **2.2.6-mk (broken BLE, has TTS)** —
-kept there on purpose for RCA. The **working** firmware is **2.2.0-mk = commit
-`8cdbb32`**, which is what's published on the web flasher. To build the working
-robot locally, check out `8cdbb32`, NOT `main`.
+**Status:** `main` HEAD firmware is now **2.2.7-mk** — the **fix candidate** (BUG A +
+BUG B fixed, keeps TTS). The **published web flasher is still 2.2.0-mk** (known-stable,
+no TTS) until 2.2.7 is verified on hardware via LOCAL flash. So: build `main` locally
+to **test the fix**; the stable fallback remains 2.2.0 (`8cdbb32`) on the flasher.
 
 ## Version → commit → symptom
 | Ver | Commit | Date (WIB) | Change | Result |
@@ -48,6 +48,21 @@ cd /tmp/rca-<ver>/firmware/robotku-esp32 && pio run -e makerkit
 # flash .pio/build/makerkit via pio run -t upload (local, not web)
 ```
 
+## Fix applied — 2.2.7-mk (needs hardware verification via LOCAL flash)
+Per the deep analysis (`~/Downloads/ai-firmware-rca-deep.md`), both bugs fixed on the
+2.2.6 TTS base, builds clean for `-e v3` AND `-e makerkit`:
+- **BUG A:** `PIN_SERVO_L` restored 33→**14** (+ aux 26→33) in `pins_makerkit.h` — the
+  proven 2.2.0 pins; both drive servos move.
+- **BUG B (notify storm):** `HELLO_ACK` no longer built/sent in the `onWrite` host-task.
+  `HELLO` now just sets `helloPending`; `loop()` calls the new `sendHelloAck()` once the
+  MTU is negotiated (>23) — ~3 notifies instead of ~32. Plus `sendTelemetry` now paces
+  (`delay(2)`) between chunks so the mbuf pool drains (notify() is `void` in NimBLE 1.4.x,
+  so pacing — not a return check — is the lever). `helloPending` reset on disconnect.
+- **Verify (local flash, not web):** connect + idle 3 min, 10× connect/disconnect with no
+  drop; HELLO_ACK arrives whole (ends `;`), caps include `TTS_*`; both servos move. If
+  stable, publish 2.2.7 to the flasher; if not, fall back to 2.2.0 and re-bisect.
+
 ## Related
+- Deep analysis (mechanism + WiFi plan + prompts): `~/Downloads/ai-firmware-rca-deep.md`
 - Feature architecture + file map: `docs/ai-robot-voice.md`
 - Web TTS gate that makes older firmware safe: `src/ailabs/robotVoice.ts` (`robotCanSpeak`)
