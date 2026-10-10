@@ -47,17 +47,20 @@ Implemented on branch **`wifi-phase1`** (NOT main; experimental, compile-verifie
   the existing BLE/Serial link) + `WebSocketsServer` on :81 reusing `feed()`/`handleCommand`
   (same JSON protocol) + mDNS `robotku.local`. `sendTelemetry` now also broadcasts to WS
   clients; HELLO_ACK reports `wifiIp`/`wsPort`. Builds for `-e v3` and `-e makerkit`.
-- **⚠️ Flash wall:** with the WiFi+WS+mDNS stack, **makerkit = 97.9% of the 1.25 MB app
-  partition** (v3 = 86.8%). Consequences on this 4 MB board:
-  - **Serving the web app from the ESP** (the chosen mixed-content fix) has **no room** —
-    even a slim embedded page likely needs the `huge_app` partition (3 MB app, **no OTA**).
-  - **OTA (b.md)** needs dual app slots; at 97.9% of one slot there's no growth headroom.
-  - On 4 MB you can realistically have **WiFi + serve-page** OR **WiFi + OTA**, not both.
-  - This is the concrete point where a **bigger-flash ESP32 (S3, 8/16 MB + PSRAM)** pays off
-    (ties back to the earlier "do we need a better ESP32?" question).
-- **Not yet done / blocked:** HTTP file server to actually serve the UI (mixed-content fix),
-  the web `WiFiTransport.ts` (a.md), OTA (b.md), and WiFi+NimBLE+I2S coexistence testing on
-  real hardware (heap/radio contention is unproven).
+- **OTA added + the flash wall solved (b.md).** `2.3.1-mk` adds `OTA_UPDATE` (ESP downloads
+  the `.bin` over WiFi via HTTPClient + `Update.h`; command can arrive over BLE so no browser
+  mixed-content; no-brick — only restarts after `Update.end(true)`). WiFi+WS+OTA overflowed
+  the default 1.31 MB slot (**109.5%**), so a **custom partition (`partitions_ota.csv`)**
+  reclaims the unused SPIFFS into **two 1.875 MB OTA slots** → **makerkit 73.0%**, v3 65.7%,
+  with dual-slot OTA and ~530 KB headroom. **OTA works on the current 4 MB board — no S3
+  required for OTA.** One-time cost: the partition change needs ONE more USB flash (esptool
+  writes the new table), then all future updates are OTA.
+- **Still bigger-flash territory (S3):** *serving the full web app* from the ESP (multi-MB)
+  is impossible on 4 MB regardless, and hi-fi real-time audio wants PSRAM. So S3 is for
+  serve-app + audio quality, NOT for OTA.
+- **Not yet done:** web OTA UI (WiFi provisioning input + "Update over WiFi" button sending
+  `OTA_UPDATE` over BLE + progress) — b.md task 4; the web `WiFiTransport.ts` (a.md); and
+  WiFi+NimBLE+I2S coexistence testing on real hardware (heap/radio contention unproven).
 
 ## Tunable knobs (code pointers, for whatever comes next)
 - Audio rate/size/loudness: `TARGET_SR`, `MAX_BYTES`, `CHUNK` in `robotVoice.ts`; `PCM_STREAM_CAP` + the `<<7` playback scale + `SPK_AMPLITUDE` in `main.cpp`.
