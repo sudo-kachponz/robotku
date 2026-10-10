@@ -1,0 +1,11 @@
+# Custom 4 MB partition for WiFi + OTA (branch wifi-phase1).
+# The default scheme wastes ~1.4 MB on SPIFFS, which this firmware never uses (WiFi
+# creds live in NVS). Reclaim it into two big OTA app slots so WiFi+OTA fits (the
+# default 1.31 MB slot overflowed at 109.5%). Two 1.875 MB slots -> ~440 KB headroom.
+# NOTE: switching partition tables requires ONE more USB flash (esptool writes this
+# table + erases data); after that, updates can be OTA. No SPIFFS/LittleFS here.
+# Name,    Type, SubType, Offset,   Size
+nvs,       data, nvs,     0x9000,   0x5000
+otadata,   data, ota,     0xe000,   0x2000
+app0,      app,  ota_0,   0x10000,  0x1E0000
+app1,      app,  ota_1,   0x1F0000, 0x1E0000

@@ -42,6 +42,9 @@
 #include <ESPmDNS.h>             // robotku.local
 #include <Preferences.h>         // persist WiFi creds in NVS
 #include <WebSocketsServer.h>    // links2004/WebSockets — WS server on :81
+#include <HTTPClient.h>          // OTA: download the new .bin over WiFi
+#include <WiFiClientSecure.h>    // OTA: https fetch (ESP-side; setInsecure, not the browser)
+#include <Update.h>              // OTA: write the new firmware to the inactive app slot
 
 #include "config.h"
 
@@ -61,7 +64,7 @@
 // ------------------------------------------------------------------ Identity
 // BOARD_NAME / BOARD_ID come from the selected pin map (pins_*.h) so HELLO_ACK
 // tells the web which variant connected — no #ifdef BOARD_* here (see config.h).
-#define FW_VERSION   "2.3.0-mk"
+#define FW_VERSION   "2.3.1-mk"
 #define PROTOCOL_ID  "robotku-v1"
 #define BLE_NAME     "Robotku"
 
@@ -715,6 +718,69 @@ int noteToFreq(const char* note) {
   return 440;
 }
 
+// OTA over WiFi (b.md): the OTA_UPDATE command can arrive over ANY transport (BLE/
+// Serial/WS); the ESP downloads the .bin itself over WiFi, so browser mixed-content
+// doesn't apply. No-brick: only ESP.restart() after Update.end(true) succeeds; on any
+// failure we report OTA_FAIL and stay on the current firmware.
+void doOtaUpdate(const String& url, const String& version) {
+  auto fail = [](const char* reason, int code) {
+    JsonDocument e; e["command"] = "OTA_FAIL"; e["reason"] = reason;
+    if (code) e["code"] = code;
+    sendJson(e);
+  };
+  if (WiFi.status() != WL_CONNECTED) { fail("wifi_down", 0); return; }
+  if (url.length() == 0)             { fail("no_url", 0); return; }
+  if (version.length() && version == FW_VERSION) { fail("same_version", 0); return; }
+
+  // Free CPU/heap + silence the board before flashing (no playback mid-OTA).
+  stopAllActuators();
+#if HAS_SPEAKER
+  spkStop = true; pcmStreamPlay = false; pcmStreamRecv = false; spkPcmPlay = false; spkToneFreq = 0;
+#endif
+
+  WiFiClientSecure secure;
+  secure.setInsecure();                 // ESP-side fetch; skip cert chain
+  WiFiClient plain;
+  HTTPClient http;
+  bool begun = url.startsWith("https")
+                 ? http.begin(secure, url)
+                 : http.begin(plain, url);
+  if (!begun) { fail("begin", 0); return; }
+
+  int code = http.GET();
+  if (code != HTTP_CODE_OK) { fail("http", code); http.end(); return; }
+
+  int total = http.getSize();
+  if (total <= 0 || !Update.begin((size_t)total)) { fail("update_begin", total); http.end(); return; }
+
+  WiFiClient* stream = http.getStreamPtr();
+  uint8_t buf[1024];
+  size_t written = 0;
+  int lastPct = -1;
+  while (http.connected() && written < (size_t)total) {
+    size_t avail = stream->available();
+    if (avail) {
+      size_t n = avail < sizeof(buf) ? avail : sizeof(buf);
+      int r = stream->readBytes(buf, n);
+      if (r <= 0 || Update.write(buf, r) != (size_t)r) { fail("write", 0); Update.abort(); http.end(); return; }
+      written += r;
+      int pct = (int)(written * 100 / total);
+      if (pct != lastPct && pct % 10 == 0) {
+        lastPct = pct;
+        JsonDocument p; p["command"] = "OTA_PROGRESS"; p["pct"] = pct; sendJson(p);
+      }
+    } else {
+      delay(1);
+    }
+  }
+  http.end();
+
+  if (!Update.end(true)) { fail("end", (int)Update.getError()); return; }  // stays on old fw
+  JsonDocument ok; ok["command"] = "OTA_OK"; ok["version"] = version; sendJson(ok);
+  delay(300);
+  ESP.restart();
+}
+
 // Build + send the HELLO_ACK. Called from loop() (NOT the onWrite host-task) once the
 // MTU is negotiated, so the ~621-byte ack goes out in ~3 notifies instead of ~32 at
 // MTU 23 — the notify storm that caused the connect-drop loop (docs/ai-firmware-rca.md).
@@ -742,6 +808,7 @@ void sendHelloAck() {
   caps.add("WAIT");
   caps.add("PLAY_TONE");
   caps.add("SET_WIFI");         // Phase 1: provision WiFi STA over BLE/Serial
+  caps.add("OTA_UPDATE");       // firmware update over WiFi (no USB flasher)
 #if HAS_RGB
   caps.add("SET_LED_COLOR");   // FW-06 RGB LED (GPIO16/17/5)
 #endif
@@ -857,6 +924,14 @@ void handleCommand(const String& jsonLine) {
     r["connecting"] = true;
     r["ssid"] = ssid;
     sendJson(r);
+    return;
+  }
+
+  // --- OTA firmware update over WiFi (b.md). Command may arrive via BLE/Serial/WS;
+  // the ESP downloads the .bin itself over WiFi (no browser mixed-content). Needs
+  // SET_WIFI done first. See docs/ai-firmware-rca.md / b.md.
+  if (strcmp(cmd, "OTA_UPDATE") == 0) {
+    doOtaUpdate(String(p["url"] | ""), String(p["version"] | ""));
     return;
   }
 
