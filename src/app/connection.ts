@@ -5,7 +5,7 @@
 // directly — only this controller and the RobotTransport interface.
 
 import { createTransport, setWsUrl, type ConnState, type RobotInfo, type TransportKind } from '../transport';
-import { setWifiLine } from '../domain/protocol';
+import { setWifiLine, otaUpdateLine } from '../domain/protocol';
 import {
   setActiveTransport as storeSetTransport,
   setConnState,
@@ -167,6 +167,34 @@ export async function connectWifi(host: string): Promise<RobotInfo> {
   const clean = host.trim().replace(/^wss?:\/\//, '').replace(/:\d+$/, '');
   setWsUrl(`ws://${clean}:81`);
   return connect('ws');
+}
+
+export interface OtaManifest {
+  version: string;
+  url: string;
+  notes?: string;
+}
+
+/** Latest firmware manifest hosted on the same origin (public/firmware/ota.json). */
+export async function fetchOtaManifest(): Promise<OtaManifest | null> {
+  try {
+    const res = await fetch('/firmware/ota.json', { cache: 'no-store' });
+    if (!res.ok) return null;
+    return (await res.json()) as OtaManifest;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Kick off an OTA firmware update: the robot downloads the .bin from `url` itself over
+ * WiFi (no browser mixed-content). Needs an active link (BLE/Serial/WS) + robot on WiFi.
+ * The caller watches OTA_PROGRESS / OTA_OK / OTA_FAIL via onTelemetry.
+ */
+export async function startOtaUpdate(url: string, version: string): Promise<void> {
+  const { transport } = getState();
+  if (!transport) throw new Error('Sambungkan robot dulu (BLE/USB) sebelum update.');
+  await transport.sendLine(otaUpdateLine(url, version));
 }
 
 let autoConnecting = false;
