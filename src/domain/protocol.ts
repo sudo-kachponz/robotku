@@ -118,6 +118,15 @@ export function helloLine(): string {
   return encodeCommand({ command: 'HELLO', protocol: PROTOCOL_VERSION });
 }
 
+/**
+ * Provision WiFi on the robot (firmware 2.3.x): it stores the creds in NVS, joins the
+ * STA, then emits WIFI_STATUS{connected,ip,wsPort} once associated. Sent over the
+ * current BLE/Serial link; the web then opens the WS transport to that IP.
+ */
+export function setWifiLine(ssid: string, pass: string): string {
+  return encodeCommand({ command: 'SET_WIFI', params: { ssid, pass } });
+}
+
 /** Periodic heartbeat line. Firmware replies with ACK{seq}. */
 export function heartbeatLine(seq: number): string {
   return encodeCommand({ command: 'HEARTBEAT', seq });

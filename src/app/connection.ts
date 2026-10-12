@@ -4,7 +4,8 @@
 // store, the command_runner and telemetry. UI never touches a concrete transport
 // directly — only this controller and the RobotTransport interface.
 
-import { createTransport, type ConnState, type RobotInfo, type TransportKind } from '../transport';
+import { createTransport, setWsUrl, type ConnState, type RobotInfo, type TransportKind } from '../transport';
+import { setWifiLine } from '../domain/protocol';
 import {
   setActiveTransport as storeSetTransport,
   setConnState,
@@ -148,6 +149,24 @@ export async function connect(kind: TransportKind, isReconnect = false): Promise
     }
     throw err;
   }
+}
+
+/**
+ * Provision WiFi on the robot over the CURRENT link (BLE/Serial). The robot joins the
+ * STA and emits WIFI_STATUS{connected,ip,wsPort} once up — the UI listens for that to
+ * learn the IP, then calls connectWifi().
+ */
+export async function provisionWifi(ssid: string, pass: string): Promise<void> {
+  const { transport } = getState();
+  if (!transport) throw new Error('Sambungkan dulu lewat Bluetooth/USB sebelum kirim WiFi.');
+  await transport.sendLine(setWifiLine(ssid, pass));
+}
+
+/** Connect to the robot over WiFi (WebSocket). `host` is an IP or mDNS name (robotku.local). */
+export async function connectWifi(host: string): Promise<RobotInfo> {
+  const clean = host.trim().replace(/^wss?:\/\//, '').replace(/:\d+$/, '');
+  setWsUrl(`ws://${clean}:81`);
+  return connect('ws');
 }
 
 let autoConnecting = false;
