@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { isBleSupported, isSerialSupported, type TransportKind } from '../../transport';
-import { connect, disconnect } from '../../app/connection';
+import { connect, disconnect, provisionWifi, connectWifi, onTelemetry } from '../../app/connection';
 import { useConnection } from '../../hooks/useConnection';
 import UnsupportedBrowserModal from './UnsupportedBrowserModal';
 import styles from './ConnectPanel.module.css';
@@ -112,6 +112,8 @@ export default function ConnectPanel({ onClose }: { onClose: () => void }) {
               )}
             </div>
           )}
+
+          <WifiSection isConnected={isConnected} onClose={onClose} />
         </div>
       </div>
 
@@ -120,6 +122,135 @@ export default function ConnectPanel({ onClose }: { onClose: () => void }) {
         onClose={() => setShowUnsupportedModal(false)}
       />
     </>
+  );
+}
+
+function WifiSection({ isConnected, onClose }: { isConnected: boolean; onClose: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [ssid, setSsid] = useState('');
+  const [pass, setPass] = useState('');
+  const [host, setHost] = useState('robotku.local');
+  const [sent, setSent] = useState(false);
+  const [detectedIp, setDetectedIp] = useState<string | null>(null);
+  const [busy, setBusy] = useState<'provision' | 'connect' | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+  // Robot reports WIFI_STATUS{connected,ip} once it joins — capture the IP.
+  useEffect(() => {
+    const off = onTelemetry((m: { command?: string; connected?: boolean; ip?: string }) => {
+      if (m?.command === 'WIFI_STATUS' && m.connected && m.ip) {
+        setDetectedIp(m.ip);
+        setHost(m.ip);
+      }
+    });
+    return off;
+  }, []);
+
+  const provision = async () => {
+    setBusy('provision');
+    setErr(null);
+    try {
+      await provisionWifi(ssid, pass);
+      setSent(true);
+    } catch (e) {
+      setErr(msg(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+  const doConnect = async () => {
+    setBusy('connect');
+    setErr(null);
+    try {
+      await connectWifi(host);
+      onClose();
+    } catch (e) {
+      setErr(msg(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className={styles.wifiSection}>
+      <button className={styles.wifiToggle} onClick={() => setOpen((v) => !v)} type="button">
+        <WifiIcon />
+        <span>WiFi (beta)</span>
+        <span className={styles.wifiChevron}>{open ? '▾' : '▸'}</span>
+      </button>
+      {open && (
+        <div className={styles.wifiBody}>
+          {isConnected ? (
+            <>
+              <label className={styles.wifiLabel}>Nama WiFi (SSID)</label>
+              <input
+                className={styles.wifiInput}
+                value={ssid}
+                onChange={(e) => setSsid(e.target.value)}
+                placeholder="WiFi rumah / sekolah"
+              />
+              <label className={styles.wifiLabel}>Password</label>
+              <input
+                className={styles.wifiInput}
+                type="password"
+                value={pass}
+                onChange={(e) => setPass(e.target.value)}
+                placeholder="••••••••"
+              />
+              <button
+                className={styles.wifiBtn}
+                disabled={!ssid || busy !== null}
+                onClick={provision}
+                type="button"
+              >
+                {busy === 'provision' ? 'Mengirim…' : 'Kirim WiFi ke robot'}
+              </button>
+              {sent && !detectedIp && (
+                <div className={styles.wifiNote}>Terkirim — menunggu robot gabung WiFi…</div>
+              )}
+              {detectedIp && <div className={styles.wifiOk}>Robot online di {detectedIp} ✓</div>}
+            </>
+          ) : (
+            <div className={styles.wifiNote}>
+              Sambungkan dulu via Bluetooth/USB untuk mengirim nama WiFi ke robot — atau isi
+              alamat di bawah kalau robot sudah tersambung WiFi.
+            </div>
+          )}
+
+          <label className={styles.wifiLabel}>Alamat robot</label>
+          <input
+            className={styles.wifiInput}
+            value={host}
+            onChange={(e) => setHost(e.target.value)}
+            placeholder="robotku.local atau 192.168.x.x"
+          />
+          <button
+            className={`${styles.wifiBtn} ${styles.wifiConnect}`}
+            disabled={!host || busy !== null}
+            onClick={doConnect}
+            type="button"
+          >
+            {busy === 'connect' ? 'Menyambung…' : 'Sambung via WiFi'}
+          </button>
+          {err && <div className={styles.wifiErr}>{err}</div>}
+          <div className={styles.wifiHint}>
+            WiFi (ws://) hanya jalan dari halaman http/localhost atau yang dilayani robot — bukan
+            dari https.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WifiIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12.55a11 11 0 0 1 14 0" />
+      <path d="M8.5 16.1a6 6 0 0 1 7 0" />
+      <circle cx="12" cy="19.5" r="0.6" fill="currentColor" />
+    </svg>
   );
 }
 

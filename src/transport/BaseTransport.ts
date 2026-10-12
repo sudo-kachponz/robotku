@@ -26,7 +26,7 @@ const HEARTBEAT_INTERVAL_MS = 500;
 const HEARTBEAT_TIMEOUT_MS = 1500;
 
 export abstract class BaseTransport implements RobotTransport {
-  abstract readonly kind: 'ble' | 'serial';
+  abstract readonly kind: 'ble' | 'serial' | 'ws';
 
   private telemetryCbs: Array<(msg: RobotCommand) => void> = [];
   private stateCbs: Array<(s: ConnState) => void> = [];

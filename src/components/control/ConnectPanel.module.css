@@ -133,3 +133,92 @@
     transform: translateY(8px);
   }
 }
+
+/* --- WiFi (beta) section --- */
+.wifiSection {
+  margin-top: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.wifiToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--ink-600);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 6px 2px;
+  cursor: pointer;
+}
+.wifiChevron {
+  margin-left: auto;
+  color: var(--ink-400);
+}
+.wifiBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 2px 2px;
+}
+.wifiLabel {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-500);
+  margin-top: 2px;
+}
+.wifiInput {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-900);
+  border-radius: 9px;
+  padding: 8px 11px;
+  font-size: 13.5px;
+}
+.wifiInput:focus {
+  outline: none;
+  border-color: var(--indigo-400);
+}
+.wifiBtn {
+  margin-top: 4px;
+  border: none;
+  background: var(--indigo-600);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13.5px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.wifiBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.wifiConnect {
+  background: var(--green);
+}
+.wifiNote {
+  font-size: 12px;
+  color: var(--ink-500);
+  line-height: 1.4;
+}
+.wifiOk {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--green);
+}
+.wifiErr {
+  font-size: 12.5px;
+  color: var(--red);
+  line-height: 1.4;
+}
+.wifiHint {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--ink-400);
+  line-height: 1.4;
+}

@@ -6,10 +6,26 @@
 import type { RobotTransport } from './RobotTransport';
 import { BleTransport } from './BleTransport';
 import { SerialTransport } from './SerialTransport';
+import { WsTransport } from './WsTransport';
 
 export type { RobotTransport, ConnState, RobotInfo } from './RobotTransport';
 
-export type TransportKind = 'ble' | 'serial';
+export type TransportKind = 'ble' | 'serial' | 'ws';
+
+// WiFi target for the WS transport, set by connection.connectWifi() before connect('ws')
+// so the whole connect/reconnect machinery works unchanged.
+let wsUrl = 'ws://robotku.local:81';
+export function setWsUrl(url: string): void {
+  wsUrl = url;
+}
+export function getWsUrl(): string {
+  return wsUrl;
+}
+
+/** WebSocket exists in every modern browser; mixed-content (https -> ws://) is the real gate. */
+export function isWsSupported(): boolean {
+  return typeof WebSocket !== 'undefined';
+}
 
 /** Web Bluetooth support (Chromium on HTTPS/localhost). */
 export function isBleSupported(): boolean {
@@ -33,6 +49,8 @@ export function createTransport(kind: TransportKind): RobotTransport {
       return new BleTransport();
     case 'serial':
       return new SerialTransport();
+    case 'ws':
+      return new WsTransport(wsUrl);
     default:
       throw new Error(`Unknown transport kind: ${kind}`);
   }
