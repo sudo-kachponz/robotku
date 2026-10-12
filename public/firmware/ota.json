@@ -1,0 +1,5 @@
+{
+  "version": "2.3.1-mk",
+  "url": "https://hub.robotku.id/firmware/robotku-esp32-2.3.1-mk-app.bin",
+  "notes": "WiFi STA + WebSocket transport + OTA over WiFi"
+}

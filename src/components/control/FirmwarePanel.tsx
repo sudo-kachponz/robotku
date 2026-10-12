@@ -8,19 +8,74 @@
 import { useEffect, useState } from 'react';
 import { createElement } from 'react';
 import { useConnection } from '../../hooks/useConnection';
-import { disconnect } from '../../app/connection';
+import {
+  disconnect,
+  fetchOtaManifest,
+  onTelemetry,
+  startOtaUpdate,
+  type OtaManifest,
+} from '../../app/connection';
 import { showToast } from '../../ui/toast';
 import styles from '../../styles/Settings.module.css';
 
-const LATEST_FW = '2.2.0-mk';
+const LATEST_FW = '2.3.1-mk';
 const MANIFEST = '/firmware/manifest.json';
 const BIN_URL = `/firmware/robotku-${LATEST_FW}.bin`;
 const ESP_WEB_TOOLS = 'https://unpkg.com/esp-web-tools@10/dist/web/install-button.js';
+
+type OtaState = 'idle' | 'updating' | 'done' | 'fail';
+const OTA_FAIL_MSG: Record<string, string> = {
+  wifi_down: 'Robot belum tersambung WiFi. Buka panel koneksi → kirim WiFi ke robot dulu.',
+  same_version: 'Robot sudah di versi terbaru.',
+  update_begin: 'Gagal menyiapkan slot OTA (ukuran file?).',
+  write: 'Gagal menulis firmware (koneksi WiFi putus saat unduh?).',
+};
 
 export default function FirmwarePanel() {
   const { robotInfo, transport } = useConnection();
   const [supported, setSupported] = useState(true);
   const [loaded, setLoaded] = useState(false);
+  const [manifest, setManifest] = useState<OtaManifest | null>(null);
+  const [ota, setOta] = useState<OtaState>('idle');
+  const [otaPct, setOtaPct] = useState(0);
+  const [otaMsg, setOtaMsg] = useState<string | null>(null);
+
+  // Latest firmware manifest (for the OTA version + .bin URL).
+  useEffect(() => {
+    void fetchOtaManifest().then(setManifest);
+  }, []);
+
+  // Watch OTA progress/result frames from the robot.
+  useEffect(() => {
+    const off = onTelemetry((m: { command?: string; pct?: number; reason?: string }) => {
+      if (m?.command === 'OTA_PROGRESS') {
+        setOta('updating');
+        setOtaPct(typeof m.pct === 'number' ? m.pct : 0);
+      } else if (m?.command === 'OTA_OK') {
+        setOta('done');
+        setOtaPct(100);
+      } else if (m?.command === 'OTA_FAIL') {
+        setOta('fail');
+        setOtaMsg(OTA_FAIL_MSG[m.reason ?? ''] ?? `Gagal: ${m.reason ?? 'unknown'}`);
+      }
+    });
+    return off;
+  }, []);
+
+  const otaVersion = manifest?.version ?? LATEST_FW;
+
+  const doOta = async () => {
+    if (!manifest) return;
+    setOta('updating');
+    setOtaPct(0);
+    setOtaMsg(null);
+    try {
+      await startOtaUpdate(manifest.url, manifest.version);
+    } catch (e) {
+      setOta('fail');
+      setOtaMsg(e instanceof Error ? e.message : String(e));
+    }
+  };
 
   useEffect(() => {
     setSupported('serial' in navigator);
@@ -37,7 +92,8 @@ export default function FirmwarePanel() {
   }, []);
 
   const installed = robotInfo?.fwVersion ?? null;
-  const upToDate = installed === LATEST_FW;
+  const upToDate = installed === otaVersion;
+  const connected = !!transport;
   // A live SERIAL link holds the USB port; ESP Web Tools can't open it until we let go.
   const serialBusy = transport?.kind === 'serial';
 
@@ -58,10 +114,84 @@ export default function FirmwarePanel() {
         <div style={{ ...row, borderTop: '1px solid var(--line-soft)' }}>
           <span style={{ color: 'var(--ink-500)' }}>Versi terbaru</span>
           <strong>
-            {LATEST_FW}{' '}
+            {otaVersion}{' '}
             {installed && (upToDate ? '✓ sudah terbaru' : '· ada pembaruan')}
           </strong>
         </div>
+      </div>
+
+      {/* --- OTA update over WiFi (no cable). Robot downloads the .bin itself. --- */}
+      <div
+        style={{
+          marginTop: 16,
+          padding: '12px 14px',
+          borderRadius: 'var(--r-md)',
+          border: '1px solid var(--line)',
+          background: 'var(--surface-2)',
+        }}
+      >
+        <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 4 }}>
+          📡 Update via WiFi (OTA)
+        </div>
+        <p style={{ margin: '0 0 10px', fontSize: 12.5, color: 'var(--ink-500)', lineHeight: 1.5 }}>
+          Tanpa kabel. Robot mengunduh firmware sendiri lewat WiFi — jalan dari hub.robotku.id.
+          Syarat: robot tersambung (BLE/USB) <b>dan</b> sudah dikirimi WiFi (panel koneksi).
+        </p>
+
+        {ota === 'updating' && (
+          <div style={{ marginBottom: 8 }}>
+            <div
+              style={{ height: 8, borderRadius: 999, background: 'var(--line)', overflow: 'hidden' }}
+            >
+              <div
+                style={{
+                  height: '100%',
+                  width: `${otaPct}%`,
+                  background: 'var(--indigo-600)',
+                  transition: 'width .2s',
+                }}
+              />
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 4 }}>
+              Mengunduh & memasang… {otaPct}%
+            </div>
+          </div>
+        )}
+        {ota === 'done' && (
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--green)', marginBottom: 8 }}>
+            ✓ Berhasil! Robot restart dengan firmware {otaVersion}.
+          </div>
+        )}
+        {ota === 'fail' && otaMsg && (
+          <div style={{ fontSize: 13, color: 'var(--red)', marginBottom: 8, lineHeight: 1.5 }}>
+            ⛔ {otaMsg}
+          </div>
+        )}
+
+        <button
+          onClick={doOta}
+          disabled={!connected || !manifest || ota === 'updating' || (!!installed && upToDate)}
+          style={{
+            border: 'none',
+            borderRadius: 'var(--r-full)',
+            padding: '11px 20px',
+            fontWeight: 800,
+            fontSize: 14,
+            cursor: !connected || ota === 'updating' ? 'not-allowed' : 'pointer',
+            opacity: !connected || !manifest || (!!installed && upToDate) ? 0.5 : 1,
+            background: 'var(--green)',
+            color: '#fff',
+            fontFamily: 'inherit',
+          }}
+        >
+          {ota === 'updating'
+            ? `Mengunduh… ${otaPct}%`
+            : !connected
+              ? 'Sambungkan robot dulu'
+              : installed && upToDate
+                ? '✓ Sudah terbaru'
+                : '📡 Update via WiFi'}
+        </button>
       </div>
 
       {serialBusy && (

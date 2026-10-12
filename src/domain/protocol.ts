@@ -127,6 +127,16 @@ export function setWifiLine(ssid: string, pass: string): string {
   return encodeCommand({ command: 'SET_WIFI', params: { ssid, pass } });
 }
 
+/**
+ * Tell the robot to update its firmware over WiFi: it downloads the .bin itself from
+ * `url` (https, no browser mixed-content) and flashes the inactive OTA slot, emitting
+ * OTA_PROGRESS{pct} then OTA_OK{version} (reboot) or OTA_FAIL{reason}. Robot must be on
+ * WiFi (SET_WIFI) first. Sent over the current BLE/Serial/WS link.
+ */
+export function otaUpdateLine(url: string, version: string): string {
+  return encodeCommand({ command: 'OTA_UPDATE', params: { url, version } });
+}
+
 /** Periodic heartbeat line. Firmware replies with ACK{seq}. */
 export function heartbeatLine(seq: number): string {
   return encodeCommand({ command: 'HEARTBEAT', seq });
