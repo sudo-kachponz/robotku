@@ -22,9 +22,11 @@ export default function BaseMode() {
   const { left, right, arms } = mapping.base;
 
   const stageRef = useRef<HTMLDivElement | null>(null);
+  const robotRef = useRef<HTMLDivElement | null>(null);
   const leftStickThumbRef = useRef<HTMLDivElement | null>(null);
 
   const intentRef = useRef({ fwd: 0, turn: 0 });
+  const headingRef = useRef(0);
   const reducedRef = useRef(false);
 
   // Speed level: 1 = Eco (50%), 2 = Normal (75%), 3 = Turbo (100%)
@@ -157,6 +159,25 @@ export default function BaseMode() {
     apply();
     mq.addEventListener('change', apply);
     return () => mq.removeEventListener('change', apply);
+  }, []);
+
+  // ---- Animation loop: rotate in place (no x/y movement) ----
+  useEffect(() => {
+    let raf = 0;
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      const el = robotRef.current;
+      if (el && !reducedRef.current) {
+        const { turn } = intentRef.current;
+        headingRef.current = (headingRef.current + turn * 100 * dt + 360) % 360;
+        el.style.transform = `rotate(${headingRef.current}deg)`;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   // Global Keyboard shortcuts (gear speed only — 1/2/3)
@@ -302,7 +323,7 @@ export default function BaseMode() {
               {/* Static Robot Display (centered, no movement) */}
               <div className={styles.switchScreen} ref={stageRef}>
                 <div className={styles.arenaCrosshair} />
-                <div className={styles.lcdRobot}>
+                <div className={styles.lcdRobot} ref={robotRef}>
                   <RobotSprite
                     fwd={intent.fwd}
                     turn={intent.turn}
@@ -320,21 +341,6 @@ export default function BaseMode() {
           </div>
         </div>
 
-        {/* ── KEYBOARD SHORTCUT GUIDE ── */}
-        <div className={styles.guideBar}>
-          <div>
-            <span className={styles.kbdBadge}>W / A / S / D</span> D-Pad Gerak
-          </div>
-          <div>
-            <span className={styles.kbdBadge}>Q / E</span> Grab & Release
-          </div>
-          <div>
-            <span className={styles.kbdBadge}>Spasi</span> Rem Stop
-          </div>
-          <div>
-            <span className={styles.kbdBadge}>1 / 2 / 3</span> Gear Speed (Eco / Norm / Turbo)
-          </div>
-        </div>
       </div>
     </ControlLayout>
   );
