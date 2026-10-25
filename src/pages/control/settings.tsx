@@ -92,42 +92,6 @@ function SettingsTab({
           onToggle={(p) => edit((s) => toggle(s.mapping.base.right, p))}
         />
 
-        <MapGroup
-          label="Tank · Turret"
-          ports={settings.mapping.tank.turret}
-          onToggle={(p) => edit((s) => toggle(s.mapping.tank.turret, p))}
-        />
-        <MapGroup
-          label="Tank · Kiri"
-          ports={settings.mapping.tank.left}
-          onToggle={(p) => edit((s) => toggle(s.mapping.tank.left, p))}
-        />
-        <MapGroup
-          label="Tank · Kanan"
-          ports={settings.mapping.tank.right}
-          onToggle={(p) => edit((s) => toggle(s.mapping.tank.right, p))}
-        />
-
-        <MapGroup
-          label="Joystick · Kiri"
-          ports={settings.mapping.joystick.left}
-          onToggle={(p) => edit((s) => toggle(s.mapping.joystick.left, p))}
-        />
-        <MapGroup
-          label="Joystick · Kanan"
-          ports={settings.mapping.joystick.right}
-          onToggle={(p) => edit((s) => toggle(s.mapping.joystick.right, p))}
-        />
-        <MapGroup
-          label="Joystick · Custom Y"
-          ports={settings.mapping.joystick.customY}
-          onToggle={(p) => edit((s) => toggle(s.mapping.joystick.customY, p))}
-        />
-        <MapGroup
-          label="Joystick · Custom X"
-          ports={settings.mapping.joystick.customX}
-          onToggle={(p) => edit((s) => toggle(s.mapping.joystick.customX, p))}
-        />
       </div>
 
       {/* Speed & direction */}
@@ -190,14 +154,6 @@ function SettingsTab({
         <KeybindTable
           title="Port Control (SHIFT membalik)"
           rows={[['Port 1–8', ['1', '…', '8']]]}
-        />
-        <KeybindTable
-          title="Tank"
-          rows={[
-            ['Left Throttle +/−', ['W', 'S']],
-            ['Right Throttle +/−', ['E', 'D']],
-            ['Turret CCW / CW', ['Q', 'R']],
-          ]}
         />
       </div>
 

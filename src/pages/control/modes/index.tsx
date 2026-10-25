@@ -10,8 +10,6 @@ import ControlLayout from '../../../components/control/ControlLayout';
 import styles from '../../../styles/Modes.module.css';
 import baseRobotSvg from '../../../assets/Baserobot.svg';
 import portSvg from '../../../assets/Port.svg';
-import tankSvg from '../../../assets/tank.svg';
-import joystickSvg from '../../../assets/joystick.svg';
 import codeSvg from '../../../assets/code.svg';
 
 // Redefine GearIcon if it's not exported
@@ -89,25 +87,9 @@ const MODES: ModeCard[] = [
     key: 'port',
     href: '/control/modes/port',
     title: 'Port Control',
-    desc: 'Uji 8 port satu per satu lewat slider -100..100.',
+    desc: 'Uji fungsi port satu per satu lewat slider −100..100.',
     accent: 'var(--purple)',
     image: portSvg,
-  },
-  {
-    key: 'tank',
-    href: '/control/modes/tank',
-    title: 'Tank Mode',
-    desc: 'Dua throttle roda kiri/kanan + belok + turret.',
-    accent: 'var(--amber)',
-    image: tankSvg,
-  },
-  {
-    key: 'joystick',
-    href: '/control/modes/joystick',
-    title: 'Joystick',
-    desc: 'Satu stik analog + dua tombol aksi, arcade mixing.',
-    accent: 'var(--pink-500)',
-    image: joystickSvg,
   },
   {
     key: 'code',
