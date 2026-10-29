@@ -17,16 +17,16 @@ export const LAYOUT: Record<string, LayoutBox> = {
     height: '30.89%',
   },
 
-  // Left 4-Way Directional Pad
-  dpad: {
+  // Left 4 Action Buttons Diamond (blue wing)
+  actions: {
     left: '14.06%',
     top: '25.0%',
     width: '13.125%',
     height: '23.33%',
   },
 
-  // Right 4 Action Buttons Diamond
-  actions: {
+  // Right 4-Way Directional Pad (red wing)
+  dpad: {
     left: '72.81%',
     top: '25.0%',
     width: '13.125%',

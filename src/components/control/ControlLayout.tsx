@@ -10,7 +10,7 @@ import { useRouter } from 'next/router';
 import ConnectionBadge from './ConnectionBadge';
 import ConnectPanel from './ConnectPanel';
 import { useConnection } from '../../hooks/useConnection';
-import { autoConnect } from '../../app/connection';
+import { autoConnect, estop } from '../../app/connection';
 import styles from './ControlLayout.module.css';
 
 const COMMUNITY_URL = 'https://robotku.id/#course';
@@ -43,6 +43,18 @@ export default function ControlLayout({
   // Auto-reconnect to an already-granted robot on load
   useEffect(() => {
     void autoConnect();
+  }, []);
+
+  // Send STOP_ALL when tab is closing/hidden (safety: robot stops if user leaves)
+  useEffect(() => {
+    const stop = () => { void estop(); };
+    window.addEventListener('pagehide', stop);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') stop();
+    });
+    return () => {
+      window.removeEventListener('pagehide', stop);
+    };
   }, []);
 
   useEffect(() => {

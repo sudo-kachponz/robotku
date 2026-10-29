@@ -7,10 +7,12 @@ import type { RobotTransport } from './RobotTransport';
 import { BleTransport } from './BleTransport';
 import { SerialTransport } from './SerialTransport';
 import { WsTransport } from './WsTransport';
+import { RelayTransport } from './RelayTransport';
 
 export type { RobotTransport, ConnState, RobotInfo } from './RobotTransport';
+export { RelayTransport } from './RelayTransport';
 
-export type TransportKind = 'ble' | 'serial' | 'ws';
+export type TransportKind = 'ble' | 'serial' | 'ws' | 'relay';
 
 // WiFi target for the WS transport, set by connection.connectWifi() before connect('ws')
 // so the whole connect/reconnect machinery works unchanged.
@@ -20,6 +22,23 @@ export function setWsUrl(url: string): void {
 }
 export function getWsUrl(): string {
   return wsUrl;
+}
+
+// Relay target, set by connection.connectRelay() before connect('relay').
+const DEFAULT_RELAY_URL =
+  typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_RELAY_URL
+    ? process.env.NEXT_PUBLIC_RELAY_URL
+    : 'ws://localhost:8787';
+
+let relayUrl = DEFAULT_RELAY_URL;
+let relayRobotId = '';
+
+export function setRelayTarget(target: { url?: string; id: string }): void {
+  if (target.url) relayUrl = target.url;
+  relayRobotId = target.id.toUpperCase().trim();
+}
+export function getRelayTarget(): { url: string; id: string } {
+  return { url: relayUrl, id: relayRobotId };
 }
 
 /** WebSocket exists in every modern browser; mixed-content (https -> ws://) is the real gate. */
@@ -51,6 +70,8 @@ export function createTransport(kind: TransportKind): RobotTransport {
       return new SerialTransport();
     case 'ws':
       return new WsTransport(wsUrl);
+    case 'relay':
+      return new RelayTransport(relayUrl, relayRobotId);
     default:
       throw new Error(`Unknown transport kind: ${kind}`);
   }
