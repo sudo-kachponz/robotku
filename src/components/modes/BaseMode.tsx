@@ -17,9 +17,9 @@ import styles from './BaseMode.module.css';
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 export default function BaseMode() {
-  const { driveGroup, stopGroup, setGripper } = useDrive();
+  const { driveGroup, stopGroup } = useDrive();
   const { mapping } = useSettings();
-  const { left, right, arms } = mapping.base;
+  const { left, right } = mapping.base;
 
   const stageRef = useRef<HTMLDivElement | null>(null);
   const robotRef = useRef<HTMLDivElement | null>(null);
@@ -32,7 +32,6 @@ export default function BaseMode() {
   // Speed level: 1 = Eco (50%), 2 = Normal (75%), 3 = Turbo (100%)
   const [speedLevel, setSpeedLevel] = useState<1 | 2 | 3>(2);
   const [intent, setIntent] = useState({ fwd: 0, turn: 0 });
-  const [gripperOpen, setGripperOpen] = useState(true);
   const [reduced, setReduced] = useState(false);
 
   const currentDriveSpeed = speedLevel === 1 ? 50 : speedLevel === 2 ? 75 : 100;
@@ -81,24 +80,6 @@ export default function BaseMode() {
     setTurn(0);
     soundFx.updateEngineSound(0, 0);
   }, [stopGroup, left, right, setFwd, setTurn]);
-
-  const grab = useCallback(() => {
-    setGripper(false);
-    driveGroup(arms, 100);
-    setGripperOpen(false);
-    soundFx.playClick(900);
-  }, [setGripper, driveGroup, arms]);
-
-  const release = useCallback(() => {
-    setGripper(true);
-    driveGroup(arms, -100);
-    setGripperOpen(true);
-    soundFx.playClick(600);
-  }, [setGripper, driveGroup, arms]);
-
-  const stopArms = useCallback(() => {
-    stopGroup(arms);
-  }, [stopGroup, arms]);
 
   // ---- Left Analog Stick Pointer Handlers (Proportional Steering/Drive) ----
   const handleLeftStickStart = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -204,56 +185,52 @@ export default function BaseMode() {
       <div className={styles.container}>
         {/* ── CONSOLE LAYOUT ── */}
         <div className={styles.switchConsole}>
-          {/* ── TOP: GRAB / RELEASE shoulder buttons ── */}
-          <div className={styles.shoulderBar}>
-            <div className={styles.shoulderGroup}>
-              <HoldButton
-                className={`${styles.shoulderBtn} ${styles.triggerBtn}`}
-                activeClassName={styles.shoulderActive}
-                keys={['q', 'Q']}
-                onStart={grab}
-                onStop={stopArms}
-                ariaLabel="Grab Claw (Q)"
-                title="Grab Claw (Q)"
-              >
-                <ClawIcon closed />
-                <span>GRAB</span>
-              </HoldButton>
-            </div>
-
-            <div className={styles.shoulderGroup}>
-              <HoldButton
-                className={`${styles.shoulderBtn} ${styles.triggerBtn}`}
-                activeClassName={styles.shoulderActive}
-                keys={['e', 'E']}
-                onStart={release}
-                onStop={stopArms}
-                ariaLabel="Release Claw (E)"
-                title="Release Claw (E)"
-              >
-                <ClawIcon closed={false} />
-                <span>RELEASE</span>
-              </HoldButton>
-            </div>
-          </div>
-
           {/* ── 3-SECTION HORIZONTAL BODY ── */}
           <div className={styles.consoleBody}>
-            {/* ── 1. LEFT SIDE: Analog Stick + D-Pad ── */}
+            {/* ── 1. LEFT SIDE: Analog Stick ── */}
             <div className={styles.leftJoyCon}>
               <div className={styles.railAccentLeft} />
 
-              {/* Left Proportional Analog Stick */}
+              {/* Proportional Analog Stick */}
               <div
                 className={styles.stickWell}
                 onPointerDown={handleLeftStickStart}
-                title="Left Stick: Drag untuk kendali gerak proporsional"
-                aria-label="Left Thumbstick"
+                title="Stick: Drag untuk kendali gerak proporsional"
+                aria-label="Thumbstick"
               >
                 <div className={styles.stickThumb} ref={leftStickThumbRef}>
                   <div className={styles.stickRidge} />
                 </div>
               </div>
+            </div>
+
+            {/* ── 2. CENTER DISPLAY ── */}
+            <div className={styles.centerDisplay}>
+              <div className={styles.screenTopBar}>
+                <div className={styles.screenStatusBadges}>
+                  <span className={styles.statusChip}>
+                    GEAR: {speedLevel === 1 ? 'ECO 50%' : speedLevel === 2 ? 'NORM 75%' : 'TURBO 100%'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Static Robot Display (centered, no movement) */}
+              <div className={styles.switchScreen} ref={stageRef}>
+                <div className={styles.arenaCrosshair} />
+                <div className={styles.lcdRobot} ref={robotRef}>
+                  <RobotSprite
+                    fwd={intent.fwd}
+                    turn={intent.turn}
+                    gripperOpen={true}
+                    reduced={reduced}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* ── 3. RIGHT SIDE: D-Pad ── */}
+            <div className={styles.rightJoyCon}>
+              <div className={styles.railAccentRight} />
 
               {/* 4-Way D-Pad Buttons */}
               <div className={styles.switchDpadGrid}>
@@ -306,38 +283,6 @@ export default function BaseMode() {
                 </HoldButton>
               </div>
             </div>
-
-            {/* ── 2. CENTER DISPLAY ── */}
-            <div className={styles.centerDisplay}>
-              <div className={styles.screenTopBar}>
-                <div className={styles.screenStatusBadges}>
-                  <span className={styles.statusChip}>
-                    GEAR: {speedLevel === 1 ? 'ECO 50%' : speedLevel === 2 ? 'NORM 75%' : 'TURBO 100%'}
-                  </span>
-                  <span className={`${styles.statusChip} ${styles.statusChipActive}`}>
-                    {gripperOpen ? 'CLAW: OPEN' : 'CLAW: GRAB'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Static Robot Display (centered, no movement) */}
-              <div className={styles.switchScreen} ref={stageRef}>
-                <div className={styles.arenaCrosshair} />
-                <div className={styles.lcdRobot} ref={robotRef}>
-                  <RobotSprite
-                    fwd={intent.fwd}
-                    turn={intent.turn}
-                    gripperOpen={gripperOpen}
-                    reduced={reduced}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* ── 3. RIGHT SIDE (empty — claw buttons moved to shoulder) ── */}
-            <div className={styles.rightJoyCon}>
-              <div className={styles.railAccentRight} />
-            </div>
           </div>
         </div>
 
@@ -361,31 +306,3 @@ function Arrow({ dir }: { dir: 'up' | 'down' | 'left' | 'right' }) {
   );
 }
 
-function ClawIcon({ closed = false }: { closed?: boolean }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width="13"
-      height="13"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      {closed ? (
-        <>
-          <path d="M7 6c2 4 4 6 5 6s3-2 5-6" />
-          <path d="M12 12v7" />
-          <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-        </>
-      ) : (
-        <>
-          <path d="M5 6c1 5 4 6 7 6s6-1 7-6" />
-          <path d="M12 12v7" />
-          <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-        </>
-      )}
-    </svg>
-  );
-}
