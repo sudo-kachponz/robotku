@@ -22,6 +22,10 @@ const LATEST_FW = '2.4.0-mk';
 const MANIFEST = '/firmware/manifest.json';
 const BIN_URL = `/firmware/robotku-${LATEST_FW}.bin`;
 
+const RELAY_FW = '2.4.0-relay';
+const RELAY_MANIFEST = '/firmware/manifest-relay.json';
+const RELAY_BIN_URL = `/firmware/robotku-${RELAY_FW}.bin`;
+
 // ponytail: OTA_UPDATE removed in 2.4.0-mk firmware. OTA section disabled
 // until capability check is wired (see Fajri's relay notes).
 
@@ -291,6 +295,60 @@ export default function FirmwarePanel() {
         Colok robot ke komputer pakai kabel USB, klik tombol di atas, lalu pilih port
         <code> USB-SERIAL CH340</code> di jendela yang muncul. Jangan cabut kabel saat proses flashing.
       </p>
+
+      {/* --- Firmware + Relay (internet control) --- */}
+      <div
+        style={{
+          marginTop: 16,
+          padding: '12px 14px',
+          borderRadius: 'var(--r-md)',
+          border: '1px solid rgba(16, 185, 129, 0.3)',
+          background: 'rgba(16, 185, 129, 0.06)',
+        }}
+      >
+        <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 4, color: 'var(--green)' }}>
+          🌐 Firmware + Relay (kontrol lewat internet)
+        </div>
+        <p style={{ margin: '0 0 10px', fontSize: 12.5, color: 'var(--ink-500)', lineHeight: 1.5 }}>
+          Versi {RELAY_FW} — sama dengan firmware standar, ditambah relay client supaya robot
+          bisa dikontrol dari hub.robotku.id lewat internet. Setelah flash, ketik{' '}
+          <code>SET_RELAY &lt;ID&gt; &lt;SECRET&gt;</code> di Serial Monitor untuk mengaktifkan.
+        </p>
+
+        {supported && loaded ? (
+          createElement(
+            'esp-web-install-button',
+            { manifest: RELAY_MANIFEST },
+            createElement(
+              'button',
+              {
+                slot: 'activate',
+                disabled: serialBusy,
+                style: {
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  border: 'none',
+                  borderRadius: 'var(--r-full)',
+                  padding: '12px 22px',
+                  fontWeight: 800,
+                  fontSize: 15,
+                  cursor: serialBusy ? 'not-allowed' : 'pointer',
+                  opacity: serialBusy ? 0.5 : 1,
+                  background: 'var(--green)',
+                  color: '#fff',
+                  fontFamily: 'inherit',
+                },
+              },
+              '🌐 Flash Firmware + Relay via USB',
+            ),
+          )
+        ) : !supported ? (
+          <a href={RELAY_BIN_URL} download style={{ color: 'var(--green)', fontWeight: 700 }}>
+            ⬇ Download firmware relay .bin
+          </a>
+        ) : null}
+      </div>
     </div>
   );
 }

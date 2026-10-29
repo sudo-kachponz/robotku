@@ -150,7 +150,7 @@ static void handleSetRelay(const String &raw)
 static void relaySend(const String &line)
 {
   if (relayConnected)
-    relayWs.sendTXT(line);
+    relayWs.sendTXT(line.c_str(), line.length());
 }
 
 // ── Internal ──
