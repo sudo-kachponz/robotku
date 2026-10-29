@@ -10,7 +10,7 @@ export type { RobotInfo } from '../domain/protocol';
 export type ConnState = 'disconnected' | 'connecting' | 'connected' | 'error';
 
 export interface RobotTransport {
-  readonly kind: 'ble' | 'serial' | 'ws';
+  readonly kind: 'ble' | 'serial' | 'ws' | 'relay';
 
   /** Open the device picker, connect, run the HELLO handshake, resolve board info. */
   connect(): Promise<RobotInfo>;

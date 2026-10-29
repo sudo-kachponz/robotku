@@ -134,6 +134,25 @@
   }
 }
 
+/* --- Section divider --- */
+.sectionDivider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-400);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.sectionDivider::before,
+.sectionDivider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
 /* --- WiFi (beta) section --- */
 .wifiSection {
   margin-top: 10px;

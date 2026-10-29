@@ -4,9 +4,10 @@
 // actions. Degrades gracefully on Safari/Firefox/iOS with a "buka di Chrome/Edge"
 // notice. Reuses the framework-agnostic connection use-cases.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { isBleSupported, isSerialSupported, type TransportKind } from '../../transport';
-import { connect, disconnect, provisionWifi, connectWifi, onTelemetry } from '../../app/connection';
+import { connect, disconnect, provisionWifi, connectWifi, connectRelay, onTelemetry } from '../../app/connection';
+import { RELAY_ID_RE } from '../../domain/protocol';
 import { useConnection } from '../../hooks/useConnection';
 import UnsupportedBrowserModal from './UnsupportedBrowserModal';
 import styles from './ConnectPanel.module.css';
@@ -80,6 +81,12 @@ export default function ConnectPanel({ onClose }: { onClose: () => void }) {
             </div>
           ) : (
             <div className={styles.body}>
+              <RelaySection onClose={onClose} />
+
+              <div className={styles.sectionDivider}>
+                <span>atau sambung langsung</span>
+              </div>
+
               <button
                 className={`${styles.btn} ${styles.bleBtn}`}
                 disabled={busy !== null}
@@ -88,6 +95,9 @@ export default function ConnectPanel({ onClose }: { onClose: () => void }) {
                 <BluetoothIcon />
                 <span>{busy === 'ble' ? 'Menyambungkan…' : 'Bluetooth'}</span>
               </button>
+              <div className={styles.wifiHint}>
+                Bluetooth tidak tersedia di firmware terbaru (2.4.0+). Gunakan USB atau Relay.
+              </div>
 
               <button
                 className={`${styles.btn} ${styles.serialBtn}`}
@@ -125,6 +135,78 @@ export default function ConnectPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
+function RelaySection({ onClose }: { onClose: () => void }) {
+  const [robotCode, setRobotCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  // Auto-uppercase, strip spaces, max 6 chars
+  const handleInput = useCallback((val: string) => {
+    const clean = val.toUpperCase().replace(/\s/g, '').slice(0, 6);
+    setRobotCode(clean);
+    setErr(null);
+  }, []);
+
+  // Warn about confusing characters
+  const hasConfusing = /[01IO]/.test(robotCode);
+  const isValid = RELAY_ID_RE.test(robotCode);
+
+  const doConnect = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      await connectRelay(robotCode);
+      onClose();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div>
+      <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 6, color: 'var(--ink-800)' }}>
+        Online (lewat internet)
+      </div>
+      <div style={{ fontSize: 12, color: 'var(--ink-500)', lineHeight: 1.4, marginBottom: 8 }}>
+        Masukkan kode 6 karakter dari robot untuk mengendalikan lewat relay.
+      </div>
+      <input
+        className={styles.wifiInput}
+        value={robotCode}
+        onChange={(e) => handleInput(e.target.value)}
+        placeholder="Contoh: A3B7K2"
+        maxLength={6}
+        style={{
+          textAlign: 'center',
+          fontSize: 18,
+          fontWeight: 800,
+          letterSpacing: '0.15em',
+          fontFamily: 'monospace',
+        }}
+        autoComplete="off"
+        spellCheck={false}
+      />
+      {hasConfusing && robotCode.length > 0 && (
+        <div style={{ fontSize: 11, color: 'var(--amber)', marginTop: 2 }}>
+          Kode robot tidak mengandung 0, 1, I, atau O. Mungkin maksudnya huruf/angka lain?
+        </div>
+      )}
+      <button
+        className={styles.wifiBtn}
+        disabled={!isValid || busy}
+        onClick={doConnect}
+        type="button"
+        style={{ width: '100%', marginTop: 8, background: 'var(--green)' }}
+      >
+        {busy ? 'Menyambung…' : 'Sambung via Relay'}
+      </button>
+      {err && <div className={styles.wifiErr}>{err}</div>}
+    </div>
+  );
+}
+
 function WifiSection({ isConnected, onClose }: { isConnected: boolean; onClose: () => void }) {
   const [open, setOpen] = useState(false);
   const [ssid, setSsid] = useState('');
@@ -134,7 +216,14 @@ function WifiSection({ isConnected, onClose }: { isConnected: boolean; onClose: 
   const [detectedIp, setDetectedIp] = useState<string | null>(null);
   const [busy, setBusy] = useState<'provision' | 'connect' | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [isHttps, setIsHttps] = useState(false);
   const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsHttps(window.isSecureContext && location.protocol === 'https:');
+    }
+  }, []);
 
   // Robot reports WIFI_STATUS{connected,ip} once it joins — capture the IP.
   useEffect(() => {
@@ -181,6 +270,13 @@ function WifiSection({ isConnected, onClose }: { isConnected: boolean; onClose: 
       </button>
       {open && (
         <div className={styles.wifiBody}>
+          {isHttps && (
+            <div className={styles.unsupported} style={{ marginBottom: 6 }}>
+              Halaman https tidak bisa membuka ws://. WiFi langsung hanya jalan dari
+              http://localhost atau halaman yang dilayani robot. Gunakan <b>Relay</b> untuk
+              mengendalikan dari situs ini.
+            </div>
+          )}
           {isConnected ? (
             <>
               <label className={styles.wifiLabel}>Nama WiFi (SSID)</label>
@@ -227,7 +323,7 @@ function WifiSection({ isConnected, onClose }: { isConnected: boolean; onClose: 
           />
           <button
             className={`${styles.wifiBtn} ${styles.wifiConnect}`}
-            disabled={!host || busy !== null}
+            disabled={!host || busy !== null || isHttps}
             onClick={doConnect}
             type="button"
           >

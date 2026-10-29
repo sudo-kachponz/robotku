@@ -4,8 +4,16 @@
 // store, the command_runner and telemetry. UI never touches a concrete transport
 // directly — only this controller and the RobotTransport interface.
 
-import { createTransport, setWsUrl, type ConnState, type RobotInfo, type TransportKind } from '../transport';
-import { setWifiLine, otaUpdateLine } from '../domain/protocol';
+import {
+  createTransport,
+  setWsUrl,
+  setRelayTarget,
+  RelayTransport,
+  type ConnState,
+  type RobotInfo,
+  type TransportKind,
+} from '../transport';
+import { setWifiLine, otaUpdateLine, RELAY_ID_RE, RELAY_CLOSE } from '../domain/protocol';
 import {
   setActiveTransport as storeSetTransport,
   setConnState,
@@ -55,16 +63,30 @@ function clearReconnect(): void {
   }
 }
 
+// Last relay close code, used to decide reconnect policy
+let lastRelayCloseCode: number | undefined;
+
 /** Schedule a silent reconnect after an UNEXPECTED drop (never after a user disconnect). */
 function scheduleReconnect(): void {
   if (userDisconnected || lastKind == null) return;
   const st = getState();
   if (st.connState === 'connected' || st.connState === 'connecting') return;
   if (reconnectAttempts >= MAX_RECONNECT) return;
+
+  // Relay: only retry on codes that make sense (4404 offline, 4410 robot dropped, network error)
+  if (lastKind === 'relay' && lastRelayCloseCode) {
+    const info = RELAY_CLOSE[lastRelayCloseCode];
+    if (info && info.retry === 'no') return; // 4400, 4403, 4408, 4409, 4429 — don't retry
+  }
+
   clearReconnect();
   // First retry waits ~1.5s: after a BLE drop the ESP32 needs ~1s to free the old
   // link before it re-advertises, so reconnecting sooner just hits "GATT Error Unknown".
-  const delay = Math.min(1500 + reconnectAttempts * 600, 6000);
+  // Relay uses longer backoff (3, 6, 12s) to avoid IP rate limiting.
+  const baseDelay = lastKind === 'relay' ? 3000 : 1500;
+  const step = lastKind === 'relay' ? 3000 : 600;
+  const maxDelay = lastKind === 'relay' ? 12000 : 6000;
+  const delay = Math.min(baseDelay + reconnectAttempts * step, maxDelay);
   reconnectTimer = setTimeout(() => {
     reconnectAttempts += 1;
     connect(lastKind!, true).catch(() => scheduleReconnect());
@@ -98,6 +120,7 @@ export async function connect(kind: TransportKind, isReconnect = false): Promise
     if (s === 'connected') {
       reconnectAttempts = 0;
       reconnectToastShown = false;
+      lastRelayCloseCode = undefined;
     } else if (s === 'error') {
       runnerSetTransport(null);
       if (!userDisconnected) {
@@ -108,9 +131,22 @@ export async function connect(kind: TransportKind, isReconnect = false): Promise
         scheduleReconnect();
       }
     } else if (s === 'disconnected') {
+      // Capture relay close code for reconnect policy
+      if (transport instanceof RelayTransport) {
+        lastRelayCloseCode = transport.lastCloseCode;
+      }
       runnerSetTransport(null);
       storeSetTransport(null);
-      if (!userDisconnected) scheduleReconnect();
+      if (!userDisconnected) {
+        // Relay: show the specific close reason
+        if (lastKind === 'relay' && lastRelayCloseCode && RELAY_CLOSE[lastRelayCloseCode]) {
+          if (!reconnectToastShown) {
+            showToast(RELAY_CLOSE[lastRelayCloseCode].message, 'warn');
+            reconnectToastShown = true;
+          }
+        }
+        scheduleReconnect();
+      }
     }
   });
 
@@ -124,9 +160,14 @@ export async function connect(kind: TransportKind, isReconnect = false): Promise
     setRobotInfo(info);
     setConnState('connected');
     reconnectAttempts = 0;
+    lastRelayCloseCode = undefined;
     if (!isReconnect) showToast(`Connected · ${info.board} · fw ${info.fwVersion}`, 'success');
     return info;
   } catch (err) {
+    // Capture relay close code for reconnect policy
+    if (transport instanceof RelayTransport) {
+      lastRelayCloseCode = transport.lastCloseCode;
+    }
     runnerSetTransport(null);
     storeSetTransport(null);
     setConnState('disconnected');
@@ -159,6 +200,7 @@ export async function connect(kind: TransportKind, isReconnect = false): Promise
 export async function provisionWifi(ssid: string, pass: string): Promise<void> {
   const { transport } = getState();
   if (!transport) throw new Error('Sambungkan dulu lewat Bluetooth/USB sebelum kirim WiFi.');
+  if (transport.kind === 'relay') throw new Error('SET_WIFI tidak bisa lewat relay. Gunakan USB Serial.');
   await transport.sendLine(setWifiLine(ssid, pass));
 }
 
@@ -167,6 +209,17 @@ export async function connectWifi(host: string): Promise<RobotInfo> {
   const clean = host.trim().replace(/^wss?:\/\//, '').replace(/:\d+$/, '');
   setWsUrl(`ws://${clean}:81`);
   return connect('ws');
+}
+
+/** Connect to the robot through the relay server using a 6-char robot ID. */
+export async function connectRelay(rawId: string, relayUrl?: string): Promise<RobotInfo> {
+  const id = rawId.toUpperCase().replace(/\s/g, '');
+  if (!RELAY_ID_RE.test(id)) {
+    throw new Error('Kode robot tidak valid. Harus 6 karakter (angka 2-9, huruf tanpa I dan O).');
+  }
+  setRelayTarget({ id, ...(relayUrl ? { url: relayUrl } : {}) });
+  lastRelayCloseCode = undefined;
+  return connect('relay');
 }
 
 export interface OtaManifest {
