@@ -20,13 +20,19 @@ import {
   parseTelemetry,
 } from '../domain/protocol';
 
-const MAX_CHUNK = 180; // bytes per BLE write (safe for default ATT MTU)
-const HELLO_TIMEOUT_MS = 4000;
-const HEARTBEAT_INTERVAL_MS = 500;
-const HEARTBEAT_TIMEOUT_MS = 1500;
+const DEFAULT_MAX_CHUNK = 180; // bytes per BLE write (safe for default ATT MTU)
+const DEFAULT_HELLO_TIMEOUT_MS = 4000;
+const DEFAULT_HEARTBEAT_INTERVAL_MS = 500;
+const DEFAULT_HEARTBEAT_TIMEOUT_MS = 1500;
 
 export abstract class BaseTransport implements RobotTransport {
-  abstract readonly kind: 'ble' | 'serial' | 'ws';
+  abstract readonly kind: 'ble' | 'serial' | 'ws' | 'relay';
+
+  // Override per transport (relay needs wider windows for internet latency)
+  protected get maxChunk(): number { return DEFAULT_MAX_CHUNK; }
+  protected get helloTimeoutMs(): number { return DEFAULT_HELLO_TIMEOUT_MS; }
+  protected get heartbeatIntervalMs(): number { return DEFAULT_HEARTBEAT_INTERVAL_MS; }
+  protected get heartbeatTimeoutMs(): number { return DEFAULT_HEARTBEAT_TIMEOUT_MS; }
 
   private telemetryCbs: Array<(msg: RobotCommand) => void> = [];
   private stateCbs: Array<(s: ConnState) => void> = [];
@@ -43,6 +49,7 @@ export abstract class BaseTransport implements RobotTransport {
   private lastTxTime = 0;
 
   private helloResolve: ((info: RobotInfo) => void) | null = null;
+  private helloReject: ((err: Error) => void) | null = null;
 
   // ---- subclass contract -------------------------------------------------
 
@@ -142,8 +149,12 @@ export abstract class BaseTransport implements RobotTransport {
   }
 
   /** Called by subclasses when the underlying link drops unexpectedly. */
-  protected handleUnexpectedDisconnect(): void {
+  protected handleUnexpectedDisconnect(reason?: string): void {
     this.stopHeartbeat();
+    // Reject pending handshake immediately instead of waiting for timeout
+    if (this.helloReject) {
+      this.helloReject(new Error(reason ?? 'Transport closed during handshake'));
+    }
     this.setState('disconnected');
   }
 
@@ -177,19 +188,25 @@ export abstract class BaseTransport implements RobotTransport {
     return new Promise<RobotInfo>((resolve, reject) => {
       const timer = setTimeout(() => {
         this.helloResolve = null;
-        reject(new Error('HELLO handshake timed out (no HELLO_ACK within 4s)'));
-      }, HELLO_TIMEOUT_MS);
+        this.helloReject = null;
+        reject(new Error(`HELLO handshake timed out (no HELLO_ACK within ${this.helloTimeoutMs}ms)`));
+      }, this.helloTimeoutMs);
+
+      const fail = (err: Error) => {
+        clearTimeout(timer);
+        this.helloResolve = null;
+        this.helloReject = null;
+        reject(err);
+      };
 
       this.helloResolve = (info) => {
         clearTimeout(timer);
+        this.helloReject = null;
         resolve(info);
       };
+      this.helloReject = fail;
 
-      this.writeFramed(helloLine()).catch((err) => {
-        clearTimeout(timer);
-        this.helloResolve = null;
-        reject(err);
-      });
+      this.writeFramed(helloLine()).catch(fail);
     });
   }
 
@@ -200,7 +217,7 @@ export abstract class BaseTransport implements RobotTransport {
       // Watchdog: link is dead only if neither an inbound frame NOR a successful
       // outbound write happened within the window. (A big DISPLAY_BITMAP keeps us
       // writing for ~1s while the board is too busy to ACK — that's alive, not dead.)
-      if (Date.now() - Math.max(this.lastRxTime, this.lastTxTime) > HEARTBEAT_TIMEOUT_MS) {
+      if (Date.now() - Math.max(this.lastRxTime, this.lastTxTime) > this.heartbeatTimeoutMs) {
         console.warn('[transport] heartbeat watchdog tripped');
         this.setState('error');
         void this.estop();
@@ -209,7 +226,7 @@ export abstract class BaseTransport implements RobotTransport {
       void this.writeFramed(heartbeatLine(this.heartbeatSeq++)).catch(() => {
         this.setState('error');
       });
-    }, HEARTBEAT_INTERVAL_MS);
+    }, this.heartbeatIntervalMs);
   }
 
   private stopHeartbeat(): void {
@@ -250,7 +267,7 @@ export abstract class BaseTransport implements RobotTransport {
   }
 
   private async writeFramedRaw(blob: string): Promise<void> {
-    // Group commands so each chunk stays <=MAX_CHUNK and prefers `;` boundaries.
+    // Group commands so each chunk stays <=this.maxChunk and prefers `;` boundaries.
     // Every command leaves as `...;\n`. The trailing newline matters: firmware
     // that reads with Serial.readStringUntil('\n') (the ControllerV1 sketch)
     // otherwise hangs until its ~1s timeout and then parses several concatenated
@@ -265,7 +282,7 @@ export abstract class BaseTransport implements RobotTransport {
     let batch = '';
     for (const cmd of commands) {
       const cmdBytes = this.encoder.encode(cmd);
-      if (cmdBytes.length > MAX_CHUNK) {
+      if (cmdBytes.length > this.maxChunk) {
         // Oversized single command: flush batch, then hard-split the command.
         if (batch) {
           await this.chunk(this.encoder.encode(batch));
@@ -274,7 +291,7 @@ export abstract class BaseTransport implements RobotTransport {
         await this.writeRawChunks(cmdBytes);
         continue;
       }
-      if (this.encoder.encode(batch + cmd).length > MAX_CHUNK) {
+      if (this.encoder.encode(batch + cmd).length > this.maxChunk) {
         await this.chunk(this.encoder.encode(batch));
         batch = cmd;
       } else {
@@ -293,8 +310,8 @@ export abstract class BaseTransport implements RobotTransport {
   }
 
   private async writeRawChunks(bytes: Uint8Array): Promise<void> {
-    for (let i = 0; i < bytes.length; i += MAX_CHUNK) {
-      await this.chunk(bytes.slice(i, i + MAX_CHUNK));
+    for (let i = 0; i < bytes.length; i += this.maxChunk) {
+      await this.chunk(bytes.slice(i, i + this.maxChunk));
     }
   }
 }

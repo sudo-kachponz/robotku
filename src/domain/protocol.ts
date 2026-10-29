@@ -199,6 +199,32 @@ export function splitLines(blob: string): string[] {
   return out;
 }
 
+// ── Relay protocol helpers ──────────────────────────────────────────────────
+
+/** Robot ID: 6 chars, digits 2-9 + uppercase A-Z minus I and O. */
+export const RELAY_ID_RE = /^[2-9A-HJ-NP-Z]{6}$/;
+
+/** True if the frame is a relay control message (not robot data). */
+export function isRelayFrame(msg: RobotCommand): boolean {
+  return msg.command === 'RELAY';
+}
+
+export interface RelayRefusal {
+  message: string;
+  retry: 'no' | 'backoff';
+}
+
+/** Close code → user-facing message and retry policy. */
+export const RELAY_CLOSE: Record<number, RelayRefusal> = {
+  4400: { message: 'Kode robot tidak valid. Periksa 6 karakternya.', retry: 'no' },
+  4403: { message: 'Situs ini belum diizinkan mengendalikan robot.', retry: 'no' },
+  4404: { message: 'Robot tidak ditemukan atau sedang offline.', retry: 'backoff' },
+  4408: { message: 'Sesi berakhir karena tidak aktif.', retry: 'no' },
+  4409: { message: 'Robot sedang dikendalikan pengguna lain.', retry: 'no' },
+  4410: { message: 'Robot terputus. Menyambung ulang...', retry: 'backoff' },
+  4429: { message: 'Terlalu banyak percobaan. Coba lagi sebentar lagi.', retry: 'no' },
+};
+
 /** Parse inbound telemetry frames from a raw blob into command objects. */
 export function parseTelemetry(blob: string): RobotCommand[] {
   const out: RobotCommand[] = [];

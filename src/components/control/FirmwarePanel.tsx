@@ -18,9 +18,13 @@ import {
 import { showToast } from '../../ui/toast';
 import styles from '../../styles/Settings.module.css';
 
-const LATEST_FW = '2.3.1-mk';
+const LATEST_FW = '2.4.0-mk';
 const MANIFEST = '/firmware/manifest.json';
 const BIN_URL = `/firmware/robotku-${LATEST_FW}.bin`;
+
+// ponytail: OTA_UPDATE removed in 2.4.0-mk firmware. OTA section disabled
+// until capability check is wired (see Fajri's relay notes).
+
 const ESP_WEB_TOOLS = 'https://unpkg.com/esp-web-tools@10/dist/web/install-button.js';
 
 type OtaState = 'idle' | 'updating' | 'done' | 'fail';

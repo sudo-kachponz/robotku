@@ -64,7 +64,7 @@
 // ------------------------------------------------------------------ Identity
 // BOARD_NAME / BOARD_ID come from the selected pin map (pins_*.h) so HELLO_ACK
 // tells the web which variant connected — no #ifdef BOARD_* here (see config.h).
-#define FW_VERSION   "2.3.1-mk"
+#define FW_VERSION   "2.3.2-mk"
 #define PROTOCOL_ID  "robotku-v1"
 #define BLE_NAME     "Robotku"
 
@@ -190,6 +190,8 @@ WebSocketsServer wsServer(81);
 Preferences wifiPrefs;
 bool          wifiOn       = false;   // STA started (creds present)
 bool          wifiUp       = false;   // associated + got IP (edge-reported once)
+unsigned long wifiStartMs  = 0;       // millis() when STA began connecting
+const unsigned long WIFI_TIMEOUT_MS = 10000;  // give up after 10s, fall back to BLE/Serial
 uint8_t       wsClients    = 0;       // connected WebSocket clients
 String        wsBuffer;               // inbound line buffer for the WS parser
 // Forward decls (definitions live later in the file).
@@ -1468,23 +1470,45 @@ void onWsEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t len) {
 
 bool startWiFiSTA(const String& ssid, const String& pass) {
   if (ssid.length() == 0) return false;
-  WiFi.mode(WIFI_STA);
+  if (WiFi.getMode() == WIFI_OFF) {
+    Serial.println("[wifi] initialising radio...");
+    WiFi.mode(WIFI_STA);
+    // Start WS server now that lwIP is up (deferred from setupWiFi on fresh boot).
+    wsServer.begin();
+    wsServer.onEvent(onWsEvent);
+  }
   WiFi.begin(ssid.c_str(), pass.c_str());      // non-blocking; loop() reports when up
   wifiOn = true;
   wifiUp = false;
+  wifiStartMs = millis();
   return true;
 }
 
 void setupWiFi() {
-  // WS server starts now; it serves once WiFi associates. Auto-join if a previous
-  // SET_WIFI stored creds in NVS.
-  wsServer.begin();
-  wsServer.onEvent(onWsEvent);
-  wifiPrefs.begin("robotku", true);            // read-only
-  String ssid = wifiPrefs.getString("ssid", "");
-  String pass = wifiPrefs.getString("pass", "");
-  wifiPrefs.end();
-  if (ssid.length()) startWiFiSTA(ssid, pass);
+  // Read saved creds from NVS. begin() returns false on a fresh/erased NVS
+  // (namespace doesn't exist yet) — guard so getString/end don't touch a
+  // bad handle and silently hang or crash.
+  String ssid, pass;
+  if (wifiPrefs.begin("robotku", true)) {
+    ssid = wifiPrefs.getString("ssid", "");
+    pass = wifiPrefs.getString("pass", "");
+    wifiPrefs.end();
+  } else {
+    Serial.println("[wifi] no saved creds (fresh NVS) — skipping WiFi");
+  }
+
+  // Only bring up WiFi + WebSocket server when we actually have creds to connect.
+  // WiFi.mode(WIFI_STA) can block for seconds on fresh NVS / no RF cal data, and
+  // wsServer.begin() needs lwIP which only inits after WiFi.mode(). If no creds,
+  // skip entirely — BLE/Serial work fine, and SET_WIFI will start WiFi on demand.
+  if (ssid.length()) {
+    WiFi.mode(WIFI_STA);
+    wsServer.begin();
+    wsServer.onEvent(onWsEvent);
+    startWiFiSTA(ssid, pass);
+  } else {
+    Serial.println("[wifi] no creds — WiFi+WS deferred until SET_WIFI");
+  }
 }
 
 void setup() {
@@ -1544,15 +1568,21 @@ void setup() {
 #endif
 
   // OLED
+  Serial.println("[boot] OLED init...");
   Wire.begin(PIN_OLED_SDA, PIN_OLED_SCL);
   oledOk = oled.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
+  Serial.printf("[boot] OLED %s\n", oledOk ? "OK" : "FAIL");
   if (oledOk) oledSplash();
 
+  Serial.println("[boot] startupTone...");
   startupTone();                  // "robot hidup" cue (delay() ok in setup)
 
+  Serial.println("[boot] BLE init...");
   setupBle();
+  Serial.println("[boot] WiFi init...");
   setupWiFi();   // Phase 1: WS server + auto-join saved WiFi (if any)
 
+  Serial.println("[boot] READY");
   oledStatus("Siap", "USB / Bluetooth");
 }
 
@@ -1577,6 +1607,16 @@ void loop() {
       sendJson(r);
     } else if (!up && wifiUp) {
       wifiUp = false;
+    }
+    // WiFi timeout: if we've been trying for WIFI_TIMEOUT_MS and still not
+    // connected, give up gracefully — disconnect WiFi so the board runs in
+    // BLE/Serial-only mode instead of retrying forever.
+    if (!wifiUp && wifiStartMs && (millis() - wifiStartMs > WIFI_TIMEOUT_MS)) {
+      Serial.println("[wifi] timeout — falling back to BLE/Serial mode");
+      WiFi.disconnect(true);   // stop retrying
+      wifiOn = false;
+      wifiStartMs = 0;
+      oledStatus("Siap", "BLE / USB");
     }
   }
 
