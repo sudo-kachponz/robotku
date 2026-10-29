@@ -10,4 +10,4 @@ bindings = [{ name = "ROOM", class_name = "RelayRoom" }]
 
 [[migrations]]
 tag = "v1"
-new_classes = ["RelayRoom"]
+new_sqlite_classes = ["RelayRoom"]
