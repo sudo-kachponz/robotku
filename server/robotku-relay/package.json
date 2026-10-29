@@ -1,0 +1,15 @@
+{
+  "name": "robotku-relay",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx wrangler dev",
+    "deploy": "npx wrangler deploy",
+    "test": "node --test test/relay.test.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0",
+    "ws": "^8.0.0"
+  }
+}
