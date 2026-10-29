@@ -1,0 +1,11 @@
+{
+  "name": "Robotku Firmware + Relay",
+  "version": "2.4.0-relay",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [{ "path": "robotku-2.4.0-relay.bin", "offset": 0 }]
+    }
+  ]
+}
