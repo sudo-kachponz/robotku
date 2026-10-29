@@ -28,7 +28,7 @@ export function getWsUrl(): string {
 const DEFAULT_RELAY_URL =
   typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_RELAY_URL
     ? process.env.NEXT_PUBLIC_RELAY_URL
-    : 'ws://localhost:8787';
+    : 'wss://robotku-relay.hubrobotku.workers.dev';
 
 let relayUrl = DEFAULT_RELAY_URL;
 let relayRobotId = '';
