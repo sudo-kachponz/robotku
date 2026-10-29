@@ -142,6 +142,21 @@ defineOnce([
     tooltip: 'Halts every motor immediately.',
   },
   {
+    // Servo step: move servo to a specific position (positive integer 0-180).
+    // Fajri: "fungsi step, nilai berupa integer bulat positif"
+    type: 'servo_step',
+    message0: 'Servo %1  posisi %2',
+    args0: [
+      { type: 'field_dropdown', name: 'PORT', options: MOTOR_PORTS },
+      { type: 'input_value', name: 'POSITION', check: 'Number' },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    style: 'motors_blocks',
+    inputsInline: true,
+    tooltip: 'Gerakkan servo ke posisi tertentu (0–180 derajat).',
+  },
+  {
     // Test ONE servo at a time (the drive blocks always move L+R together).
     type: 'servo_single',
     message0: 'Uji servo %1  kecepatan %2',
@@ -233,6 +248,12 @@ javascriptGenerator.forBlock['move_stop_all'] = function () {
   return JSON.stringify({ command: astroidV2.commands.stopAll, params: {} }) + ';';
 };
 
+javascriptGenerator.forBlock['servo_step'] = function (block, gen) {
+  const port = parseInt(block.getFieldValue('PORT').slice(1), 10);
+  const position = numArg(block, gen, 'POSITION', 90);
+  return JSON.stringify({ command: 'SET_PORT', port, value: position }) + ';';
+};
+
 javascriptGenerator.forBlock['servo_single'] = function (block, gen) {
   const port = parseInt(block.getFieldValue('PORT').slice(1), 10); // 'P1' -> 1
   const speed = parseInt(block.getFieldValue('SPEED'), 10);
@@ -263,7 +284,8 @@ export const motorsCategory = {
     { kind: 'block', type: 'move_right', inputs: durationShadow },
     { kind: 'block', type: 'move_steer', inputs: durationShadow },
     { kind: 'block', type: 'move_claw', inputs: durationShadow },
-    { kind: 'label', text: 'Uji Servo Satu-Satu' },
+    { kind: 'label', text: 'Servo' },
+    { kind: 'block', type: 'servo_step', inputs: { POSITION: { shadow: { type: 'math_number', fields: { NUM: 90 } } } } },
     { kind: 'block', type: 'servo_single', inputs: durationShadow },
     { kind: 'block', type: 'move_stop' },
     { kind: 'block', type: 'move_stop_all' },
