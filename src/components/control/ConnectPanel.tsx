@@ -89,15 +89,13 @@ export default function ConnectPanel({ onClose }: { onClose: () => void }) {
 
               <button
                 className={`${styles.btn} ${styles.bleBtn}`}
-                disabled={busy !== null}
+                disabled
+                style={{ opacity: 0.4, cursor: 'not-allowed' }}
                 onClick={() => handleConnect('ble')}
               >
                 <BluetoothIcon />
-                <span>{busy === 'ble' ? 'Menyambungkan…' : 'Bluetooth'}</span>
+                <span>Bluetooth (nonaktif di fw 2.4.0+)</span>
               </button>
-              <div className={styles.wifiHint}>
-                Bluetooth tidak tersedia di firmware terbaru (2.4.0+). Gunakan USB atau Relay.
-              </div>
 
               <button
                 className={`${styles.btn} ${styles.serialBtn}`}

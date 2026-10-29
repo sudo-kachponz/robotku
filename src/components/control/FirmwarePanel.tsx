@@ -98,6 +98,7 @@ export default function FirmwarePanel() {
   const installed = robotInfo?.fwVersion ?? null;
   const upToDate = installed === otaVersion;
   const connected = !!transport;
+  const hasOta = robotInfo?.capabilities?.includes('OTA_UPDATE') ?? false;
   // A live SERIAL link holds the USB port; ESP Web Tools can't open it until we let go.
   const serialBusy = transport?.kind === 'serial';
 
@@ -125,6 +126,11 @@ export default function FirmwarePanel() {
       </div>
 
       {/* --- OTA update over WiFi (no cable). Robot downloads the .bin itself. --- */}
+      {!hasOta && connected && (
+        <div style={{ marginTop: 12, fontSize: 12.5, color: 'var(--ink-500)', lineHeight: 1.5 }}>
+          Firmware ini tidak mendukung OTA WiFi. Gunakan USB untuk update.
+        </div>
+      )}
       <div
         style={{
           marginTop: 16,
@@ -132,6 +138,7 @@ export default function FirmwarePanel() {
           borderRadius: 'var(--r-md)',
           border: '1px solid var(--line)',
           background: 'var(--surface-2)',
+          display: hasOta || !connected ? undefined : 'none',
         }}
       >
         <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 4 }}>
