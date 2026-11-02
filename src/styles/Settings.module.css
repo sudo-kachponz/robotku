@@ -14,6 +14,9 @@
 .tabs {
   display: inline-flex;
   align-self: center;
+  /* Clear the absolute connection badge (top:62px, ~34px tall) so it doesn't sit
+     over the FIRMWARE/GUIDE tabs. */
+  margin-top: 48px;
   gap: 4px;
   padding: 4px;
   background: rgba(255, 255, 255, 0.15);
