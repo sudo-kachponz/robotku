@@ -14,7 +14,7 @@
 
 | Opcode | Status | Blocks |
 |---|---|---|
-| `CLAW_TIMED` | unsupported-by-profile | move_claw |
+| `CLAW_TIMED` | handled | move_claw |
 | `DISPLAY_TEXT` | handled | display_text, display_kaomoji |
 | `GET_SENSOR_DATA` | handled | sensor_button1, sensor_mic_level, sensor_mic_clap, sensor_button2, sensor_is_recording, sensor_get_analog, sensor_get_digital, sensor_ultrasonic, sensor_temperature, sensor_humidity, sensor_light, sensor_distance, sensor_heading |
 | `LCD_CLEAR` | unsupported-by-profile | lcd_clear |
@@ -23,25 +23,25 @@
 | `MOVE_TIMED` | handled | move_forward, move_reverse |
 | `NEOPIXEL_EFFECT` | handled | neopixel_effect |
 | `NEOPIXEL_SET` | handled | neopixel_set |
-| `PLAY_RECORDING` | unsupported-by-profile | audio_play_recording |
-| `PLAY_SOUND_EFFECT` | unsupported-by-profile | audio_sound_effect |
+| `PLAY_RECORDING` | handled | audio_play_recording |
+| `PLAY_SOUND_EFFECT` | handled | audio_sound_effect |
 | `PLAY_TONE` | handled | audio_play_tone_sec, audio_play_tone_beat, audio_play_melody |
-| `RECORD_AUDIO` | unsupported-by-profile | audio_record |
-| `RESET_DISTANCE` | unsupported-by-profile | sensor_reset_distance |
-| `RESET_HEADING` | unsupported-by-profile | sensor_reset_heading |
-| `SET_ANALOG` | unsupported-by-profile | sensor_set_analog |
-| `SET_BPM` | unsupported-by-profile | audio_set_bpm |
-| `SET_DIGITAL` | unsupported-by-profile | sensor_set_digital |
-| `SET_GRIPPER` | unsupported-by-profile | mechanism_set_gripper |
+| `RECORD_AUDIO` | handled | audio_record |
+| `RESET_DISTANCE` | handled | sensor_reset_distance |
+| `RESET_HEADING` | handled | sensor_reset_heading |
+| `SET_ANALOG` | handled | sensor_set_analog |
+| `SET_BPM` | handled | audio_set_bpm |
+| `SET_DIGITAL` | handled | sensor_set_digital |
+| `SET_GRIPPER` | handled | mechanism_set_gripper |
 | `SET_HEAD_POSITION` | handled | mechanism_set_head |
 | `SET_LED_BRIGHTNESS` | handled | display_set_brightness |
 | `SET_LED_COLOR` | handled | set_led_color |
-| `SET_VOLUME` | unsupported-by-profile | audio_set_volume |
+| `SET_VOLUME` | handled | audio_set_volume |
 | `SPEAKER_PLAY_PCM` | handled | speaker_play_clip |
 | `STEER_TIMED` | handled | move_steer |
 | `STOP` | handled | move_stop |
 | `STOP_ALL` | handled | move_stop_all |
-| `STOP_SOUNDS` | unsupported-by-profile | audio_stop_sounds |
+| `STOP_SOUNDS` | handled | audio_stop_sounds |
 | `TURN_TIMED` | handled | move_left, move_right |
 
 ## Host-only opcodes
