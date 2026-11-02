@@ -26,6 +26,13 @@ const RELAY_FW = '2.4.0-relay';
 const RELAY_MANIFEST = '/firmware/manifest-relay.json';
 const RELAY_BIN_URL = `/firmware/robotku-${RELAY_FW}.bin`;
 
+// New dated column (relay client actually wired into firmware — AI/TTS over relay).
+// Added alongside the old entries, labelled by firmware date (per request).
+const RELAY2_DATE = '2 Nov 2026';
+const RELAY2_FW = '2.4.0-mk';
+const RELAY2_MANIFEST = '/firmware/manifest-relay-2026-11-02.json';
+const RELAY2_BIN_URL = `/firmware/robotku-${RELAY2_FW}.bin`;
+
 // ponytail: OTA_UPDATE removed in 2.4.0-mk firmware. OTA section disabled
 // until capability check is wired (see Fajri's relay notes).
 
@@ -346,6 +353,60 @@ export default function FirmwarePanel() {
         ) : !supported ? (
           <a href={RELAY_BIN_URL} download style={{ color: 'var(--green)', fontWeight: 700 }}>
             ⬇ Download firmware relay .bin
+          </a>
+        ) : null}
+      </div>
+
+      {/* --- Firmware Relay (dated) — relay client wired in, AI/TTS over relay --- */}
+      <div
+        style={{
+          marginTop: 16,
+          padding: '12px 14px',
+          borderRadius: 'var(--r-md)',
+          border: '1px solid rgba(99, 102, 241, 0.35)',
+          background: 'rgba(99, 102, 241, 0.07)',
+        }}
+      >
+        <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 4, color: 'var(--indigo-600)' }}>
+          🌐 Firmware Relay — {RELAY2_DATE}
+        </div>
+        <p style={{ margin: '0 0 10px', fontSize: 12.5, color: 'var(--ink-500)', lineHeight: 1.5 }}>
+          Versi {RELAY2_FW} ({RELAY2_DATE}) — relay client sudah tertanam di firmware, jadi
+          semua fitur (joystick, block coding, AI/TTS) jalan lewat relay dari hub.robotku.id.
+          Setelah flash: <code>SET_RELAY &lt;ID&gt; &lt;SECRET&gt;</code> lalu <code>SET_WIFI</code> di Serial Monitor.
+        </p>
+
+        {supported && loaded ? (
+          createElement(
+            'esp-web-install-button',
+            { manifest: RELAY2_MANIFEST },
+            createElement(
+              'button',
+              {
+                slot: 'activate',
+                disabled: serialBusy,
+                style: {
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  border: 'none',
+                  borderRadius: 'var(--r-full)',
+                  padding: '12px 22px',
+                  fontWeight: 800,
+                  fontSize: 15,
+                  cursor: serialBusy ? 'not-allowed' : 'pointer',
+                  opacity: serialBusy ? 0.5 : 1,
+                  background: 'var(--indigo-600)',
+                  color: '#fff',
+                  fontFamily: 'inherit',
+                },
+              },
+              `🌐 Flash Firmware Relay (${RELAY2_DATE}) via USB`,
+            ),
+          )
+        ) : !supported ? (
+          <a href={RELAY2_BIN_URL} download style={{ color: 'var(--indigo-600)', fontWeight: 700 }}>
+            ⬇ Download firmware relay {RELAY2_DATE} .bin
           </a>
         ) : null}
       </div>
