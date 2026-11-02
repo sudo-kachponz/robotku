@@ -65,7 +65,7 @@
 // ------------------------------------------------------------------ Identity
 // BOARD_NAME / BOARD_ID come from the selected pin map (pins_*.h) so HELLO_ACK
 // tells the web which variant connected — no #ifdef BOARD_* here (see config.h).
-#define FW_VERSION   "2.4.0-mk"
+#define FW_VERSION   "2.4.1-mk"
 #define PROTOCOL_ID  "robotku-v1"
 #define BLE_NAME     "Robotku"
 
@@ -123,6 +123,7 @@ volatile unsigned long spkToneEndMs = 0;      // stop the tone at this millis()
 volatile bool          spkPcmPlay   = false;  // true = stream the welcome clip once
 volatile bool          spkStop      = false;  // request: silence everything now
 bool                   spkReady     = false;  // I2S TX installed OK
+volatile int           spkVolume    = 100;    // SET_VOLUME 0..100 — scales tone + TTS samples
 
 // ---- Streamed TTS playback (robot "speaks" the AI reply) --------------------
 // The browser sends the AI reply as 8 kHz 8-bit unsigned mono PCM in base64
@@ -150,6 +151,14 @@ volatile bool micClap  = false;  // latched clap; cleared on read
 bool          micReady = false;  // I2S RX installed OK
 #endif
 
+#if HAS_SPEAKER && HAS_MIC
+// Single-slot voice memo (RECORD_AUDIO/PLAY_RECORDING): micTask captures into the
+// shared pcmStreamBuf (8-bit, 8 kHz); PLAY_RECORDING hands recordLen to the TTS
+// playback path so the same i2s_write code plays it back. One slot — slot arg ignored.
+volatile unsigned long recordMs  = 0;   // 0 = idle; else record until this millis()
+volatile size_t        recordLen = 0;   // bytes captured so far
+#endif
+
 // ----------------------------------------------------- Non-blocking motion
 // FIX 3: the firmware NEVER blocks. A timed command sets the actuators and
 // records a deadline; loop() stops them when the deadline passes. delay() must
@@ -158,6 +167,10 @@ bool          micReady = false;  // I2S RX installed OK
 // the real timekeeper; this deadline is only a safety net if a STOP is lost.
 // Do NOT "simplify" this back into delay() — that reintroduces both bugs.
 unsigned long motionEndsAtMs = 0;   // 0 = no timed motion in flight
+
+// SET_BPM: stored for the web's music blocks. Firmware timing is browser-driven, so
+// this is advisory only (clamped 40..300) — a knob the web can set and read back.
+volatile int musicBpm = 120;
 
 // ----------------------------------------------------- Heartbeat watchdog
 // FIX 6: arm ONLY after the first HELLO (a bare board on the bench must idle,
@@ -449,7 +462,7 @@ void audioTask(void*) {
       for (int i = 0; i < 256; i++) {
         int16_t s = spkToneSquare ? (phase < PI ? SPK_AMPLITUDE : -SPK_AMPLITUDE)
                                   : (int16_t)(SPK_AMPLITUDE * sinf(phase));
-        buf[i] = s;
+        buf[i] = (int16_t)((int)s * spkVolume / 100);   // SET_VOLUME scale
         phase += inc; if (phase >= 2.0f * PI) phase -= 2.0f * PI;
       }
       size_t wr; i2s_write(I2S_NUM_1, buf, sizeof(buf), &wr, portMAX_DELAY);
@@ -474,7 +487,7 @@ void audioTask(void*) {
           // u8 (centre 128) -> s16 at HALF scale (<<7, not <<8): still far louder
           // than the old tone, but leaves current headroom so a long reply doesn't
           // brown the board out on USB. Bump toward <<8 if you run on battery.
-          int16_t s = (int16_t)(((int)pcmStreamBuf[off] - 128) << 7);
+          int16_t s = (int16_t)((((int)pcmStreamBuf[off] - 128) << 7) * spkVolume / 100);  // SET_VOLUME scale
           buf[n++] = s;
           buf[n++] = s;
           off++;
@@ -536,6 +549,20 @@ void micTask(void*) {
       lastClapMs = millis();
       micClap = true;   // latched until GET_SENSOR_DATA reads it
     }
+#if HAS_SPEAKER
+    // RECORD_AUDIO: while armed, downsample 16 kHz -> 8 kHz (every other sample) and
+    // store as 8-bit unsigned (centre 128) into the shared buffer PLAY_RECORDING reuses.
+    if (recordMs != 0 && pcmStreamBuf) {
+      if ((long)(millis() - recordMs) >= 0) {
+        recordMs = 0;                            // time up — buffer holds recordLen bytes
+      } else {
+        for (int i = 0; i < n && recordLen < PCM_STREAM_CAP; i += 2) {
+          int v = (samples[i] >> 8) + 128;       // s16 -> u8 unsigned
+          pcmStreamBuf[recordLen++] = (uint8_t)constrain(v, 0, 255);
+        }
+      }
+    }
+#endif
   }
 }
 #endif
@@ -722,6 +749,16 @@ int noteToFreq(const char* note) {
   return 440;
 }
 
+// SET_ANALOG/SET_DIGITAL: resolve a web port name ("P1".."P8" or a bare number) to
+// its PWM-header GPIO through the SAME config.h table the drive path uses — single
+// source of truth. Unwired ports (PORT_CHANNEL == -1) and junk return -1 (skip).
+int portPwmPin(const char* port) {
+  if (!port || port[0] == '\0') return -1;
+  int n = (port[0] == 'P' || port[0] == 'p') ? atoi(port + 1) : atoi(port);
+  if (n < 1 || n > 8 || PORT_CHANNEL[n] < 0) return -1;
+  return servoPin(PORT_CHANNEL[n]);
+}
+
 // OTA over WiFi (b.md): the OTA_UPDATE command can arrive over ANY transport (BLE/
 // Serial/WS); the ESP downloads the .bin itself over WiFi, so browser mixed-content
 // doesn't apply. No-brick: only ESP.restart() after Update.end(true) succeeds; on any
@@ -834,6 +871,27 @@ void sendHelloAck() {
   if (oledOk) caps.add("DISPLAY_TEXT");   // OLED text — only if the panel answered
   if (oledOk) caps.add("DISPLAY_BITMAP"); // OLED pixel-art
   if (oledOk) caps.add("SET_LED_BRIGHTNESS"); // OLED contrast/brightness
+  // Web control-surface opcodes (guarded to match the handlers below).
+  caps.add("DRIVE_DIRECT");
+  caps.add("ESTOP");
+#if HAS_SERVO_AUX
+  caps.add("SET_GRIPPER");
+  caps.add("CLAW_TIMED");
+#endif
+#if HAS_SPEAKER
+  caps.add("SET_VOLUME");
+#endif
+  caps.add("STOP_SOUNDS");
+  caps.add("PLAY_SOUND_EFFECT");
+  caps.add("SET_BPM");
+#if HAS_SPEAKER && HAS_MIC
+  caps.add("RECORD_AUDIO");
+  caps.add("PLAY_RECORDING");
+#endif
+  caps.add("SET_ANALOG");
+  caps.add("SET_DIGITAL");
+  caps.add("RESET_DISTANCE");
+  caps.add("RESET_HEADING");
   // Report the ports that are REALLY wired by scanning the config.h table —
   // never a hardcoded list. A board claiming port 2 it doesn't have makes the
   // right joystick axis die silently, which reads as "the web app is broken".
@@ -1234,6 +1292,157 @@ void handleCommand(const String& jsonLine) {
       oledDirty = true;
       oledPushIfDue();
     }
+    return;
+  }
+
+  // --- Drive: live tank (Joystick-style, no deadline) ----------------------
+  // Continuous control: the web keeps sending; the heartbeat watchdog is the net.
+  if (strcmp(cmd, "DRIVE_DIRECT") == 0) {
+    int left  = constrain((int)(p["left"]  | 0), -100, 100);
+    int right = constrain((int)(p["right"] | 0), -100, 100);
+    driveChannel(0, left);
+    driveChannel(1, right);
+    lastRxMs = millis();      // live continuous — no motionEndsAtMs deadline
+    lastStatus = "Drive";
+    return;
+  }
+
+  // --- Emergency stop: cut actuators AND any sound now ---------------------
+  if (strcmp(cmd, "ESTOP") == 0) {
+    stopAllActuators();
+#if HAS_SPEAKER
+    spkStop = true;
+#endif
+    lastStatus = "STOP";
+    return;
+  }
+
+  // --- Gripper: aux positional servo open(0)/closed(180) -------------------
+  if (strcmp(cmd, "SET_GRIPPER") == 0) {
+#if HAS_SERVO_AUX
+    const char* state = p["state"] | "closed";
+    servoWriteAngle(SERVO_AUX_CH, strcmp(state, "open") == 0 ? 0 : 180);
+    lastStatus = "Gripper";
+#else
+    sendUnsupported("SET_GRIPPER");
+#endif
+    return;
+  }
+
+  // --- Claw timed: drive the aux servo toward a direction ------------------
+  if (strcmp(cmd, "CLAW_TIMED") == 0) {
+#if HAS_SERVO_AUX
+    const char* dir = p["direction"] | "open";
+    bool opening = strstr(dir, "open") || strstr(dir, "up");
+    servoWriteAngle(SERVO_AUX_CH, opening ? 0 : 180);
+    long ms = readDurationMs(p);
+    if (ms > 0) motionEndsAtMs = millis() + ms;   // safety deadline (aux holds)
+    lastStatus = "Claw";
+#else
+    sendUnsupported("CLAW_TIMED");
+#endif
+    return;
+  }
+
+  // --- Volume: scale synthesized tone + TTS playback (0..100) --------------
+  if (strcmp(cmd, "SET_VOLUME") == 0) {
+#if HAS_SPEAKER
+    spkVolume = constrain((int)(p["value"] | 100), 0, 100);
+    lastStatus = "Volume";
+#else
+    sendUnsupported("SET_VOLUME");
+#endif
+    return;
+  }
+
+  // --- Stop all sounds: speaker + buzzer -----------------------------------
+  if (strcmp(cmd, "STOP_SOUNDS") == 0) {
+#if HAS_SPEAKER
+    spkStop = true;
+#endif
+    buzzerOff();
+    return;
+  }
+
+  // --- Sound effect: a few named buzzer tones ------------------------------
+  if (strcmp(cmd, "PLAY_SOUND_EFFECT") == 0) {
+    const char* effect = p["effect"] | "";
+    if      (strcmp(effect, "beep")  == 0) buzzerTone(880, 120);
+    else if (strcmp(effect, "chirp") == 0) buzzerTone(1320, 100);
+    else if (strcmp(effect, "alarm") == 0) buzzerTone(600, 300);
+    else                                   buzzerTone(1000, 120);
+    lastStatus = "Efek";
+    return;
+  }
+
+  // --- Music tempo: store BPM (advisory; see musicBpm) ---------------------
+  if (strcmp(cmd, "SET_BPM") == 0) {
+    musicBpm = constrain((int)(p["bpm"] | 120), 40, 300);
+    lastStatus = "BPM";
+    return;
+  }
+
+  // --- Voice memo: record into the shared buffer (single slot) -------------
+  if (strcmp(cmd, "RECORD_AUDIO") == 0) {
+#if HAS_SPEAKER && HAS_MIC
+    if (!pcmStreamBuf) pcmStreamBuf = (uint8_t*)malloc(PCM_STREAM_CAP);
+    if (pcmStreamBuf) {
+      int secs = constrain((int)(p["secs"] | 1), 1, 4);   // cap at the 4 s buffer
+      recordLen = 0;
+      recordMs  = millis() + (unsigned long)secs * 1000;  // micTask fills the buffer
+      lastStatus = "Rekam";
+    }
+#endif
+    return;   // ACK by silence — never UNSUPPORTED
+  }
+
+  // --- Voice memo: play the last recording back ----------------------------
+  if (strcmp(cmd, "PLAY_RECORDING") == 0) {
+#if HAS_SPEAKER && HAS_MIC
+    if (pcmStreamBuf && recordLen > 0) {
+      pcmStreamLen  = recordLen;    // hand the capture to the TTS playback path
+      pcmStreamPlay = true;
+      lastStatus = "Putar";
+    }
+#endif
+    return;
+  }
+
+  // --- Generic PWM output on a web port ------------------------------------
+  if (strcmp(cmd, "SET_ANALOG") == 0) {
+    int pin = portPwmPin(p["port"] | "");
+    if (pin >= 0) {
+      int value = constrain((int)(p["value"] | 0), 0, 255);
+      analogWrite(pin, value);
+      lastStatus = "Analog";
+    }
+    return;   // unknown/unwired port -> skip, no UNSUPPORTED
+  }
+
+  // --- Generic digital output on a web port --------------------------------
+  if (strcmp(cmd, "SET_DIGITAL") == 0) {
+    int pin = portPwmPin(p["port"] | "");
+    if (pin >= 0) {
+      bool on;
+      if (p["value"].is<const char*>()) {
+        const char* v = p["value"].as<const char*>();
+        on = (strcmp(v, "high") == 0 || strcmp(v, "1") == 0 || strcmp(v, "on") == 0);
+      } else {
+        on = (p["value"] | 0) != 0;
+      }
+      pinMode(pin, OUTPUT);
+      digitalWrite(pin, on ? HIGH : LOW);
+      lastStatus = "Digital";
+    }
+    return;
+  }
+
+  // --- Sensor origin resets: no fw-side sensor state -> ACK no-op ----------
+  if (strcmp(cmd, "RESET_DISTANCE") == 0 || strcmp(cmd, "RESET_HEADING") == 0) {
+    JsonDocument ack;
+    ack["command"] = "ACK";
+    ack["op"] = cmd;
+    sendJson(ack);
     return;
   }
 
