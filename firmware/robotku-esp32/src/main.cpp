@@ -45,6 +45,7 @@
 #include <HTTPClient.h>          // OTA: download the new .bin over WiFi
 #include <WiFiClientSecure.h>    // OTA: https fetch (ESP-side; setInsecure, not the browser)
 #include <Update.h>              // OTA: write the new firmware to the inactive app slot
+#include "relay_client.h"        // relay client: control robot from https://hub via wss relay
 
 #include "config.h"
 
@@ -64,7 +65,7 @@
 // ------------------------------------------------------------------ Identity
 // BOARD_NAME / BOARD_ID come from the selected pin map (pins_*.h) so HELLO_ACK
 // tells the web which variant connected — no #ifdef BOARD_* here (see config.h).
-#define FW_VERSION   "2.3.2-mk"
+#define FW_VERSION   "2.4.0-mk"
 #define PROTOCOL_ID  "robotku-v1"
 #define BLE_NAME     "Robotku"
 
@@ -683,6 +684,7 @@ void sendTelemetry(const String& line) {
     }
   }
   if (wsClients > 0) wsServer.broadcastTXT(line.c_str(), line.length());   // WiFi transport (WS, no MTU chunking)
+  if (relayConnected) relaySend(line);                                     // relay transport (internet)
   Serial.print(line);   // mirror to USB serial
 }
 
@@ -1282,6 +1284,8 @@ void handleTextCommand(const String& raw) {
   line.trim();
   if (line.length() == 0) return;
 
+  if (line.startsWith("SET_RELAY")) { handleSetRelay(line); return; }   // relay provisioning
+
   int sp = line.indexOf(' ');
   String verb = (sp < 0) ? line : line.substring(0, sp);
   String arg  = (sp < 0) ? String("") : line.substring(sp + 1);
@@ -1581,6 +1585,7 @@ void setup() {
   setupBle();
   Serial.println("[boot] WiFi init...");
   setupWiFi();   // Phase 1: WS server + auto-join saved WiFi (if any)
+  setupRelay();  // relay client: load NVS id/secret, connect when WiFi up
 
   Serial.println("[boot] READY");
   oledStatus("Siap", "USB / Bluetooth");
@@ -1590,6 +1595,8 @@ void setup() {
 void loop() {
   // 1) Drain USB serial.
   while (Serial.available() > 0) feed(serialBuffer, (char)Serial.read(), true);
+
+  loopRelay();   // relay client (self-gates on relayEnabled + WiFi up)
 
   // 1a) WiFi/WebSocket servicing (Phase 1). Pump the WS server and report once the
   // STA associates (so the web learns the robot's IP for the WiFi transport).
