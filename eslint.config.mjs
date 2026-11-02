@@ -27,6 +27,7 @@ export default [
       // Vendored Cloudflare Worker backend — separate deployable (its own runtime
       // + wrangler toolchain), not part of the Next app lint.
       'server/robotku-ai-backend/**',
+      'server/robotku-relay/**',
     ],
   },
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
