@@ -12,8 +12,9 @@
   box-shadow: var(--shadow-xs);
   border: 1px solid transparent;
   user-select: none;
-  /* The container is pointer-events:none; keep only the pill itself live. */
-  pointer-events: auto;
+  /* Status-only pill (no onClick). Must NOT eat clicks — it overlaps the Settings
+     tab row and was blocking the centre FIRMWARE tab. */
+  pointer-events: none;
 }
 
 .dot {
