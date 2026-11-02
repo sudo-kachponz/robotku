@@ -30,7 +30,7 @@
 #define RELAY_RECONNECT_MS 5000
 
 // ── External functions from main.cpp (already exist, no changes needed) ──
-extern void feed(String &buffer, char c, const char *src);
+extern void feed(String &buffer, char c, bool fromSerial);
 extern void stopAllActuators();
 extern bool watchdogArmed;
 extern unsigned long lastRxMs;
@@ -238,7 +238,8 @@ static void relayFeed(const char *data, size_t len)
     return;
   }
 
-  // Feed each char to the existing parser
+  // Feed each char to the existing parser (fromSerial=false; relay replies ride
+  // sendTelemetry -> relaySend).
   for (size_t i = 0; i < len; i++)
-    feed(relayBuffer, data[i], "RELAY");
+    feed(relayBuffer, data[i], false);
 }
