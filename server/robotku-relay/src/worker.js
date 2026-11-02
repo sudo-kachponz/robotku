@@ -10,6 +10,16 @@
 
 const ID_RE = /^[2-9A-HJ-NP-Z]{6}$/;
 
+// Robot secret = first 32 hex of HMAC-SHA256(signingKey, id). Must match gen-robot-id.mjs.
+async function robotSecret(signingKey, id) {
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(signingKey),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(id));
+  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -43,10 +53,15 @@ async function handleWs(request, env) {
     }
   }
 
-  // Robot auth
+  // Robot auth — validate the secret, not just the format. The secret is
+  // HMAC-SHA256(RELAY_SIGNING_KEY, id) (first 32 hex), same as gen-robot-id.mjs,
+  // so the worker verifies statelessly (no per-robot store). Reject if the signing
+  // key is unset so auth can never silently become open.
   if (role === 'robot') {
     const auth = request.headers.get('Authorization') || '';
-    if (!auth.startsWith('Bearer ') || auth.length < 10) {
+    const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+    const expected = env.RELAY_SIGNING_KEY ? await robotSecret(env.RELAY_SIGNING_KEY, rawId) : '';
+    if (!expected || token !== expected) {
       return closeUpgrade(4401, 'Token robot tidak valid');
     }
   }
