@@ -18,7 +18,7 @@ import {
 import { showToast } from '../../ui/toast';
 import styles from '../../styles/Settings.module.css';
 
-const LATEST_FW = '2.4.1-mk';
+const LATEST_FW = '2.4.2-mk';
 const MANIFEST = '/firmware/manifest.json';
 const BIN_URL = `/firmware/robotku-${LATEST_FW}.bin`;
 
@@ -29,7 +29,7 @@ const RELAY_BIN_URL = `/firmware/robotku-${RELAY_FW}.bin`;
 // New dated column (relay client actually wired into firmware — AI/TTS over relay).
 // Added alongside the old entries, labelled by firmware date (per request).
 const RELAY2_DATE = '2 Nov 2026';
-const RELAY2_FW = '2.4.1-mk';
+const RELAY2_FW = '2.4.2-mk';
 const RELAY2_MANIFEST = '/firmware/manifest-relay-2026-11-02.json';
 const RELAY2_BIN_URL = `/firmware/robotku-${RELAY2_FW}.bin`;
 
