@@ -14,6 +14,7 @@ import { Lcd, PETW } from './lcd/engine';
 import { PET_COLORS, type Mood } from './lcd/sprites';
 import { firaChat, type ChatMsg } from '../../ailabs/brain';
 import { speak, stopSpeaking, ttsSupported, voiceLabel, listenOnce, sttSupported } from '../../ailabs/speech';
+import { listenViaRobot, robotCanListen } from '../../ailabs/micStt';
 import { speakViaRobot } from '../../ailabs/robotVoice';
 import styles from './FiraPanel.module.css';
 
@@ -113,11 +114,19 @@ export default function FiraPanel({ open, onClose }: { open: boolean; onClose: (
   }
 
   async function handleMic() {
-    if (listening || busy || !sttSupported()) return;
+    const useRobotMic = robotCanListen();
+    if (listening || busy || (!useRobotMic && !sttSupported())) return;
     setListening(true);
     listeningRef.current = true;
     faceRef.current = 'thinking';
     try {
+      if (useRobotMic) {
+        // Voice input from the ROBOT's mic (INMP441 -> /stt Whisper).
+        const text = await listenViaRobot(3);
+        if (text) await send(text);
+        else setMessages((m) => [...m, { role: 'assistant', content: '(robot tidak mendengar / STT gagal, coba lagi)' }]);
+        return;
+      }
       const r = await listenOnce();
       if (r.ok && r.text) await send(r.text);
       else
@@ -236,7 +245,7 @@ export default function FiraPanel({ open, onClose }: { open: boolean; onClose: (
         <button
           className={`${styles.mic} ${listening ? styles.micOn : ''}`}
           onClick={handleMic}
-          disabled={busy || listening || !sttSupported()}
+          disabled={busy || listening || (!sttSupported() && !robotCanListen())}
           title={sttSupported() ? 'Bicara ke Robotku AI (Bahasa Indonesia)' : 'STT hanya Chrome/Edge — ketik saja'}
           aria-label="Bicara"
         >

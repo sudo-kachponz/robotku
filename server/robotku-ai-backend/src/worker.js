@@ -82,9 +82,51 @@ async function handleTts(request, env, headers) {
   }
 }
 
+// Speech-to-text: POST /stt { audio: base64 WAV/MP3/OGG } -> { text }. Powers voice
+// input from the robot's mic (mic PCM -> web wraps WAV -> here). Workers AI Whisper.
+async function handleStt(request, env, headers) {
+  if (!env.AI) {
+    return new Response(JSON.stringify({ error: 'AI binding tidak aktif' }), {
+      status: 501, headers: { ...headers, 'Content-Type': 'application/json' },
+    });
+  }
+  let body;
+  try { body = await request.json(); } catch {
+    return new Response(JSON.stringify({ error: 'json tidak valid' }), {
+      status: 400, headers: { ...headers, 'Content-Type': 'application/json' },
+    });
+  }
+  const b64 = String(body.audio || '');
+  if (!b64) {
+    return new Response(JSON.stringify({ error: 'audio kosong' }), {
+      status: 400, headers: { ...headers, 'Content-Type': 'application/json' },
+    });
+  }
+  try {
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    // Whisper takes the audio file bytes as a plain array.
+    const out = await env.AI.run('@cf/openai/whisper', { audio: [...bytes] });
+    const text = (out && typeof out.text === 'string' ? out.text : '').trim();
+    return new Response(JSON.stringify({ text }), {
+      status: 200, headers: { ...headers, 'Content-Type': 'application/json' },
+    });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: 'stt gagal: ' + (e && e.message) }), {
+      status: 502, headers: { ...headers, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(env) });
+
+    // Voice input from robot mic (POST /stt { audio }).
+    if (new URL(request.url).pathname === '/stt' && request.method === 'POST') {
+      return handleStt(request, env, cors(env));
+    }
 
     // Robot speech endpoint (POST /tts { text, lang? }).
     if (new URL(request.url).pathname === '/tts' && request.method === 'POST') {

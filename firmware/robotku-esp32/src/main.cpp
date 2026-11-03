@@ -65,7 +65,7 @@
 // ------------------------------------------------------------------ Identity
 // BOARD_NAME / BOARD_ID come from the selected pin map (pins_*.h) so HELLO_ACK
 // tells the web which variant connected — no #ifdef BOARD_* here (see config.h).
-#define FW_VERSION   "2.4.1-mk"
+#define FW_VERSION   "2.4.2-mk"
 #define PROTOCOL_ID  "robotku-v1"
 #define BLE_NAME     "Robotku"
 
@@ -157,6 +157,7 @@ bool          micReady = false;  // I2S RX installed OK
 // playback path so the same i2s_write code plays it back. One slot — slot arg ignored.
 volatile unsigned long recordMs  = 0;   // 0 = idle; else record until this millis()
 volatile size_t        recordLen = 0;   // bytes captured so far
+volatile bool          micSttSend = false; // after record: stream buffer to web (MIC_DATA)
 #endif
 
 // ----------------------------------------------------- Non-blocking motion
@@ -867,6 +868,7 @@ void sendHelloAck() {
 #endif
 #if HAS_MIC
   caps.add("GET_SENSOR_DATA");   // mic level / clap reporters
+  caps.add("MIC_STT");           // record mic -> stream to web for STT
 #endif
   if (oledOk) caps.add("DISPLAY_TEXT");   // OLED text — only if the panel answered
   if (oledOk) caps.add("DISPLAY_BITMAP"); // OLED pixel-art
@@ -1396,6 +1398,21 @@ void handleCommand(const String& jsonLine) {
     return;   // ACK by silence — never UNSUPPORTED
   }
 
+  // --- Voice input: record mic then stream it to the web for STT (Whisper) ---
+  if (strcmp(cmd, "MIC_STT") == 0) {
+#if HAS_SPEAKER && HAS_MIC
+    if (!pcmStreamBuf) pcmStreamBuf = (uint8_t*)malloc(PCM_STREAM_CAP);
+    if (pcmStreamBuf) {
+      int secs = constrain((int)(p["secs"] | 3), 1, 4);
+      recordLen = 0;
+      recordMs  = millis() + (unsigned long)secs * 1000;   // micTask fills the buffer
+      micSttSend = true;                                   // loop() streams it when done
+      lastStatus = "Dengar";
+    }
+#endif
+    return;
+  }
+
   // --- Voice memo: play the last recording back ----------------------------
   if (strcmp(cmd, "PLAY_RECORDING") == 0) {
 #if HAS_SPEAKER && HAS_MIC
@@ -1806,6 +1823,32 @@ void loop() {
   while (Serial.available() > 0) feed(serialBuffer, (char)Serial.read(), true);
 
   loopRelay();   // relay client (self-gates on relayEnabled + WiFi up)
+
+#if HAS_SPEAKER && HAS_MIC
+  // After a MIC_STT record window ends, stream the captured 8 kHz PCM to the web
+  // as base64 MIC_DATA chunks + MIC_END (web wraps WAV -> Whisper /stt -> chat).
+  if (micSttSend && recordMs == 0) {
+    micSttSend = false;
+    size_t off = 0; int seq = 0;
+    while (off < recordLen) {
+      size_t n = recordLen - off; if (n > 2400) n = 2400;
+      static unsigned char b64[3300]; size_t olen = 0;
+      if (mbedtls_base64_encode(b64, sizeof(b64), &olen, pcmStreamBuf + off, n) == 0) {
+        b64[olen] = 0;
+        JsonDocument d;
+        d["command"] = "MIC_DATA";
+        d["params"]["seq"]  = seq++;
+        d["params"]["data"] = (const char*)b64;
+        sendJson(d);
+      }
+      off += n;
+    }
+    JsonDocument e;
+    e["command"] = "MIC_END";
+    e["params"]["len"] = (int)recordLen;
+    sendJson(e);
+  }
+#endif
 
   // 1a) WiFi/WebSocket servicing (Phase 1). Pump the WS server and report once the
   // STA associates (so the web learns the robot's IP for the WiFi transport).
