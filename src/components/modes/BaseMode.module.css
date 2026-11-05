@@ -794,3 +794,27 @@
   }
 }
 
+
+/* Action buttons (grip ×2 + buzzer) — triangle cluster, replaces the D-Pad */
+.actionCluster {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 12px;
+  place-items: center;
+  padding: 6px;
+}
+.actionCluster > :last-child {
+  grid-column: 1 / 3;   /* bell centered on the bottom row */
+}
+.actBtn {
+  width: 56px;
+  height: 56px;
+  font-size: 26px;
+  line-height: 1;
+  color: #fff;
+  background: radial-gradient(circle at 40% 30%, #ff7a7a 0%, #dc2626 70%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+.actBtn:active {
+  transform: scale(0.94);
+}
