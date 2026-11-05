@@ -1,0 +1,2 @@
+{ "name": "Robotku Firmware — Bluetooth", "version": "2.2.0-mk", "new_install_prompt_erase": true,
+  "builds": [ { "chipFamily": "ESP32", "parts": [{ "path": "robotku-2.2.0-mk.bin", "offset": 0 }] } ] }

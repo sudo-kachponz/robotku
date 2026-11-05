@@ -18,23 +18,44 @@ import {
 import { showToast } from '../../ui/toast';
 import styles from '../../styles/Settings.module.css';
 
-const LATEST_FW = '2.4.2-mk';
-const MANIFEST = '/firmware/manifest.json';
-const BIN_URL = `/firmware/robotku-${LATEST_FW}.bin`;
 
-const RELAY_FW = '2.4.0-relay';
-const RELAY_MANIFEST = '/firmware/manifest-relay.json';
-const RELAY_BIN_URL = `/firmware/robotku-${RELAY_FW}.bin`;
+// The three firmware types offered, each with its feature table.
+const FEATURES = ['Bluetooth', 'WiFi', 'Relay (internet)', 'OTA update', 'Block coding', 'AI suara + mic'] as const;
 
-// New dated column (relay client actually wired into firmware — AI/TTS over relay).
-// Added alongside the old entries, labelled by firmware date (per request).
-const RELAY2_DATE = '2 Nov 2026';
-const RELAY2_FW = '2.4.2-mk';
-const RELAY2_MANIFEST = '/firmware/manifest-relay-2026-11-02.json';
-const RELAY2_BIN_URL = `/firmware/robotku-${RELAY2_FW}.bin`;
+interface Firmware {
+  title: string;
+  ver: string;
+  manifest: string;
+  chip: string;
+  color: string;
+  status: string;
+  desc: string;
+  feats: (boolean | string)[]; // aligned to FEATURES
+  setup: string | null;
+}
 
-// ponytail: OTA_UPDATE removed in 2.4.0-mk firmware. OTA section disabled
-// until capability check is wired (see Fajri's relay notes).
+const FIRMWARES: Firmware[] = [
+  {
+    title: 'Bluetooth (stabil)', ver: '2.2.0-mk', manifest: '/firmware/manifest-ble.json', chip: 'ESP32',
+    color: '#0284c7', status: '✅ teruji di hardware',
+    desc: 'Paling aman. Kontrol lewat Bluetooth saja — tanpa WiFi, relay, atau OTA.',
+    feats: [true, false, false, false, 'dasar', false], setup: null,
+  },
+  {
+    title: 'OTA + Relay (lengkap)', ver: '2.4.2-mk', manifest: '/firmware/manifest.json', chip: 'ESP32',
+    color: '#16a34a', status: '⚙️ compile — perlu tes hardware',
+    desc: 'Semua fitur. Kontrol dari internet lewat relay + update firmware OTA.',
+    feats: [true, true, true, true, true, true],
+    setup: 'SET_RELAY <ID> <SECRET> lalu SET_WIFI <ssid> <pass> di Serial Monitor',
+  },
+  {
+    title: 'ESP32-S3 (board baru)', ver: '2.4.2-s3', manifest: '/firmware/manifest-s3.json', chip: 'ESP32-S3',
+    color: '#4f46e5', status: '🆕 board S3 v1.3 — belum ditest',
+    desc: 'Firmware yang sama (semua fitur) untuk board ESP32-S3 v1.3.',
+    feats: [true, true, true, true, true, true],
+    setup: 'SET_RELAY <ID> <SECRET> lalu SET_WIFI <ssid> <pass> di Serial Monitor',
+  },
+];
 
 const ESP_WEB_TOOLS = 'https://unpkg.com/esp-web-tools@10/dist/web/install-button.js';
 
@@ -77,7 +98,7 @@ export default function FirmwarePanel() {
     return off;
   }, []);
 
-  const otaVersion = manifest?.version ?? LATEST_FW;
+  const otaVersion = manifest?.version ?? '2.4.2-mk';
 
   const doOta = async () => {
     if (!manifest) return;
@@ -252,164 +273,71 @@ export default function FirmwarePanel() {
         </div>
       )}
 
-      <div style={{ marginTop: 16 }}>
-        {supported ? (
-          loaded ? (
-            createElement(
-              'esp-web-install-button',
-              { manifest: MANIFEST },
-              createElement(
-                'button',
-                {
-                  slot: 'activate',
-                  disabled: serialBusy,
-                  style: {
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    border: 'none',
-                    borderRadius: 'var(--r-full)',
-                    padding: '12px 22px',
-                    fontWeight: 800,
-                    fontSize: 15,
-                    cursor: serialBusy ? 'not-allowed' : 'pointer',
-                    opacity: serialBusy ? 0.5 : 1,
-                    background: 'var(--indigo-600)',
-                    color: '#fff',
-                    fontFamily: 'inherit',
-                  },
-                },
-                '⟳ Update Firmware via USB',
-              ),
-            )
-          ) : (
-            <span style={{ color: 'var(--ink-400)', fontSize: 14 }}>Menyiapkan pembaru…</span>
-          )
-        ) : (
-          <div style={{ fontSize: 14, color: 'var(--ink-600)', lineHeight: 1.6 }}>
-            Browser ini tidak mendukung Web Serial (pakai Chrome/Edge di desktop).
-            <br />
-            <a href={BIN_URL} download style={{ color: 'var(--indigo-600)', fontWeight: 700 }}>
-              ⬇ Download firmware .bin
-            </a>{' '}
-            lalu flash dengan esptool:{' '}
-            <code style={{ fontSize: 12 }}>esptool write-flash 0x0 robotku-{LATEST_FW}.bin</code>
-          </div>
-        )}
+      {/* Three firmware types, each with a feature table */}
+      <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {FIRMWARES.map((fw) => (
+          <FirmwareCard key={fw.ver} fw={fw} supported={supported} loaded={loaded} serialBusy={serialBusy} />
+        ))}
       </div>
 
       <p style={{ marginTop: 14, fontSize: 12, color: 'var(--ink-400)', lineHeight: 1.5 }}>
-        Colok robot ke komputer pakai kabel USB, klik tombol di atas, lalu pilih port
-        <code> USB-SERIAL CH340</code> di jendela yang muncul. Jangan cabut kabel saat proses flashing.
+        Colok robot ke komputer pakai USB, klik Flash, lalu pilih port (ESP32: <code>USB-SERIAL CH340</code>;
+        S3: <code>USB JTAG/serial</code>). Jangan cabut kabel saat proses flashing.
       </p>
+    </div>
+  );
+}
 
-      {/* --- Firmware + Relay (internet control) --- */}
-      <div
-        style={{
-          marginTop: 16,
-          padding: '12px 14px',
-          borderRadius: 'var(--r-md)',
-          border: '1px solid rgba(16, 185, 129, 0.3)',
-          background: 'rgba(16, 185, 129, 0.06)',
-        }}
-      >
-        <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 4, color: 'var(--green)' }}>
-          🌐 Firmware + Relay (kontrol lewat internet)
-        </div>
-        <p style={{ margin: '0 0 10px', fontSize: 12.5, color: 'var(--ink-500)', lineHeight: 1.5 }}>
-          Versi {RELAY_FW} — sama dengan firmware standar, ditambah relay client supaya robot
-          bisa dikontrol dari hub.robotku.id lewat internet. Setelah flash, ketik{' '}
-          <code>SET_RELAY &lt;ID&gt; &lt;SECRET&gt;</code> di Serial Monitor untuk mengaktifkan.
-        </p>
 
-        {supported && loaded ? (
-          createElement(
-            'esp-web-install-button',
-            { manifest: RELAY_MANIFEST },
-            createElement(
-              'button',
-              {
-                slot: 'activate',
-                disabled: serialBusy,
-                style: {
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  border: 'none',
-                  borderRadius: 'var(--r-full)',
-                  padding: '12px 22px',
-                  fontWeight: 800,
-                  fontSize: 15,
-                  cursor: serialBusy ? 'not-allowed' : 'pointer',
-                  opacity: serialBusy ? 0.5 : 1,
-                  background: 'var(--green)',
-                  color: '#fff',
-                  fontFamily: 'inherit',
-                },
-              },
-              '🌐 Flash Firmware + Relay via USB',
-            ),
-          )
-        ) : !supported ? (
-          <a href={RELAY_BIN_URL} download style={{ color: 'var(--green)', fontWeight: 700 }}>
-            ⬇ Download firmware relay .bin
-          </a>
-        ) : null}
+function FeatureTable({ feats }: { feats: (boolean | string)[] }) {
+  return (
+    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, margin: '2px 0 10px' }}>
+      <tbody>
+        {FEATURES.map((label, i) => {
+          const v = feats[i];
+          const cell = v === true ? '✅' : v === false ? '❌' : String(v);
+          return (
+            <tr key={label} style={{ borderTop: '1px solid var(--line-soft)' }}>
+              <td style={{ padding: '4px 0', color: 'var(--ink-500)' }}>{label}</td>
+              <td style={{ padding: '4px 0', textAlign: 'right', fontWeight: 700 }}>{cell}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function FirmwareCard({ fw, supported, loaded, serialBusy }: {
+  fw: Firmware; supported: boolean; loaded: boolean; serialBusy: boolean;
+}) {
+  const bin = `/firmware/robotku-${fw.ver}.bin`;
+  return (
+    <div style={{ padding: '12px 14px', borderRadius: 'var(--r-md)', border: `1px solid ${fw.color}55`, background: `${fw.color}11` }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+        <span style={{ fontWeight: 800, fontSize: 14, color: fw.color }}>{fw.title}</span>
+        <span style={{ fontSize: 11, color: 'var(--ink-500)' }}>{fw.ver} · {fw.chip}</span>
       </div>
-
-      {/* --- Firmware Relay (dated) — relay client wired in, AI/TTS over relay --- */}
-      <div
-        style={{
-          marginTop: 16,
-          padding: '12px 14px',
-          borderRadius: 'var(--r-md)',
-          border: '1px solid rgba(99, 102, 241, 0.35)',
-          background: 'rgba(99, 102, 241, 0.07)',
-        }}
-      >
-        <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 4, color: 'var(--indigo-600)' }}>
-          🌐 Firmware Relay — {RELAY2_DATE}
-        </div>
-        <p style={{ margin: '0 0 10px', fontSize: 12.5, color: 'var(--ink-500)', lineHeight: 1.5 }}>
-          Versi {RELAY2_FW} ({RELAY2_DATE}) — relay client sudah tertanam di firmware, jadi
-          semua fitur (joystick, block coding, AI/TTS) jalan lewat relay dari hub.robotku.id.
-          Setelah flash: <code>SET_RELAY &lt;ID&gt; &lt;SECRET&gt;</code> lalu <code>SET_WIFI</code> di Serial Monitor.
+      <div style={{ fontSize: 11.5, margin: '2px 0 4px', color: 'var(--ink-500)' }}>{fw.status}</div>
+      <p style={{ margin: '0 0 6px', fontSize: 12.5, color: 'var(--ink-600)', lineHeight: 1.5 }}>{fw.desc}</p>
+      <FeatureTable feats={fw.feats} />
+      {fw.setup && (
+        <p style={{ margin: '0 0 8px', fontSize: 11.5, color: 'var(--ink-500)' }}>
+          Setelah flash: <code>{fw.setup}</code>
         </p>
-
-        {supported && loaded ? (
-          createElement(
-            'esp-web-install-button',
-            { manifest: RELAY2_MANIFEST },
-            createElement(
-              'button',
-              {
-                slot: 'activate',
-                disabled: serialBusy,
-                style: {
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  border: 'none',
-                  borderRadius: 'var(--r-full)',
-                  padding: '12px 22px',
-                  fontWeight: 800,
-                  fontSize: 15,
-                  cursor: serialBusy ? 'not-allowed' : 'pointer',
-                  opacity: serialBusy ? 0.5 : 1,
-                  background: 'var(--indigo-600)',
-                  color: '#fff',
-                  fontFamily: 'inherit',
-                },
-              },
-              `🌐 Flash Firmware Relay (${RELAY2_DATE}) via USB`,
-            ),
-          )
-        ) : !supported ? (
-          <a href={RELAY2_BIN_URL} download style={{ color: 'var(--indigo-600)', fontWeight: 700 }}>
-            ⬇ Download firmware relay {RELAY2_DATE} .bin
-          </a>
-        ) : null}
-      </div>
+      )}
+      {supported && loaded ? (
+        createElement('esp-web-install-button', { manifest: fw.manifest },
+          createElement('button', {
+            slot: 'activate', disabled: serialBusy,
+            style: { display: 'inline-flex', alignItems: 'center', gap: 8, border: 'none', borderRadius: 'var(--r-full)',
+              padding: '10px 18px', fontWeight: 800, fontSize: 14, cursor: serialBusy ? 'not-allowed' : 'pointer',
+              opacity: serialBusy ? 0.5 : 1, background: fw.color, color: '#fff', fontFamily: 'inherit' },
+          }, `⟳ Flash ${fw.title} via USB`),
+        )
+      ) : !supported ? (
+        <a href={bin} download style={{ color: fw.color, fontWeight: 700 }}>⬇ Download {fw.ver} .bin</a>
+      ) : null}
     </div>
   );
 }
