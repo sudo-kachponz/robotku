@@ -15,7 +15,9 @@
 #pragma once
 
 // ------------------------------------------------------ Pin map selection
-#if defined(BOARD_MAKERKIT)
+#if defined(BOARD_MAKERKIT_S3)
+  #include "pins_makerkit_s3.h"
+#elif defined(BOARD_MAKERKIT)
   #include "pins_makerkit.h"
 #elif defined(BOARD_V3)
   #include "pins_v3.h"
