@@ -20,6 +20,9 @@ import styles from '../../styles/Settings.module.css';
 
 
 // The three firmware types offered, each with its feature table.
+// Prefix for the staging (/development) deploy so it serves its own firmware.
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 const FEATURES = ['Bluetooth', 'WiFi', 'Relay (internet)', 'OTA update', 'Block coding', 'AI suara + mic'] as const;
 
 interface Firmware {
@@ -311,7 +314,7 @@ function FeatureTable({ feats }: { feats: (boolean | string)[] }) {
 function FirmwareCard({ fw, supported, loaded, serialBusy }: {
   fw: Firmware; supported: boolean; loaded: boolean; serialBusy: boolean;
 }) {
-  const bin = `/firmware/robotku-${fw.ver}.bin`;
+  const bin = `${BASE}/firmware/robotku-${fw.ver}.bin`;
   return (
     <div style={{ padding: '12px 14px', borderRadius: 'var(--r-md)', border: `1px solid ${fw.color}55`, background: `${fw.color}11` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
@@ -327,7 +330,7 @@ function FirmwareCard({ fw, supported, loaded, serialBusy }: {
         </p>
       )}
       {supported && loaded ? (
-        createElement('esp-web-install-button', { manifest: fw.manifest },
+        createElement('esp-web-install-button', { manifest: BASE + fw.manifest },
           createElement('button', {
             slot: 'activate', disabled: serialBusy,
             style: { display: 'inline-flex', alignItems: 'center', gap: 8, border: 'none', borderRadius: 'var(--r-full)',
