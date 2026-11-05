@@ -13,12 +13,18 @@ function assertStaticExportSafe() {
 }
 assertStaticExportSafe();
 
+// Staging build (hub.robotku.id/development) sets NEXT_PUBLIC_BASE_PATH=/development so
+// assets + routes are prefixed; production (root) leaves it empty.
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Match Stick'em's stack: statically-exported Next.js Pages Router app.
   // Produces plain static files (no Node server) — deployable to any static host,
   // and served over HTTPS/localhost so Web Bluetooth / Web Serial work.
   output: 'export',
+  basePath,
+  assetPrefix: basePath || undefined,
   reactStrictMode: true,
   // Static export cannot use the Image Optimization server.
   images: { unoptimized: true },

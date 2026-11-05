@@ -1,15 +1,17 @@
 name: Deploy to hub.robotku.id
 
-# Static export → FTPS mirror. Credentials live ONLY in repository Secrets:
-#   FTP_HOST  FTP_USER  FTP_PASS   (rotate on every leak; never commit them)
+# Two targets on the same host:
+#   branch main   -> hub.robotku.id/development  (staging; new/experimental)
+#   branch stable -> hub.robotku.id              (production; frozen stable)
+# Credentials live ONLY in repository Secrets: FTP_HOST FTP_USER FTP_PASS.
 
 on:
   push:
-    branches: [main]
+    branches: [main, stable]
   workflow_dispatch:
 
 concurrency:
-  group: deploy-production
+  group: deploy-${{ github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -17,6 +19,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Pick target (prod root vs /development)
+        run: |
+          if [ "${{ github.ref_name }}" = "stable" ]; then
+            echo "BASE_PATH=" >> "$GITHUB_ENV"
+            echo "REMOTE_DIR=/" >> "$GITHUB_ENV"
+            echo "SITE_URL=https://hub.robotku.id" >> "$GITHUB_ENV"
+          else
+            echo "BASE_PATH=/development" >> "$GITHUB_ENV"
+            echo "REMOTE_DIR=/development" >> "$GITHUB_ENV"
+            echo "SITE_URL=https://hub.robotku.id/development" >> "$GITHUB_ENV"
+          fi
 
       - uses: actions/setup-node@v4
         with:
@@ -35,23 +49,20 @@ jobs:
         run: npm test -- --reporter=verbose
 
       - name: Build (emits out/.htaccess + version.json)
+        env:
+          NEXT_PUBLIC_BASE_PATH: ${{ env.BASE_PATH }}
         run: npm run build
 
-      # Rollback snapshot: keep the exact out/ we're about to deploy as a dated
-      # artifact. To roll back, download it and re-mirror with scripts/deploy.sh.
-      # sim3d (26 MB, rarely changes, uploaded separately) is excluded to stay small.
       - name: Snapshot out/ for rollback
         uses: actions/upload-artifact@v4
         with:
-          name: out-${{ github.run_number }}-${{ github.sha }}
+          name: out-${{ github.ref_name }}-${{ github.run_number }}-${{ github.sha }}
           path: |
             out
             !out/sim3d
           retention-days: 30
           if-no-files-found: error
 
-      # Safety: never deploy with missing/old credentials. Fails loudly if the
-      # Secrets have not been set (rotate the leaked FTP creds first).
       - name: Install lftp
         run: sudo apt-get update && sudo apt-get install -y lftp
 
@@ -60,21 +71,20 @@ jobs:
           FTP_HOST: ${{ secrets.FTP_HOST || 'ftp.robotku.id' }}
           FTP_USER: ${{ secrets.FTP_USER || 'u294386579.robotkuHUB' }}
           FTP_PASS: ${{ secrets.FTP_PASS || 'V1d=tqPKuDA' }}
-          SKIP_SIM3D: '1' # launch payload excludes the 26 MB of 3D assets
+          FTP_REMOTE_DIR: ${{ env.REMOTE_DIR }}
+          DEPLOY_URL: ${{ env.SITE_URL }}
+          SKIP_SIM3D: '1'
         run: bash scripts/deploy.sh
 
-      # A half-finished FTPS mirror can exit 0 while the live site is stale. Fetch
-      # the just-deployed version.json (htaccess serves it no-cache) and confirm its
-      # sha matches this commit before declaring the deploy healthy.
       - name: Smoke check deployed version
         run: |
           EXPECT="${GITHUB_SHA:0:7}"
-          URL="https://hub.robotku.id/version.json"
+          URL="${SITE_URL}/version.json"
           for attempt in 1 2 3 4 5; do
             DEPLOYED="$(curl -fsSL --max-time 20 "$URL" | jq -r '.sha' 2>/dev/null || true)"
-            echo "attempt $attempt: deployed sha='${DEPLOYED}' expected='${EXPECT}'"
+            echo "attempt $attempt: deployed sha='${DEPLOYED}' expected='${EXPECT}' (${URL})"
             [ "$DEPLOYED" = "$EXPECT" ] && { echo "✓ live site is on ${EXPECT}"; exit 0; }
             sleep 10
           done
-          echo "::error::Deployed version.json sha did not match ${EXPECT} after retries — the mirror may be incomplete. Investigate before trusting this deploy." >&2
+          echo "::error::${URL} sha did not match ${EXPECT} after retries — mirror may be incomplete." >&2
           exit 1
