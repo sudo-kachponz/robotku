@@ -26,6 +26,7 @@ export default function BaseMode() {
 
   const intentRef = useRef({ fwd: 0, turn: 0 });
   const headingRef = useRef(0);
+  const poseRef = useRef({ x: 0, y: 0 });
   const reducedRef = useRef(false);
 
   // Speed level: 1 = Eco (50%), 2 = Normal (75%), 3 = Turbo (100%)
@@ -135,10 +136,20 @@ export default function BaseMode() {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       const el = robotRef.current;
-      if (el && !reducedRef.current) {
-        const { turn } = intentRef.current;
-        headingRef.current = (headingRef.current + turn * 100 * dt + 360) % 360;
-        el.style.transform = `rotate(${headingRef.current}deg)`;
+      const stage = stageRef.current;
+      if (el && stage && !reducedRef.current) {
+        const { fwd, turn } = intentRef.current;
+        headingRef.current = (headingRef.current + turn * 120 * dt + 360) % 360;
+        const rad = (headingRef.current * Math.PI) / 180;
+        const pose = poseRef.current;
+        // Drive forward/back along the heading (PS-stick style), not just spin.
+        pose.x += Math.sin(rad) * fwd * 140 * dt;
+        pose.y -= Math.cos(rad) * fwd * 140 * dt;
+        const halfW = Math.max(0, (stage.clientWidth - el.clientWidth) / 2);
+        const halfH = Math.max(0, (stage.clientHeight - el.clientHeight) / 2);
+        pose.x = clamp(pose.x, -halfW, halfW);
+        pose.y = clamp(pose.y, -halfH, halfH);
+        el.style.transform = `translate(${pose.x}px, ${pose.y}px) rotate(${headingRef.current}deg)`;
       }
       raf = requestAnimationFrame(tick);
     };
