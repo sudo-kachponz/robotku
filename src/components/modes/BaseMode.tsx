@@ -8,7 +8,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ControlLayout from '../control/ControlLayout';
-import HoldButton from './HoldButton';
 import RobotSprite from './RobotSprite';
 import { useDrive, useSettings } from '../../hooks/useDrive';
 import { soundFx } from './JoystickAudio';
@@ -17,7 +16,7 @@ import styles from './BaseMode.module.css';
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 export default function BaseMode() {
-  const { driveGroup, stopGroup } = useDrive();
+  const { driveGroup, stopGroup, sendCommand } = useDrive();
   const { mapping } = useSettings();
   const { left, right } = mapping.base;
 
@@ -48,30 +47,16 @@ export default function BaseMode() {
     soundFx.updateEngineSound(v !== 0 ? 60 : 0, v !== 0 ? -60 : 0);
   }, []);
 
-  // ---- Transport intents (hardware behaviour) ----
-  const forward = useCallback(() => {
-    driveGroup(left, currentDriveSpeed);
-    driveGroup(right, currentDriveSpeed);
-    setFwd(1);
-  }, [driveGroup, left, right, currentDriveSpeed, setFwd]);
+  // ---- Action buttons ----
+  const buzzer = useCallback(() => {
+    sendCommand('PLAY_TONE', { hz: 880, ms: 250 });   // ring = buzzer
+    soundFx.playHorn();
+  }, [sendCommand]);
 
-  const backward = useCallback(() => {
-    driveGroup(left, -currentDriveSpeed);
-    driveGroup(right, -currentDriveSpeed);
-    setFwd(-1);
-  }, [driveGroup, left, right, currentDriveSpeed, setFwd]);
-
-  const turnLeft = useCallback(() => {
-    driveGroup(left, -currentDriveSpeed);
-    driveGroup(right, currentDriveSpeed);
-    setTurn(-1);
-  }, [driveGroup, left, right, currentDriveSpeed, setTurn]);
-
-  const turnRight = useCallback(() => {
-    driveGroup(left, currentDriveSpeed);
-    driveGroup(right, -currentDriveSpeed);
-    setTurn(1);
-  }, [driveGroup, left, right, currentDriveSpeed, setTurn]);
+  // Grip buttons — no gripper functionality on the board yet, so these just give
+  // feedback (placeholder). Wire to SET_GRIPPER when the hardware exists.
+  const gripOpen = useCallback(() => soundFx.playClick(700), []);
+  const gripClose = useCallback(() => soundFx.playClick(500), []);
 
   const stopWheels = useCallback(() => {
     stopGroup(left);
@@ -228,59 +213,38 @@ export default function BaseMode() {
               </div>
             </div>
 
-            {/* ── 3. RIGHT SIDE: D-Pad ── */}
+            {/* ── 3. RIGHT SIDE: Action buttons (grip ×2 placeholder, buzzer) ── */}
             <div className={styles.rightJoyCon}>
               <div className={styles.railAccentRight} />
 
-              {/* 4-Way D-Pad Buttons */}
-              <div className={styles.switchDpadGrid}>
-                <HoldButton
-                  className={`${styles.switchDpadBtn} ${styles.dpadUp}`}
-                  activeClassName={styles.dpadActive}
-                  keys={['w', 'W', 'ArrowUp']}
-                  onStart={forward}
-                  onStop={stopWheels}
-                  ariaLabel="Maju (W / ↑)"
-                  title="Maju (W / ↑)"
+              <div className={styles.actionCluster}>
+                <button
+                  type="button"
+                  className={`${styles.switchDpadBtn} ${styles.actBtn}`}
+                  onClick={gripOpen}
+                  aria-label="Buka grip"
+                  title="Buka grip (belum ada fungsi)"
                 >
-                  <Arrow dir="up" />
-                </HoldButton>
-
-                <HoldButton
-                  className={`${styles.switchDpadBtn} ${styles.dpadLeft}`}
-                  activeClassName={styles.dpadActive}
-                  keys={['a', 'A', 'ArrowLeft']}
-                  onStart={turnLeft}
-                  onStop={stopWheels}
-                  ariaLabel="Belok Kiri (A / ←)"
-                  title="Belok Kiri (A / ←)"
+                  ✋
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.switchDpadBtn} ${styles.actBtn}`}
+                  onClick={gripClose}
+                  aria-label="Tutup grip"
+                  title="Tutup grip (belum ada fungsi)"
                 >
-                  <Arrow dir="left" />
-                </HoldButton>
-
-                <HoldButton
-                  className={`${styles.switchDpadBtn} ${styles.dpadRight}`}
-                  activeClassName={styles.dpadActive}
-                  keys={['d', 'D', 'ArrowRight']}
-                  onStart={turnRight}
-                  onStop={stopWheels}
-                  ariaLabel="Belok Kanan (D / →)"
-                  title="Belok Kanan (D / →)"
+                  ✊
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.switchDpadBtn} ${styles.actBtn} ${styles.actBtnBell}`}
+                  onClick={buzzer}
+                  aria-label="Buzzer"
+                  title="Buzzer"
                 >
-                  <Arrow dir="right" />
-                </HoldButton>
-
-                <HoldButton
-                  className={`${styles.switchDpadBtn} ${styles.dpadDown}`}
-                  activeClassName={styles.dpadActive}
-                  keys={['s', 'S', 'ArrowDown']}
-                  onStart={backward}
-                  onStop={stopWheels}
-                  ariaLabel="Mundur (S / ↓)"
-                  title="Mundur (S / ↓)"
-                >
-                  <Arrow dir="down" />
-                </HoldButton>
+                  🔔
+                </button>
               </div>
             </div>
           </div>
@@ -288,21 +252,6 @@ export default function BaseMode() {
 
       </div>
     </ControlLayout>
-  );
-}
-
-function Arrow({ dir }: { dir: 'up' | 'down' | 'left' | 'right' }) {
-  const rot = { up: 0, right: 90, down: 180, left: 270 }[dir];
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width="14"
-      height="14"
-      fill="currentColor"
-      style={{ transform: `rotate(${rot}deg)` }}
-    >
-      <path d="M12 4l-6 7h4v9h4v-9h4z" />
-    </svg>
   );
 }
 
