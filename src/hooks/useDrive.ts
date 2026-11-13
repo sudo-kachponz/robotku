@@ -43,9 +43,16 @@ function flushDrive(): void {
   }
 }
 
+// Relay (internet) has much higher latency than BLE — flushing at 20 Hz floods it,
+// commands pile up stale, and one-shot frames (buzzer) get dropped. Throttle the
+// relay path to ~8 Hz; BLE/serial stay at 20 Hz.
+function driveIntervalMs(): number {
+  return getState().transport?.kind === 'relay' ? 120 : DRIVE_MIN_INTERVAL_MS;
+}
+
 function scheduleFlush(): void {
   if (flushTimer) return; // a flush is already pending; the latest value will ride it
-  const wait = Math.max(0, DRIVE_MIN_INTERVAL_MS - (Date.now() - lastFlush));
+  const wait = Math.max(0, driveIntervalMs() - (Date.now() - lastFlush));
   flushTimer = setTimeout(flushDrive, wait);
 }
 
