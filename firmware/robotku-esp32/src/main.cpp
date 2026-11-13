@@ -65,7 +65,7 @@
 // ------------------------------------------------------------------ Identity
 // BOARD_NAME / BOARD_ID come from the selected pin map (pins_*.h) so HELLO_ACK
 // tells the web which variant connected — no #ifdef BOARD_* here (see config.h).
-#define FW_VERSION   "2.4.2-mk"
+#define FW_VERSION   "2.4.3-mk"
 #define PROTOCOL_ID  "robotku-v1"
 #define BLE_NAME     "Robotku"
 
@@ -130,7 +130,9 @@ volatile int           spkVolume    = 100;    // SET_VOLUME 0..100 — scales to
 // chunks (TTS_BEGIN / TTS_CHUNK*/ TTS_END). We buffer the WHOLE clip in RAM then
 // play it (buffer-then-play) because BLE is too slow for reliable real-time.
 // 8-bit @ 8 kHz = 8 KB/s — matches BLE throughput and halves RAM vs 16-bit.
-#define PCM_STREAM_CAP  32000              // 4 s @ 8 kHz, 8-bit (32 KB DRAM)
+#define PCM_STREAM_CAP  96000              // 12 s @ 8 kHz, 8-bit — long AI replies were
+                                           // cut at ~4 s (32 KB). Lazy-malloc'd from the
+                                           // ~200 KB free internal RAM, so no PSRAM needed.
 // LAZY-allocated on the first TTS, NOT a 32 KB always-on .bss array: a permanent
 // 32 KB static buffer shrank the heap the BLE stack needs and regressed connect
 // (2.2.3 stable, 2.2.4/2.2.5 connect-then-drop). Null until the robot first

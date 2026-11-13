@@ -14,8 +14,9 @@ const TTS_URL =
   'https://robotku-ai.hubrobotku.workers.dev/tts';
 
 const TARGET_SR = 8000; // must match the firmware playback rate
-const MAX_BYTES = 31000; // firmware buffer is 32000 (4 s); keep a little headroom
+const MAX_BYTES = 95000; // firmware buffer is 96000 (12 s); keep a little headroom (was 4 s -> replies cut off)
 const CHUNK = 3000; // bytes per TTS_CHUNK — base64 (~4 KB) stays under the 9 KB line cap
+const CHUNK_GAP_MS = 25; // pace chunks so the relay/WS link doesn't flood + drop the tail
 
 /** True when a robot is connected AND its firmware advertises the TTS opcodes. */
 export function robotCanSpeak(): boolean {
@@ -83,6 +84,9 @@ export async function speakViaRobot(text: string, lang = 'en'): Promise<boolean>
       await transport.sendLine(
         JSON.stringify({ command: 'TTS_CHUNK', params: { data: u8ToBase64(slice) } }) + ';',
       );
+      // WS/relay sendLine has no backpressure (unlike BLE GATT) — pace so the robot
+      // can drain + the link doesn't drop later chunks (speaker cutting off mid-reply).
+      await new Promise((r) => setTimeout(r, CHUNK_GAP_MS));
     }
     await transport.sendLine(JSON.stringify({ command: 'TTS_END', params: {} }) + ';');
     return true;
