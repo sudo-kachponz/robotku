@@ -201,6 +201,24 @@ export function splitLines(blob: string): string[] {
 
 // ── Relay protocol helpers ──────────────────────────────────────────────────
 
+/** Provision relay on the robot: saves ID + secret in NVS, robot auto-connects. */
+export function setRelayLine(id: string, secret: string): string {
+  return encodeCommand({ command: 'SET_RELAY', params: { id, secret } });
+}
+
+/** Generate a random 6-char robot ID from the allowed charset. */
+const RELAY_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+export function generateRobotId(): string {
+  const a = crypto.getRandomValues(new Uint8Array(6));
+  return Array.from(a, (b) => RELAY_CHARS[b % RELAY_CHARS.length]).join('');
+}
+
+/** Generate a random secret (32 hex chars). */
+export function generateRelaySecret(): string {
+  const a = crypto.getRandomValues(new Uint8Array(16));
+  return Array.from(a, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 /** Robot ID: 6 chars, digits 2-9 + uppercase A-Z minus I and O. */
 export const RELAY_ID_RE = /^[2-9A-HJ-NP-Z]{6}$/;
 

@@ -4,7 +4,7 @@
 // Features:
 // 1. Full Icons8/Wokwi-style categorized animated icons library (UI, WEB, SOCIAL, MEDIA, WEATHER, ECOMMERCE, EMOJI, GAME, KUSTOM)
 // 2. Multi-resolution support: 32px, 48px, 64px, 128px
-// 3. Live animated preview in the photorealistic 3D mint enclosure
+// 3. Live animated preview in the photorealistic black hard case
 // 4. "🧩 Pasang ke Block Code" -> Direct Blockly LCD sequence block insertion
 // 5. "🚀 Kirim ke OLED" -> Live serial stream over DISPLAY_BITMAP to physical robot
 // 6. Interactive 128x64 drawing canvas & classic templates (♥ Hati, 🎂 Birthday, 🎤 Hatsune Miku)
@@ -41,9 +41,10 @@ export type OledSize = 32 | 48 | 64 | 128;
 
 // Colors matched to the real 0.96" OLED module
 const C = {
-  casing: '#2FC49A',
-  casingLight: '#4DE6BC',
-  casingDark: '#1FA680',
+  // Black hard case (matches the Makerkit V1.3 kit)
+  casing: '#1E1E21',
+  casingLight: '#2E2E33',
+  casingDark: '#0B0B0D',
   pcb: '#154284',
   pcbEdge: '#0C2A56',
   screen: '#05070C',
@@ -822,7 +823,7 @@ export default function OledModule({
             </div>
           </div>
 
-          {/* ── Realistic Mint OLED Frame with Interactive Screen Canvas ── */}
+          {/* ── Realistic black OLED hard case with interactive screen canvas ── */}
           <div style={{ position: 'relative', width: '100%', maxWidth: 360, margin: '0 auto' }}>
             <svg
               viewBox="0 0 160 134"
@@ -866,10 +867,10 @@ export default function OledModule({
                 );
               })}
 
-              {/* Mint/Toska 3D Outer Frame */}
+              {/* Black 3D hard-case outer frame */}
               <rect x={6} y={12} width={148} height={118} rx={14} fill="url(#oledCaseGrad)" />
-              <rect x={40} y={10} width={80} height={4} rx={2} fill="#0F172A" opacity={0.2} />
-              <rect x={40} y={126} width={80} height={4} rx={2} fill="#0F172A" opacity={0.2} />
+              <rect x={40} y={10} width={80} height={4} rx={2} fill="#000000" opacity={0.6} />
+              <rect x={40} y={126} width={80} height={4} rx={2} fill="#000000" opacity={0.6} />
 
               {/* Navy PCB Base */}
               <rect x={14} y={18} width={132} height={106} rx={6} fill={C.pcb} stroke={C.pcbEdge} strokeWidth={1.5} />

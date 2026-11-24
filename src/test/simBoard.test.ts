@@ -15,18 +15,20 @@ const ports = [
 ];
 
 describe('Sim board renders (4.md)', () => {
-  it('BoardSvg draws toska casing, both header blocks, all 10 ports, silkscreen', () => {
+  it('BoardSvg draws the Makerkit V1.3: black case, white PCB, both header blocks, all 10 ports, silkscreen', () => {
     const html = renderToStaticMarkup(
       createElement(BoardSvg, { rgb: null, buzzerActive: false, linkState: 'off', ports }),
     );
-    expect(html).toContain('#2FC49A'); // toska casing (the kid's visual anchor)
+    expect(html).toContain('#1E1E21'); // black hard case
+    expect(html).toContain('#FBFBF9'); // white solder mask
     expect(html).toMatch(/>P1</);
     expect(html).toMatch(/>P5</);
     expect(html).toMatch(/>I1</);
     expect(html).toMatch(/>I5</);
     expect(html).toContain('#DC2626'); // red header row (VCC / 5V)
-    expect(html).toContain('#16A34A'); // green SCL row (I2C)
+    expect(html).toContain('#F1F1EE'); // white SCL row (I2C BUS)
     expect(html).toContain('ROBOTKU');
+    expect(html).toContain('MAKERKIT V1.3');
   });
 
   it('RGB LED shows the driven color', () => {

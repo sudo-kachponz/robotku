@@ -13,7 +13,7 @@ import {
   type RobotInfo,
   type TransportKind,
 } from '../transport';
-import { setWifiLine, otaUpdateLine, RELAY_ID_RE, RELAY_CLOSE } from '../domain/protocol';
+import { setWifiLine, setRelayLine, generateRobotId, generateRelaySecret, otaUpdateLine, RELAY_ID_RE, RELAY_CLOSE } from '../domain/protocol';
 import {
   setActiveTransport as storeSetTransport,
   setConnState,
@@ -202,6 +202,19 @@ export async function provisionWifi(ssid: string, pass: string): Promise<void> {
   if (!transport) throw new Error('Sambungkan dulu lewat Bluetooth/USB sebelum kirim WiFi.');
   if (transport.kind === 'relay') throw new Error('SET_WIFI tidak bisa lewat relay. Gunakan USB Serial.');
   await transport.sendLine(setWifiLine(ssid, pass));
+}
+
+/**
+ * Provision relay on the robot over the CURRENT link. Generates a robot code + secret,
+ * sends SET_RELAY, returns the code for the user to note down.
+ */
+export async function provisionRelay(): Promise<string> {
+  const { transport } = getState();
+  if (!transport) throw new Error('Sambungkan dulu lewat Bluetooth/USB.');
+  const id = generateRobotId();
+  const secret = generateRelaySecret();
+  await transport.sendLine(setRelayLine(id, secret));
+  return id;
 }
 
 /** Connect to the robot over WiFi (WebSocket). `host` is an IP or mDNS name (robotku.local). */

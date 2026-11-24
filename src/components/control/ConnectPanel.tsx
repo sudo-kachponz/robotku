@@ -6,7 +6,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { isBleSupported, isSerialSupported, type TransportKind } from '../../transport';
-import { connect, disconnect, provisionWifi, connectWifi, connectRelay, onTelemetry } from '../../app/connection';
+import { connect, disconnect, provisionWifi, provisionRelay, connectWifi, connectRelay, onTelemetry } from '../../app/connection';
 import { RELAY_ID_RE } from '../../domain/protocol';
 import { useConnection } from '../../hooks/useConnection';
 import UnsupportedBrowserModal from './UnsupportedBrowserModal';
@@ -304,6 +304,7 @@ function WifiSection({ isConnected, onClose }: { isConnected: boolean; onClose: 
                 <div className={styles.wifiNote}>Terkirim — menunggu robot gabung WiFi…</div>
               )}
               {detectedIp && <div className={styles.wifiOk}>Robot online di {detectedIp} ✓</div>}
+              {detectedIp && <RelaySetup />}
             </>
           ) : (
             <div className={styles.wifiNote}>
@@ -334,6 +335,59 @@ function WifiSection({ isConnected, onClose }: { isConnected: boolean; onClose: 
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function RelaySetup() {
+  const [robotCode, setRobotCode] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const setup = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      const code = await provisionRelay();
+      setRobotCode(code);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (robotCode) {
+    return (
+      <div style={{ marginTop: 10, padding: 12, background: 'rgba(34,197,94,0.1)', borderRadius: 10, textAlign: 'center' }}>
+        <div style={{ fontSize: 12, color: 'var(--ink-500)', marginBottom: 4 }}>
+          Kode robot kamu (catat/foto ini):
+        </div>
+        <div style={{
+          fontSize: 28, fontWeight: 900, letterSpacing: '0.2em', fontFamily: 'monospace',
+          color: 'var(--green)', padding: '8px 0',
+        }}>
+          {robotCode}
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>
+          Masukkan kode ini di halaman &quot;Sambungkan Robot&quot; dari device manapun.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <button
+        className={styles.wifiBtn}
+        onClick={setup}
+        disabled={busy}
+        type="button"
+        style={{ width: '100%', background: 'var(--green)' }}
+      >
+        {busy ? 'Menyiapkan relay…' : 'Setup Relay (kontrol dari internet)'}
+      </button>
+      {err && <div className={styles.wifiErr}>{err}</div>}
     </div>
   );
 }

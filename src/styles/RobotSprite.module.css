@@ -3,9 +3,9 @@
  * Authentic Robotku 2D Top-Down Hardware Sprite Styles & Animations
  * Features:
  * - Real wooden chassis dowel textures
- * - Mint-green 3D-printed brackets and wheels
- * - Translucent blue SG90 servo motor casing
- * - Cobalt blue PCB with ESP32 and pulsing red LED
+ * - White 3D-printed brackets, black rubber wheels with white rims
+ * - Blue SG90 servos in black wheel-servo casings
+ * - Makerkit V1.3 white PCB in a black hard case, pulsing red POWER LED
  * - Matte black power bank with glowing cyan battery meter
  * - Dynamic translucent blue USB cable with cable glow
  * - Differential wheel spin animations
@@ -28,26 +28,27 @@
 }
 
 .wheelTire {
-  fill: #059669;
-  stroke: #10b981;
+  fill: #1c1c21;
+  stroke: #3f3f46;
   stroke-width: 1.5;
 }
 
 .wheelTreads {
-  stroke: #047857;
+  fill: none;
+  stroke: #09090b;
   stroke-width: 2.5;
   stroke-dasharray: 4 4;
 }
 
 .spoke {
-  stroke: #047857;
+  stroke: #a1a1aa;
   stroke-width: 2.5;
   stroke-linecap: round;
 }
 
 .hub {
-  fill: #065f46;
-  stroke: #10b981;
+  fill: #f4f4f2;
+  stroke: #a1a1aa;
   stroke-width: 1;
 }
 

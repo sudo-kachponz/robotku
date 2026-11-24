@@ -993,6 +993,35 @@ void handleCommand(const String& jsonLine) {
     return;
   }
 
+  // --- Relay provisioning via JSON (web setup wizard sends this over BLE/Serial).
+  // Same effect as the text "SET_RELAY <ID> <SECRET>" command.
+  if (strcmp(cmd, "SET_RELAY") == 0) {
+    const char* id = p["id"] | "";
+    const char* secret = p["secret"] | "";
+    if (strlen(id) != 6) {
+      sendUnsupported("SET_RELAY");   // ID must be 6 chars
+      return;
+    }
+    String idUp = String(id); idUp.toUpperCase();
+    Preferences prefs;
+    prefs.begin("relay", false);
+    prefs.putString("id", idUp);
+    prefs.putString("secret", secret);
+    prefs.end();
+    relayId = idUp;
+    relaySecret = String(secret);
+    relayEnabled = true;
+    relayConnected = false;
+    relayLastAttempt = 0;   // try immediately
+    JsonDocument r;
+    r["command"] = "RELAY_STATUS";
+    r["id"] = idUp;
+    r["saved"] = true;
+    sendJson(r);
+    Serial.printf("[RELAY] Provisioned: ID=%s\n", idUp.c_str());
+    return;
+  }
+
   // --- OTA firmware update over WiFi (b.md). Command may arrive via BLE/Serial/WS;
   // the ESP downloads the .bin itself over WiFi (no browser mixed-content). Needs
   // SET_WIFI done first. See docs/ai-firmware-rca.md / b.md.

@@ -1,13 +1,13 @@
 // src/components/blockcoding/sim/ServoModule.tsx
 //
-// SG90 Micro Servo Module: translucent blue polycarbonate body, mint/toska 3D
-// mounting bracket, 3-wire flat ribbon cable (Orange/Red/Brown), white horn with holes.
+// SG90 Micro Servo Module: translucent blue polycarbonate body, black 3D-printed
+// wheel-servo casing, 3-wire flat ribbon cable (Orange/Red/Brown), white horn with holes.
 
 import styles from './SimBoard.module.css';
 
 const C = {
-  casing: '#2FC49A',
-  casingDark: '#1FA680',
+  casing: '#1E1E21',
+  casingDark: '#3A3A40',
   servoBody: '#1D4ED8',
   servoBodyTranslucent: 'rgba(29, 78, 216, 0.88)',
   servoTop: '#2563EB',
@@ -69,13 +69,13 @@ export default function ServoModule({ angle, speed = 0 }: Props) {
       {/* Rubber Strain Relief Grommet */}
       <rect x={26} y={42} width={6} height={18} rx={2} fill="#18181B" stroke="#27272A" strokeWidth={0.6} />
 
-      {/* ── Mint/Toska 3D Mounting Bracket ── */}
+      {/* ── Black wheel-servo casing ── */}
       <rect x={20} y={24} width={76} height={48} rx={5} fill={C.casing} stroke={C.casingDark} strokeWidth={1.2} />
       {/* Mounting Screw Holes */}
-      <circle cx={26} cy={34} r={3} fill="#0F172A" opacity={0.3} />
-      <circle cx={26} cy={62} r={3} fill="#0F172A" opacity={0.3} />
-      <circle cx={90} cy={34} r={3} fill="#0F172A" opacity={0.3} />
-      <circle cx={90} cy={62} r={3} fill="#0F172A" opacity={0.3} />
+      <circle cx={26} cy={34} r={3} fill="#000000" stroke="#52525B" strokeWidth={0.6} />
+      <circle cx={26} cy={62} r={3} fill="#000000" stroke="#52525B" strokeWidth={0.6} />
+      <circle cx={90} cy={34} r={3} fill="#000000" stroke="#52525B" strokeWidth={0.6} />
+      <circle cx={90} cy={62} r={3} fill="#000000" stroke="#52525B" strokeWidth={0.6} />
 
       {/* ── SG90 Translucent Blue Main Body ── */}
       <rect

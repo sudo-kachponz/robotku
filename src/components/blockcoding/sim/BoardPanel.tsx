@@ -299,7 +299,7 @@ export default function BoardPanel({ state }: { state: SimState }) {
         >
           <InfoIcon size={16} />
           <span>
-            Klik pin header <strong>{pending === 'servo' ? 'PWM (Bawah: P1 - P5)' : 'I2C (Atas: I1 - I5)'}</strong> di
+            Klik pin header <strong>{pending === 'servo' ? 'Servo (Atas: P1 - P5)' : 'I2C BUS (Bawah: I1 - I5)'}</strong> di
             papan untuk menancapkan kabel {pending === 'servo' ? 'Servo SG90' : 'Layar OLED SSD1306'}.
           </span>
         </div>
@@ -502,7 +502,7 @@ export default function BoardPanel({ state }: { state: SimState }) {
         />
       </div>
 
-      {/* OLED module = the ONE unified live interactive screen with realistic mint frame, direct pixel drawing, templates, animations, and live schematic sync */}
+      {/* OLED module = the ONE unified live interactive screen with realistic black hard case, direct pixel drawing, templates, animations, and live schematic sync */}
       {plugged.filter(([, k]) => k === 'oled').map(([id]) => (
         <div key={id} style={{ ...box, padding: 12, background: 'var(--surface)', boxShadow: 'var(--shadow-xs)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
