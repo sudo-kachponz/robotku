@@ -1,10 +1,10 @@
 // src/components/modes/BaseMode.tsx
 //
-// Base Robot — simplified control layout:
-// - Left: D-Pad for movement
-// - Center: Robot display (static, centered)
-// - Right: GRAB / RELEASE buttons
-// - Bottom: keyboard shortcut guide
+// Base Robot — clean simple layout inspired by control.stickem.sg:
+// - Robot illustration on the left
+// - D-Pad (Up/Down/Left/Right) + Grab/Release on the right
+// - Buzzer button below actions
+// - Highly responsive, landscape mobile optimized
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ControlLayout from '../control/ControlLayout';
@@ -13,110 +13,60 @@ import { useDrive, useSettings } from '../../hooks/useDrive';
 import { soundFx } from './JoystickAudio';
 import styles from './BaseMode.module.css';
 
-const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
-
 export default function BaseMode() {
   const { driveGroup, stopGroup, sendCommand } = useDrive();
   const { mapping } = useSettings();
   const { left, right } = mapping.base;
 
-  const stageRef = useRef<HTMLDivElement | null>(null);
-  const robotRef = useRef<HTMLDivElement | null>(null);
-  const leftStickThumbRef = useRef<HTMLDivElement | null>(null);
-
+  const [intent, setIntent] = useState({ fwd: 0, turn: 0 });
   const intentRef = useRef({ fwd: 0, turn: 0 });
   const headingRef = useRef(0);
   const poseRef = useRef({ x: 0, y: 0 });
+  const robotRef = useRef<HTMLDivElement | null>(null);
+  const arenaRef = useRef<HTMLDivElement | null>(null);
   const reducedRef = useRef(false);
-
-  // Speed level: 1 = Eco (50%), 2 = Normal (75%), 3 = Turbo (100%)
-  const [speedLevel, setSpeedLevel] = useState<1 | 2 | 3>(2);
-  const [intent, setIntent] = useState({ fwd: 0, turn: 0 });
   const [reduced, setReduced] = useState(false);
+  const speed = 75; // fixed normal speed
 
-  const currentDriveSpeed = speedLevel === 1 ? 50 : speedLevel === 2 ? 75 : 100;
+  const drive = useCallback(
+    (fwd: number, turn: number) => {
+      intentRef.current = { fwd, turn };
+      setIntent({ fwd, turn });
+      const l = Math.round((fwd + turn) * speed);
+      const r = Math.round((fwd - turn) * speed);
+      driveGroup(left, Math.max(-100, Math.min(100, l)));
+      driveGroup(right, Math.max(-100, Math.min(100, r)));
+      soundFx.updateEngineSound(Math.abs(l), Math.abs(r));
+    },
+    [driveGroup],
+  );
 
-  const setFwd = useCallback((v: number) => {
-    intentRef.current.fwd = v;
-    setIntent((i) => ({ ...i, fwd: v }));
-    soundFx.updateEngineSound(v !== 0 ? 80 : 0, v !== 0 ? 80 : 0);
-  }, []);
+  const stop = useCallback(() => {
+    intentRef.current = { fwd: 0, turn: 0 };
+    setIntent({ fwd: 0, turn: 0 });
+    stopGroup(left);
+    stopGroup(right);
+    soundFx.updateEngineSound(0, 0);
+  }, [stopGroup]);
 
-  const setTurn = useCallback((v: number) => {
-    intentRef.current.turn = v;
-    setIntent((i) => ({ ...i, turn: v }));
-    soundFx.updateEngineSound(v !== 0 ? 60 : 0, v !== 0 ? -60 : 0);
-  }, []);
+  // D-pad handlers — hold to drive, release to stop
+  const onDpad = useCallback(
+    (fwd: number, turn: number) => {
+      drive(fwd, turn);
+      soundFx.playClick(600);
+    },
+    [drive],
+  );
 
-  // ---- Action buttons ----
   const buzzer = useCallback(() => {
-    sendCommand('PLAY_TONE', { hz: 880, ms: 250 });   // ring = buzzer
+    sendCommand('PLAY_TONE', { hz: 880, ms: 250 });
     soundFx.playHorn();
   }, [sendCommand]);
 
-  // Grip buttons — no gripper functionality on the board yet, so these just give
-  // feedback (placeholder). Wire to SET_GRIPPER when the hardware exists.
   const gripOpen = useCallback(() => soundFx.playClick(700), []);
   const gripClose = useCallback(() => soundFx.playClick(500), []);
 
-  const stopWheels = useCallback(() => {
-    stopGroup(left);
-    stopGroup(right);
-    setFwd(0);
-    setTurn(0);
-    soundFx.updateEngineSound(0, 0);
-  }, [stopGroup, left, right, setFwd, setTurn]);
-
-  // ---- Left Analog Stick Pointer Handlers (Proportional Steering/Drive) ----
-  const handleLeftStickStart = (e: React.PointerEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const target = e.currentTarget;
-    target.setPointerCapture(e.pointerId);
-    const rect = target.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-
-    const onMove = (ev: PointerEvent) => {
-      const dx = ev.clientX - cx;
-      const dy = ev.clientY - cy;
-      const maxR = rect.width / 2 - 12;
-      const dist = Math.hypot(dx, dy);
-      const angle = Math.atan2(dy, dx);
-      const clampedDist = Math.min(dist, maxR);
-      const nx = Math.cos(angle) * (clampedDist / maxR);
-      const ny = Math.sin(angle) * (clampedDist / maxR);
-
-      if (leftStickThumbRef.current) {
-        leftStickThumbRef.current.style.transform = `translate(${nx * maxR}px, ${ny * maxR}px)`;
-      }
-
-      const fwdVal = -ny;
-      const turnVal = nx;
-      intentRef.current = { fwd: fwdVal, turn: turnVal };
-      setIntent({ fwd: fwdVal, turn: turnVal });
-
-      const lPwr = clamp(Math.round((fwdVal + turnVal) * currentDriveSpeed), -100, 100);
-      const rPwr = clamp(Math.round((fwdVal - turnVal) * currentDriveSpeed), -100, 100);
-      driveGroup(left, lPwr);
-      driveGroup(right, rPwr);
-      soundFx.updateEngineSound(Math.abs(lPwr), Math.abs(rPwr));
-    };
-
-    const onUp = (ev: PointerEvent) => {
-      target.releasePointerCapture(ev.pointerId);
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      if (leftStickThumbRef.current) {
-        leftStickThumbRef.current.style.transform = `translate(0px, 0px)`;
-      }
-      stopWheels();
-    };
-
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-  };
-
-  // ---- prefers-reduced-motion ----
+  // prefers-reduced-motion
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     const apply = () => {
@@ -128,25 +78,25 @@ export default function BaseMode() {
     return () => mq.removeEventListener('change', apply);
   }, []);
 
-  // ---- Animation loop: rotate in place (no x/y movement) ----
+  // Animation loop: robot drives around the arena
   useEffect(() => {
     let raf = 0;
     let last = performance.now();
+    const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
     const tick = (now: number) => {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       const el = robotRef.current;
-      const stage = stageRef.current;
-      if (el && stage && !reducedRef.current) {
+      const arena = arenaRef.current;
+      if (el && arena && !reducedRef.current) {
         const { fwd, turn } = intentRef.current;
         headingRef.current = (headingRef.current + turn * 120 * dt + 360) % 360;
         const rad = (headingRef.current * Math.PI) / 180;
         const pose = poseRef.current;
-        // Drive forward/back along the heading (PS-stick style), not just spin.
         pose.x += Math.sin(rad) * fwd * 140 * dt;
         pose.y -= Math.cos(rad) * fwd * 140 * dt;
-        const halfW = Math.max(0, (stage.clientWidth - el.clientWidth) / 2);
-        const halfH = Math.max(0, (stage.clientHeight - el.clientHeight) / 2);
+        const halfW = Math.max(0, (arena.clientWidth - 120) / 2);
+        const halfH = Math.max(0, (arena.clientHeight - 120) / 2);
         pose.x = clamp(pose.x, -halfW, halfW);
         pose.y = clamp(pose.y, -halfH, halfH);
         el.style.transform = `translate(${pose.x}px, ${pose.y}px) rotate(${headingRef.current}deg)`;
@@ -157,112 +107,166 @@ export default function BaseMode() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  // Global Keyboard shortcuts (gear speed only — 1/2/3)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.repeat) return;
-      if (e.key === '1') {
-        setSpeedLevel(1);
-        soundFx.playClick(500);
-      } else if (e.key === '2') {
-        setSpeedLevel(2);
-        soundFx.playClick(750);
-      } else if (e.key === '3') {
-        setSpeedLevel(3);
-        soundFx.playClick(1000);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
   return (
     <ControlLayout title="Base Robot">
-      <div className={styles.container}>
-        {/* ── CONSOLE LAYOUT ── */}
-        <div className={styles.switchConsole}>
-          {/* ── 3-SECTION HORIZONTAL BODY ── */}
-          <div className={styles.consoleBody}>
-            {/* ── 1. LEFT SIDE: Analog Stick ── */}
-            <div className={styles.leftJoyCon}>
-              <div className={styles.railAccentLeft} />
-
-              {/* Proportional Analog Stick */}
-              <div
-                className={styles.stickWell}
-                onPointerDown={handleLeftStickStart}
-                title="Stick: Drag untuk kendali gerak proporsional"
-                aria-label="Thumbstick"
-              >
-                <div className={styles.stickThumb} ref={leftStickThumbRef}>
-                  <div className={styles.stickRidge} />
-                </div>
-              </div>
-            </div>
-
-            {/* ── 2. CENTER DISPLAY ── */}
-            <div className={styles.centerDisplay}>
-              <div className={styles.screenTopBar}>
-                <div className={styles.screenStatusBadges}>
-                  <span className={styles.statusChip}>
-                    GEAR: {speedLevel === 1 ? 'ECO 50%' : speedLevel === 2 ? 'NORM 75%' : 'TURBO 100%'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Static Robot Display (centered, no movement) */}
-              <div className={styles.switchScreen} ref={stageRef}>
-                <div className={styles.arenaCrosshair} />
-                <div className={styles.lcdRobot} ref={robotRef}>
-                  <RobotSprite
-                    fwd={intent.fwd}
-                    turn={intent.turn}
-                    gripperOpen={true}
-                    reduced={reduced}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* ── 3. RIGHT SIDE: Action buttons (grip ×2 placeholder, buzzer) ── */}
-            <div className={styles.rightJoyCon}>
-              <div className={styles.railAccentRight} />
-
-              <div className={styles.actionCluster}>
-                <button
-                  type="button"
-                  className={`${styles.switchDpadBtn} ${styles.actBtn}`}
-                  onClick={gripOpen}
-                  aria-label="Buka grip"
-                  title="Buka grip (belum ada fungsi)"
-                >
-                  ✋
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.switchDpadBtn} ${styles.actBtn}`}
-                  onClick={gripClose}
-                  aria-label="Tutup grip"
-                  title="Tutup grip (belum ada fungsi)"
-                >
-                  ✊
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.switchDpadBtn} ${styles.actBtn} ${styles.actBtnBell}`}
-                  onClick={buzzer}
-                  aria-label="Buzzer"
-                  title="Buzzer"
-                >
-                  🔔
-                </button>
-              </div>
-            </div>
+      <div className={styles.stage}>
+        {/* Left: Robot illustration */}
+        <div className={styles.robotArea} ref={arenaRef}>
+          <div className={styles.robotWrap} ref={robotRef}>
+            <RobotSprite
+              fwd={intent.fwd}
+              turn={intent.turn}
+              gripperOpen={true}
+              reduced={reduced}
+            />
           </div>
         </div>
 
+        {/* Right: Controls */}
+        <div className={styles.controls}>
+          {/* Top row: Grab - Up - Release */}
+          <div className={styles.row}>
+            <DpadBtn
+              label="Grab"
+              icon={<GrabIcon />}
+              onDown={gripOpen}
+              className={styles.actionBtn}
+            />
+            <DpadBtn
+              label="Maju"
+              icon={<ArrowUp />}
+              onDown={() => onDpad(1, 0)}
+              onUp={stop}
+            />
+            <DpadBtn
+              label="Release"
+              icon={<ReleaseIcon />}
+              onDown={gripClose}
+              className={styles.actionBtn}
+            />
+          </div>
+
+          {/* Middle row: Left - (empty) - Right */}
+          <div className={styles.row}>
+            <DpadBtn
+              label="Kiri"
+              icon={<ArrowLeft />}
+              onDown={() => onDpad(0, -1)}
+              onUp={stop}
+            />
+            <div className={styles.spacer} />
+            <DpadBtn
+              label="Kanan"
+              icon={<ArrowRight />}
+              onDown={() => onDpad(0, 1)}
+              onUp={stop}
+            />
+          </div>
+
+          {/* Bottom row: (empty) - Down - Buzzer */}
+          <div className={styles.row}>
+            <div className={styles.spacer} />
+            <DpadBtn
+              label="Mundur"
+              icon={<ArrowDown />}
+              onDown={() => onDpad(-1, 0)}
+              onUp={stop}
+            />
+            <DpadBtn
+              label="Buzzer"
+              icon={<BuzzerIcon />}
+              onDown={buzzer}
+              className={styles.buzzerBtn}
+            />
+          </div>
+        </div>
       </div>
     </ControlLayout>
   );
 }
 
+/* ---- D-Pad Button Component ---- */
+function DpadBtn({
+  label,
+  icon,
+  onDown,
+  onUp,
+  className,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  onDown: () => void;
+  onUp?: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      className={`${styles.dpadBtn} ${className ?? ''}`}
+      onPointerDown={(e) => {
+        e.preventDefault();
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+        onDown();
+      }}
+      onPointerUp={onUp}
+      onPointerCancel={onUp}
+      aria-label={label}
+      title={label}
+    >
+      {icon}
+      <span className={styles.btnLabel}>{label}</span>
+    </button>
+  );
+}
+
+/* ---- Icons ---- */
+function ArrowUp() {
+  return (
+    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 19V5M5 12l7-7 7 7" />
+    </svg>
+  );
+}
+function ArrowDown() {
+  return (
+    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 5v14M19 12l-7 7-7-7" />
+    </svg>
+  );
+}
+function ArrowLeft() {
+  return (
+    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 12H5M12 19l-7-7 7-7" />
+    </svg>
+  );
+}
+function ArrowRight() {
+  return (
+    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12h14M12 5l7 7-7 7" />
+    </svg>
+  );
+}
+function GrabIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+      <path d="M6.5 10c-.3 0-.5-.2-.5-.5v-5c0-1.1.9-2 2-2s2 .9 2 2v3h1V3.5c0-1.1.9-2 2-2s2 .9 2 2V7h1V4.5c0-1.1.9-2 2-2s2 .9 2 2v6c0 .3-.2.5-.5.5s-.5-.2-.5-.5v-6c0-.6-.4-1-1-1s-1 .4-1 1V7.5c0 .3-.2.5-.5.5S14 7.8 14 7.5v-4c0-.6-.4-1-1-1s-1 .4-1 1v5c0 .3-.2.5-.5.5S11 9.8 11 9.5v-5c0-.6-.4-1-1-1s-1 .4-1 1v5c0 .3-.2.5-.5.5S8 9.8 8 9.5V6.3c-.6.3-1.5.6-1.5 3.2 0 .3-.2.5-.5.5zm10 12H9c-2.2 0-4-1.8-4-4v-5.5c0-1.1.9-2 2-2s2 .9 2 2V14c0 .3.2.5.5.5s.5-.2.5-.5v-3.5c0-1.1.9-2 2-2s2 .9 2 2V14c0 .3.2.5.5.5s.5-.2.5-.5v-2.5c0-1.1.9-2 2-2s2 .9 2 2V18c0 2.2-1.8 4-4 4z" />
+    </svg>
+  );
+}
+function ReleaseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+      <path d="M18 11V4.5c0-1.1-.9-2-2-2s-2 .9-2 2V9h-1V3.5c0-1.1-.9-2-2-2s-2 .9-2 2V9H8V4.5c0-1.1-.9-2-2-2s-2 .9-2 2V14c0 4.4 3.6 8 8 8s8-3.6 8-8v-3z" />
+    </svg>
+  );
+}
+function BuzzerIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 5L6 9H2v6h4l5 4V5z" />
+      <path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14" />
+    </svg>
+  );
+}
