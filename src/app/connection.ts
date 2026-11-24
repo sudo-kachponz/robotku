@@ -13,7 +13,7 @@ import {
   type RobotInfo,
   type TransportKind,
 } from '../transport';
-import { setWifiLine, setRelayLine, generateRobotId, generateRelaySecret, otaUpdateLine, RELAY_ID_RE, RELAY_CLOSE } from '../domain/protocol';
+import { setWifiLine, setRelayLine, otaUpdateLine, RELAY_ID_RE, RELAY_CLOSE } from '../domain/protocol';
 import {
   setActiveTransport as storeSetTransport,
   setConnState,
@@ -205,14 +205,17 @@ export async function provisionWifi(ssid: string, pass: string): Promise<void> {
 }
 
 /**
- * Provision relay on the robot over the CURRENT link. Generates a robot code + secret,
- * sends SET_RELAY, returns the code for the user to note down.
+ * Provision relay on the robot over the CURRENT link. Calls the relay server
+ * to generate an HMAC-valid ID+secret, sends SET_RELAY to the board, returns the code.
  */
 export async function provisionRelay(): Promise<string> {
   const { transport } = getState();
   if (!transport) throw new Error('Sambungkan dulu lewat Bluetooth/USB.');
-  const id = generateRobotId();
-  const secret = generateRelaySecret();
+  const relayBase = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_RELAY_URL)
+    || 'https://robotku-relay.hubrobotku.workers.dev';
+  const res = await fetch(`${relayBase}/provision`, { method: 'POST' });
+  if (!res.ok) throw new Error('Gagal generate kode robot dari relay server.');
+  const { id, secret } = (await res.json()) as { id: string; secret: string };
   await transport.sendLine(setRelayLine(id, secret));
   return id;
 }

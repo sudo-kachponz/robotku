@@ -26,6 +26,7 @@ export default {
 
     if (url.pathname === '/ws') return handleWs(request, env);
     if (url.pathname === '/health') return json({ ok: true });
+    if (url.pathname === '/provision' && request.method === 'POST') return handleProvision(request, env);
     return new Response('not found', { status: 404 });
   },
 };
@@ -94,6 +95,26 @@ function closeUpgrade(code, reason) {
   pair[1].accept();
   pair[1].close(code, reason);
   return new Response(null, { status: 101, webSocket: pair[0] });
+}
+
+// Generate a robot ID + HMAC secret. Called by the web setup wizard.
+// Origin-checked so only allowed sites can provision.
+const PROVISION_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+async function handleProvision(request, env) {
+  const origin = request.headers.get('Origin') || '';
+  const allowed = (env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim());
+  if (!allowed.some(a => a === origin)) {
+    return json({ error: 'origin not allowed' }, 403);
+  }
+  if (!env.RELAY_SIGNING_KEY) {
+    return json({ error: 'signing key not configured' }, 500);
+  }
+  const arr = new Uint8Array(6);
+  crypto.getRandomValues(arr);
+  let id = '';
+  for (const b of arr) id += PROVISION_CHARS[b % PROVISION_CHARS.length];
+  const secret = await robotSecret(env.RELAY_SIGNING_KEY, id);
+  return json({ id, secret }, 200);
 }
 
 function json(data, status = 200) {
