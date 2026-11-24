@@ -33,7 +33,7 @@ export class RelayTransport extends BaseTransport {
   protected override get maxChunk(): number { return 4000; }
   protected override get heartbeatIntervalMs(): number { return 1000; }
   protected override get heartbeatTimeoutMs(): number { return 5000; }
-  protected override get helloTimeoutMs(): number { return 6000; }
+  protected override get helloTimeoutMs(): number { return 15000; }
 
   protected openTransport(): Promise<void> {
     return new Promise((resolve, reject) => {

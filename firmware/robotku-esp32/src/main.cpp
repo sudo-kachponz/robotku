@@ -829,6 +829,7 @@ void doOtaUpdate(const String& url, const String& version) {
 // MTU is negotiated, so the ~621-byte ack goes out in ~3 notifies instead of ~32 at
 // MTU 23 — the notify storm that caused the connect-drop loop (docs/ai-firmware-rca.md).
 void sendHelloAck() {
+  Serial.printf("[DEBUG] sendHelloAck() called, relayConnected=%d\n", relayConnected);
   // FIX 7 — advertise ONLY what actually compiles here.
   JsonDocument ack;
   ack["command"]  = "HELLO_ACK";

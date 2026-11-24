@@ -204,8 +204,9 @@ export class RelayRoom {
       return;
     }
 
-    // Robot must be online
-    if (!this.robot) {
+    // Robot must be online and socket alive
+    if (!this.robot || this.robot.readyState !== 1) {
+      if (this.robot) { try { this.robot.close(); } catch {} this.robot = null; }
       this.recordFail(ip);
       ws.close(4404, 'Robot tidak ditemukan atau sedang offline');
       return;
@@ -226,7 +227,14 @@ export class RelayRoom {
       this.lastControllerActivity = Date.now();
       // Forward controller commands to robot
       if (this.robot) {
-        try { this.robot.send(event.data); } catch {}
+        try {
+          this.robot.send(event.data);
+        } catch (err) {
+          // Robot WebSocket is dead — clean up
+          console.error('[relay] robot send failed:', err);
+          this.robot = null;
+          try { ws.close(4410, 'Robot terputus'); } catch {}
+        }
       }
     });
 

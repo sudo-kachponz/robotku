@@ -31,7 +31,10 @@
 
 // ── External functions from main.cpp (already exist, no changes needed) ──
 extern void feed(String &buffer, char c, bool fromSerial);
+extern void handleCommand(const String &line);
+extern void handleTextCommand(const String &raw);
 extern void stopAllActuators();
+extern void oledStatus(const String& line1, const String& line2);
 extern bool watchdogArmed;
 extern unsigned long lastRxMs;
 
@@ -149,8 +152,14 @@ static void handleSetRelay(const String &raw)
 //   if (relayConnected) relaySend(line);
 static void relaySend(const String &line)
 {
-  if (relayConnected)
-    relayWs.sendTXT(line.c_str(), line.length());
+  if (relayConnected) {
+    Serial.printf("[RELAY TX] %.*s\n", (int)(line.length() > 200 ? 200 : line.length()), line.c_str());
+    oledStatus("TX", line.substring(0, 20).c_str());
+    bool ok = relayWs.sendTXT(line.c_str(), line.length());
+    Serial.printf("[RELAY TX] sendTXT=%d\n", ok);
+  } else {
+    Serial.println("[RELAY TX] SKIP - not connected");
+  }
 }
 
 // ── Internal ──
@@ -174,6 +183,8 @@ static void onRelayEvent(WStype_t type, uint8_t *payload, size_t len)
 
   case WStype_TEXT:
     lastRxMs = millis(); // relay traffic feeds the watchdog
+    Serial.printf("[RELAY RX] %.*s\n", (int)(len > 200 ? 200 : len), (const char*)payload);
+    oledStatus("RX", String((const char*)payload).substring(0, 20).c_str());
     relayFeed((const char *)payload, len);
     break;
 
@@ -184,62 +195,59 @@ static void onRelayEvent(WStype_t type, uint8_t *payload, size_t len)
 
 static void relayFeed(const char *data, size_t len)
 {
-  // Check for RELAY control frames before feeding to command parser
-  String raw = String(data);
+  // Split on ';' boundaries and handle each frame individually.
+  // Critical: a single WebSocket message may contain BOTH a RELAY control frame
+  // AND a robot command (e.g. controller_joined + HELLO coalesced by TCP).
+  // The old code matched "RELAY" anywhere in the blob and returned early,
+  // silently dropping any non-RELAY frames that followed.
+  for (size_t i = 0; i < len; i++) {
+    char c = data[i];
+    if (c == ';' || c == '\n') {
+      String frame = relayBuffer;
+      relayBuffer = "";
+      frame.trim();
+      if (frame.length() == 0) continue;
 
-  if (raw.indexOf("\"RELAY\"") >= 0)
-  {
-    // Parse RELAY frame
-    String clean = raw;
-    clean.replace(";", "");
-    clean.trim();
-
-    JsonDocument doc;
-    if (deserializeJson(doc, clean) == DeserializationError::Ok)
-    {
-      const char *cmd = doc["command"] | "";
-      const char *event = doc["event"] | "";
-
-      if (strcmp(cmd, "RELAY") == 0)
-      {
-        if (strcmp(event, "controller_joined") == 0)
-        {
-          Serial.println("[RELAY] Controller joined");
-          // Reset watchdog state for new controller
-          watchdogArmed = false;
-          return;
+      // RELAY control frame?
+      if (frame.indexOf("\"RELAY\"") >= 0) {
+        JsonDocument doc;
+        if (deserializeJson(doc, frame) == DeserializationError::Ok) {
+          const char *cmd = doc["command"] | "";
+          const char *event = doc["event"] | "";
+          if (strcmp(cmd, "RELAY") == 0) {
+            if (strcmp(event, "controller_joined") == 0) {
+              Serial.println("[RELAY] Controller joined");
+              watchdogArmed = false;
+            } else if (strcmp(event, "controller_left") == 0) {
+              Serial.println("[RELAY] Controller left -> stopping motors");
+              stopAllActuators();
+              watchdogArmed = false;
+            }
+            continue;  // consumed — don't feed to command parser
+          }
         }
-        if (strcmp(event, "controller_left") == 0)
-        {
-          Serial.println("[RELAY] Controller left -> stopping motors");
-          stopAllActuators();
-          watchdogArmed = false;
-          return;
-        }
-        // Other RELAY events: ignore
-        return;
       }
+
+      // Block SET_WIFI from relay (security)
+      if (frame.indexOf("\"SET_WIFI\"") >= 0) {
+        JsonDocument d;
+        d["command"] = "UNSUPPORTED";
+        d["op"] = "SET_WIFI";
+        d["reason"] = "SET_WIFI blocked from relay";
+        String out;
+        serializeJson(d, out);
+        out += ";";
+        relaySend(out);
+        Serial.println("[RELAY] SET_WIFI blocked from relay");
+        continue;
+      }
+
+      // Normal command — feed to parser
+      if (frame[0] == '{') handleCommand(frame);
+      else                 handleTextCommand(frame);
+    } else {
+      relayBuffer += c;
+      if (relayBuffer.length() > 9000) relayBuffer = "";
     }
   }
-
-  // Not a RELAY frame — feed to normal command parser
-  // Block SET_WIFI from relay (security: only Serial/local WS)
-  if (raw.indexOf("\"SET_WIFI\"") >= 0)
-  {
-    JsonDocument d;
-    d["command"] = "UNSUPPORTED";
-    d["op"] = "SET_WIFI";
-    d["reason"] = "SET_WIFI blocked from relay";
-    String out;
-    serializeJson(d, out);
-    out += ";";
-    relaySend(out);
-    Serial.println("[RELAY] SET_WIFI blocked from relay");
-    return;
-  }
-
-  // Feed each char to the existing parser (fromSerial=false; relay replies ride
-  // sendTelemetry -> relaySend).
-  for (size_t i = 0; i < len; i++)
-    feed(relayBuffer, data[i], false);
 }
