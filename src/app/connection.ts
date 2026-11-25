@@ -8,12 +8,21 @@ import {
   createTransport,
   setWsUrl,
   setRelayTarget,
+  getRelayTarget,
   RelayTransport,
   type ConnState,
   type RobotInfo,
   type TransportKind,
 } from '../transport';
-import { setWifiLine, setRelayLine, otaUpdateLine, RELAY_ID_RE, RELAY_CLOSE } from '../domain/protocol';
+import {
+  setWifiLine,
+  setRelayLine,
+  otaUpdateLine,
+  helloLine,
+  robotInfoFromHelloAck,
+  RELAY_ID_RE,
+  RELAY_CLOSE,
+} from '../domain/protocol';
 import {
   setActiveTransport as storeSetTransport,
   setConnState,
@@ -41,6 +50,54 @@ export function onTelemetry(cb: TelemetryCb): () => void {
 /** Fan a telemetry frame out to every subscriber (used by the active transport). */
 export function dispatchTelemetry(msg: any): void {
   for (const cb of telemetryCbs) cb(msg);
+}
+
+// ── Saved link (survives reload / new tab) ──────────────────────────────────
+// The connection used to live ONLY in this tab's memory: a reload, a new tab or
+// opening /ai-labs by URL started with transport = null, so every command was
+// silently dropped and Fira spoke from the laptop. We remember the last relay link
+// and resume it on app start (relay needs no user gesture, unlike BLE/Serial).
+const LINK_KEY = 'robotku.lastLink';
+type SavedLink = { kind: 'relay'; id: string };
+
+function saveLink(link: SavedLink | null): void {
+  try {
+    if (typeof window === 'undefined') return;
+    if (link) window.localStorage.setItem(LINK_KEY, JSON.stringify(link));
+    else window.localStorage.removeItem(LINK_KEY);
+  } catch {
+    /* private mode / storage full — resume is best-effort */
+  }
+}
+
+/** The last relay link this browser used, if any. */
+export function getSavedLink(): SavedLink | null {
+  try {
+    if (typeof window === 'undefined') return null;
+    const raw = window.localStorage.getItem(LINK_KEY);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as SavedLink;
+    return v && v.kind === 'relay' && RELAY_ID_RE.test(v.id) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+let resumeTried = false;
+/**
+ * Called once on app start (_app.tsx): reconnect the saved relay link quietly.
+ * The relay lets the newest controller take over, so opening AI Labs in a new tab
+ * moves the robot to that tab instead of failing with "dikendalikan pengguna lain".
+ */
+export async function resumeSavedLink(): Promise<void> {
+  if (resumeTried) return;
+  resumeTried = true;
+  const saved = getSavedLink();
+  if (!saved || getState().transport) return;
+  setRelayTarget({ id: saved.id });
+  await connect('relay', true).catch(() => {
+    /* scheduleReconnect() already handles retry/backoff */
+  });
 }
 
 // ── Persistent-connection state ──────────────────────────────────────────────
@@ -150,7 +207,26 @@ export async function connect(kind: TransportKind, isReconnect = false): Promise
     }
   });
 
-  transport.onTelemetry(dispatchTelemetry);
+  transport.onTelemetry((msg) => {
+    // A re-HELLO (after the robot rebooted) refreshes board info + capabilities.
+    if ((msg as { command?: string }).command === 'HELLO_ACK' && getState().transport === transport) {
+      setRobotInfo(robotInfoFromHelloAck(msg));
+    }
+    dispatchTelemetry(msg);
+  });
+
+  if (transport instanceof RelayTransport) {
+    transport.onRelayEvent((ev) => {
+      if (getState().transport !== transport) return;
+      if (ev === 'robot_offline') {
+        showToast('Robot sedang menyambung ulang ke internet…', 'warn');
+      } else if (ev === 'robot_reconnected') {
+        showToast('Robot online lagi', 'success');
+        // The robot rebooted: re-arm its watchdog and refresh capabilities.
+        void transport.sendLine(helloLine()).catch(() => {});
+      }
+    });
+  }
 
   storeSetTransport(transport);
 
@@ -158,6 +234,7 @@ export async function connect(kind: TransportKind, isReconnect = false): Promise
     const info = await transport.connect();
     runnerSetTransport(transport);
     setRobotInfo(info);
+    if (kind === 'relay') saveLink({ kind: 'relay', id: getRelayTarget().id });
     setConnState('connected');
     reconnectAttempts = 0;
     lastRelayCloseCode = undefined;
@@ -304,6 +381,7 @@ export async function autoConnect(): Promise<boolean> {
 /** Disconnect the active transport (if any) — USER-initiated, so no auto-reconnect. */
 export async function disconnect(): Promise<void> {
   userDisconnected = true;
+  saveLink(null); // an explicit disconnect also stops auto-resume on the next visit
   clearReconnect();
   await teardown();
 }

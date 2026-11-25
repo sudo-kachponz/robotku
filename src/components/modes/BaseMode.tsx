@@ -11,6 +11,7 @@ import ControlLayout from '../control/ControlLayout';
 import RobotSprite from './RobotSprite';
 import { useDrive, useSettings } from '../../hooks/useDrive';
 import { soundFx } from './JoystickAudio';
+import { getState } from '../../app/store';
 import styles from './BaseMode.module.css';
 
 export default function BaseMode() {
@@ -59,8 +60,13 @@ export default function BaseMode() {
   );
 
   const buzzer = useCallback(() => {
-    sendCommand('PLAY_TONE', { hz: 880, ms: 250 });
-    soundFx.playHorn();
+    // `target: 'buzzer'` = the physical buzzer on the board (Makerkit routes plain
+    // PLAY_TONE to the I2S speaker). `frequency` is the name firmware reads; `hz`
+    // was silently ignored (always 440 Hz).
+    sendCommand('PLAY_TONE', { frequency: 880, duration_ms: 250, target: 'buzzer' });
+    // Laptop horn only as simulator feedback. With a robot connected it made the
+    // buzzer "sound from the laptop" and hid whether the hardware really beeped.
+    if (!getState().transport) soundFx.playHorn();
   }, [sendCommand]);
 
   const gripOpen = useCallback(() => soundFx.playClick(700), []);

@@ -18,6 +18,7 @@ import {
   helloLine,
   estopLines,
   parseTelemetry,
+  robotInfoFromHelloAck,
 } from '../domain/protocol';
 
 const DEFAULT_MAX_CHUNK = 180; // bytes per BLE write (safe for default ATT MTU)
@@ -164,13 +165,7 @@ export abstract class BaseTransport implements RobotTransport {
     const type = (msg.command as string) || (msg as any).event;
 
     if (type === 'HELLO_ACK' && this.helloResolve) {
-      const info: RobotInfo = {
-        fwVersion: String((msg as any).fw ?? (msg as any).fwVersion ?? '?'),
-        board: String((msg as any).board ?? 'Robotku'),
-        protocol: String((msg as any).protocol ?? 'robotku-v1'),
-        capabilities: Array.isArray((msg as any).capabilities) ? (msg as any).capabilities : [],
-        ports: Array.isArray((msg as any).ports) ? (msg as any).ports : [],
-      };
+      const info: RobotInfo = robotInfoFromHelloAck(msg);
       this.helloResolve(info);
       this.helloResolve = null;
     }

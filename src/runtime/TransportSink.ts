@@ -17,6 +17,7 @@ import {
 import { estop } from '../app/connection';
 import { getCachedSensor } from './telemetryCache';
 import { cvStore } from '../ai/cvStore';
+import { runAiBlockOnRobot, HOST_AI_COMMANDS } from '../ailabs/robotSay';
 
 export class TransportSink implements RobotSink {
   private transport: RobotTransport;
@@ -38,6 +39,13 @@ export class TransportSink implements RobotSink {
     }
     if (cmd.command === 'AI_SET_MODEL') {
       if (cmd.params?.model) void cvStore.setModel(String(cmd.params.model));
+      return;
+    }
+    // AI blocks are host-side (LLM/STT/TTS run in the browser + cloud), but the
+    // VOICE must come out of the robot: TTS PCM is streamed to its speaker.
+    // Sending them raw made the firmware reply UNSUPPORTED (robot silent).
+    if (HOST_AI_COMMANDS.has(cmd.command)) {
+      await runAiBlockOnRobot(cmd.command, (cmd.params ?? {}) as Record<string, unknown>);
       return;
     }
     // SET_BPM is host-side only (the firmware has no BPM concept) — remember it so

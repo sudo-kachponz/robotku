@@ -11,8 +11,15 @@ import { fredoka, jakarta } from '../theme/fonts';
 import { DialogHost } from '../ui/dialog';
 import { setSettings, subscribeSettings } from '../app/settingsStore';
 import { loadSettings, persistSettings } from '../app/persistence';
+import { resumeSavedLink } from '../app/connection';
 
 export default function App({ Component, pageProps }: AppProps) {
+  // Resume the last relay link on every page load (reload, new tab, /ai-labs by URL),
+  // so commands and Fira's voice actually reach the robot instead of being dropped.
+  useEffect(() => {
+    void resumeSavedLink();
+  }, []);
+
   // Hydrate settings from IndexedDB once, then persist future changes.
   useEffect(() => {
     let unsub = () => {};

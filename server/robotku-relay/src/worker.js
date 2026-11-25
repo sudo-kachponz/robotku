@@ -125,16 +125,33 @@ function json(data, status = 200) {
 }
 
 // ── Durable Object: one per robot ID ──
+//
+// Session rules (v2):
+//  - Robot liveness = last message seen. The robot sends {"command":"RELAY",
+//    "event":"robot_alive"} every 10 s (Cloudflare answers WS pings itself, so the
+//    DO never sees them). No traffic for ROBOT_STALE_MS = treat as offline, even if
+//    the socket still says OPEN (half-open TCP after a brownout reboot).
+//  - Newest controller WINS (takeover). The old one gets 4412. Reloading a tab or
+//    opening AI Labs in a new tab no longer locks the owner out with 4409.
+//  - A robot reboot does NOT kill the controller. The controller gets
+//    "robot_offline", then "robot_reconnected" (it re-sends HELLO). Only if the
+//    robot stays away ROBOT_GRACE_MS is the controller closed with 4410.
+
+const ROBOT_STALE_MS = 35000;
+const ROBOT_GRACE_MS = 30000;
+const CONTROLLER_IDLE_MS = 30000;
 
 export class RelayRoom {
   constructor(state, env) {
     this.state = state;
     this.env = env;
     this.robot = null;       // WebSocket
+    this.robotLastSeen = 0;
     this.controller = null;  // WebSocket
     this.controllerIp = null;
     this.lastControllerActivity = 0;
     this.idleTimer = null;
+    this.graceTimer = null;
     this.rateLimits = new Map(); // ip -> { fails: number, oldestFail: number }
   }
 
@@ -165,111 +182,143 @@ export class RelayRoom {
     return new Response(null, { status: 101, webSocket: client });
   }
 
+  robotOnline() {
+    return !!this.robot && this.robot.readyState === 1 && Date.now() - this.robotLastSeen < ROBOT_STALE_MS;
+  }
+
   handleRobot(ws, id) {
-    // Replace existing robot connection
-    if (this.robot) {
-      try { this.robot.close(4411, 'Robot baru tersambung'); } catch {}
+    // Replace existing robot connection (newest robot socket wins)
+    if (this.robot && this.robot !== ws) {
+      const old = this.robot;
+      this.robot = null;
+      try { old.close(4411, 'Robot baru tersambung'); } catch {}
     }
     this.robot = ws;
+    this.robotLastSeen = Date.now();
+    this.stopGraceTimer();
 
-    // Notify existing controller that robot is back
+    // Controller waited through a robot reboot -> tell it to re-HELLO
     if (this.controller) {
       this.sendRelay(this.controller, 'robot_reconnected');
+      this.sendRelay(ws, 'controller_joined');
     }
 
     ws.addEventListener('message', (event) => {
-      // Forward robot data to controller
+      this.robotLastSeen = Date.now();
+      const data = event.data;
+      // Liveness beacons stay inside the relay
+      if (typeof data === 'string' && data.length < 80 && data.includes('robot_alive')) return;
       if (this.controller) {
-        try { this.controller.send(event.data); } catch {}
+        try { this.controller.send(data); } catch {}
       }
     });
 
-    ws.addEventListener('close', () => {
-      if (this.robot === ws) {
-        this.robot = null;
-        // Notify controller
-        if (this.controller) {
-          try { this.controller.close(4410, 'Robot terputus'); } catch {}
-          this.controller = null;
-        }
-        this.stopIdleTimer();
+    const gone = () => {
+      if (this.robot !== ws) return; // an older socket closing after a replacement
+      this.robot = null;
+      if (this.controller) {
+        this.sendRelay(this.controller, 'robot_offline');
+        this.startGraceTimer();
       }
-    });
+    };
+    ws.addEventListener('close', gone);
+    ws.addEventListener('error', gone);
   }
 
   handleController(ws, id, ip) {
-    // One controller at a time
-    if (this.controller) {
-      ws.close(4409, 'Robot sedang dikendalikan pengguna lain');
-      return;
-    }
-
-    // Robot must be online and socket alive
-    if (!this.robot || this.robot.readyState !== 1) {
-      if (this.robot) { try { this.robot.close(); } catch {} this.robot = null; }
+    // Robot must be online AND recently heard from
+    if (!this.robotOnline()) {
+      if (this.robot) { try { this.robot.close(4410, 'Robot tidak merespons'); } catch {} this.robot = null; }
       this.recordFail(ip);
       ws.close(4404, 'Robot tidak ditemukan atau sedang offline');
       return;
+    }
+
+    // Takeover: the newest controller wins
+    if (this.controller) {
+      const old = this.controller;
+      this.controller = null;
+      try { old.close(4412, 'Robot dibuka di tab/perangkat lain'); } catch {}
     }
 
     this.controller = ws;
     this.controllerIp = ip;
     this.lastControllerActivity = Date.now();
 
-    // Send linked event
     this.sendRelay(ws, 'linked');
-    // Notify robot
     this.sendRelay(this.robot, 'controller_joined');
 
     this.startIdleTimer();
 
     ws.addEventListener('message', (event) => {
       this.lastControllerActivity = Date.now();
-      // Forward controller commands to robot
-      if (this.robot) {
-        try {
-          this.robot.send(event.data);
-        } catch (err) {
-          // Robot WebSocket is dead — clean up
-          console.error('[relay] robot send failed:', err);
-          this.robot = null;
-          try { ws.close(4410, 'Robot terputus'); } catch {}
-        }
+      if (!this.robot) {
+        return; // robot rebooting — controller already got robot_offline
+      }
+      try {
+        this.robot.send(event.data);
+      } catch (err) {
+        console.error('[relay] robot send failed:', err);
+        this.robot = null;
+        this.sendRelay(ws, 'robot_offline');
+        this.startGraceTimer();
       }
     });
 
-    ws.addEventListener('close', () => {
-      if (this.controller === ws) {
-        this.controller = null;
-        this.controllerIp = null;
-        this.stopIdleTimer();
-        // Notify robot
-        if (this.robot) {
-          this.sendRelay(this.robot, 'controller_left');
-        }
-      }
-    });
+    const gone = () => {
+      if (this.controller !== ws) return;
+      this.controller = null;
+      this.controllerIp = null;
+      this.stopIdleTimer();
+      this.stopGraceTimer();
+      if (this.robot) this.sendRelay(this.robot, 'controller_left');
+    };
+    ws.addEventListener('close', gone);
+    ws.addEventListener('error', gone);
   }
 
   sendRelay(ws, event) {
+    if (!ws) return;
     try {
       ws.send(JSON.stringify({ command: 'RELAY', event }) + ';');
     } catch {}
   }
 
-  // ── Idle timeout: release controller lock after 10s inactivity ──
+  // ── Grace period while the robot reboots / re-joins WiFi ──
+
+  startGraceTimer() {
+    if (this.graceTimer) return;
+    this.graceTimer = setTimeout(() => {
+      this.graceTimer = null;
+      if (!this.robot && this.controller) {
+        try { this.controller.close(4410, 'Robot terputus'); } catch {}
+        this.controller = null;
+        this.controllerIp = null;
+        this.stopIdleTimer();
+      }
+    }, ROBOT_GRACE_MS);
+  }
+
+  stopGraceTimer() {
+    if (this.graceTimer) {
+      clearTimeout(this.graceTimer);
+      this.graceTimer = null;
+    }
+  }
+
+  // ── Idle timeout: release controller lock after inactivity ──
 
   startIdleTimer() {
     this.stopIdleTimer();
     this.idleTimer = setInterval(() => {
-      if (this.controller && Date.now() - this.lastControllerActivity > 10000) {
+      if (this.controller && Date.now() - this.lastControllerActivity > CONTROLLER_IDLE_MS) {
         try { this.controller.close(4408, 'Sesi berakhir karena tidak aktif'); } catch {}
         this.controller = null;
         this.controllerIp = null;
         this.stopIdleTimer();
         if (this.robot) this.sendRelay(this.robot, 'controller_left');
       }
-    }, 2000);
+    }, 5000);
   }
 
   stopIdleTimer() {

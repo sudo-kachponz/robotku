@@ -13,6 +13,14 @@ import { isSupported, robotkuEsp32V3, type BoardProfile } from '../domain/boardP
 import { cvStore } from '../ai/cvStore';
 import { speak, listenOnce, sttSupported } from '../ailabs/speech';
 import { firaChat } from '../ailabs/brain';
+import { getState } from '../app/store';
+
+// In mirror mode (robot connected + 2D panel open) the TransportSink already runs
+// the AI blocks and speaks through the ROBOT. The sim must not ALSO talk on the
+// laptop (that was the "suara keluar dari laptop" symptom) or call the LLM twice.
+function robotHandlesAi(): boolean {
+  return !!getState().transport;
+}
 
 // Virtual arena — pose is kept in px inside a square stage, clamped to ±42% of the
 // half-extent exactly like BaseMode's clamp(). SimStage renders in this same space.
@@ -314,6 +322,10 @@ export class SimSink implements RobotSink {
         this.beep(600, 400);
         break;
       case 'AI_SPEAK': {
+        if (robotHandlesAi()) {
+          this.commit({ simConsole: [...this.state.simConsole, 'Robotku AI: (dijawab lewat speaker robot)'] }, true);
+          break;
+        }
         // Fira TTS — host-executed in the browser (no-op in tests without speechSynthesis).
         const text = String(params.text ?? '');
         if (text) {
@@ -323,6 +335,10 @@ export class SimSink implements RobotSink {
         break;
       }
       case 'AI_ASK': {
+        if (robotHandlesAi()) {
+          this.commit({ simConsole: [...this.state.simConsole, 'Robotku AI: (dijawab lewat speaker robot)'] }, true);
+          break;
+        }
         // Fira LLM (Netra) — ask, then speak the reply. Demo reply when no API key.
         const q = String(params.question ?? '');
         if (!q) break;
@@ -338,6 +354,10 @@ export class SimSink implements RobotSink {
         break;
       }
       case 'AI_CONVERSE': {
+        if (robotHandlesAi()) {
+          this.commit({ simConsole: [...this.state.simConsole, 'Robotku AI: (dijawab lewat speaker robot)'] }, true);
+          break;
+        }
         // Rantai penuh STT -> LLM -> TTS (tahap 4). STT hanya Chrome/Edge.
         if (!sttSupported()) {
           this.commit(

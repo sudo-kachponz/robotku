@@ -106,6 +106,21 @@ export interface RobotInfo {
   capabilities: string[];
   /** Physical ports (1-based) the firmware reports as really wired. */
   ports: number[];
+  /** Firmware >= 2.5.0: remote diagnostics (reset reason, heap, PSRAM, RSSI, relay). */
+  diag?: Record<string, unknown>;
+}
+
+/** Build RobotInfo from a HELLO_ACK frame (handshake AND re-HELLO after a robot reboot). */
+export function robotInfoFromHelloAck(msg: RobotCommand): RobotInfo {
+  const m = msg as Record<string, unknown>;
+  return {
+    fwVersion: String(m.fw ?? m.fwVersion ?? '?'),
+    board: String(m.board ?? 'Robotku'),
+    protocol: String(m.protocol ?? 'robotku-v1'),
+    capabilities: Array.isArray(m.capabilities) ? (m.capabilities as string[]) : [],
+    ports: Array.isArray(m.ports) ? (m.ports as number[]) : [],
+    ...(m.diag && typeof m.diag === 'object' ? { diag: m.diag as Record<string, unknown> } : {}),
+  };
 }
 
 /** Turn a command object into a single `;`-terminated wire line. */
@@ -240,6 +255,7 @@ export const RELAY_CLOSE: Record<number, RelayRefusal> = {
   4408: { message: 'Sesi berakhir karena tidak aktif.', retry: 'no' },
   4409: { message: 'Robot sedang dikendalikan pengguna lain.', retry: 'no' },
   4410: { message: 'Robot terputus. Menyambung ulang...', retry: 'backoff' },
+  4412: { message: 'Robot sedang dibuka di tab/perangkat lain.', retry: 'no' },
   4429: { message: 'Terlalu banyak percobaan. Coba lagi sebentar lagi.', retry: 'no' },
 };
 

@@ -60,12 +60,15 @@
 #include <math.h>
 #include "mbedtls/base64.h"      // decode base64 TTS PCM chunks (bundled with ESP-IDF)
 #include "welcome_audio.h"       // const int16_t welcomeAudio[] in FLASH (.rodata), 16 kHz mono
+
 #endif
+#include <esp_system.h>         // esp_reset_reason() for HELLO_ACK diag
+const char* resetReasonName(esp_reset_reason_t r);   // defined after sendHelloAck()
 
 // ------------------------------------------------------------------ Identity
 // BOARD_NAME / BOARD_ID come from the selected pin map (pins_*.h) so HELLO_ACK
 // tells the web which variant connected — no #ifdef BOARD_* here (see config.h).
-#define FW_VERSION   "2.4.3-mk"
+#define FW_VERSION   "2.5.0-mk"   // 2.5.0: relay/WiFi resilience, diag, PSRAM, mic 32-bit, tone target
 #define PROTOCOL_ID  "robotku-v1"
 #define BLE_NAME     "Robotku"
 
@@ -139,6 +142,15 @@ volatile int           spkVolume    = 100;    // SET_VOLUME 0..100 — scales to
 // speaks, so idle/connect RAM == the stable 2.2.3; kept allocated after (reused,
 // no free -> no race with the audio task).
 uint8_t*               pcmStreamBuf  = nullptr;
+// Big audio buffers go to PSRAM when the board has it (ESP32-S3 WROOM-2 N16R8V:
+// 8 MB octal PSRAM, enabled by the makerkit_s3 env). Internal heap is then left for
+// WiFi + TLS (relay handshake) + NimBLE, which is what used to starve on TTS.
+static uint8_t* allocBig(size_t n) {
+  uint8_t* b = nullptr;
+  if (psramFound()) b = (uint8_t*)ps_malloc(n);
+  if (!b) b = (uint8_t*)malloc(n);
+  return b;
+}
 volatile size_t        pcmStreamLen  = 0;   // bytes buffered so far
 volatile bool          pcmStreamRecv = false; // between TTS_BEGIN and TTS_END
 volatile bool          pcmStreamPlay = false; // audioTask: play the buffer once
@@ -148,6 +160,12 @@ volatile bool          pcmStreamPlay = false; // audioTask: play the buffer once
 // I2S microphone (INMP441) on I2S_NUM_0. A task keeps a rolling peak level and a
 // latched clap flag; GET_SENSOR_DATA reads them. CLAP_THRESHOLD/COOLDOWN in config.h.
 #define MIC_SR  16000
+// If the level still reads 0 on a board, flip this to I2S_CHANNEL_FMT_ONLY_RIGHT
+// (legacy driver slot naming differs between chips) — one-line test.
+#ifndef MIC_CHANNEL_FMT
+#define MIC_CHANNEL_FMT I2S_CHANNEL_FMT_ONLY_LEFT
+#endif
+#define MIC_SHIFT 14   // 32-bit slot -> ~16-bit level (24-bit data, drop noise LSBs)
 volatile int  micLevel = 0;      // last block peak, 0..32767
 volatile bool micClap  = false;  // latched clap; cleared on read
 bool          micReady = false;  // I2S RX installed OK
@@ -511,9 +529,12 @@ void i2sMicInit() {
   i2s_config_t cfg = {};
   cfg.mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX);
   cfg.sample_rate = MIC_SR;
-  cfg.bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT;
-  cfg.channel_format = I2S_CHANNEL_FMT_ONLY_LEFT;
-  cfg.communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_I2S_MSB);
+  // INMP441 = Philips I2S, 24-bit data in a 32-bit slot, 64 SCK per frame. The old
+  // 16-bit + I2S_MSB setup clocked only 32 SCK per frame -> the mic answered zeros
+  // ("mic level = 0"). L/R is tied to GND on the Makerkit -> LEFT slot.
+  cfg.bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT;
+  cfg.channel_format = MIC_CHANNEL_FMT;
+  cfg.communication_format = I2S_COMM_FORMAT_STAND_I2S;
   cfg.intr_alloc_flags = ESP_INTR_FLAG_LEVEL1;
   cfg.dma_buf_count = 4;
   cfg.dma_buf_len = 1024;
@@ -537,14 +558,19 @@ void i2sMicInit() {
 // Continuously read the mic, track block peak + detect claps (threshold/cooldown
 // from config.h). Runs on its own task so i2s_read blocking never stalls loop().
 void micTask(void*) {
+  static int32_t raw[512];
   static int16_t samples[512];
   unsigned long lastClapMs = 0;
   for (;;) {
     size_t nbytes = 0;
-    if (i2s_read(I2S_NUM_0, samples, sizeof(samples), &nbytes, portMAX_DELAY) != ESP_OK || nbytes == 0) {
+    if (i2s_read(I2S_NUM_0, raw, sizeof(raw), &nbytes, portMAX_DELAY) != ESP_OK || nbytes == 0) {
       vTaskDelay(2); continue;
     }
-    int n = nbytes / sizeof(int16_t);
+    int n = nbytes / sizeof(int32_t);
+    for (int i = 0; i < n; i++) {
+      int32_t v = raw[i] >> MIC_SHIFT;
+      samples[i] = (int16_t)constrain(v, -32768, 32767);
+    }
     int peak = 0;
     for (int i = 0; i < n; i++) { int a = abs(samples[i]); if (a > peak) peak = a; }
     micLevel = peak;
@@ -829,7 +855,6 @@ void doOtaUpdate(const String& url, const String& version) {
 // MTU is negotiated, so the ~621-byte ack goes out in ~3 notifies instead of ~32 at
 // MTU 23 — the notify storm that caused the connect-drop loop (docs/ai-firmware-rca.md).
 void sendHelloAck() {
-  Serial.printf("[DEBUG] sendHelloAck() called, relayConnected=%d\n", relayConnected);
   // FIX 7 — advertise ONLY what actually compiles here.
   JsonDocument ack;
   ack["command"]  = "HELLO_ACK";
@@ -923,10 +948,41 @@ void sendHelloAck() {
     ack["wifiIp"] = WiFi.localIP().toString();
     ack["wsPort"] = 81;
   }
+  // Remote diagnostics — readable from the web over ANY link, so we never have to
+  // open USB serial (which resets the board via the CH340C auto-reset) to debug.
+  JsonObject diag = ack["diag"].to<JsonObject>();
+  diag["reset"]      = resetReasonName(esp_reset_reason());
+  diag["uptimeS"]    = (uint32_t)(millis() / 1000);
+  diag["heapFree"]   = (uint32_t)ESP.getFreeHeap();
+  diag["heapMin"]    = (uint32_t)ESP.getMinFreeHeap();
+  diag["psram"]      = (uint32_t)ESP.getPsramSize();
+  diag["psramFree"]  = (uint32_t)ESP.getFreePsram();
+  diag["flash"]      = (uint32_t)ESP.getFlashChipSize();
+  diag["rssi"]       = wifiUp ? (int)WiFi.RSSI() : 0;
+  diag["relay"]      = relayConnected;
+  diag["relayId"]    = relayId;
+  diag["relayConns"] = relayConnectCount;
+  diag["link"]       = bleConnected ? "ble" : (relayConnected ? "relay" : (wsClients ? "ws" : "usb"));
   sendJson(ack);
   watchdogArmed = true;         // the link is live from here on
   lastStatus = "Terhubung";
-  oledStatus("Terhubung", bleConnected ? "via Bluetooth" : "via USB");
+  oledStatus("Terhubung", bleConnected ? "via Bluetooth" : (relayConnected ? "via Internet" : "via USB"));
+}
+
+// Human-readable esp_reset_reason() — BROWNOUT here = power problem, not software.
+const char* resetReasonName(esp_reset_reason_t r) {
+  switch (r) {
+    case ESP_RST_POWERON:  return "POWERON";
+    case ESP_RST_SW:       return "SW";
+    case ESP_RST_PANIC:    return "PANIC";
+    case ESP_RST_INT_WDT:  return "INT_WDT";
+    case ESP_RST_TASK_WDT: return "TASK_WDT";
+    case ESP_RST_WDT:      return "WDT";
+    case ESP_RST_BROWNOUT: return "BROWNOUT";
+    case ESP_RST_DEEPSLEEP:return "DEEPSLEEP";
+    case ESP_RST_EXT:      return "EXT";
+    default:               return "OTHER";
+  }
 }
 
 // =========================================================== COMMAND PARSER
@@ -1012,8 +1068,9 @@ void handleCommand(const String& jsonLine) {
     relayId = idUp;
     relaySecret = String(secret);
     relayEnabled = true;
+    if (relayBegun) relayWs.disconnect();   // restart the client with the new identity
+    relayBegun = false;
     relayConnected = false;
-    relayLastAttempt = 0;   // try immediately
     JsonDocument r;
     r["command"] = "RELAY_STATUS";
     r["id"] = idUp;
@@ -1142,15 +1199,21 @@ void handleCommand(const String& jsonLine) {
   if (strcmp(cmd, "PLAY_TONE") == 0) {
     int freq;
     if (!p["frequency"].isNull())  freq = p["frequency"].as<int>();
+    else if (!p["hz"].isNull())    freq = p["hz"].as<int>();     // Base mode / older web
+    else if (!p["freq"].isNull())  freq = p["freq"].as<int>();
     else if (!p["note"].isNull())  freq = noteToFreq(p["note"].as<const char*>());
     else                           freq = 440;
     long ms = readDurationMs(p);
     if (ms <= 0) ms = 300;
+    // target: "buzzer" = the physical buzzer (Base mode button), "speaker" = I2S amp,
+    // absent = speaker when the board has one (K5, block programs), else buzzer.
+    const char* target = p["target"] | "";
+    bool toBuzzer = (strcmp(target, "buzzer") == 0);
 #if HAS_SPEAKER
-    // K5: route tones to the I2S speaker (better quality). Buzzer is the fallback
-    // only on boards without a speaker (V3), where HAS_SPEAKER is 0.
-    spkToneSquare = false; spkToneFreq = freq; spkToneEndMs = millis() + ms;
+    if (!toBuzzer) { spkToneSquare = false; spkToneFreq = freq; spkToneEndMs = millis() + ms; }
+    else           buzzerTone(freq, ms);
 #else
+    (void)toBuzzer;
     buzzerTone(freq, ms);   // non-blocking; loop() silences at the deadline
 #endif
     lastStatus = "Nada";
@@ -1192,7 +1255,7 @@ void handleCommand(const String& jsonLine) {
     spkToneFreq = 0; spkPcmPlay = false;   // interrupt any current audio
     pcmStreamPlay = false;
     pcmStreamLen = 0;
-    if (!pcmStreamBuf) pcmStreamBuf = (uint8_t*)malloc(PCM_STREAM_CAP);
+    if (!pcmStreamBuf) pcmStreamBuf = allocBig(PCM_STREAM_CAP);
     if (!pcmStreamBuf) { sendUnsupported("TTS_BEGIN"); return; }  // OOM -> skip, don't crash
     pcmStreamRecv = true;
     lastStatus = "Bicara";
@@ -1419,7 +1482,7 @@ void handleCommand(const String& jsonLine) {
   // --- Voice memo: record into the shared buffer (single slot) -------------
   if (strcmp(cmd, "RECORD_AUDIO") == 0) {
 #if HAS_SPEAKER && HAS_MIC
-    if (!pcmStreamBuf) pcmStreamBuf = (uint8_t*)malloc(PCM_STREAM_CAP);
+    if (!pcmStreamBuf) pcmStreamBuf = allocBig(PCM_STREAM_CAP);
     if (pcmStreamBuf) {
       int secs = constrain((int)(p["secs"] | 1), 1, 4);   // cap at the 4 s buffer
       recordLen = 0;
@@ -1433,7 +1496,7 @@ void handleCommand(const String& jsonLine) {
   // --- Voice input: record mic then stream it to the web for STT (Whisper) ---
   if (strcmp(cmd, "MIC_STT") == 0) {
 #if HAS_SPEAKER && HAS_MIC
-    if (!pcmStreamBuf) pcmStreamBuf = (uint8_t*)malloc(PCM_STREAM_CAP);
+    if (!pcmStreamBuf) pcmStreamBuf = allocBig(PCM_STREAM_CAP);
     if (pcmStreamBuf) {
       int secs = constrain((int)(p["secs"] | 3), 1, 4);
       recordLen = 0;
@@ -1739,6 +1802,7 @@ bool startWiFiSTA(const String& ssid, const String& pass) {
     wsServer.begin();
     wsServer.onEvent(onWsEvent);
   }
+  WiFi.setAutoReconnect(true);                 // re-associate on its own after a drop
   WiFi.begin(ssid.c_str(), pass.c_str());      // non-blocking; loop() reports when up
   wifiOn = true;
   wifiUp = false;
@@ -1889,6 +1953,9 @@ void loop() {
     bool up = (WiFi.status() == WL_CONNECTED);
     if (up && !wifiUp) {
       wifiUp = true;
+      wifiStartMs = 0;          // BUG FIX: connected -> stop the boot-timeout clock.
+                                // Leaving it set made the FIRST later drop trip the
+                                // timeout instantly and kill WiFi until a power cycle.
       MDNS.begin("robotku");                   // http://robotku.local, ws://robotku.local:81
       JsonDocument r;
       r["command"]  = "WIFI_STATUS";
@@ -1898,15 +1965,15 @@ void loop() {
       sendJson(r);
     } else if (!up && wifiUp) {
       wifiUp = false;
+      Serial.println("[wifi] link lost — auto-reconnecting");
+      oledStatus("WiFi putus", "menyambung ulang");
     }
-    // WiFi timeout: if we've been trying for WIFI_TIMEOUT_MS and still not
-    // connected, give up gracefully — disconnect WiFi so the board runs in
-    // BLE/Serial-only mode instead of retrying forever.
+    // Slow router / DHCP at boot: after WIFI_TIMEOUT_MS just TELL the user BLE/USB is
+    // available. Never WiFi.disconnect(true) — the radio keeps retrying in the
+    // background (setAutoReconnect), so the relay comes back by itself.
     if (!wifiUp && wifiStartMs && (millis() - wifiStartMs > WIFI_TIMEOUT_MS)) {
-      Serial.println("[wifi] timeout — falling back to BLE/Serial mode");
-      WiFi.disconnect(true);   // stop retrying
-      wifiOn = false;
-      wifiStartMs = 0;
+      Serial.println("[wifi] still not connected — BLE/USB usable, WiFi keeps retrying");
+      wifiStartMs = 0;          // report once
       oledStatus("Siap", "BLE / USB");
     }
   }

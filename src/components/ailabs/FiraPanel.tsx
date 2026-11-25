@@ -15,7 +15,8 @@ import { PET_COLORS, type Mood } from './lcd/sprites';
 import { firaChat, type ChatMsg } from '../../ailabs/brain';
 import { speak, stopSpeaking, ttsSupported, voiceLabel, listenOnce, sttSupported } from '../../ailabs/speech';
 import { listenViaRobot, robotCanListen } from '../../ailabs/micStt';
-import { speakViaRobot } from '../../ailabs/robotVoice';
+import { speakViaRobot, SPEAK_REASON_TEXT } from '../../ailabs/robotVoice';
+import { showToast } from '../../ui/toast';
 import styles from './FiraPanel.module.css';
 
 type Face = 'idle' | 'thinking' | 'speaking';
@@ -166,8 +167,16 @@ export default function FiraPanel({ open, onClose }: { open: boolean; onClose: (
       // Prefer the ROBOT's speaker (so it physically talks); fall back to the
       // laptop/phone speaker only when no robot with TTS is connected.
       const reply = res.content || acc;
-      const spokeOnRobot = await speakViaRobot(reply);
-      if (!spokeOnRobot && ttsSupported()) speak(reply);
+      const spoken = await speakViaRobot(reply);
+      if (!spoken.ok) {
+        // Say WHY the voice comes from the laptop instead of silently falling back.
+        showToast(
+          `Suara dari laptop: ${SPEAK_REASON_TEXT[spoken.reason]}${spoken.detail ? ` (${spoken.detail})` : ''}`,
+          spoken.reason === 'not_connected' ? 'warn' : 'error',
+          4500,
+        );
+        if (ttsSupported()) speak(reply);
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'error tak dikenal';
       setMessages((m) => {

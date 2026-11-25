@@ -15,6 +15,7 @@ import ControlLayout from '../control/ControlLayout';
 import ConnectHint from './ConnectHint';
 import { useDrive } from '../../hooks/useDrive';
 import { soundFx } from './JoystickAudio';
+import { getState } from '../../app/store';
 import { ControllerShell } from './joystick/ControllerShell';
 import { AmbientGlow } from './joystick/AmbientGlow';
 import { CenterMonitor } from './joystick/CenterMonitor';
@@ -250,8 +251,8 @@ export default function JoystickMode() {
   // Klakson / Buzzer Honk
   const triggerHorn = useCallback(() => {
     setActiveActions((prev) => ({ ...prev, horn: true }));
-    soundFx.playHorn();
-    sendCommand('PLAY_TONE', { hz: 880, ms: 250 });
+    if (!getState().transport) soundFx.playHorn(); // simulator feedback only
+    sendCommand('PLAY_TONE', { frequency: 880, duration_ms: 250, target: 'buzzer' });
     setTimeout(() => {
       setActiveActions((prev) => ({ ...prev, horn: false }));
     }, 260);

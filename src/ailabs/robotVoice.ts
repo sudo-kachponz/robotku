@@ -18,6 +18,19 @@ const MAX_BYTES = 95000; // firmware buffer is 96000 (12 s); keep a little headr
 const CHUNK = 3000; // bytes per TTS_CHUNK — base64 (~4 KB) stays under the 9 KB line cap
 const CHUNK_GAP_MS = 25; // pace chunks so the relay/WS link doesn't flood + drop the tail
 
+/** Why the robot did / did not speak — shown to the user instead of silently using the laptop. */
+export type RobotSpeakResult =
+  | { ok: true }
+  | { ok: false; reason: 'not_connected' | 'no_speaker' | 'empty' | 'tts_failed' | 'send_failed'; detail?: string };
+
+export const SPEAK_REASON_TEXT: Record<Exclude<RobotSpeakResult, { ok: true }>['reason'], string> = {
+  not_connected: 'robot belum tersambung',
+  no_speaker: 'firmware robot tidak punya speaker (TTS_BEGIN)',
+  empty: 'teks kosong',
+  tts_failed: 'server suara (TTS) gagal',
+  send_failed: 'pengiriman suara ke robot terputus',
+};
+
 /** True when a robot is connected AND its firmware advertises the TTS opcodes. */
 export function robotCanSpeak(): boolean {
   const { transport, robotInfo } = getState();
@@ -41,8 +54,11 @@ function base64ToU8(b64: string): Uint8Array {
  * Speak `text` through the robot. Returns true if the robot played it, false if
  * the caller should fall back to the browser speaker.
  */
-export async function speakViaRobot(text: string, lang = 'en'): Promise<boolean> {
-  if (!robotCanSpeak() || !text.trim()) return false;
+export async function speakViaRobot(text: string, lang = 'en'): Promise<RobotSpeakResult> {
+  if (!text.trim()) return { ok: false, reason: 'empty' };
+  const st = getState();
+  if (!st.transport) return { ok: false, reason: 'not_connected' };
+  if (!robotCanSpeak()) return { ok: false, reason: 'no_speaker', detail: st.robotInfo?.board };
 
   let pcm: Uint8Array;
   try {
@@ -51,9 +67,9 @@ export async function speakViaRobot(text: string, lang = 'en'): Promise<boolean>
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, lang }),
     });
-    if (!res.ok) return false;
+    if (!res.ok) return { ok: false, reason: 'tts_failed', detail: `HTTP ${res.status}` };
     const data = (await res.json()) as { audio?: string };
-    if (!data.audio) return false;
+    if (!data.audio) return { ok: false, reason: 'tts_failed', detail: 'no audio' };
 
     // Decode the WAV/MP3 to float PCM, then downsample to 8 kHz 8-bit unsigned.
     const bytes = base64ToU8(data.audio);
@@ -70,13 +86,13 @@ export async function speakViaRobot(text: string, lang = 'en'): Promise<boolean>
       pcm[i] = Math.max(0, Math.min(255, Math.round(f * 127 + 128))); // float -> u8 (centre 128)
     }
     void ctx.close();
-  } catch {
-    return false;
+  } catch (err) {
+    return { ok: false, reason: 'tts_failed', detail: String(err) };
   }
 
   // Stream to the robot. sendLine awaits the GATT write, giving natural backpressure.
   const { transport } = getState();
-  if (!transport) return false;
+  if (!transport) return { ok: false, reason: 'not_connected' };
   try {
     await transport.sendLine(JSON.stringify({ command: 'TTS_BEGIN', params: {} }) + ';');
     for (let off = 0; off < pcm.length; off += CHUNK) {
@@ -89,8 +105,8 @@ export async function speakViaRobot(text: string, lang = 'en'): Promise<boolean>
       await new Promise((r) => setTimeout(r, CHUNK_GAP_MS));
     }
     await transport.sendLine(JSON.stringify({ command: 'TTS_END', params: {} }) + ';');
-    return true;
-  } catch {
-    return false;
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, reason: 'send_failed', detail: String(err) };
   }
 }

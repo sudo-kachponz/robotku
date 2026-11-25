@@ -10,11 +10,29 @@ import { getState } from '../app/store';
 import { getSettings, subscribeSettings } from '../app/settingsStore';
 import { applyPortTuning, type RobotSettings } from '../domain/settings';
 import { setPortLine, driveDirectLine, encodeCommand, OPCODES } from '../domain/protocol';
+import { showToast } from '../ui/toast';
+
+// No link = the command goes nowhere. That used to be SILENT, which looked exactly
+// like "relay doesn't reach the hardware". Tell the user (throttled, one toast per 4 s).
+let lastNotConnectedToast = 0;
+function notifyNotConnected(): void {
+  if (typeof document === 'undefined') return;
+  const now = Date.now();
+  if (now - lastNotConnectedToast < 4000) return;
+  lastNotConnectedToast = now;
+  showToast('Robot belum tersambung — perintah tidak terkirim. Sambungkan dulu di menu Koneksi.', 'warn');
+}
 
 function sendLine(line: string): Promise<void> {
   const { transport } = getState();
-  if (!transport) return Promise.resolve();
-  return transport.sendLine(line).catch((err) => console.warn('[drive] send failed', err));
+  if (!transport) {
+    notifyNotConnected();
+    return Promise.resolve();
+  }
+  return transport.sendLine(line).catch((err) => {
+    console.warn('[drive] send failed', err);
+    if (typeof document !== 'undefined') showToast('Perintah gagal terkirim ke robot.', 'error');
+  });
 }
 
 // --- Live-drive coalescer (servo.md §5) -------------------------------------

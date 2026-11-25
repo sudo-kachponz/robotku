@@ -13,7 +13,7 @@
  *
  * Requires: WebSockets library (already in platformio.ini), WiFi connected.
  * Robot ID + secret stored in NVS namespace "relay" (keys "id" and "secret").
- * Set via Serial Monitor: type SET_RELAY <ID> <SECRET>
+ * Set via Serial/BLE: SET_RELAY <ID> <SECRET> (the web setup wizard sends it).
  *
  * DOES NOT MODIFY any existing firmware behavior. Uses the same feed() and
  * sendTelemetry() functions. All relay control frames (RELAY) are handled here.
@@ -27,7 +27,16 @@
 // ── Config ──
 #define RELAY_HOST "robotku-relay.hubrobotku.workers.dev"
 #define RELAY_PORT 443
-#define RELAY_RECONNECT_MS 5000
+#define RELAY_RECONNECT_MS 3000      // library-managed retry interval (NOT our own loop)
+#define RELAY_ALIVE_MS     10000     // app-level "robot_alive" so the relay DO can detect a dead robot
+#define RELAY_PING_MS      15000     // WS ping (detects half-open TCP on the robot side)
+#define RELAY_PONG_MS      5000
+#define RELAY_PONG_MISSES  2
+// Per-frame Serial/OLED logging BLOCKS loop() (UART 115200 + I2C) and hijacked the
+// user's OLED content. Keep 0 in production; set 1 only while debugging on a bench.
+#ifndef RELAY_DEBUG
+#define RELAY_DEBUG 0
+#endif
 
 // ── External functions from main.cpp (already exist, no changes needed) ──
 extern void feed(String &buffer, char c, bool fromSerial);
@@ -43,9 +52,12 @@ static WebSocketsClient relayWs;
 static String relayBuffer;
 static String relayId;
 static String relaySecret;
+static String relayPath;
 static bool relayEnabled = false;
 static bool relayConnected = false;
-static unsigned long relayLastAttempt = 0;
+static bool relayBegun = false;           // beginSSL() called ONCE per id/secret
+static unsigned long relayAliveAt = 0;
+static uint32_t relayConnectCount = 0;    // reported in HELLO_ACK diag
 
 // ── Forward decl ──
 static void onRelayEvent(WStype_t type, uint8_t *payload, size_t len);
@@ -73,42 +85,57 @@ static void setupRelay()
   Serial.printf("[RELAY] ID=%s, will connect when WiFi is up\n", relayId.c_str());
 }
 
+// Start the client exactly once. The WebSockets library owns reconnects from here on
+// (setReconnectInterval). The old code called beginSSL() every 5 s while a TLS
+// handshake (2-6 s on ESP32) was still in flight -> two reconnect mechanisms fought,
+// the socket flapped and the relay DO kept a dead robot socket (HELLO_ACK timeout).
+static void relayStart()
+{
+  relayPath = "/ws?role=robot&id=" + relayId;
+  relayWs.beginSSL(RELAY_HOST, RELAY_PORT, relayPath.c_str());
+  relayWs.setExtraHeaders(("Authorization: Bearer " + relaySecret).c_str()); // copied into a String by the lib
+  relayWs.onEvent(onRelayEvent);
+  relayWs.setReconnectInterval(RELAY_RECONNECT_MS);
+  relayWs.enableHeartbeat(RELAY_PING_MS, RELAY_PONG_MS, RELAY_PONG_MISSES);
+  relayBegun = true;
+  Serial.printf("[RELAY] Client started -> %s%s\n", RELAY_HOST, relayPath.c_str());
+}
+
 // Call every loop() iteration.
 static void loopRelay()
 {
   if (!relayEnabled)
     return;
 
-  // Only connect when WiFi is up
+  // No WiFi: don't hammer connect attempts. The library resumes on its own once
+  // WiFi is back (WiFi itself auto-reconnects — see startWiFiSTA()).
   if (WiFi.status() != WL_CONNECTED)
   {
     if (relayConnected)
     {
       relayConnected = false;
-      relayWs.disconnect();
+      stopAllActuators();   // safety: lost the link
+      watchdogArmed = false;
     }
     return;
   }
 
-  // Connect if not connected (with backoff)
-  if (!relayConnected && (millis() - relayLastAttempt > RELAY_RECONNECT_MS))
-  {
-    relayLastAttempt = millis();
-    String path = "/ws?role=robot&id=" + relayId;
-
-    relayWs.beginSSL(RELAY_HOST, RELAY_PORT, path);
-    relayWs.setExtraHeaders(("Authorization: Bearer " + relaySecret).c_str());
-    relayWs.onEvent(onRelayEvent);
-    relayWs.setReconnectInterval(RELAY_RECONNECT_MS);
-
-    Serial.printf("[RELAY] Connecting to %s%s\n", RELAY_HOST, path.c_str());
-  }
+  if (!relayBegun)
+    relayStart();
 
   relayWs.loop();
+
+  // App-level liveness so the relay can tell a live robot from a half-open socket
+  // (Cloudflare answers WS pings itself, so the DO never sees them).
+  if (relayConnected && (millis() - relayAliveAt > RELAY_ALIVE_MS))
+  {
+    relayAliveAt = millis();
+    static const char alive[] = "{\"command\":\"RELAY\",\"event\":\"robot_alive\"};";
+    relayWs.sendTXT(alive, sizeof(alive) - 1);
+  }
 }
 
-// Handle SET_RELAY command from Serial Monitor.
-// Call this from handleTextCommand() in main.cpp:
+// Handle SET_RELAY command (Serial / BLE / LAN WS — never from the relay itself).
 //   if (raw.startsWith("SET_RELAY")) { handleSetRelay(raw); return; }
 static void handleSetRelay(const String &raw)
 {
@@ -140,26 +167,26 @@ static void handleSetRelay(const String &raw)
   relaySecret = secret;
   relayEnabled = true;
 
-  Serial.printf("[RELAY] Saved ID=%s, secret=%d chars. Connecting...\n",
+  Serial.printf("[RELAY] Saved ID=%s, secret=%d chars. Reconnecting...\n",
                 id.c_str(), (int)secret.length());
 
-  // Force reconnect
+  // New identity -> restart the client with the new path/header.
+  if (relayBegun) relayWs.disconnect();
+  relayBegun = false;
   relayConnected = false;
-  relayLastAttempt = 0;
 }
 
-// Send telemetry/reply to relay (call from sendTelemetry in main.cpp):
-//   if (relayConnected) relaySend(line);
+// Send telemetry/reply to relay (called from sendTelemetry in main.cpp).
+// No Serial/OLED work here: this runs for EVERY outbound frame.
 static void relaySend(const String &line)
 {
-  if (relayConnected) {
-    Serial.printf("[RELAY TX] %.*s\n", (int)(line.length() > 200 ? 200 : line.length()), line.c_str());
-    oledStatus("TX", line.substring(0, 20).c_str());
-    bool ok = relayWs.sendTXT(line.c_str(), line.length());
-    Serial.printf("[RELAY TX] sendTXT=%d\n", ok);
-  } else {
-    Serial.println("[RELAY TX] SKIP - not connected");
-  }
+  if (!relayConnected) return;
+  bool ok = relayWs.sendTXT(line.c_str(), line.length());
+#if RELAY_DEBUG
+  Serial.printf("[RELAY TX] %d %.*s\n", ok, (int)(line.length() > 120 ? 120 : line.length()), line.c_str());
+#else
+  (void)ok;
+#endif
 }
 
 // ── Internal ──
@@ -170,21 +197,25 @@ static void onRelayEvent(WStype_t type, uint8_t *payload, size_t len)
   {
   case WStype_CONNECTED:
     relayConnected = true;
-    Serial.printf("[RELAY] Connected to relay server\n");
+    relayConnectCount++;
+    relayBuffer = "";               // never carry a partial frame across sessions
+    relayAliveAt = 0;               // announce liveness right away
+    Serial.printf("[RELAY] Connected (#%u)\n", (unsigned)relayConnectCount);
     break;
 
   case WStype_DISCONNECTED:
+    if (relayConnected) Serial.println("[RELAY] Disconnected");
     relayConnected = false;
-    Serial.printf("[RELAY] Disconnected from relay\n");
-    // Stop motors on controller disconnect (safety)
-    stopAllActuators();
+    relayBuffer = "";
+    stopAllActuators();             // safety: lost the controller path
     watchdogArmed = false;
     break;
 
   case WStype_TEXT:
     lastRxMs = millis(); // relay traffic feeds the watchdog
-    Serial.printf("[RELAY RX] %.*s\n", (int)(len > 200 ? 200 : len), (const char*)payload);
-    oledStatus("RX", String((const char*)payload).substring(0, 20).c_str());
+#if RELAY_DEBUG
+    Serial.printf("[RELAY RX] %.*s\n", (int)(len > 120 ? 120 : len), (const char*)payload);
+#endif
     relayFeed((const char *)payload, len);
     break;
 
@@ -195,11 +226,9 @@ static void onRelayEvent(WStype_t type, uint8_t *payload, size_t len)
 
 static void relayFeed(const char *data, size_t len)
 {
-  // Split on ';' boundaries and handle each frame individually.
-  // Critical: a single WebSocket message may contain BOTH a RELAY control frame
-  // AND a robot command (e.g. controller_joined + HELLO coalesced by TCP).
-  // The old code matched "RELAY" anywhere in the blob and returned early,
-  // silently dropping any non-RELAY frames that followed.
+  // Frames end with ';' or '\n'. One WS message may hold several frames, and a very
+  // large command may still span two messages, so the partial tail is kept in
+  // relayBuffer (reset on (re)connect).
   for (size_t i = 0; i < len; i++) {
     char c = data[i];
     if (c == ';' || c == '\n') {
@@ -228,17 +257,16 @@ static void relayFeed(const char *data, size_t len)
         }
       }
 
-      // Block SET_WIFI from relay (security)
-      if (frame.indexOf("\"SET_WIFI\"") >= 0) {
+      // Block credential changes from the internet path (security)
+      if (frame.indexOf("\"SET_WIFI\"") >= 0 || frame.startsWith("SET_RELAY")) {
         JsonDocument d;
         d["command"] = "UNSUPPORTED";
-        d["op"] = "SET_WIFI";
-        d["reason"] = "SET_WIFI blocked from relay";
+        d["op"] = frame.startsWith("SET_RELAY") ? "SET_RELAY" : "SET_WIFI";
+        d["reason"] = "blocked from relay";
         String out;
         serializeJson(d, out);
         out += ";";
         relaySend(out);
-        Serial.println("[RELAY] SET_WIFI blocked from relay");
         continue;
       }
 

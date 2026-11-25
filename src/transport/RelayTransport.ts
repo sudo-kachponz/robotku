@@ -11,12 +11,22 @@ import { isRelayFrame, RELAY_CLOSE } from '../domain/protocol';
 
 const OPEN_TIMEOUT_MS = 6000;
 
+/** Relay session events surfaced to the app (robot rebooting, back online, …). */
+export type RelayEvent = 'robot_offline' | 'robot_reconnected' | string;
+
 export class RelayTransport extends BaseTransport {
   readonly kind = 'relay' as const;
 
   private ws: WebSocket | null = null;
   private opened = false;
   private readonly decoder = new TextDecoder();
+
+  private relayEventCbs: Array<(ev: RelayEvent) => void> = [];
+
+  /** Subscribe to relay control events (robot_offline / robot_reconnected). */
+  onRelayEvent(cb: (ev: RelayEvent) => void): void {
+    this.relayEventCbs.push(cb);
+  }
 
   /** Last close code/reason from the relay, for UI display. */
   lastCloseCode: number | undefined;
@@ -30,7 +40,9 @@ export class RelayTransport extends BaseTransport {
   }
 
   // Relay has higher latency — widen the heartbeat/chunk windows per Fajri's notes
-  protected override get maxChunk(): number { return 4000; }
+  // WebSocket is message-framed: keep every command (incl. ~4.1 KB TTS_CHUNK) in ONE
+  // message so the robot never has to stitch a command across messages.
+  protected override get maxChunk(): number { return 8000; }
   protected override get heartbeatIntervalMs(): number { return 1000; }
   protected override get heartbeatTimeoutMs(): number { return 5000; }
   protected override get helloTimeoutMs(): number { return 15000; }
@@ -134,7 +146,13 @@ export class RelayTransport extends BaseTransport {
         try {
           const clean = trimmed.replace(/;\s*$/, '');
           const msg = JSON.parse(clean);
-          if (isRelayFrame(msg)) continue; // drop RELAY frames
+          if (isRelayFrame(msg)) {
+            const ev = String((msg as { event?: unknown }).event ?? '');
+            for (const cb of this.relayEventCbs) {
+              try { cb(ev); } catch (err) { console.warn('[relay] event callback threw', err); }
+            }
+            continue; // RELAY frames never reach telemetry
+          }
         } catch { /* not parseable alone, pass through */ }
         filtered.push(trimmed);
       }
