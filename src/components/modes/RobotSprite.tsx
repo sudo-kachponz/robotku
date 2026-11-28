@@ -13,6 +13,7 @@
 // - Differential wheel spin animations matching drive intent
 
 import { useConnection } from '../../hooks/useConnection';
+import MakerkitBoardArt from '../blockcoding/sim/MakerkitBoardArt';
 import styles from '../../styles/RobotSprite.module.css';
 
 const sign = (n: number) => (n > 0 ? 1 : n < 0 ? -1 : 0);
@@ -83,11 +84,6 @@ export default function RobotSprite({
           <stop offset="100%" stopColor="#b88350" />
         </linearGradient>
 
-        {/* Makerkit white solder mask */}
-        <linearGradient id="pcbWhite" x1="0" y1="0" x2="0.3" y2="1">
-          <stop offset="0%" stopColor="#fbfbf9" />
-          <stop offset="100%" stopColor="#e7e8e4" />
-        </linearGradient>
 
         {/* Black hard case */}
         <linearGradient id="hardCase" x1="0" y1="0" x2="0" y2="1">
@@ -103,12 +99,6 @@ export default function RobotSprite({
           <stop offset="100%" stopColor="#121215" />
         </linearGradient>
 
-        {/* ESP32 Silver Metal Shield */}
-        <linearGradient id="esp32Metal" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#f1f5f9" />
-          <stop offset="50%" stopColor="#cbd5e1" />
-          <stop offset="100%" stopColor="#94a3b8" />
-        </linearGradient>
       </defs>
 
       {/* ── Ground Shadow ── */}
@@ -195,76 +185,15 @@ export default function RobotSprite({
         <rect x="94" y="188" width="12" height="5" rx="1" fill="#94a3b8" stroke="#64748b" strokeWidth="0.5" />
       </g>
 
-      {/* ── Robotku Makerkit V1.3 (white PCB in black hard case) ── */}
+      {/* ── Robotku Makerkit V1.3 (white PCB in black hard case): the shared board art
+          (same drawing as the Block Coding simulator), scaled into its 58×52 slot ── */}
       <g id="pcb">
-        {/* Black hard case */}
-        <rect x="71" y="51" width="58" height="52" rx="5" fill="url(#hardCase)" stroke="#3a3a40" strokeWidth="0.6" />
-
-        {/* Board drawn in Makerkit units (390×300) and scaled into the case */}
-        <g transform="translate(74 54) scale(0.1333 0.1533)">
-          <rect x="12" y="14" width="366" height="272" rx="10" fill="url(#pcbWhite)" stroke="#c9cbc6" strokeWidth="3" />
-
-          {/* ROBOTKU logo */}
-          <text x="40" y="52" fill="#ffffff" stroke="#1a1a1a" strokeWidth="5" paintOrder="stroke"
-                fontSize="21" fontWeight="900" letterSpacing="-0.5">ROBOTKU</text>
-
-          {/* Servo headers 1-3 + AUX 5-6 (GND / 5V / PWM) */}
-          {[180, 193, 206, 230, 243].map((hx) =>
-            ['#1c1917', '#dc2626', '#eab308'].map((col, r) => (
-              <rect key={`sv-${hx}-${r}`} x={hx - 5.5} y={22 + r * 13} width="11" height="11" rx="1.5" fill={col} />
-            ))
-          )}
-          {/* Distance header + INPUT & OUTPUT */}
-          {[0, 1, 2, 3].map((i) => (
-            <rect key={`ds-${i}`} x="268" y={20 + i * 11.5} width="9.5" height="9.5" rx="1.4" fill="#eab308" />
-          ))}
-          {[294, 307, 320, 333].map((hx) =>
-            ['#dc2626', '#1c1917', '#eab308'].map((col, r) => (
-              <rect key={`io-${hx}-${r}`} x={hx - 5.5} y={22 + r * 13} width="11" height="11" rx="1.5" fill={col} />
-            ))
-          )}
-
-          {/* USB-C breakout */}
-          <rect x="5" y="110" width="58" height="58" rx="4" fill="#2f8f4e" />
-
-          {/* Buzzer */}
-          <circle cx="140" cy="96" r="27" fill="#141416" />
-          <circle cx="145" cy="91" r="4" fill="#d4d4d8" />
-
-          {/* LED RGB ×4 */}
-          {[98, 122, 146, 170].map((ly) => (
-            <rect key={`led-${ly}`} x="199" y={ly - 9} width="18" height="18" rx="2" fill="#f4f4f5" stroke="#a1a1aa" strokeWidth="2" />
-          ))}
-
-          {/* ESP32-S3 module */}
-          <rect x="257" y="93" width="121" height="89" rx="4" fill="#18181b" />
-          <rect x="264" y="99" width="84" height="76" rx="4" fill="url(#esp32Metal)" stroke="#64748b" strokeWidth="2" />
-
-          {/* MIC */}
-          <circle cx="104" cy="207" r="26" fill="#e2b33c" />
-          <circle cx="104" cy="207" r="21" fill="#18181b" />
-
-          {/* I2C BUS (SDA / SCL / VCC / GND) */}
-          {[140, 153, 166, 179, 192].map((hx) =>
-            ['#eab308', '#f1f1ee', '#dc2626', '#1c1917'].map((col, r) => (
-              <rect key={`i2c-${hx}-${r}`} x={hx - 5.5} y={231 + r * 13} width="11" height="11" rx="1.5" fill={col}
-                    stroke={col === '#f1f1ee' ? '#a1a1aa' : 'none'} strokeWidth="1" />
-            ))
-          )}
-
-          {/* Touch pad + MAX98357A speaker amp */}
-          <rect x="327" y="185" width="41" height="37" rx="6" fill="#c8ccd2" />
-          <rect x="240" y="206" width="76" height="80" rx="4" fill="#4b2a86" />
-          <rect x="256" y="256" width="46" height="26" rx="2" fill="#1f2937" />
-
-          {/* Screws */}
-          {[[26, 27], [364, 27], [27, 273], [364, 274]].map(([sx, sy], i) => (
-            <circle key={`scr-${i}`} cx={sx} cy={sy} r="8" fill="#cbd5e1" stroke="#64748b" strokeWidth="2" />
-          ))}
+        <g transform="translate(71 51) scale(0.1487 0.1733)">
+          <MakerkitBoardArt />
         </g>
 
-        {/* Pulsing POWER LED (bottom-left of the board) */}
-        <circle cx="83.5" cy="92.5" r="1.8" fill="#ef4444" className={styles.redLedGlow} />
+        {/* Pulsing POWER LED, on top of the art's POWER LED (board 62,253) */}
+        <circle cx="80.2" cy="94.8" r="1.8" fill="#ef4444" className={styles.redLedGlow} />
 
         {/* USB cable plug point at the case bottom */}
         <rect x="96" y="101" width="8" height="5" rx="1" fill="#94a3b8" stroke="#64748b" strokeWidth="0.5" />

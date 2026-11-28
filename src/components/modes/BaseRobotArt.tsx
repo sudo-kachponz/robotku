@@ -4,14 +4,15 @@
 // for the Base Robot control page. Front = up.
 //   - wooden-dowel frame: double side rails, front/rear rails, two inner bars that
 //     carry the board and the power bank; yellow corner joints, orange gussets,
-//     green clips
+//     black 3D-printed clips
 //   - two green wheels seen edge-on (tread scrolls when they turn) on blue SG90
 //     servos in yellow mounts, servo cables running to the board
-//   - Makerkit ESP32-S3 v1.3 PCB in its yellow tray (ESP32-S3 module, buzzer, PWM
-//     headers, 4 RGB LEDs, CH340C, USB-C, wifi/BT status LEDs)
+//   - the real Makerkit V1.3 board (white PCB, black case) from MakerkitBoardArt,
+//     the same drawing as the Block Coding simulator
 //   - OLED module on the front rail with its ribbon cable, power bank at the rear
 // Pure SVG + CSS so it scales crisply at any size; no state of its own.
 
+import MakerkitBoardArt from '../blockcoding/sim/MakerkitBoardArt';
 import styles from './BaseRobotArt.module.css';
 
 const sign = (n: number) => (n > 0 ? 1 : n < 0 ? -1 : 0);
@@ -50,7 +51,7 @@ function Wheel({ x, dir }: { x: number; dir: number }) {
 }
 
 /** One side's servo, mount, horn and cable (mirrored for the right side). */
-function Drive({ right }: { right?: boolean }) {
+function Drive({ right, endX }: { right?: boolean; endX: number }) {
   return (
     <g transform={right ? 'translate(320 0) scale(-1 1)' : undefined}>
       {/* horn / hub between wheel and servo */}
@@ -97,7 +98,7 @@ function Drive({ right }: { right?: boolean }) {
       ].map(([c, d]) => (
         <path
           key={String(c)}
-          d={`M${72 + Number(d)} 200 C ${80 + Number(d)} 168, ${104 + Number(d)} 196, ${128 + Number(d)} 186`}
+          d={`M${72 + Number(d)} 200 C ${84 + Number(d)} 186, ${endX - 24 + Number(d)} 198, ${endX + Number(d)} 182`}
           fill="none"
           stroke={String(c)}
           strokeWidth={2}
@@ -152,15 +153,6 @@ export default function BaseRobotArt({
         <linearGradient id="rk-yellow" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#fde047" />
           <stop offset="1" stopColor="#eab308" />
-        </linearGradient>
-        <linearGradient id="rk-pcb" x1="0" y1="0" x2="0.4" y2="1">
-          <stop offset="0" stopColor="#2f9e4a" />
-          <stop offset="1" stopColor="#1d7a36" />
-        </linearGradient>
-        <linearGradient id="rk-shield" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#f8fafc" />
-          <stop offset="0.55" stopColor="#cbd5e1" />
-          <stop offset="1" stopColor="#94a3b8" />
         </linearGradient>
         <linearGradient id="rk-bank" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stopColor="#2a2a2f" />
@@ -307,8 +299,8 @@ export default function BaseRobotArt({
           width={w}
           height={h}
           rx={3.5}
-          fill="#16a34a"
-          stroke="#14532d"
+          fill="#18181b"
+          stroke="#000"
           strokeWidth={0.8}
         />
       ))}
@@ -316,8 +308,9 @@ export default function BaseRobotArt({
       {/* ── wheels + drive ── */}
       <Wheel x={10} dir={leftDir} />
       <Wheel x={288} dir={rightDir} />
-      <Drive />
-      <Drive right />
+      {/* endX = local x of SERVO header 1 / 2 (right side is mirrored: 320 - x) */}
+      <Drive endX={164.6} />
+      <Drive right endX={159.4} />
 
       {/* ── power bank (rear, between the inner bars, overhanging the rear rail) ── */}
       <rect
@@ -362,8 +355,8 @@ export default function BaseRobotArt({
         width={20}
         height={12}
         rx={3}
-        fill="#16a34a"
-        stroke="#14532d"
+        fill="#18181b"
+        stroke="#000"
         strokeWidth={0.8}
       />
       <rect
@@ -372,226 +365,32 @@ export default function BaseRobotArt({
         width={20}
         height={12}
         rx={3}
-        fill="#16a34a"
-        stroke="#14532d"
+        fill="#18181b"
+        stroke="#000"
         strokeWidth={0.8}
       />
       {/* USB power cable into the board */}
       <path
-        d="M140 205 C 138 199, 131 200, 129 195"
+        d="M165 205 C 198 207, 226 186, 220 153"
         fill="none"
         stroke="#27272a"
         strokeWidth={4}
         strokeLinecap="round"
       />
       <path
-        d="M140 205 C 138 199, 131 200, 129 195"
+        d="M165 205 C 198 207, 226 186, 220 153"
         fill="none"
         stroke="#52525b"
         strokeWidth={1.2}
         strokeLinecap="round"
       />
 
-      {/* ── controller: yellow tray + Makerkit ESP32-S3 v1.3 PCB ── */}
-      <rect
-        x={110}
-        y={94}
-        width={100}
-        height={104}
-        rx={9}
-        fill="url(#rk-yellow)"
-        stroke="#b7791f"
-        strokeWidth={1}
-      />
-      <rect
-        x={104}
-        y={132}
-        width={8}
-        height={18}
-        rx={2.5}
-        fill="#eab308"
-        stroke="#b7791f"
-        strokeWidth={0.8}
-      />
-      <rect
-        x={208}
-        y={132}
-        width={8}
-        height={18}
-        rx={2.5}
-        fill="#eab308"
-        stroke="#b7791f"
-        strokeWidth={0.8}
-      />
-      <rect
-        x={117}
-        y={101}
-        width={86}
-        height={90}
-        rx={4}
-        fill="url(#rk-pcb)"
-        stroke="#14532d"
-        strokeWidth={0.8}
-      />
-      {/* silkscreen outline + mounting holes */}
-      <rect
-        x={120}
-        y={104}
-        width={80}
-        height={84}
-        rx={3}
-        fill="none"
-        stroke="#bbf7d0"
-        strokeWidth={0.4}
-        opacity={0.6}
-      />
-      {[
-        [121.5, 105.5],
-        [198.5, 105.5],
-        [121.5, 186.5],
-        [198.5, 186.5],
-      ].map(([cx, cy]) => (
-        <circle
-          key={`${cx}-${cy}`}
-          cx={cx}
-          cy={cy}
-          r={1.8}
-          fill="#e5c07b"
-          stroke="#a16207"
-          strokeWidth={0.4}
-        />
-      ))}
-      {/* ESP32-S3 module: antenna end + metal shield */}
-      <rect x={160} y={104} width={36} height={44} rx={1.5} fill="#14532d" />
-      <path
-        d="M163 107 h6 v5 h6 v-5 h6 v5 h6 v-5 h6"
-        fill="none"
-        stroke="#facc15"
-        strokeWidth={0.7}
-        opacity={0.85}
-      />
-      <rect
-        x={162}
-        y={116}
-        width={32}
-        height={30}
-        rx={1.5}
-        fill="url(#rk-shield)"
-        stroke="#64748b"
-        strokeWidth={0.5}
-      />
-      <text
-        x={178}
-        y={128}
-        textAnchor="middle"
-        fontSize={3.6}
-        fontWeight={700}
-        fill="#475569"
-        fontFamily="monospace"
-      >
-        ESP32-S3
-      </text>
-      <text
-        x={178}
-        y={133}
-        textAnchor="middle"
-        fontSize={2.6}
-        fill="#64748b"
-        fontFamily="monospace"
-      >
-        WROOM-2
-      </text>
-      {/* status LEDs: wifi (IO47) + BT (IO48) */}
-      <circle
-        cx={155}
-        cy={110}
-        r={2}
-        fill={wifiOn ? '#4ade80' : '#14532d'}
-        className={wifiOn ? styles.ledGlow : ''}
-      />
-      <circle
-        cx={155}
-        cy={117}
-        r={2}
-        fill={btOn ? '#60a5fa' : '#1e3a8a'}
-        className={btOn ? styles.ledGlow : ''}
-      />
-      {/* buzzer */}
-      <circle cx={136} cy={124} r={10} fill="#111827" stroke="#000" strokeWidth={0.8} />
-      <circle cx={136} cy={124} r={6.5} fill="none" stroke="#374151" strokeWidth={1} />
-      <circle cx={136} cy={124} r={1.6} fill="#000" />
-      {/* OLED / I2C connector */}
-      <rect x={124} y={104} width={14} height={4.5} rx={0.8} fill="#111" />
-      {/* CH340C + regulator + passives */}
-      <rect x={140} y={140} width={13} height={7} rx={0.8} fill="#1f2937" />
-      <rect x={168} y={152} width={10} height={6} rx={0.8} fill="#1f2937" />
-      <rect x={182} y={152} width={12} height={8} rx={0.8} fill="#334155" />
-      {[
-        [124, 141],
-        [130, 141],
-        [157, 152],
-        [124, 147],
-        [186, 163],
-        [158, 140],
-      ].map(([x, y]) => (
-        <rect key={`p${x}-${y}`} x={x} y={y} width={3.5} height={1.8} rx={0.4} fill="#d6c7a1" />
-      ))}
-      {/* 4x WS2812B RGB LEDs */}
-      {[0, 1, 2, 3].map((i) => (
-        <g key={`led${i}`}>
-          <rect
-            x={160 + i * 9}
-            y={166}
-            width={6}
-            height={6}
-            rx={0.8}
-            fill="#f8fafc"
-            stroke="#94a3b8"
-            strokeWidth={0.4}
-          />
-          <circle cx={163 + i * 9} cy={169} r={1.6} fill="#e2e8f0" />
-        </g>
-      ))}
-      {/* PWM servo headers (3 pins each) */}
-      <rect x={124} y={176} width={74} height={10} rx={1} fill="#111827" />
-      {Array.from({ length: 6 }, (_, c) =>
-        [0, 1, 2].map((r) => (
-          <rect
-            key={`h${c}-${r}`}
-            x={127 + c * 12 + r * 3.2}
-            y={179.5}
-            width={2}
-            height={3}
-            fill="#eab308"
-          />
-        )),
-      )}
-      {/* USB-C */}
-      <rect
-        x={124}
-        y={188}
-        width={11}
-        height={6}
-        rx={2}
-        fill="#e2e8f0"
-        stroke="#64748b"
-        strokeWidth={0.5}
-      />
-      {/* silkscreen */}
-      <text
-        x={136}
-        y={161}
-        textAnchor="middle"
-        fontSize={5}
-        fontWeight={800}
-        fill="#ecfdf5"
-        letterSpacing={0.3}
-      >
-        ROBOTKU
-      </text>
-      <text x={136} y={166.5} textAnchor="middle" fontSize={3} fill="#bbf7d0">
-        Makerkit v1.3
-      </text>
+      {/* ── controller: the real Makerkit V1.3 (white PCB, black 3D-printed case), shared
+          art. Mounted rotated 180° like on the robot: SERVO headers face the rear
+          (servo cables), I2C BUS faces the front (OLED ribbon), USB-C on the right. ── */}
+      <g transform="translate(220.4 192.5) rotate(180) scale(0.31)">
+        <MakerkitBoardArt bleOn={btOn} wifiOn={wifiOn} />
+      </g>
 
       {/* ── OLED module on the front rail + ribbon cable ── */}
       {[
@@ -602,7 +401,7 @@ export default function BaseRobotArt({
       ].map(([c, d]) => (
         <path
           key={String(c)}
-          d={`M${155 + Number(d)} 88 C ${155 + Number(d)} 96, ${126 + Number(d)} 96, ${126 + Number(d) / 1.5} 104`}
+          d={`M${155 + Number(d)} 88 C ${155 + Number(d)} 96, ${163 + Number(d) * 1.3} 98, ${163 + Number(d) * 1.3} 108`}
           fill="none"
           stroke={String(c)}
           strokeWidth={1.6}
@@ -615,8 +414,8 @@ export default function BaseRobotArt({
         width={16}
         height={18}
         rx={3.5}
-        fill="#16a34a"
-        stroke="#14532d"
+        fill="#18181b"
+        stroke="#000"
         strokeWidth={0.8}
       />
       <rect
