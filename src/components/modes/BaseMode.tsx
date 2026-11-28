@@ -2,11 +2,11 @@
 //
 // Base Robot — big top-down illustration of the real kit on the left (BaseRobotArt:
 // dowel frame, edge-on wheels on SG90 servos, Makerkit PCB, OLED, power bank) that
-// drives around as you hold the buttons; 3x3 pad on the right:
+// leans the way you hold the buttons and springs back on release; 3x3 pad on the right:
 //   · [▲] · / [◀] · [▶] / · [▼] [Buzzer]  (no claw on the kit: no Grab/Release)
 // Highly responsive, landscape mobile optimized.
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import ControlLayout from '../control/ControlLayout';
 import BaseRobotArt from './BaseRobotArt';
 import { useDrive, useSettings } from '../../hooks/useDrive';
@@ -23,18 +23,11 @@ export default function BaseMode() {
   const link = connState === 'connected' ? (transport?.kind ?? null) : null;
 
   const [intent, setIntent] = useState({ fwd: 0, turn: 0 });
-  const intentRef = useRef({ fwd: 0, turn: 0 });
-  const headingRef = useRef(0);
-  const poseRef = useRef({ x: 0, y: 0 });
-  const robotRef = useRef<HTMLDivElement | null>(null);
-  const arenaRef = useRef<HTMLDivElement | null>(null);
-  const reducedRef = useRef(false);
   const [reduced, setReduced] = useState(false);
   const speed = 75; // fixed normal speed
 
   const drive = useCallback(
     (fwd: number, turn: number) => {
-      intentRef.current = { fwd, turn };
       setIntent({ fwd, turn });
       const l = Math.round((fwd + turn) * speed);
       const r = Math.round((fwd - turn) * speed);
@@ -46,7 +39,6 @@ export default function BaseMode() {
   );
 
   const stop = useCallback(() => {
-    intentRef.current = { fwd: 0, turn: 0 };
     setIntent({ fwd: 0, turn: 0 });
     stopGroup(left);
     stopGroup(right);
@@ -76,7 +68,6 @@ export default function BaseMode() {
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     const apply = () => {
-      reducedRef.current = mq.matches;
       setReduced(mq.matches);
     };
     apply();
@@ -84,42 +75,22 @@ export default function BaseMode() {
     return () => mq.removeEventListener('change', apply);
   }, []);
 
-  // Animation loop: robot drives around the arena
-  useEffect(() => {
-    let raf = 0;
-    let last = performance.now();
-    const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
-    const tick = (now: number) => {
-      const dt = Math.min(0.05, (now - last) / 1000);
-      last = now;
-      const el = robotRef.current;
-      const arena = arenaRef.current;
-      if (el && arena && !reducedRef.current) {
-        const { fwd, turn } = intentRef.current;
-        headingRef.current = (headingRef.current + turn * 120 * dt + 360) % 360;
-        const rad = (headingRef.current * Math.PI) / 180;
-        const pose = poseRef.current;
-        pose.x += Math.sin(rad) * fwd * 140 * dt;
-        pose.y -= Math.cos(rad) * fwd * 140 * dt;
-        // Keep the whole (big) robot inside the arena, not just a 120px box.
-        const halfW = Math.max(0, (arena.clientWidth - el.offsetWidth) / 2);
-        const halfH = Math.max(0, (arena.clientHeight - el.offsetHeight) / 2);
-        pose.x = clamp(pose.x, -halfW, halfW);
-        pose.y = clamp(pose.y, -halfH, halfH);
-        el.style.transform = `translate(${pose.x}px, ${pose.y}px) rotate(${headingRef.current}deg)`;
-      }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, []);
-
   return (
     <ControlLayout title="Base Robot">
       <div className={styles.stage}>
         {/* Left: Robot illustration */}
-        <div className={styles.robotArea} ref={arenaRef}>
-          <div className={styles.robotWrap} ref={robotRef}>
+        <div className={styles.robotArea}>
+          {/* Like stickem: while a button is held the robot leans that way (nudges
+              forward/back, tilts ±30° to turn) and springs back to the start pose on
+              release — it doesn't roam the arena. */}
+          <div
+            className={styles.robotWrap}
+            style={{
+              transform: reduced
+                ? undefined
+                : `translateY(${-intent.fwd * 12}%) rotate(${intent.turn * 30}deg)`,
+            }}
+          >
             <BaseRobotArt fwd={intent.fwd} turn={intent.turn} reduced={reduced} link={link} />
           </div>
         </div>
