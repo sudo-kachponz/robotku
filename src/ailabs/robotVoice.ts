@@ -161,14 +161,17 @@ export function floatToUlaw(samples: Float32Array): Uint8Array {
 /**
  * Voice pitch: 1 = Piper's natural voice; >1 = higher, more child-like. Raised by
  * playing faster while Piper speaks `pitch` x slower, so the tempo stays the same.
- *   localStorage.setItem('robotku.voicePitch', '1.25')
+ * Default 1.3 = "suara nomor 3", picked by ear on the robot (2026-11-28) from
+ * 1 / 1.15 / 1.3 / 1.45. Override: localStorage.setItem('robotku.voicePitch', '1')
  */
+export const DEFAULT_VOICE_PITCH = 1.3;
 export function voicePitch(): number {
   try {
-    const v = Number(window.localStorage.getItem('robotku.voicePitch'));
-    return v >= 1 && v <= 1.6 ? v : 1;
+    const raw = window.localStorage.getItem('robotku.voicePitch');
+    const v = Number(raw);
+    return raw !== null && v >= 1 && v <= 1.6 ? v : DEFAULT_VOICE_PITCH;
   } catch {
-    return 1;
+    return DEFAULT_VOICE_PITCH;
   }
 }
 

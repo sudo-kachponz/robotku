@@ -1,7 +1,7 @@
 // Robot voice pipeline helpers: sentence streaming, speech cleanup, WAV framing,
 // Whisper hallucination filter.
 import { describe, it, expect } from 'vitest';
-import { SentenceSplitter, cleanForSpeech, floatToU8, floatToUlaw } from '../ailabs/robotVoice';
+import { SentenceSplitter, cleanForSpeech, floatToU8, floatToUlaw, voicePitch } from '../ailabs/robotVoice';
 import { pcmToWavB64, cleanTranscript } from '../ailabs/micStt';
 
 describe('SentenceSplitter', () => {
@@ -56,6 +56,18 @@ describe('floatToUlaw', () => {
     const quiet = new Float32Array([1, 0.004, 0.008, 0.012]); // loud first sample fixes the gain
     expect(new Set(floatToUlaw(quiet).slice(1)).size).toBe(3);
     expect(new Set(floatToU8(quiet).slice(1)).size).toBeLessThan(3);
+  });
+});
+
+describe('voicePitch', () => {
+  it('defaults to the child-like 1.3, honours a valid override, ignores junk', () => {
+    window.localStorage.removeItem('robotku.voicePitch');
+    expect(voicePitch()).toBe(1.3);
+    window.localStorage.setItem('robotku.voicePitch', '1');
+    expect(voicePitch()).toBe(1);
+    window.localStorage.setItem('robotku.voicePitch', '9');
+    expect(voicePitch()).toBe(1.3);
+    window.localStorage.removeItem('robotku.voicePitch');
   });
 });
 
