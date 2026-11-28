@@ -29,7 +29,10 @@ describe('connect panel setup flow', () => {
   it('not connected: relay box + Bluetooth/USB setup buttons (Bluetooth enabled again)', () => {
     const html = render();
     expect(html).toContain('Sambung via Relay');
-    expect(html).toMatch(/<button[^>]*>(?:(?!disabled)[^<])*<svg[\s\S]*?1\. Sambung via Bluetooth/);
+    expect(html).toContain('Langkah 01');
+    expect(html).toContain('Nyalakan robot');
+    // Bluetooth button present and enabled (it was force-disabled before 2.6)
+    expect(html).toMatch(/<button class="[^"]*bleBtn[^"]*">/);
     expect(html).not.toContain('nonaktif');
   });
 
@@ -38,7 +41,7 @@ describe('connect panel setup flow', () => {
     setConnState('connected');
     setRobotInfo(info({ relayId: 'KV5KDZ', relay: false }));
     const html = render();
-    expect(html).toContain('Robot tersambung via Bluetooth');
+    expect(html).toContain('Tersambung via Bluetooth');
     expect(html).toContain('KV5KDZ');
     expect(html).not.toContain('Ambil kode relay'); // no hardware password needed
     expect(html).toContain('Kirim WiFi ke robot');
@@ -59,7 +62,7 @@ describe('connect panel setup flow', () => {
     setConnState('connected');
     setRobotInfo(info({ relayId: 'KV5KDZ', relay: true }));
     const html = render();
-    expect(html).toContain('Robot online di internet');
+    expect(html).toContain('Robot sudah online di internet');
     expect(html).not.toMatch(/<button[^>]*disabled=""[^>]*>Pindah ke internet/);
   });
 });

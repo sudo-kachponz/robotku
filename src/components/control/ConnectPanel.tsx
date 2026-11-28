@@ -3,13 +3,14 @@
 // Connect panel. Two paths:
 //  - "Online (lewat internet)": robot already set up -> type its relay code or the
 //    hardware password from the box (or one tap on the last robot) -> relay.
-//  - "Setup robot (sekali saja)": power-bank robot, no WiFi yet. 1) link it briefly
-//    over Bluetooth/USB, 2) relay code: the robot's own (HELLO_ACK diag.relayId) or
-//    claimed with the hardware password, 3) send WiFi, wait until the robot is on the
-//    relay, 4) switch to the internet link (OTA updates work from there).
+//  - Setup slides (picture + explanation + action per step) for a robot without WiFi:
+//    1) power it (power bank), 2) link it briefly over Bluetooth/USB, 3) relay code:
+//    the robot's own (HELLO_ACK diag.relayId) or claimed with the hardware password,
+//    4) send WiFi and wait until it is on the relay, 5) switch to the internet link
+//    (OTA updates work from there).
 // Degrades gracefully on Safari/Firefox/iOS with a "buka di Chrome/Edge" notice.
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { isBleSupported, isSerialSupported, type TransportKind } from '../../transport';
 import {
   connect,
@@ -22,10 +23,10 @@ import {
   getSavedLink,
 } from '../../app/connection';
 import { getState } from '../../app/store';
-import { helloLine } from '../../domain/protocol';
-import { RELAY_ID_RE, normalizeRobotPassword } from '../../domain/protocol';
+import { RELAY_ID_RE, normalizeRobotPassword, helloLine } from '../../domain/protocol';
 import { useConnection } from '../../hooks/useConnection';
 import UnsupportedBrowserModal from './UnsupportedBrowserModal';
+import SetupArt, { type Scene } from './SetupArt';
 import styles from './ConnectPanel.module.css';
 
 export default function ConnectPanel({ onClose }: { onClose: () => void }) {
@@ -81,11 +82,7 @@ export default function ConnectPanel({ onClose }: { onClose: () => void }) {
             </button>
           </div>
 
-          {localLink ? (
-            <div className={styles.body}>
-              <RobotSetup onClose={onClose} />
-            </div>
-          ) : isConnected ? (
+          {isConnected && !localLink ? (
             <div className={styles.body}>
               <div className={styles.connectedNote}>
                 <span className={styles.okDot} />
@@ -103,34 +100,19 @@ export default function ConnectPanel({ onClose }: { onClose: () => void }) {
             </div>
           ) : (
             <div className={styles.body}>
-              <RelaySection onClose={onClose} />
-
-              <div className={styles.sectionDivider}>
-                <span>setup robot (sekali saja)</span>
-              </div>
-              <div className={styles.wifiNote}>
-                Robot baru atau belum tersambung WiFi? Nyalakan robot (boleh pakai power bank), lalu
-                sambungkan sebentar lewat Bluetooth atau USB.
-              </div>
-
-              <button
-                className={`${styles.btn} ${styles.bleBtn}`}
-                disabled={busy !== null}
-                onClick={() => handleConnect('ble')}
-              >
-                <BluetoothIcon />
-                <span>{busy === 'ble' ? 'Menyambungkan…' : '1. Sambung via Bluetooth'}</span>
-              </button>
-
-              <button
-                className={`${styles.btn} ${styles.serialBtn}`}
-                disabled={!caps.serial || busy !== null}
-                onClick={() => handleConnect('serial')}
-              >
-                <UsbIcon />
-                <span>{busy === 'serial' ? 'Menyambungkan…' : '1. Sambung via USB'}</span>
-              </button>
-
+              {!localLink && <RelaySection onClose={onClose} />}
+              {!localLink && (
+                <div className={styles.sectionDivider}>
+                  <span>robot baru? setup dulu</span>
+                </div>
+              )}
+              <SetupSlides
+                localLink={localLink}
+                busy={busy}
+                canSerial={caps.serial}
+                onConnect={handleConnect}
+                onClose={onClose}
+              />
               {!anySupported && (
                 <div
                   className={styles.unsupported}
@@ -385,24 +367,83 @@ function WifiSection({ isConnected, onClose }: { isConnected: boolean; onClose: 
 const isHttpsPage = () =>
   typeof window !== 'undefined' && window.isSecureContext && location.protocol === 'https:';
 
-/** Steps 2-4 of the setup, shown while the robot is linked over Bluetooth/USB. */
-function RobotSetup({ onClose }: { onClose: () => void }) {
+const SLIDES: { scene: Scene; title: string; desc: string }[] = [
+  {
+    scene: 'power',
+    title: 'Nyalakan robot',
+    desc: 'Colok kabel USB-C robot ke power bank. Lampu POWER menyala merah dan layar OLED menampilkan logo Robotku.',
+  },
+  {
+    scene: 'link',
+    title: 'Sambungkan sebentar',
+    desc: 'Cuma untuk setup pertama, supaya robot bisa menerima nama WiFi. Pilih Bluetooth (robot tetap di power bank) atau colok kabel USB robot ke laptop. Pakai Chrome atau Edge.',
+  },
+  {
+    scene: 'code',
+    title: 'Kode relay robot',
+    desc: 'Kode relay adalah alamat robotmu di internet. Robot yang sudah pernah di-setup punya kodenya sendiri; robot baru memakai kode hardware dari kartu di dalam box.',
+  },
+  {
+    scene: 'wifi',
+    title: 'Masukkan WiFi',
+    desc: 'Robot butuh WiFi 2.4 GHz: WiFi rumah, sekolah, atau hotspot HP. Nama dan password dikirim lewat sambungan di langkah 2.',
+  },
+  {
+    scene: 'internet',
+    title: 'Kendalikan dari mana saja',
+    desc: 'Robot sudah online. Kabel dan Bluetooth tidak perlu lagi: buka situs ini di HP atau laptop mana pun dan masukkan kode relay. Update firmware juga lewat WiFi (OTA).',
+  },
+];
+
+/**
+ * Robot setup as swipeable slides (scroll-snap; swipe on touch, arrows/dots on desktop).
+ * Each slide: picture, explanation, and the action for that step. The deck jumps ahead
+ * by itself as steps complete (linked -> code -> WiFi -> online).
+ */
+function SetupSlides({
+  localLink,
+  busy,
+  canSerial,
+  onConnect,
+  onClose,
+}: {
+  localLink: boolean;
+  busy: TransportKind | null;
+  canSerial: boolean;
+  onConnect: (kind: TransportKind) => void;
+  onClose: () => void;
+}) {
   const { robotInfo, transport } = useConnection();
   const diag = robotInfo?.diag ?? {};
   const robotRelayId =
     typeof diag.relayId === 'string' && RELAY_ID_RE.test(diag.relayId) ? diag.relayId : '';
   const [claimedId, setClaimedId] = useState<string | null>(null);
-  const relayId = claimedId ?? robotRelayId;
-  const relayOnline = diag.relay === true;
+  const relayId = localLink ? (claimedId ?? robotRelayId) : '';
+  const relayOnline = localLink && diag.relay === true;
+
+  const [index, setIndex] = useState(0);
+  const goTo = useCallback(
+    (i: number) => setIndex(Math.max(0, Math.min(SLIDES.length - 1, i))),
+    [],
+  );
+  // Swipe: a mostly-horizontal drag of 50 px+ flips one slide (taps still click).
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
 
   const [password, setPassword] = useState('');
   const [ssid, setSsid] = useState('');
   const [pass, setPass] = useState('');
-  const [busy, setBusy] = useState<'relay' | 'wifi' | 'switch' | null>(null);
+  const [work, setWork] = useState<'relay' | 'wifi' | 'switch' | null>(null);
   const [wifi, setWifi] = useState<'idle' | 'sent' | 'up'>('idle');
   const [wifiIp, setWifiIp] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+  // Jump to the next open step as soon as one completes.
+  useEffect(() => {
+    if (relayOnline) goTo(4);
+    else if (localLink && relayId) goTo(3);
+    else if (localLink) goTo(2);
+  }, [localLink, relayId, relayOnline, goTo]);
 
   // The robot reports WIFI_STATUS {connected, ip} once it joins the network.
   useEffect(
@@ -427,151 +468,259 @@ function RobotSetup({ onClose }: { onClose: () => void }) {
     return () => clearInterval(id);
   }, [wifi, relayOnline]);
 
-  const claim = async () => {
-    setBusy('relay');
+  const run = async (kind: 'relay' | 'wifi' | 'switch', fn: () => Promise<void>) => {
+    setWork(kind);
     setErr(null);
     try {
-      setClaimedId(await provisionRelay(password));
+      await fn();
     } catch (e) {
       setErr(msg(e));
     } finally {
-      setBusy(null);
+      setWork(null);
     }
   };
-  const sendWifi = async () => {
-    setBusy('wifi');
-    setErr(null);
-    try {
+  const claim = () => run('relay', async () => setClaimedId(await provisionRelay(password)));
+  const sendWifi = () =>
+    run('wifi', async () => {
       await provisionWifi(ssid, pass);
       setWifi('sent');
-    } catch (e) {
-      setErr(msg(e));
-    } finally {
-      setBusy(null);
-    }
-  };
-  const switchToInternet = async () => {
-    setBusy('switch');
-    setErr(null);
-    try {
+    });
+  const switchToInternet = () =>
+    run('switch', async () => {
       await disconnect(); // free the Bluetooth/USB link
       await connectRelay(relayId);
       onClose();
-    } catch (e) {
-      setErr(msg(e));
-      setBusy(null);
-    }
-  };
+    });
 
-  const step = (n: number, done: boolean, title: string) => (
-    <div className={styles.setupStep}>
-      <span className={done ? styles.setupNumDone : styles.setupNum}>{done ? '✓' : n}</span>
-      {title}
+  const needLink = (
+    <div className={styles.wifiNote}>
+      Sambungkan robot dulu di{' '}
+      <button type="button" className={styles.linkBtn} onClick={() => goTo(1)}>
+        langkah 2
+      </button>
+      .
     </div>
   );
 
-  return (
-    <div style={{ display: 'grid', gap: 8 }}>
-      {step(
-        1,
-        true,
-        `Robot tersambung via ${transport?.kind === 'ble' ? 'Bluetooth' : 'USB'} · fw ${robotInfo?.fwVersion ?? '?'}`,
-      )}
+  const actions = [
+    // 1 — power on
+    <button key="a1" type="button" className={styles.wifiBtn} onClick={() => goTo(1)}>
+      Sudah menyala, lanjut →
+    </button>,
 
-      {step(2, !!relayId, 'Kode relay robot')}
-      {relayId ? (
-        <div className={styles.wifiOk}>
-          Kode relay: <b className={styles.setupCode}>{relayId}</b> — catat kode ini.
+    // 2 — Bluetooth / USB
+    localLink ? (
+      <div key="a2" className={styles.wifiOk}>
+        ✓ Tersambung via {transport?.kind === 'ble' ? 'Bluetooth' : 'USB'} · fw{' '}
+        {robotInfo?.fwVersion ?? '?'}
+      </div>
+    ) : (
+      <div key="a2" className={styles.slideActions}>
+        <button
+          className={`${styles.btn} ${styles.bleBtn}`}
+          disabled={busy !== null}
+          onClick={() => onConnect('ble')}
+        >
+          <BluetoothIcon />
+          <span>{busy === 'ble' ? 'Menyambungkan…' : 'Bluetooth'}</span>
+        </button>
+        <button
+          className={`${styles.btn} ${styles.serialBtn}`}
+          disabled={!canSerial || busy !== null}
+          onClick={() => onConnect('serial')}
+        >
+          <UsbIcon />
+          <span>{busy === 'serial' ? 'Menyambungkan…' : 'Kabel USB'}</span>
+        </button>
+        <div className={styles.wifiHint}>
+          Robot tidak muncul di daftar Bluetooth? Pastikan robot menyala. Di Chrome Linux, aktifkan
+          dulu chrome://flags/#enable-experimental-web-platform-features.
         </div>
-      ) : (
-        <>
+      </div>
+    ),
+
+    // 3 — relay code
+    !localLink ? (
+      <div key="a3">{needLink}</div>
+    ) : relayId ? (
+      <div key="a3" className={styles.wifiOk}>
+        Kode relay: <b className={styles.setupCode}>{relayId}</b> — catat kode ini.
+      </div>
+    ) : (
+      <div key="a3" className={styles.slideActions}>
+        <input
+          className={styles.wifiInput}
+          value={password}
+          onChange={(e) => setPassword(e.target.value.toUpperCase())}
+          placeholder="Kode hardware XXXX-XXXX-XXXX-XXXX"
+          autoComplete="off"
+          spellCheck={false}
+          maxLength={24}
+          style={{ fontFamily: 'monospace', letterSpacing: '0.06em', textAlign: 'center' }}
+        />
+        <button
+          className={styles.wifiBtn}
+          disabled={work !== null || !password.trim()}
+          onClick={claim}
+          type="button"
+        >
+          {work === 'relay' ? 'Mengambil kode…' : 'Ambil kode relay'}
+        </button>
+      </div>
+    ),
+
+    // 4 — WiFi
+    !localLink ? (
+      <div key="a4">{needLink}</div>
+    ) : relayOnline ? (
+      <div key="a4" className={styles.wifiOk}>
+        ✓ Robot sudah online di internet
+      </div>
+    ) : !relayId ? (
+      <div key="a4" className={styles.wifiNote}>
+        Isi kode relay dulu di{' '}
+        <button type="button" className={styles.linkBtn} onClick={() => goTo(2)}>
+          langkah 3
+        </button>
+        .
+      </div>
+    ) : (
+      <div key="a4" className={styles.slideActions}>
+        <input
+          className={styles.wifiInput}
+          value={ssid}
+          onChange={(e) => setSsid(e.target.value)}
+          placeholder="Nama WiFi"
+          aria-label="Nama WiFi (2.4 GHz)"
+        />
+        <input
+          className={styles.wifiInput}
+          type="password"
+          value={pass}
+          onChange={(e) => setPass(e.target.value)}
+          placeholder="Password WiFi"
+          aria-label="Password WiFi"
+        />
+        <button
+          className={styles.wifiBtn}
+          disabled={!ssid || work !== null}
+          onClick={sendWifi}
+          type="button"
+        >
+          {work === 'wifi' ? 'Mengirim…' : 'Kirim WiFi ke robot'}
+        </button>
+        {wifi === 'sent' && (
+          <div className={styles.wifiNote}>Terkirim — robot sedang masuk WiFi…</div>
+        )}
+        {wifi === 'up' && (
           <div className={styles.wifiNote}>
-            Masukkan kode hardware dari kartu di dalam box robot.
+            Robot masuk WiFi{wifiIp ? ` (${wifiIp})` : ''} ✓ — menunggu tersambung ke internet…
           </div>
-          <input
-            className={styles.wifiInput}
-            value={password}
-            onChange={(e) => setPassword(e.target.value.toUpperCase())}
-            placeholder="XXXX-XXXX-XXXX-XXXX"
-            autoComplete="off"
-            spellCheck={false}
-            maxLength={24}
-            style={{ fontFamily: 'monospace', letterSpacing: '0.08em', textAlign: 'center' }}
-          />
-          <button
-            className={styles.wifiBtn}
-            disabled={busy !== null || !password.trim()}
-            onClick={claim}
-            type="button"
-          >
-            {busy === 'relay' ? 'Mengambil kode…' : 'Ambil kode relay'}
-          </button>
-        </>
-      )}
+        )}
+      </div>
+    ),
 
-      {step(3, relayOnline, 'Sambungkan robot ke WiFi')}
-      {relayId && !relayOnline && (
-        <>
-          <label className={styles.wifiLabel}>Nama WiFi (2.4 GHz)</label>
-          <input
-            className={styles.wifiInput}
-            value={ssid}
-            onChange={(e) => setSsid(e.target.value)}
-            placeholder="WiFi rumah / sekolah / hotspot HP"
-          />
-          <label className={styles.wifiLabel}>Password WiFi</label>
-          <input
-            className={styles.wifiInput}
-            type="password"
-            value={pass}
-            onChange={(e) => setPass(e.target.value)}
-            placeholder="••••••••"
-          />
-          <button
-            className={styles.wifiBtn}
-            disabled={!ssid || busy !== null}
-            onClick={sendWifi}
-            type="button"
-          >
-            {busy === 'wifi' ? 'Mengirim…' : 'Kirim WiFi ke robot'}
-          </button>
-          {wifi === 'sent' && (
-            <div className={styles.wifiNote}>Terkirim — robot sedang masuk WiFi…</div>
-          )}
-          {wifi === 'up' && (
-            <div className={styles.wifiNote}>
-              Robot masuk WiFi{wifiIp ? ` (${wifiIp})` : ''} ✓ — menunggu tersambung ke internet…
-            </div>
-          )}
-        </>
-      )}
-      {relayOnline && <div className={styles.wifiOk}>Robot online di internet ✓</div>}
-
-      {step(4, false, 'Kendalikan lewat internet')}
+    // 5 — switch to the relay
+    <div key="a5" className={styles.slideActions}>
+      {relayOnline && <div className={styles.wifiOk}>✓ Robot online · kode {relayId}</div>}
       <button
         className={styles.wifiBtn}
-        disabled={!relayOnline || busy !== null}
+        disabled={!relayOnline || work !== null}
         onClick={switchToInternet}
         type="button"
         style={{ background: 'var(--green)' }}
       >
-        {busy === 'switch' ? 'Memindahkan…' : 'Pindah ke internet (relay)'}
+        {work === 'switch' ? 'Memindahkan…' : 'Pindah ke internet (relay)'}
       </button>
-      <div className={styles.wifiHint}>
-        Setelah ini kabel/Bluetooth tidak perlu lagi: robot cukup pakai power bank, dan update
-        firmware jalan lewat WiFi (OTA).
-      </div>
-      {err && <div className={styles.wifiErr}>{err}</div>}
+      {!relayOnline && (
+        <div className={styles.wifiNote}>Aktif setelah robot online (langkah 4).</div>
+      )}
+    </div>,
+  ];
 
-      <button
-        className={`${styles.btn} ${styles.disconnectBtn}`}
-        onClick={async () => {
-          await disconnect();
-          onClose();
+  return (
+    <div className={styles.slidesWrap}>
+      <div
+        className={styles.slides}
+        onPointerDown={(e) => {
+          swipeStart.current = { x: e.clientX, y: e.clientY };
+        }}
+        onPointerUp={(e) => {
+          const st = swipeStart.current;
+          swipeStart.current = null;
+          if (!st) return;
+          const dx = e.clientX - st.x;
+          if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(e.clientY - st.y))
+            goTo(index + (dx < 0 ? 1 : -1));
         }}
       >
-        Putuskan
-      </button>
+        <div className={styles.track} style={{ transform: `translateX(-${index * 100}%)` }}>
+          {SLIDES.map((s, i) => (
+            <section
+              key={s.scene}
+              className={styles.slide}
+              aria-label={`Langkah ${i + 1} dari ${SLIDES.length}: ${s.title}`}
+              aria-hidden={i !== index}
+            >
+              <span className={styles.stepBadge}>Langkah {String(i + 1).padStart(2, '0')}</span>
+              <h3 className={styles.slideTitle}>{s.title}</h3>
+              <div className={styles.slideArt}>
+                <SetupArt scene={s.scene} />
+              </div>
+              <p className={styles.slideDesc}>{s.desc}</p>
+              {actions[i]}
+            </section>
+          ))}
+        </div>
+      </div>
+
+      {err && <div className={styles.wifiErr}>{err}</div>}
+
+      <div className={styles.slideNav}>
+        <button
+          type="button"
+          className={styles.navArrow}
+          onClick={() => goTo(index - 1)}
+          disabled={index === 0}
+          aria-label="Langkah sebelumnya"
+        >
+          ‹
+        </button>
+        <div className={styles.dots} role="tablist" aria-label="Langkah setup">
+          {SLIDES.map((s, i) => (
+            <button
+              key={s.scene}
+              type="button"
+              role="tab"
+              aria-selected={i === index}
+              aria-label={`Langkah ${i + 1}: ${s.title}`}
+              className={i === index ? styles.dotOn : styles.dot}
+              onClick={() => goTo(i)}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          className={styles.navArrow}
+          onClick={() => goTo(index + 1)}
+          disabled={index === SLIDES.length - 1}
+          aria-label="Langkah berikutnya"
+        >
+          ›
+        </button>
+      </div>
+
+      {localLink && (
+        <button
+          className={`${styles.btn} ${styles.disconnectBtn}`}
+          onClick={async () => {
+            await disconnect();
+            onClose();
+          }}
+        >
+          Putuskan
+        </button>
+      )}
     </div>
   );
 }

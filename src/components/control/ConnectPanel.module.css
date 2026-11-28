@@ -13,7 +13,9 @@
 
 .panel {
   width: 100%;
-  max-width: 380px;
+  max-width: 460px;
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
   background: var(--surface);
   border-radius: var(--r-xl);
   box-shadow: var(--shadow-lg);
@@ -157,7 +159,7 @@
 .wifiSection {
   margin-top: 10px;
   border-top: 1px solid var(--line);
-  padding-top: 8px;
+  padding: 8px 20px 18px;
 }
 .wifiToggle {
   display: flex;
@@ -271,4 +273,118 @@
   font-family: monospace;
   font-size: 16px;
   letter-spacing: 0.15em;
+}
+
+/* ---- Setup slides ---- */
+.slidesWrap {
+  display: grid;
+  gap: 10px;
+}
+.slides {
+  overflow: hidden;
+  touch-action: pan-y; /* vertical scroll stays native; horizontal drags are swipes */
+}
+.track {
+  display: flex;
+  align-items: flex-start;
+  transition: transform 0.3s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .track {
+    transition: none;
+  }
+}
+.slide {
+  flex: 0 0 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 4px 4px;
+  text-align: center;
+}
+.stepBadge {
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: var(--pink-500, #ec2d8f);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.slideTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink-900);
+}
+.slideArt {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  border-radius: 14px;
+  background: #f1f5f9;
+  border: 1.5px solid #e2e8f0;
+}
+.slideDesc {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-600);
+}
+.slideActions {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+}
+.slideNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.navArrow {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-800);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.navArrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.dots {
+  display: flex;
+  gap: 8px;
+}
+.dot,
+.dotOn {
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--line);
+  cursor: pointer;
+}
+.dotOn {
+  width: 24px;
+  background: var(--pink-500, #ec2d8f);
+}
+.linkBtn {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--pink-500, #ec2d8f);
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  cursor: pointer;
 }
