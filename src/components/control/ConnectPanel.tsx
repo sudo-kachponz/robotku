@@ -341,6 +341,7 @@ function WifiSection({ isConnected, onClose }: { isConnected: boolean; onClose: 
 
 function RelaySetup() {
   const [robotCode, setRobotCode] = useState<string | null>(null);
+  const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -348,7 +349,7 @@ function RelaySetup() {
     setBusy(true);
     setErr(null);
     try {
-      const code = await provisionRelay();
+      const code = await provisionRelay(password);
       setRobotCode(code);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
@@ -378,10 +379,23 @@ function RelaySetup() {
 
   return (
     <div style={{ marginTop: 8 }}>
+      <label style={{ display: 'block', fontSize: 12, color: 'var(--ink-500)', marginBottom: 4 }}>
+        Password produk (ada di kartu dalam box robot)
+        <input
+          className={styles.wifiInput}
+          value={password}
+          onChange={(e) => setPassword(e.target.value.toUpperCase())}
+          placeholder="XXXX-XXXX-XXXX-XXXX"
+          autoComplete="off"
+          spellCheck={false}
+          maxLength={24}
+          style={{ width: '100%', marginTop: 4, fontFamily: 'monospace', letterSpacing: '0.08em' }}
+        />
+      </label>
       <button
         className={styles.wifiBtn}
         onClick={setup}
-        disabled={busy}
+        disabled={busy || !password.trim()}
         type="button"
         style={{ width: '100%', background: 'var(--green)' }}
       >

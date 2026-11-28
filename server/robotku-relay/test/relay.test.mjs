@@ -4,7 +4,9 @@
 // the controller.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { RelayRoom } from '../src/worker.js';
+import worker, { RelayRoom } from '../src/worker.js';
+import { createHmac } from 'node:crypto';
+import { claimPassword, passwordForSerial, relayForSerial, robotSecret, normalizePassword } from '../src/boxcode.js';
 
 class FakeWs {
   constructor(name) { this.name = name; this.readyState = 1; this.sent = []; this.closed = null; this.l = {}; }
@@ -76,4 +78,55 @@ test('controller commands reach the robot', () => {
   r.handleController(web, 'ABC234', 'ip');
   web.emit('message', { data: '{"command":"PLAY_TONE","params":{"hz":880,"target":"buzzer"}};\n' });
   assert.ok(robot.sent.some((s) => s.includes('PLAY_TONE')));
+});
+
+// ── Box passwords -> relay code (/provision) ──
+const KEY = 'test-signing-key';
+const env = { RELAY_SIGNING_KEY: KEY, ALLOWED_ORIGINS: 'https://hub.robotku.id' };
+const provision = (body, origin = 'https://hub.robotku.id') =>
+  worker.fetch(
+    new Request('https://relay.test/provision', {
+      method: 'POST',
+      headers: { Origin: origin, 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    }),
+    env,
+  );
+
+test('robot token is unchanged (same as gen-robot-id.mjs)', async () => {
+  const want = createHmac('sha256', KEY).update('ABC234').digest('hex').slice(0, 32);
+  assert.equal(await robotSecret(KEY, 'ABC234'), want);
+});
+
+test('a printed password claims its relay code, the same one every time', async () => {
+  const pw = await passwordForSerial(KEY, 'K7M2Q9XA');
+  assert.match(pw, /^[2-9A-HJ-NP-Z]{4}(-[2-9A-HJ-NP-Z]{4}){3}$/);
+  const a = await claimPassword(KEY, pw);
+  const b = await claimPassword(KEY, ' rk ' + pw.toLowerCase().replace(/-/g, ' ')); // typed sloppily
+  assert.deepEqual(a, b);
+  assert.deepEqual({ id: a.id, secret: a.secret }, await relayForSerial(KEY, 'K7M2Q9XA'));
+  assert.match(a.id, /^[2-9A-HJ-NP-Z]{6}$/);
+});
+
+test('a forged or mistyped password is rejected', async () => {
+  const pw = (await passwordForSerial(KEY, 'K7M2Q9XA')).replace(/-/g, '');
+  const flipped = pw.slice(0, 15) + (pw[15] === 'Z' ? 'Y' : 'Z');
+  assert.equal(await claimPassword(KEY, flipped), null);
+  assert.equal(await claimPassword('other-key', pw), null);
+  assert.equal(normalizePassword('ABCD-EFGH-IJKL-MNOP'), null); // I/O not in the alphabet
+});
+
+test('/provision: password required, wrong one 403, right one returns id+secret with CORS', async () => {
+  let r = await provision(undefined);
+  assert.equal(r.status, 400);
+  assert.equal(r.headers.get('Access-Control-Allow-Origin'), 'https://hub.robotku.id');
+  r = await provision({ password: '2222-2222-2222-2222' });
+  assert.equal(r.status, 403);
+  const pw = await passwordForSerial(KEY, 'K7M2Q9XA');
+  r = await provision({ password: pw });
+  assert.equal(r.status, 200);
+  const { id, secret } = await r.json();
+  assert.equal(secret, await robotSecret(KEY, id)); // the robot can log in with it
+  r = await provision({ password: pw }, 'https://evil.example');
+  assert.equal(r.status, 403);
 });

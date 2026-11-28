@@ -282,19 +282,33 @@ export async function provisionWifi(ssid: string, pass: string): Promise<void> {
 }
 
 /**
- * Provision relay on the robot over the CURRENT link. Calls the relay server
- * to generate an HMAC-valid ID+secret, sends SET_RELAY to the board, returns the code.
+ * Provision relay on the robot over the CURRENT link. Exchanges the password printed
+ * on the card inside the robot box for that robot's relay code (ID + token) at the
+ * relay server, sends SET_RELAY to the board, returns the code. Same password ->
+ * same code, so a lost code can be recovered by running this again.
  */
-export async function provisionRelay(): Promise<string> {
+export async function provisionRelay(password: string): Promise<string> {
   const { transport } = getState();
   if (!transport) throw new Error('Sambungkan dulu lewat Bluetooth/USB.');
+  if (!password.trim()) throw new Error('Masukkan password dari kartu di dalam box robot.');
   const relayBase = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_RELAY_URL)
     || 'https://robotku-relay.hubrobotku.workers.dev';
-  const res = await fetch(`${relayBase}/provision`, { method: 'POST' });
-  if (!res.ok) throw new Error('Gagal generate kode robot dari relay server.');
-  const { id, secret } = (await res.json()) as { id: string; secret: string };
-  await transport.sendLine(setRelayLine(id, secret));
-  return id;
+  let res: Response;
+  try {
+    res = await fetch(`${relayBase}/provision`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: password.trim() }),
+    });
+  } catch {
+    throw new Error('Server relay tidak bisa dihubungi. Cek internet lalu coba lagi.');
+  }
+  const data = (await res.json().catch(() => ({}))) as { id?: string; secret?: string; message?: string };
+  if (!res.ok || !data.id || !data.secret) {
+    throw new Error(data.message || 'Gagal mengambil kode robot dari relay server.');
+  }
+  await transport.sendLine(setRelayLine(data.id, data.secret));
+  return data.id;
 }
 
 /** Connect to the robot over WiFi (WebSocket). `host` is an IP or mDNS name (robotku.local). */

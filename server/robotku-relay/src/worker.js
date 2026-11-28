@@ -7,18 +7,11 @@
 // Deploy:
 //   npx wrangler deploy
 //   # Set robot secrets via gen-robot-id.mjs, stored in robot NVS
+//   # Box cards (password -> relay code): tools/gen-box-codes.mjs, see src/boxcode.js
+
+import { robotSecret, claimPassword } from './boxcode.js';
 
 const ID_RE = /^[2-9A-HJ-NP-Z]{6}$/;
-
-// Robot secret = first 32 hex of HMAC-SHA256(signingKey, id). Must match gen-robot-id.mjs.
-async function robotSecret(signingKey, id) {
-  const key = await crypto.subtle.importKey(
-    'raw', new TextEncoder().encode(signingKey),
-    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
-  );
-  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(id));
-  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
-}
 
 export default {
   async fetch(request, env) {
@@ -26,6 +19,7 @@ export default {
 
     if (url.pathname === '/ws') return handleWs(request, env);
     if (url.pathname === '/health') return json({ ok: true });
+    if (url.pathname === '/provision' && request.method === 'OPTIONS') return preflight(request, env);
     if (url.pathname === '/provision' && request.method === 'POST') return handleProvision(request, env);
     return new Response('not found', { status: 404 });
   },
@@ -97,30 +91,57 @@ function closeUpgrade(code, reason) {
   return new Response(null, { status: 101, webSocket: pair[0] });
 }
 
-// Generate a robot ID + HMAC secret. Called by the web setup wizard.
-// Origin-checked so only allowed sites can provision.
-const PROVISION_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
-async function handleProvision(request, env) {
+function allowedOrigin(request, env) {
   const origin = request.headers.get('Origin') || '';
-  const allowed = (env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim());
-  if (!allowed.some(a => a === origin)) {
-    return json({ error: 'origin not allowed' }, 403);
-  }
-  if (!env.RELAY_SIGNING_KEY) {
-    return json({ error: 'signing key not configured' }, 500);
-  }
-  const arr = new Uint8Array(6);
-  crypto.getRandomValues(arr);
-  let id = '';
-  for (const b of arr) id += PROVISION_CHARS[b % PROVISION_CHARS.length];
-  const secret = await robotSecret(env.RELAY_SIGNING_KEY, id);
-  return json({ id, secret }, 200);
+  const allowed = (env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim());
+  return allowed.includes(origin) ? origin : null;
 }
 
-function json(data, status = 200) {
+// The wizard runs on another origin (hub.robotku.id), so the browser needs CORS
+// headers to READ the answer — without them the old /provision always looked failed.
+function corsHeaders(origin) {
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'content-type',
+    Vary: 'Origin',
+  };
+}
+
+function preflight(request, env) {
+  const origin = allowedOrigin(request, env);
+  return new Response(null, { status: origin ? 204 : 403, headers: origin ? corsHeaders(origin) : {} });
+}
+
+// Exchange the password printed on the card inside the robot box for that robot's
+// relay code (ID + token). Only genuine passwords work (see boxcode.js), and the
+// same password always returns the same code, so a lost code can be recovered.
+// Called by the web setup wizard, which then sends SET_RELAY to the robot.
+async function handleProvision(request, env) {
+  const origin = allowedOrigin(request, env);
+  if (!origin) return json({ error: 'origin not allowed' }, 403);
+  const headers = corsHeaders(origin);
+  if (!env.RELAY_SIGNING_KEY) return json({ error: 'signing key not configured' }, 500, headers);
+  let body = {};
+  try {
+    body = await request.json();
+  } catch {
+    // no/invalid body -> handled as "password missing" below
+  }
+  if (!body || !body.password) {
+    return json({ error: 'password_required', message: 'Masukkan password dari kartu di dalam box robot.' }, 400, headers);
+  }
+  const claim = await claimPassword(env.RELAY_SIGNING_KEY, body.password);
+  if (!claim) {
+    return json({ error: 'bad_password', message: 'Password salah atau bukan password produk Robotku.' }, 403, headers);
+  }
+  return json({ id: claim.id, secret: claim.secret }, 200, headers);
+}
+
+function json(data, status = 200, extra = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...extra },
   });
 }
 
