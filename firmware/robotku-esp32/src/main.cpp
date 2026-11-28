@@ -959,6 +959,9 @@ static bool touchPressed(int i) {
 // HC-SR04: 10 us trigger, echo pulse width = round trip. -1 = no sensor / no echo
 // within ~4 m (25 ms timeout keeps loop() responsive).
 static float ultrasonicRead(bool inch) {
+  // Trig/Echo share AUX G6/G5: a "digital"/"analog" read there leaves them INPUT.
+  pinMode(PIN_US_TRIG, OUTPUT);
+  pinMode(PIN_US_ECHO, INPUT);
   digitalWrite(PIN_US_TRIG, LOW);
   delayMicroseconds(2);
   digitalWrite(PIN_US_TRIG, HIGH);
