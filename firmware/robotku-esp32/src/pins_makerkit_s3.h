@@ -53,3 +53,17 @@
 // -------- Accessory positional servo (web port 5 = PWM5) --------
 #define PIN_SERVO_AUX  19      // PWM5 = IO19
 #define HAS_SERVO_AUX  1
+
+// -------- Inputs (SCH 2026-11-24) --------
+// Touch1/Touch2 pads -> blocks "tombol 1/2" (capacitive, touchRead()).
+#define PIN_TOUCH1     1       // IO1 (Touch1)
+#define PIN_TOUCH2     2       // IO2 (Touch2)
+// AUX_I/O1..6 -> web ports G1..G6 (analog/digital read + write). AUX1-4 are on the
+// H8 "IN" header (+3V3/GND rows beside it), AUX5/AUX6 on the Distance_Sensor header.
+// All on ADC1, so analogRead works while WiFi is on.
+#define AUX_PIN_LIST   { 4, 5, 6, 7, 15, 16 }
+// HC-SR04 on the Distance_Sensor header H5 (pin2 = AUX6, pin3 = AUX5): the usual
+// VCC/Trig/Echo/GND order -> Trig = AUX6, Echo = AUX5. NOTE: HC-SR04 echo is 5 V —
+// a 1k/2k divider on Echo protects the 3.3 V input.
+#define PIN_US_TRIG    16      // IO16 (AUX_I/O6)
+#define PIN_US_ECHO    15      // IO15 (AUX_I/O5)

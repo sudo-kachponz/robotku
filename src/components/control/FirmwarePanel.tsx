@@ -45,15 +45,15 @@ const FIRMWARES: Firmware[] = [
     feats: [true, false, false, false, 'dasar', false], setup: null,
   },
   {
-    title: 'OTA + Relay (lengkap)', ver: '2.6.0-mk', manifest: '/firmware/manifest.json', chip: 'ESP32',
+    title: 'OTA + Relay (lengkap)', ver: '2.6.2-mk', manifest: '/firmware/manifest.json', chip: 'ESP32',
     color: '#16a34a', status: '⚙️ compile — perlu tes hardware',
     desc: 'Semua fitur. Kontrol dari internet lewat relay + update firmware OTA.',
     feats: [true, true, true, true, true, true],
     setup: 'SET_RELAY <ID> <SECRET> lalu SET_WIFI <ssid> <pass> di Serial Monitor',
   },
   {
-    title: 'ESP32-S3 (board baru)', ver: '2.6.0-s3', manifest: '/firmware/manifest-s3.json', chip: 'ESP32-S3',
-    color: '#4f46e5', status: '🆕 board S3 v1.3 — belum ditest',
+    title: 'ESP32-S3 (board baru)', ver: '2.6.2-s3', manifest: '/firmware/manifest-s3.json', chip: 'ESP32-S3',
+    color: '#4f46e5', status: '✅ teruji di board S3 v1.3 (USB)',
     desc: 'Firmware yang sama (semua fitur) untuk board ESP32-S3 v1.3.',
     feats: [true, true, true, true, true, true],
     setup: 'SET_RELAY <ID> <SECRET> lalu SET_WIFI <ssid> <pass> di Serial Monitor',

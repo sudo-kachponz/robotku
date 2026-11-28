@@ -68,7 +68,7 @@ const char* resetReasonName(esp_reset_reason_t r);   // defined after sendHelloA
 // ------------------------------------------------------------------ Identity
 // BOARD_NAME / BOARD_ID come from the selected pin map (pins_*.h) so HELLO_ACK
 // tells the web which variant connected — no #ifdef BOARD_* here (see config.h).
-#define FW_VERSION   "2.6.0-mk"   // 2.6.0: S3 mic pins (SCH 11-24), streaming TTS + TTS_DONE, MIC_STT 16-bit/VAD/MIC_STOP
+#define FW_VERSION   "2.6.2-mk"   // 2.6.2: S3 servos work (ESP32Servo 3.0.9), touch/AUX/ultrasonic sensors, LCD->OLED, 16K serial RX; 2.6.1: mu-law TTS
 #define PROTOCOL_ID  "robotku-v1"
 #define BLE_NAME     "Robotku"
 
@@ -168,6 +168,18 @@ volatile size_t        pcmPlayOff    = 0;   // bytes played so far (reader: audi
 volatile bool          pcmStreamRecv = false; // between TTS_BEGIN and TTS_END
 volatile bool          pcmStreamPlay = false; // audioTask: play the buffer
 volatile int           pcmStreamSr   = 8000;  // 8000 (BLE) or 16000 (WiFi/relay)
+// Byte format of the streamed TTS: 0 = 8-bit linear (centre 128, older web builds),
+// 1 = G.711 mu-law. Same 1 byte/sample, but mu-law keeps ~13-bit quality for quiet
+// syllables where 8-bit linear turned to hiss ("audio kurang jernih").
+volatile uint8_t       pcmStreamFmt  = 0;
+static int16_t         ulawTable[256];      // filled once in setup via ulawInit()
+static void ulawInit() {
+  for (int i = 0; i < 256; i++) {
+    uint8_t u = ~(uint8_t)i;
+    int t = (((u & 0x0F) << 3) + 0x84) << ((u & 0x70) >> 4);
+    ulawTable[i] = (int16_t)((u & 0x80) ? (0x84 - t) : (t - 0x84));
+  }
+}
 volatile bool          pcmDoneNotify = false; // audioTask -> loop(): send TTS_DONE
 volatile bool          pcmTaskBusy   = false; // audioTask is inside the TTS play loop
 volatile int           pcmEndSeq     = 0;     // seq of the last TTS_END (echoed in TTS_DONE)
@@ -571,7 +583,9 @@ void audioTask(void*) {
           // u8 (centre 128) -> s16 at HALF scale (<<7, not <<8): still far louder
           // than the old tone, but leaves current headroom so a long reply doesn't
           // brown the board out on USB. Bump toward <<8 if you run on battery.
-          int16_t s = (int16_t)((((int)pcmStreamBuf[off] - 128) << 7) * spkVolume / 100);  // SET_VOLUME scale
+          // mu-law decodes to +-32124; >>1 keeps the same half-scale headroom as <<7.
+          const int lin = pcmStreamFmt ? (ulawTable[pcmStreamBuf[off]] >> 1) : (((int)pcmStreamBuf[off] - 128) << 7);
+          int16_t s = (int16_t)(lin * spkVolume / 100);  // SET_VOLUME scale
           if (up) buf[n++] = (int16_t)(((int)prev + s) / 2);
           buf[n++] = s;
           prev = s;
@@ -895,6 +909,55 @@ int noteToFreq(const char* note) {
 // SET_ANALOG/SET_DIGITAL: resolve a web port name ("P1".."P8" or a bare number) to
 // its PWM-header GPIO through the SAME config.h table the drive path uses — single
 // source of truth. Unwired ports (PORT_CHANNEL == -1) and junk return -1 (skip).
+#ifdef AUX_PIN_LIST
+static const int AUX_PINS[] = AUX_PIN_LIST;
+#endif
+// Web port "G1".."G6" -> AUX_I/O GPIO (boards that have the AUX header), else -1.
+int auxPin(const char* port) {
+#ifdef AUX_PIN_LIST
+  if (!port || (port[0] != 'G' && port[0] != 'g')) return -1;
+  int n = atoi(port + 1);
+  if (n < 1 || n > (int)(sizeof(AUX_PINS) / sizeof(AUX_PINS[0]))) return -1;
+  return AUX_PINS[n - 1];
+#else
+  (void)port;
+  return -1;
+#endif
+}
+
+#ifdef PIN_TOUCH1
+// Capacitive pads: the S3 reading RISES when touched. Baseline taken at boot (pads
+// untouched); "pressed" = 25% above it.
+static uint32_t touchBase[2] = {0, 0};
+static void touchInit() {
+  const int pins[2] = {PIN_TOUCH1, PIN_TOUCH2};
+  for (int i = 0; i < 2; i++) {
+    uint32_t sum = 0;
+    for (int k = 0; k < 8; k++) sum += touchRead(pins[i]);
+    touchBase[i] = sum / 8;
+  }
+}
+static bool touchPressed(int i) {
+  uint32_t v = touchRead(i == 0 ? PIN_TOUCH1 : PIN_TOUCH2);
+  return touchBase[i] && v > touchBase[i] + touchBase[i] / 4;
+}
+#endif
+
+#ifdef PIN_US_TRIG
+// HC-SR04: 10 us trigger, echo pulse width = round trip. -1 = no sensor / no echo
+// within ~4 m (25 ms timeout keeps loop() responsive).
+static float ultrasonicRead(bool inch) {
+  digitalWrite(PIN_US_TRIG, LOW);
+  delayMicroseconds(2);
+  digitalWrite(PIN_US_TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(PIN_US_TRIG, LOW);
+  unsigned long us = pulseIn(PIN_US_ECHO, HIGH, 25000UL);
+  if (us == 0) return -1;
+  return roundf((inch ? us / 148.0f : us / 58.0f) * 10) / 10;
+}
+#endif
+
 int portPwmPin(const char* port) {
   if (!port || port[0] == '\0') return -1;
   int n = (port[0] == 'P' || port[0] == 'p') ? atoi(port + 1) : atoi(port);
@@ -1008,6 +1071,7 @@ void sendHelloAck() {
   caps.add("TTS_CHUNK");
   caps.add("TTS_END");
   caps.add("TTS_STREAM");       // 2.6: plays while streaming, append + sr, replies TTS_DONE
+  caps.add("TTS_ULAW");         // 2.6.1: TTS_BEGIN {fmt:"ulaw"} -> G.711 mu-law bytes
   if (psramFound()) caps.add("TTS_SR16");   // 1 MB buffer -> 16 kHz is safe over WiFi/relay
 #endif
 #if HAS_MIC
@@ -1017,6 +1081,7 @@ void sendHelloAck() {
 #endif
   if (oledOk) caps.add("DISPLAY_TEXT");   // OLED text — only if the panel answered
   if (oledOk) caps.add("DISPLAY_BITMAP"); // OLED pixel-art
+  if (oledOk) { caps.add("LCD_TEXT"); caps.add("LCD_SHAPE"); caps.add("LCD_CLEAR"); }  // LCD blocks -> OLED
   if (oledOk) caps.add("SET_LED_BRIGHTNESS"); // OLED contrast/brightness
   // Web control-surface opcodes (guarded to match the handlers below).
   caps.add("DRIVE_DIRECT");
@@ -1383,6 +1448,7 @@ void handleCommand(const String& jsonLine) {
       pcmStreamLen = 0;
       pcmPlayOff = 0;
       pcmStreamSr = ((p["sr"] | 8000) == 16000) ? 16000 : 8000;
+      pcmStreamFmt = (strcmp(p["fmt"] | "", "ulaw") == 0) ? 1 : 0;
       // No `sr` = older web build: keep its buffer-then-play behaviour (play on TTS_END).
       long preMs  = p["sr"].isNull() ? 120000L : constrain((long)(p["pre_ms"] | 250), 50L, 120000L);
       pcmPrebuf   = (size_t)((long)pcmStreamSr * preMs / 1000);
@@ -1427,26 +1493,45 @@ void handleCommand(const String& jsonLine) {
     return;
   }
 
-  // --- Reporter: mic level / clap (Makerkit) — replies with a TELEMETRY frame ---
+  // --- Reporters (sensor blocks) — reply with a TELEMETRY frame ---------------
+  // Only sensors this board really has answer; anything else -> UNSUPPORTED.
   if (strcmp(cmd, "GET_SENSOR_DATA") == 0) {
-#if HAS_MIC
     const char* sensor = p["sensor"] | "";
+    const int aux = auxPin(p["port"] | "");
     JsonDocument r;
     r["command"] = "TELEMETRY";
     r["sensor"]  = sensor;
-    if (strcmp(sensor, "mic_level") == 0) {
+    bool known = true;
+    if (false) {
+#if HAS_MIC
+    } else if (strcmp(sensor, "mic_level") == 0) {
       r["value"] = micLevel;
     } else if (strcmp(sensor, "mic_clap") == 0) {
       r["value"] = micClap ? 1 : 0;
       micClap = false;   // latch cleared on read
-    } else {
-      sendUnsupported("GET_SENSOR_DATA");   // unknown sensor on this board
-      return;
-    }
-    sendJson(r);
-#else
-    sendUnsupported("GET_SENSOR_DATA");
 #endif
+#if HAS_SPEAKER && HAS_MIC
+    } else if (strcmp(sensor, "recording") == 0) {
+      r["value"] = (recordMs != 0 || sttActive) ? 1 : 0;
+#endif
+#ifdef PIN_TOUCH1
+    } else if (strcmp(sensor, "button1") == 0 || strcmp(sensor, "button2") == 0) {
+      r["value"] = touchPressed(sensor[6] == '2' ? 1 : 0) ? 1 : 0;
+#endif
+    } else if (strcmp(sensor, "analog") == 0 && aux >= 0) {
+      r["value"] = analogRead(aux);            // 0..4095 (12-bit ADC1)
+    } else if (strcmp(sensor, "digital") == 0 && aux >= 0) {
+      pinMode(aux, INPUT);
+      r["value"] = digitalRead(aux);
+#ifdef PIN_US_TRIG
+    } else if (strcmp(sensor, "ultrasonic") == 0) {
+      r["value"] = ultrasonicRead(strcmp(p["unit"] | "cm", "inch") == 0);
+#endif
+    } else {
+      known = false;
+    }
+    if (!known) { sendUnsupported("GET_SENSOR_DATA"); return; }   // sensor not on this board
+    sendJson(r);
     return;
   }
 
@@ -1494,6 +1579,40 @@ void handleCommand(const String& jsonLine) {
     } else {
       sendUnsupported("DISPLAY_TEXT");   // OLED not detected (FIX 4)
     }
+    return;
+  }
+
+  // --- Blocks: "LCD" text / shape / clear -> the OLED (this kit's display) ---
+  // The LCD blocks target a matrix display other kits have; here the 128x64 OLED
+  // shows them so the blocks do something instead of UNSUPPORTED.
+  if (strcmp(cmd, "LCD_TEXT") == 0 || strcmp(cmd, "LCD_CLEAR") == 0 || strcmp(cmd, "LCD_SHAPE") == 0) {
+    if (!oledOk) { sendUnsupported(cmd); return; }
+    if (cmd[4] == 'T') { oledStatus(p["text"] | "", ""); return; }   // LCD_TEXT
+    if (cmd[4] == 'C') { oledStatus("", ""); return; }               // LCD_CLEAR
+    // LCD_SHAPE: 16x8 pixel art (cells 8x8 px on the panel), '1' = lit.
+    static const struct { const char* name; const char* px; } SHAPES[] = {
+      {"left_arrow",  "0000001000000000" "0000011000000000" "0000111111111100" "0001111111111100"
+                      "0001111111111100" "0000111111111100" "0000011000000000" "0000001000000000"},
+      {"right_arrow", "0000000001000000" "0000000001100000" "0011111111110000" "0011111111111000"
+                      "0011111111111000" "0011111111110000" "0000000001100000" "0000000001000000"},
+      {"heart",       "0000110001100000" "0001111011110000" "0001111111110000" "0001111111110000"
+                      "0000111111100000" "0000011111000000" "0000001110000000" "0000000100000000"},
+      {"smile",       "0000111111100000" "0001000000010000" "0010010001001000" "0010000000001000"
+                      "0010100000101000" "0010011111001000" "0001000000010000" "0000111111100000"},
+      {"sad",         "0000111111100000" "0001000000010000" "0010010001001000" "0010000000001000"
+                      "0010011111001000" "0010100000101000" "0001000000010000" "0000111111100000"},
+      {"star",        "0000000100000000" "0000001110000000" "0011111111111000" "0001111111110000"
+                      "0000111111100000" "0001111011110000" "0011100000111000" "0010000000001000"},
+    };
+    const char* shape = p["shape"] | "";
+    for (const auto& sh : SHAPES) {
+      if (strcmp(shape, sh.name) == 0) {
+        oledBmpW = 16; oledBmpH = 8; oledBmp = sh.px;
+        oledBitmapMode = true; oledDirty = true; oledPushIfDue();
+        return;
+      }
+    }
+    sendUnsupported("LCD_SHAPE");   // unknown shape name
     return;
   }
 
@@ -1672,6 +1791,7 @@ void handleCommand(const String& jsonLine) {
     if (pcmStreamBuf && recordLen > 0) {
       pcmStopAndWait();
       pcmStreamSr   = 8000;         // memo is captured at 8 kHz u8
+      pcmStreamFmt  = 0;
       pcmPlayOff    = 0;
       pcmStreamRecv = false;
       pcmStreamLen  = recordLen;    // hand the capture to the TTS playback path
@@ -1685,6 +1805,7 @@ void handleCommand(const String& jsonLine) {
   // --- Generic PWM output on a web port ------------------------------------
   if (strcmp(cmd, "SET_ANALOG") == 0) {
     int pin = portPwmPin(p["port"] | "");
+    if (pin < 0) pin = auxPin(p["port"] | "");   // G1..G6 = AUX_I/O header
     if (pin >= 0) {
       int value = constrain((int)(p["value"] | 0), 0, 255);
       analogWrite(pin, value);
@@ -1696,6 +1817,7 @@ void handleCommand(const String& jsonLine) {
   // --- Generic digital output on a web port --------------------------------
   if (strcmp(cmd, "SET_DIGITAL") == 0) {
     int pin = portPwmPin(p["port"] | "");
+    if (pin < 0) pin = auxPin(p["port"] | "");   // G1..G6 = AUX_I/O header
     if (pin >= 0) {
       bool on;
       if (p["value"].is<const char*>()) {
@@ -2000,6 +2122,10 @@ void setupWiFi() {
 }
 
 void setup() {
+  // Default UART RX buffer is 256 B = ~22 ms at 115200 baud; one OLED refresh is ~30 ms,
+  // so streamed TTS over USB lost bytes -> broken TTS_BEGIN/CHUNK/END -> silent or cut
+  // replies (measured: 2 of 4 test takes). 16 KB rides out any loop() hiccup.
+  Serial.setRxBufferSize(16384);   // must come before begin()
   Serial.begin(115200);
 
   // Servos (ESP32Servo) get the FULL 4-timer LEDC pool — the exact config proven
@@ -2043,7 +2169,16 @@ void setup() {
   strip.show();              // start dark
 #endif
 
+#ifdef PIN_TOUCH1
+  touchInit();                       // pads must be untouched at boot (baseline)
+#endif
+#ifdef PIN_US_TRIG
+  pinMode(PIN_US_TRIG, OUTPUT);
+  digitalWrite(PIN_US_TRIG, LOW);
+  pinMode(PIN_US_ECHO, INPUT_PULLDOWN); // no sensor -> reads LOW -> "-1", not noise
+#endif
 #if HAS_SPEAKER
+  ulawInit();
   i2sSpeakerInit();
   // Audio runs on core 0 (Arduino loop() is core 1) so i2s_write can't stall the
   // command path. Only start the streamer if the I2S driver actually installed.

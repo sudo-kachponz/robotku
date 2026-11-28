@@ -251,7 +251,17 @@ javascriptGenerator.forBlock['move_stop_all'] = function () {
 javascriptGenerator.forBlock['servo_step'] = function (block, gen) {
   const port = parseInt(block.getFieldValue('PORT').slice(1), 10);
   const position = numArg(block, gen, 'POSITION', 90);
-  return JSON.stringify({ command: 'SET_PORT', port, value: position }) + ';';
+  // Degrees 0..180 -> SET_PORT's -100..100 (90 deg = centre / stop), like servo.write():
+  // the firmware maps it back to 0..180 deg on a positional servo and to speed on a
+  // continuous one. Nested `params`: the runner adds params._bid, and the firmware
+  // reads `params` when it exists — the old flat {port, value} reached the robot as
+  // port 0 -> UNSUPPORTED (found on hardware, 2026-11-28).
+  const toValue = (d: number) => Math.round((Math.max(0, Math.min(180, d)) - 90) * (100 / 90));
+  const value =
+    typeof position === 'number'
+      ? toValue(position)
+      : { $expr: `Math.round((Math.max(0, Math.min(180, ${position.$expr})) - 90) * (100 / 90))` };
+  return JSON.stringify({ command: 'SET_PORT', params: { port, value } }) + ';';
 };
 
 javascriptGenerator.forBlock['servo_single'] = function (block, gen) {
