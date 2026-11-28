@@ -83,44 +83,6 @@ describe('Parity: Motion & Actuators', () => {
     expect(state.turn).toBe(0);
   });
 
-  // Head servo has no hardware on Robotku V3 (P2): the block still emits the opcode,
-  // but the sim leaves head state at neutral and logs the ignore.
-  it('mechanism_set_head emits SET_HEAD_POSITION but the sim ignores it (no head hardware)', async () => {
-    const cmds = buildBlock({
-      type: 'mechanism_set_head',
-      fields: { PITCH: '85', YAW: '95' },
-    });
-    expect(cmds[0]).toMatchObject({
-      command: 'SET_HEAD_POSITION',
-      params: { pitch: 85, yaw: 95 },
-    });
-
-    const { state } = await buildAndRun([
-      { type: 'mechanism_set_head', fields: { PITCH: '85', YAW: '95' } },
-    ]);
-    expect(state.headPitch).toBe(90); // unchanged — inert
-    expect(state.headYaw).toBe(90);
-    expect(state.simConsole.some((m) => m.includes('SET_HEAD_POSITION'))).toBe(true);
-  });
-
-  it('move_claw emits CLAW_TIMED but the sim ignores it (no gripper wired)', async () => {
-    const cmds = buildBlock({
-      type: 'move_claw',
-      fields: { DIRECTION: 'clockwise' },
-      inputs: { DURATION: 0.2 },
-    });
-    expect(cmds[0]).toMatchObject({
-      command: 'CLAW_TIMED',
-      params: { direction: 'clockwise' },
-    });
-
-    const { state } = await buildAndRun([
-      { type: 'move_claw', fields: { DIRECTION: 'clockwise' }, inputs: { DURATION: 0.2 } },
-    ]);
-    expect(state.gripperOpen).toBe(1); // unchanged — inert
-    expect(state.simConsole.some((m) => m.includes('CLAW_TIMED'))).toBe(true);
-  });
-
   it('move_steer generates STEER_TIMED; ±100 steering mirror the heading', async () => {
     const cmds = buildBlock({
       type: 'move_steer',
@@ -170,17 +132,6 @@ describe('Parity: Motion & Actuators', () => {
     expect(state.turn).toBe(0);
     expect(state.portValues[0]).toBe(0); // M1
     expect(state.portValues[1]).toBe(0); // M2
-  });
-
-  it('mechanism_set_gripper emits SET_GRIPPER but the sim ignores it (no gripper wired)', async () => {
-    const cmds = buildBlock({ type: 'mechanism_set_gripper', fields: { STATE: 'open' } });
-    expect(cmds[0]).toMatchObject({ command: 'SET_GRIPPER', params: { state: 'open' } });
-
-    const closed = await buildAndRun([
-      { type: 'mechanism_set_gripper', fields: { STATE: 'closed' } },
-    ]);
-    expect(closed.state.gripperOpen).toBe(1); // unchanged — inert (stays at initial open)
-    expect(closed.state.simConsole.some((m) => m.includes('SET_GRIPPER'))).toBe(true);
   });
 
   it('servo_single drives one port then auto-stops (test servos one by one)', async () => {

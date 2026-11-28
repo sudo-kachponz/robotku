@@ -5,10 +5,10 @@ const PORT = { name: 'port', type: 'teks', default: '"G1"', desc: 'Port sensor G
 export const SENSORS_DOCS: DocEntry[] = [
   {
     slug: 'sensors/button',
-    title: 'sensors.button1 / button2',
+    title: 'sensors.button1',
     category: 'Sensors & Data',
-    summary: 'Benar saat tombol ditekan.',
-    description: 'Membaca tombol bawaan. Bernilai True saat ditekan, False saat tidak.',
+    summary: 'Benar saat pad TOUCH 1 disentuh.',
+    description: 'Membaca pad sentuh TOUCH 1 di board. Bernilai True saat disentuh, False saat tidak.',
     signature: { python: 'sensors.button1()', opcode: 'GET_SENSOR_DATA' },
     returns: { type: 'boolean', desc: 'True jika tombol ditekan.' },
     blockPreview: { blockType: 'sensor_button1' },

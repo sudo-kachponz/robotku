@@ -14,9 +14,8 @@
 
 | Opcode | Status | Blocks |
 |---|---|---|
-| `CLAW_TIMED` | handled | move_claw |
 | `DISPLAY_TEXT` | handled | display_text, display_kaomoji |
-| `GET_SENSOR_DATA` | handled | sensor_button1, sensor_mic_level, sensor_mic_clap, sensor_button2, sensor_is_recording, sensor_get_analog, sensor_get_digital, sensor_ultrasonic |
+| `GET_SENSOR_DATA` | handled | sensor_button1, sensor_mic_level, sensor_mic_clap, sensor_is_recording, sensor_get_analog, sensor_get_digital, sensor_ultrasonic |
 | `LCD_CLEAR` | handled | lcd_clear |
 | `LCD_SHAPE` | handled | lcd_shape |
 | `LCD_TEXT` | handled | lcd_text |
@@ -30,8 +29,6 @@
 | `SET_ANALOG` | handled | sensor_set_analog |
 | `SET_BPM` | handled | audio_set_bpm |
 | `SET_DIGITAL` | handled | sensor_set_digital |
-| `SET_GRIPPER` | handled | mechanism_set_gripper |
-| `SET_HEAD_POSITION` | handled | mechanism_set_head |
 | `SET_LED_BRIGHTNESS` | handled | display_set_brightness |
 | `SET_LED_COLOR` | handled | set_led_color |
 | `SET_VOLUME` | handled | audio_set_volume |

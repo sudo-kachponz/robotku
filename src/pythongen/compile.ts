@@ -211,7 +211,6 @@ function buildReporter(fn: string, a: CallArgs, line: number): BlockSpec {
   const kw = (n: string) => a.kw[n];
   switch (fn) {
     case 'sensors.button1': return { type: 'sensor_button1' };
-    case 'sensors.button2': return { type: 'sensor_button2' };
     case 'sensors.is_recording': return { type: 'sensor_is_recording' };
     case 'sensors.mic_level': return { type: 'sensor_mic_level' };
     case 'sensors.clap_detected': return { type: 'sensor_mic_clap' };
@@ -240,12 +239,9 @@ function buildStatement(fn: string, a: CallArgs, line: number): BlockSpec {
       return { type: dir === 'right' ? 'move_right' : 'move_left', fields: { SPEED: F(kw('speed'), 'medium') }, inputs: { DURATION: a.pos[1] ?? 1 } };
     }
     case 'robot.steer': return { type: 'move_steer', fields: { STEERING: F(kw('steering'), '0'), SPEED: F(kw('speed'), 'medium') }, inputs: { DURATION: a.pos[0] ?? 1 } };
-    case 'robot.claw': return { type: 'move_claw', fields: { SPEED: F(kw('speed'), 'medium'), DIRECTION: F(kw('direction'), 'clockwise'), PORT: F(kw('port'), 'P1') }, inputs: { DURATION: a.pos[0] ?? 1 } };
     case 'robot.stop': return { type: 'move_stop', fields: { WHEELS: F(a.pos[0], '2') } };
     case 'robot.stop_all': return { type: 'move_stop_all' };
     case 'robot.servo': return { type: 'servo_single', fields: { PORT: asField(a.pos[0], line), SPEED: asField(a.pos[1], line) }, inputs: { DURATION: a.pos[2] ?? 1 } };
-    case 'robot.head': return { type: 'mechanism_set_head', fields: { PITCH: F(kw('pitch'), '90'), YAW: F(kw('yaw'), '90') } };
-    case 'robot.gripper': return { type: 'mechanism_set_gripper', fields: { STATE: asField(a.pos[0], line) } };
     case 'wait': return { type: 'timing_wait', inputs: { DURATION: a.pos[0] ?? 1 } };
     case 'wait_until': return { type: 'timing_wait_until', inputs: { CONDITION: a.pos[0] } };
     case 'display.text': return { type: 'display_text', fields: { TEXT: asField(a.pos[0], line) } };
@@ -282,12 +278,12 @@ function buildStatement(fn: string, a: CallArgs, line: number): BlockSpec {
 
 /** Function names the compiler understands (for autocomplete + coverage tests). */
 export const KNOWN_STATEMENT_FNS = [
-  'robot.forward', 'robot.reverse', 'robot.turn', 'robot.steer', 'robot.claw', 'robot.stop', 'robot.stop_all',
-  'robot.servo', 'robot.head', 'robot.gripper', 'wait', 'wait_until',
+  'robot.forward', 'robot.reverse', 'robot.turn', 'robot.steer', 'robot.stop', 'robot.stop_all',
+  'robot.servo', 'wait', 'wait_until',
   'display.text', 'display.face', 'display.brightness',
   'led.color', 'neopixel.set', 'neopixel.effect', 'lcd.shape', 'lcd.text', 'lcd.clear',
   'audio.record', 'audio.play_recording', 'audio.sound_effect', 'audio.tone', 'audio.tone_beat', 'audio.melody', 'audio.volume', 'audio.stop', 'audio.bpm', 'speaker.play_clip',
-  'sensors.set_analog', 'sensors.set_digital', 'sensors.reset_distance', 'sensors.reset_heading',
+  'sensors.set_analog', 'sensors.set_digital',
   'ai.use_model', 'ai.wait_until_seen', 'camera.on', 'camera.off', 'fira.speak', 'fira.ask', 'fira.converse',
 ] as const;
 

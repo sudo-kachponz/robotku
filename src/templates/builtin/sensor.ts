@@ -101,7 +101,7 @@ export const lineFollow: BuiltinTemplate = {
 export const buttonRace: BuiltinTemplate = {
   id: 'button_race',
   name: 'Balapan Tombol',
-  description: 'Tekan Tombol 1 untuk mulai, Tombol 2 untuk berhenti.',
+  description: 'Sentuh TOUCH 1 untuk mulai, tepuk tangan untuk berhenti.',
   collection: 'sensor',
   tags: ['sensor', 'tombol'],
   difficulty: 2,
@@ -115,7 +115,7 @@ export const buttonRace: BuiltinTemplate = {
         DO: [
           {
             type: 'controls_if',
-            inputs: { IF0: { type: 'sensor_button2' } },
+            inputs: { IF0: { type: 'sensor_mic_clap' } },
             statements: { DO0: [{ type: 'controls_break' }] },
           },
           { type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.2 } },

@@ -21,7 +21,6 @@ export const BLOCK_OPCODE: Readonly<Record<string, string>> = {
   move_left: C.turnTimed,
   move_right: C.turnTimed,
   move_steer: C.steerTimed,
-  move_claw: C.clawTimed,
   move_stop: C.stop,
   move_stop_all: C.stopAll,
   // Display
@@ -49,7 +48,6 @@ export const BLOCK_OPCODE: Readonly<Record<string, string>> = {
   sensor_button1: C.getSensorData,
   sensor_mic_level: C.getSensorData,
   sensor_mic_clap: C.getSensorData,
-  sensor_button2: C.getSensorData,
   sensor_is_recording: C.getSensorData,
   sensor_get_analog: C.getSensorData,
   sensor_get_digital: C.getSensorData,
@@ -57,8 +55,6 @@ export const BLOCK_OPCODE: Readonly<Record<string, string>> = {
   sensor_set_analog: C.setAnalog,
   sensor_set_digital: C.setDigital,
   // Mechanisms (head servo / gripper — no hardware by default)
-  mechanism_set_head: C.setHeadPosition,
-  mechanism_set_gripper: C.setGripper,
 };
 
 /**

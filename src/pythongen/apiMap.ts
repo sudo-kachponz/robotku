@@ -63,8 +63,6 @@ export const API: ApiEntry[] = [
     py: stmt((b, g) => `robot.turn("right", ${dur(b, g)}, speed=${q(fld(b, 'SPEED'))})`) },
   { block: 'move_steer', category: 'Movement', kind: 'statement', opcode: 'STEER_TIMED', docs: 'movement/steer',
     py: stmt((b, g) => `robot.steer(${dur(b, g)}, steering=${int(b, 'STEERING')}, speed=${q(fld(b, 'SPEED'))})`) },
-  { block: 'move_claw', category: 'Movement', kind: 'statement', opcode: 'CLAW_TIMED', docs: 'movement/claw',
-    py: stmt((b, g) => `robot.claw(${dur(b, g)}, speed=${q(fld(b, 'SPEED'))}, direction=${q(fld(b, 'DIRECTION'))}, port=${q(fld(b, 'PORT'))})`) },
   { block: 'move_stop', category: 'Movement', kind: 'statement', opcode: 'STOP', docs: 'movement/stop',
     py: stmt((b) => `robot.stop(${int(b, 'WHEELS', 2)})`) },
   { block: 'move_stop_all', category: 'Movement', kind: 'statement', opcode: 'STOP_ALL', docs: 'movement/stop-all',
@@ -137,7 +135,6 @@ export const API: ApiEntry[] = [
 
   // ---------------- Sensors & Data (sensors.ts) ----------------
   { block: 'sensor_button1', category: 'Sensors & Data', kind: 'reporter', opcode: 'GET_SENSOR_DATA', docs: 'sensors/button', py: rep(() => 'sensors.button1()') },
-  { block: 'sensor_button2', category: 'Sensors & Data', kind: 'reporter', opcode: 'GET_SENSOR_DATA', docs: 'sensors/button', py: rep(() => 'sensors.button2()') },
   { block: 'sensor_is_recording', category: 'Sensors & Data', kind: 'reporter', opcode: 'GET_SENSOR_DATA', docs: 'sensors/is-recording', py: rep(() => 'sensors.is_recording()') },
   { block: 'sensor_mic_level', category: 'Sensors & Data', kind: 'reporter', opcode: 'GET_SENSOR_DATA', py: rep(() => 'sensors.mic_level()') },
   { block: 'sensor_mic_clap', category: 'Sensors & Data', kind: 'reporter', opcode: 'GET_SENSOR_DATA', py: rep(() => 'sensors.clap_detected()') },
@@ -148,10 +145,6 @@ export const API: ApiEntry[] = [
   { block: 'sensor_set_digital', category: 'Sensors & Data', kind: 'statement', opcode: 'SET_DIGITAL', docs: 'sensors/set-digital', py: stmt((b) => `sensors.set_digital(${q(fld(b, 'PORT'))}, ${q(fld(b, 'VALUE'))})`) },
 
   // ---------------- Mechanisms (mechanisms.ts) ----------------
-  { block: 'mechanism_set_head', category: 'Mechanisms', kind: 'statement', opcode: 'SET_HEAD_POSITION', docs: 'mechanisms/head',
-    py: stmt((b) => `robot.head(pitch=${int(b, 'PITCH', 90)}, yaw=${int(b, 'YAW', 90)})`) },
-  { block: 'mechanism_set_gripper', category: 'Mechanisms', kind: 'statement', opcode: 'SET_GRIPPER', docs: 'mechanisms/gripper',
-    py: stmt((b) => `robot.gripper(${q(fld(b, 'STATE'))})`) },
 
   // ---------------- AI (ai.ts) ----------------
   { block: 'ai_use_model', category: 'AI', kind: 'statement', opcode: 'AI_SET_MODEL', docs: 'ai/use-model', py: stmt((b) => `ai.use_model(${q(fld(b, 'MODEL'))})`) },

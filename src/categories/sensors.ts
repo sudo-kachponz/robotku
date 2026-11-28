@@ -260,7 +260,6 @@ export const sensorsCategory = {
   contents: [
     { kind: 'label', text: 'Sensors & Data' },
     { kind: 'block', type: 'sensor_button1' },
-    { kind: 'block', type: 'sensor_button2' },
     { kind: 'block', type: 'sensor_is_recording' },
     { kind: 'label', text: 'Microphone' },
     { kind: 'block', type: 'sensor_mic_level' },

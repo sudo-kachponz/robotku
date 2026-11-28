@@ -28,7 +28,6 @@ const DYNAMIC_GROUPS: Array<{ name: string; blocks: string[] }> = [
     blocks: ['procedures_defnoreturn', 'procedures_callnoreturn', 'procedures_ifreturn'],
   },
   { name: 'Templates', blocks: ['templates_comment'] }, // custom flyout (gallery is the primary UI)
-  { name: 'Parts', blocks: ['mechanism_set_head', 'mechanism_set_gripper'] },
 ];
 
 // Not a user program block: the immovable hat.
@@ -55,10 +54,6 @@ function toolboxGroups(): Array<{ name: string; blocks: string[] }> {
     const blocks: string[] = [];
     collectBlocks(cat.contents, blocks);
     groups.push({ name: cat.name, blocks: blocks.filter((b) => !NON_PROGRAM.has(b)) });
-  }
-  // Parts (mechanisms) is streamed but not a top-level toolbox category.
-  if (!groups.some((g) => g.name === 'Parts')) {
-    groups.push(DYNAMIC_GROUPS.find((g) => g.name === 'Parts')!);
   }
   return groups;
 }

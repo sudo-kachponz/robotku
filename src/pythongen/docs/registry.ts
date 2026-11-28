@@ -12,7 +12,6 @@ import { FLOW_DOCS } from './flow';
 import { DISPLAY_DOCS } from './display';
 import { AUDIO_DOCS } from './audio';
 import { SENSORS_DOCS } from './sensors';
-import { MECHANISMS_DOCS } from './mechanisms';
 import { AI_DOCS } from './ai';
 import { FUNCTIONS_DOCS } from './functions';
 import { MISC_DOCS } from './misc';
@@ -24,7 +23,6 @@ const ALL: DocEntry[] = [
   ...DISPLAY_DOCS,
   ...AUDIO_DOCS,
   ...SENSORS_DOCS,
-  ...MECHANISMS_DOCS,
   ...AI_DOCS,
   ...FUNCTIONS_DOCS,
   ...MISC_DOCS,

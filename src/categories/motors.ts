@@ -293,7 +293,6 @@ export const motorsCategory = {
     { kind: 'block', type: 'move_left', inputs: durationShadow },
     { kind: 'block', type: 'move_right', inputs: durationShadow },
     { kind: 'block', type: 'move_steer', inputs: durationShadow },
-    { kind: 'block', type: 'move_claw', inputs: durationShadow },
     { kind: 'label', text: 'Servo' },
     { kind: 'block', type: 'servo_step', inputs: { POSITION: { shadow: { type: 'math_number', fields: { NUM: 90 } } } } },
     { kind: 'block', type: 'servo_single', inputs: durationShadow },

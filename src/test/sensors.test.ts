@@ -59,9 +59,8 @@ describe('Parity: Sensors & Data — reporters are inert (no sensor hardware)', 
     expect(await branchFired({ type: 'sensor_is_recording' })).toBe(false);
   });
 
-  it('sensor_button1 / sensor_button2 never fire (no touch buttons)', async () => {
+  it('sensor_button1 never fires in the sim (the TOUCH 1 pad is on the robot)', async () => {
     expect(await branchFired({ type: 'sensor_button1' }, (s) => s.holdButton(1, true))).toBe(false);
-    expect(await branchFired({ type: 'sensor_button2' }, (s) => s.holdButton(2, true))).toBe(false);
   });
 
   it('sensor_get_analog / sensor_get_digital never fire (no I/O bus)', async () => {

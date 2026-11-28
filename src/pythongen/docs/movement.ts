@@ -99,37 +99,6 @@ export const MOVEMENT_DOCS: DocEntry[] = [
     seeAlso: ['movement/turn', 'movement/forward'],
   },
   {
-    slug: 'movement/claw',
-    title: 'robot.claw',
-    category: 'Movement',
-    summary: 'Menggerakkan capit (claw) pada port tertentu.',
-    description: 'Memutar motor capit searah/berlawanan jarum jam selama beberapa detik.',
-    signature: {
-      python: 'robot.claw(detik, speed="medium", direction="clockwise", port="P1")',
-      opcode: 'CLAW_TIMED',
-    },
-    params: [
-      { name: 'detik', type: 'angka', default: '1', desc: 'Lama gerak.' },
-      SPEED,
-      {
-        name: 'direction',
-        type: 'teks',
-        default: '"clockwise"',
-        desc: '"clockwise" atau "anticlockwise".',
-      },
-      { name: 'port', type: 'teks', default: '"P1"', desc: 'Port servo, P1–P5.' },
-    ],
-    blockPreview: { blockType: 'move_claw', fields: { SPEED: 'medium', DIRECTION: 'clockwise', PORT: 'P1' } },
-    examples: [
-      {
-        title: 'Buka capit',
-        python: 'robot.claw(1, speed="slow", direction="clockwise", port="P3")',
-        runnable: true,
-      },
-    ],
-    seeAlso: ['movement/servo', 'mechanisms/gripper'],
-  },
-  {
     slug: 'movement/stop',
     title: 'robot.stop',
     category: 'Movement',
@@ -167,7 +136,7 @@ export const MOVEMENT_DOCS: DocEntry[] = [
     ],
     blockPreview: { blockType: 'servo_single', fields: { PORT: 'P1', SPEED: 100 } },
     examples: [{ title: 'Uji servo P1', python: 'robot.servo("P1", 100, 2)', runnable: true }],
-    seeAlso: ['movement/claw'],
+    seeAlso: [],
     notes: ['Satu baris ini menghasilkan 2 perintah: putar servo, lalu berhentikan.'],
   },
 ];

@@ -78,7 +78,6 @@ Notasi: `<sec>`/`<expr>` = slot ekspresi (boleh angka/variabel/reporter). Field 
 | move_left | `robot.turn("left", <sec>, speed="medium")` | TURN_TIMED | direction="left", speed, duration_ms, left, right |
 | move_right | `robot.turn("right", <sec>, speed="medium")` | TURN_TIMED | direction="right", … |
 | move_steer | `robot.steer(<sec>, steering=0, speed="medium")` | STEER_TIMED | duration_ms, steering(int −100..100), speed, left, right |
-| move_claw | `robot.claw(<sec>, speed="medium", direction="clockwise", port="P1")` | CLAW_TIMED | duration_ms, direction, speed, port |
 | move_stop | `robot.stop(2)` | STOP | wheels(2/4), left, right |
 | move_stop_all | `robot.stop_all()` | STOP_ALL | — |
 | servo_single | `robot.servo("P1", 100, <sec>)` | SET_PORT ×2 | ⚠ 2 command: {port,value,duration_ms} lalu {port,value:0} |
@@ -130,7 +129,6 @@ Notasi: `<sec>`/`<expr>` = slot ekspresi (boleh angka/variabel/reporter). Field 
 | block | Python | opcode | params |
 |---|---|---|---|
 | sensor_button1 | `sensors.button1()` → bool | GET_SENSOR_DATA | sensor="button1" |
-| sensor_button2 | `sensors.button2()` → bool | GET_SENSOR_DATA | sensor="button2" |
 | sensor_is_recording | `sensors.is_recording()` → bool | GET_SENSOR_DATA | sensor="recording" |
 | sensor_get_analog | `sensors.analog("P1")` | GET_SENSOR_DATA | sensor="analog", port |
 | sensor_get_digital | `sensors.digital("P1")` | GET_SENSOR_DATA | sensor="digital", port |
@@ -143,8 +141,6 @@ Notasi: `<sec>`/`<expr>` = slot ekspresi (boleh angka/variabel/reporter). Field 
 ### Mechanisms — `src/categories/mechanisms.ts`
 | block | Python | opcode | params |
 |---|---|---|---|
-| mechanism_set_head | `robot.head(pitch=90, yaw=90)` | SET_HEAD_POSITION | pitch, yaw (dua servo) |
-| mechanism_set_gripper | `robot.gripper("open")` / `"closed"` | SET_GRIPPER | state ("open"/"closed") |
 
 ### Variables — `src/categories/variables.ts`
 | block | Python | opcode | params |

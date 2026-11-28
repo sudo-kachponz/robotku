@@ -80,7 +80,7 @@ const PROGRAMS: Record<string, BlockSpec[]> = {
       inputs: { DURATION: { type: 'math_arithmetic', fields: { OP: 'ADD' }, inputs: { A: { type: 'variables_get', fields: { VAR: 'n' } }, B: 1 } } } },
   ],
   'while sensor + led hex': [
-    { type: 'controls_while', inputs: { CONDITION: { type: 'sensor_button2' } }, statements: { DO: [
+    { type: 'controls_while', inputs: { CONDITION: { type: 'sensor_button1' } }, statements: { DO: [
       { type: 'set_led_color', fields: { COLOR: '#00ff00' }, inputs: { DURATION: 1 } },
       { type: 'controls_break' },
     ] } },
