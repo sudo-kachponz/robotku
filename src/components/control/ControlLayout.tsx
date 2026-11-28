@@ -106,6 +106,18 @@ export default function ControlLayout({
           >
             <BackIcon />
           </button>
+          {/* Full-bleed pages (Block Coding) scroll panels under the bottom-left corner, so
+              the fullscreen button lives up here instead of floating over their content. */}
+          {fullBleed && (
+            <button
+              className={styles.iconBtn}
+              onClick={toggleFullscreen}
+              aria-label="Layar penuh"
+              title="Layar penuh"
+            >
+              {isFullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
+            </button>
+          )}
         </div>
 
         <div className={styles.topCenter}>
@@ -169,14 +181,16 @@ export default function ControlLayout({
       )}
 
       {/* Bottom-left fullscreen */}
-      <button
-        className={`${styles.cornerBtn} ${styles.fullscreenBtn}`}
-        onClick={toggleFullscreen}
-        aria-label="Layar penuh"
-        title="Layar penuh"
-      >
-        {isFullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
-      </button>
+      {!fullBleed && (
+        <button
+          className={`${styles.cornerBtn} ${styles.fullscreenBtn}`}
+          onClick={toggleFullscreen}
+          aria-label="Layar penuh"
+          title="Layar penuh"
+        >
+          {isFullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
+        </button>
+      )}
 
       {/* Bottom-right Connect power button */}
       <button

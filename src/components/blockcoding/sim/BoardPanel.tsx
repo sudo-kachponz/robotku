@@ -103,6 +103,9 @@ export default function BoardPanel({ state }: { state: SimState }) {
   const [selectedName, setSelectedName] = useState<string>('Merah');
   const [duration, setDuration] = useState<number>(1);
   const [manualRgb, setManualRgb] = useState<string | null>(null);
+  // Which of the 4 WS2812B LEDs the panel drives: 'all' or '0'..'3' (= neopixel_set INDEX).
+  const [ledTarget, setLedTarget] = useState<'all' | '0' | '1' | '2' | '3'>('all');
+  const [manualPixels, setManualPixels] = useState<string[] | null>(null); // '' = unlit
   const [bitmap, setBitmap] = useState<Bitmap | null>(null);
   const [showPinHint, setShowPinHint] = useState(false);
   const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
@@ -170,12 +173,29 @@ export default function BoardPanel({ state }: { state: SimState }) {
   const servoIdx = servoPortId ? PWM_PORTS.findIndex((p) => p.id === servoPortId) : -1;
   const servoSpeed = servoIdx >= 0 ? (state.portValues[servoIdx] ?? 0) : 0;
 
+  // Apply `hex` to the selected LED (or all 4) on the board picture and the robot.
+  const applyLed = (hex: string) => {
+    const { r, g, b } = hexToRgb(hex);
+    if (ledTarget === 'all') {
+      setManualRgb(hex);
+      setManualPixels([hex, hex, hex, hex]);
+      sendCommand('SET_LED_COLOR', { r, g, b });
+      return;
+    }
+    const i = Number(ledTarget);
+    setManualRgb('#000000'); // unlit pixels stay dark instead of showing the last "all" colour
+    setManualPixels((prev) => {
+      const next = [...(prev ?? state.neoPixels ?? []), '', '', '', ''].slice(0, 4);
+      next[i] = hex;
+      return next;
+    });
+    sendCommand('NEOPIXEL_SET', { index: i, r, g, b });
+  };
+
   const handleSelectColor = (hex: string, name?: string) => {
     setSelectedHex(hex);
     setSelectedName(name || `Kustom ${hex.toUpperCase()}`);
-    setManualRgb(hex);
-    const { r, g, b } = hexToRgb(hex);
-    sendCommand('SET_LED_COLOR', { r, g, b });
+    applyLed(hex);
   };
 
   const handleRgbSlider = (channel: 'r' | 'g' | 'b', val: number) => {
@@ -184,8 +204,7 @@ export default function BoardPanel({ state }: { state: SimState }) {
     const hex = `#${updated.r.toString(16).padStart(2, '0')}${updated.g.toString(16).padStart(2, '0')}${updated.b.toString(16).padStart(2, '0')}`;
     setSelectedHex(hex);
     setSelectedName(`Kustom ${hex.toUpperCase()}`);
-    setManualRgb(hex);
-    sendCommand('SET_LED_COLOR', updated);
+    applyLed(hex);
   };
 
   const handleHexInput = (val: string) => {
@@ -194,13 +213,18 @@ export default function BoardPanel({ state }: { state: SimState }) {
     if (/^#?[0-9A-Fa-f]{6}$/.test(clean)) {
       const hex = clean.startsWith('#') ? clean : `#${clean}`;
       setSelectedName(`Kustom ${hex.toUpperCase()}`);
-      setManualRgb(hex);
-      const { r, g, b } = hexToRgb(hex);
-      sendCommand('SET_LED_COLOR', { r, g, b });
+      applyLed(hex);
     }
   };
 
   const handleInsertBlock = () => {
+    if (ledTarget !== 'all') {
+      insertLcdBlock(
+        [{ type: 'neopixel_set', fields: { INDEX: ledTarget, COLOR: selectedHex } }],
+        `Blok LED ${Number(ledTarget) + 1} (${selectedName || selectedHex}) dipasang!`
+      );
+      return;
+    }
     const dur = duration > 0 ? duration : 1;
     insertLcdBlock(
       [
@@ -214,17 +238,12 @@ export default function BoardPanel({ state }: { state: SimState }) {
     );
   };
 
-  const handleSendDirect = () => {
-    const { r, g, b } = hexToRgb(selectedHex);
-    setManualRgb(selectedHex);
-    sendCommand('SET_LED_COLOR', { r, g, b });
-  };
+  const handleSendDirect = () => applyLed(selectedHex);
 
   const handleTurnOff = () => {
     setSelectedHex('#000000');
     setSelectedName('Hitam (Off)');
-    setManualRgb('#000000');
-    sendCommand('SET_LED_COLOR', { r: 0, g: 0, b: 0 });
+    applyLed('#000000');
   };
 
   return (
@@ -485,7 +504,7 @@ export default function BoardPanel({ state }: { state: SimState }) {
 
         <BoardSvg
           rgb={rgb}
-          neoPixels={state.neoPixels}
+          neoPixels={manualPixels ?? state.neoPixels}
           buzzerActive={buzzerActive}
           linkState="off"
           ports={ports}
@@ -574,7 +593,7 @@ export default function BoardPanel({ state }: { state: SimState }) {
                 Kontrol Warna LED (RGB)
               </div>
               <div style={{ fontSize: 11, color: 'var(--ink-500)' }}>
-                Pilih warna palet, roda warna, atau sesuaikan slider RGB untuk membuat blok kode
+                Pilih LED (semua atau satu per satu), lalu warnanya dari palet, roda warna, atau slider RGB
               </div>
             </div>
           </div>
@@ -626,6 +645,52 @@ export default function BoardPanel({ state }: { state: SimState }) {
             />
             <span style={{ color: 'var(--ink-500)', fontSize: 10 }}>({currentRgb.r}, {currentRgb.g}, {currentRgb.b})</span>
           </div>
+        </div>
+
+        {/* Which LED: all 4 or one of them (numbers as printed on the PCB) */}
+        <div role="radiogroup" aria-label="Pilih LED" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-700)', marginRight: 2 }}>LED:</span>
+          {(['all', '0', '1', '2', '3'] as const).map((t) => {
+            const on = ledTarget === t;
+            const dot = t === 'all' ? null : (manualPixels ?? state.neoPixels)?.[Number(t)] || null;
+            return (
+              <button
+                key={t}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                onClick={() => setLedTarget(t)}
+                title={t === 'all' ? 'Atur keempat LED sekaligus' : `Atur LED ${Number(t) + 1} saja`}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  padding: '4px 10px',
+                  borderRadius: 999,
+                  border: on ? '2px solid var(--pink-500)' : '1px solid var(--line)',
+                  background: on ? 'var(--pink-500)' : 'var(--surface)',
+                  color: on ? '#FFFFFF' : 'var(--ink-900)',
+                  fontSize: 12,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                }}
+              >
+                {t !== 'all' && (
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      background: dot && !/^(#000000|rgb\(0, 0, 0\)|black)$/i.test(dot) ? dot : 'var(--line)',
+                      border: '1px solid rgba(0,0,0,0.15)',
+                    }}
+                  />
+                )}
+                {t === 'all' ? 'Semua' : Number(t) + 1}
+              </button>
+            );
+          })}
         </div>
 
         {/* Palette & Color Wheel Container */}
@@ -830,7 +895,8 @@ export default function BoardPanel({ state }: { state: SimState }) {
             paddingTop: 4,
           }}
         >
-          {/* Duration Selector */}
+          {/* Duration Selector (only the all-LED block has a duration) */}
+          {ledTarget === 'all' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-700)', fontWeight: 600 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               <ClockIcon size={14} /> Durasi:
@@ -856,6 +922,7 @@ export default function BoardPanel({ state }: { state: SimState }) {
             />
             <span style={{ color: 'var(--ink-500)', fontSize: 11 }}>detik</span>
           </div>
+          )}
 
           {/* Action Buttons */}
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
