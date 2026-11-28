@@ -59,15 +59,6 @@ describe('Parity: Sensors & Data — reporters are inert (no sensor hardware)', 
     expect(await branchFired({ type: 'sensor_is_recording' })).toBe(false);
   });
 
-  it('sensor_light / temperature / humidity never fire (no scalar sensors)', async () => {
-    const light = compare({ type: 'sensor_light', fields: { PORT: 'G1' } }, 'GT', 500);
-    expect(await branchFired(light, (s) => s.setSensorScalar('light', 800))).toBe(false);
-    const temp = compare({ type: 'sensor_temperature', fields: { PORT: 'G1' } }, 'GT', 30);
-    expect(await branchFired(temp, (s) => s.setSensorScalar('temperature', 40))).toBe(false);
-    const hum = compare({ type: 'sensor_humidity', fields: { PORT: 'G1' } }, 'GT', 70);
-    expect(await branchFired(hum, (s) => s.setSensorScalar('humidity', 90))).toBe(false);
-  });
-
   it('sensor_button1 / sensor_button2 never fire (no touch buttons)', async () => {
     expect(await branchFired({ type: 'sensor_button1' }, (s) => s.holdButton(1, true))).toBe(false);
     expect(await branchFired({ type: 'sensor_button2' }, (s) => s.holdButton(2, true))).toBe(false);
@@ -80,17 +71,6 @@ describe('Parity: Sensors & Data — reporters are inert (no sensor hardware)', 
     expect(await branchFired(d, (s) => s.setDigitalPort(0, true))).toBe(false);
   });
 
-  it('sensor_distance / sensor_heading never fire (no encoder / compass)', async () => {
-    const dist = compare({ type: 'sensor_distance', fields: { PORT: 'G1' } }, 'GT', 1);
-    const heading = compare({ type: 'sensor_heading', fields: { PORT: 'G1' } }, 'GT', 5);
-    const { state } = await buildAndRun([
-      { type: 'move_forward', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.3 } },
-      { type: 'move_right', fields: { SPEED: 'medium' }, inputs: { DURATION: 0.3 } },
-      { type: 'controls_if', inputs: { IF0: dist }, statements: { DO0: [beep] } },
-      { type: 'controls_if', inputs: { IF0: heading }, statements: { DO0: [beep] } },
-    ]);
-    expect(state.buzzerHz).toBe(0); // neither branch fired
-  });
 });
 
 describe('Parity: Sensors & Data — statements are logged no-ops', () => {
@@ -116,17 +96,4 @@ describe('Parity: Sensors & Data — statements are logged no-ops', () => {
     expect(state.simConsole.some((m) => m.includes('SET_DIGITAL'))).toBe(true);
   });
 
-  it('sensor_reset_distance / sensor_reset_heading emit their opcodes but are inert', async () => {
-    const rd = buildBlock({ type: 'sensor_reset_distance', fields: { PORT: 'G1' } });
-    expect(rd[0]).toMatchObject({ command: 'RESET_DISTANCE', params: { port: 'G1' } });
-    const rh = buildBlock({ type: 'sensor_reset_heading', fields: { PORT: 'G1' } });
-    expect(rh[0]).toMatchObject({ command: 'RESET_HEADING', params: { port: 'G1' } });
-
-    const { state } = await buildAndRun([
-      { type: 'sensor_reset_distance', fields: { PORT: 'G1' } },
-      { type: 'sensor_reset_heading', fields: { PORT: 'G1' } },
-    ]);
-    expect(state.simConsole.some((m) => m.includes('RESET_DISTANCE'))).toBe(true);
-    expect(state.simConsole.some((m) => m.includes('RESET_HEADING'))).toBe(true);
-  });
 });

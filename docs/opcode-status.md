@@ -16,7 +16,7 @@
 |---|---|---|
 | `CLAW_TIMED` | handled | move_claw |
 | `DISPLAY_TEXT` | handled | display_text, display_kaomoji |
-| `GET_SENSOR_DATA` | handled | sensor_button1, sensor_mic_level, sensor_mic_clap, sensor_button2, sensor_is_recording, sensor_get_analog, sensor_get_digital, sensor_ultrasonic, sensor_temperature, sensor_humidity, sensor_light, sensor_distance, sensor_heading |
+| `GET_SENSOR_DATA` | handled | sensor_button1, sensor_mic_level, sensor_mic_clap, sensor_button2, sensor_is_recording, sensor_get_analog, sensor_get_digital, sensor_ultrasonic |
 | `LCD_CLEAR` | handled | lcd_clear |
 | `LCD_SHAPE` | handled | lcd_shape |
 | `LCD_TEXT` | handled | lcd_text |
@@ -27,8 +27,6 @@
 | `PLAY_SOUND_EFFECT` | handled | audio_sound_effect |
 | `PLAY_TONE` | handled | audio_play_tone_sec, audio_play_tone_beat, audio_play_melody |
 | `RECORD_AUDIO` | handled | audio_record |
-| `RESET_DISTANCE` | handled | sensor_reset_distance |
-| `RESET_HEADING` | handled | sensor_reset_heading |
 | `SET_ANALOG` | handled | sensor_set_analog |
 | `SET_BPM` | handled | audio_set_bpm |
 | `SET_DIGITAL` | handled | sensor_set_digital |

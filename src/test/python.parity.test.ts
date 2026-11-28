@@ -65,7 +65,7 @@ const PROGRAMS: Record<string, BlockSpec[]> = {
   'if / elif / else with sensor + compare': [
     { type: 'controls_if', extraState: { elseIfCount: 1, hasElse: true },
       inputs: {
-        IF0: { type: 'logic_compare', fields: { OP: 'GT' }, inputs: { A: { type: 'sensor_distance', fields: { PORT: 'G1' } }, B: 20 } },
+        IF0: { type: 'logic_compare', fields: { OP: 'GT' }, inputs: { A: { type: 'sensor_ultrasonic', fields: { UNIT: 'cm', PORT: 'G1' } }, B: 20 } },
         IF1: { type: 'sensor_button1' },
       },
       statements: {

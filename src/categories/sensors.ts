@@ -17,8 +17,6 @@ const PORTS: [string, string][] = [
   ['G4', 'G4'],
   ['G5', 'G5'],
   ['G6', 'G6'],
-  ['G7', 'G7'],
-  ['G8', 'G8'],
 ];
 const UNITS: [string, string][] = [
   ['cm', 'cm'],
@@ -109,6 +107,10 @@ defineOnce([
   },
 
   // --- Distance / environment reporters ---
+  // Temperature, humidity, light, distance travelled and heading (+ their resets) have
+  // no hardware on the Makerkit v1.3 (no such sensor, no wheel encoder, no IMU), so they
+  // are NOT in the toolbox, Python API or docs. The definitions stay only so a project
+  // saved with them still loads (the robot answers UNSUPPORTED for them).
   {
     type: 'sensor_ultrasonic',
     message0: 'Ultrasonic Sensor Value in %1 on Port %2',
@@ -268,12 +270,5 @@ export const sensorsCategory = {
     { kind: 'block', type: 'sensor_set_digital' },
     { kind: 'block', type: 'sensor_get_digital' },
     { kind: 'block', type: 'sensor_ultrasonic' },
-    { kind: 'block', type: 'sensor_temperature' },
-    { kind: 'block', type: 'sensor_humidity' },
-    { kind: 'block', type: 'sensor_light' },
-    { kind: 'block', type: 'sensor_distance' },
-    { kind: 'block', type: 'sensor_reset_distance' },
-    { kind: 'block', type: 'sensor_heading' },
-    { kind: 'block', type: 'sensor_reset_heading' },
   ],
 };

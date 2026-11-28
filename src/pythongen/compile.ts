@@ -218,11 +218,6 @@ function buildReporter(fn: string, a: CallArgs, line: number): BlockSpec {
     case 'sensors.analog': return { type: 'sensor_get_analog', fields: { PORT: asField(a.pos[0], line) } };
     case 'sensors.digital': return { type: 'sensor_get_digital', fields: { PORT: asField(a.pos[0], line) } };
     case 'sensors.ultrasonic': return { type: 'sensor_ultrasonic', fields: { PORT: asField(kw('port') ?? a.pos[0], line), UNIT: asField(kw('unit') ?? a.pos[1], line) } };
-    case 'sensors.temperature': return { type: 'sensor_temperature', fields: { PORT: asField(kw('port') ?? a.pos[0], line) } };
-    case 'sensors.humidity': return { type: 'sensor_humidity', fields: { PORT: asField(kw('port') ?? a.pos[0], line) } };
-    case 'sensors.light': return { type: 'sensor_light', fields: { PORT: asField(kw('port') ?? a.pos[0], line) } };
-    case 'sensors.distance': return { type: 'sensor_distance', fields: { PORT: asField(kw('port') ?? a.pos[0], line) } };
-    case 'sensors.heading': return { type: 'sensor_heading', fields: { PORT: asField(kw('port') ?? a.pos[0], line) } };
     case 'ai.detected': return { type: 'ai_detected', fields: { LABEL: a.pos[0] ? asField(a.pos[0], line) : 'any' } };
     case 'ai.confidence': return { type: 'ai_confidence', fields: { LABEL: a.pos[0] ? asField(a.pos[0], line) : 'any' } };
     case 'ai.object_count': return { type: 'ai_object_count', fields: { LABEL: a.pos[0] ? asField(a.pos[0], line) : 'any' } };
@@ -274,8 +269,6 @@ function buildStatement(fn: string, a: CallArgs, line: number): BlockSpec {
     case 'audio.bpm': return { type: 'audio_set_bpm', fields: { BPM: asField(a.pos[0], line) } };
     case 'sensors.set_analog': return { type: 'sensor_set_analog', fields: { PORT: asField(a.pos[0], line), VALUE: asField(a.pos[1], line) } };
     case 'sensors.set_digital': return { type: 'sensor_set_digital', fields: { PORT: asField(a.pos[0], line), VALUE: asField(a.pos[1], line) } };
-    case 'sensors.reset_distance': return { type: 'sensor_reset_distance', fields: { PORT: asField(a.pos[0], line) } };
-    case 'sensors.reset_heading': return { type: 'sensor_reset_heading', fields: { PORT: asField(a.pos[0], line) } };
     case 'ai.use_model': return { type: 'ai_use_model', fields: { MODEL: asField(a.pos[0], line) } };
     case 'ai.wait_until_seen': return { type: 'ai_wait_until_seen', fields: { LABEL: a.pos[0] ? asField(a.pos[0], line) : 'any' } };
     case 'camera.on': return { type: 'ai_camera_on', fields: { STATE: 'on' } };

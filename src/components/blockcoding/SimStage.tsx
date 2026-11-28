@@ -525,7 +525,7 @@ function SensorRack({ sink, state }: { sink: SimSink; state: SimState }) {
         />
       </div>
       <details className={styles.io}>
-        <summary>Analog / Digital G1–G8</summary>
+        <summary>Analog / Digital G1–G6</summary>
         <div className={styles.ioGrid}>
           {state.analogPorts.map((v, i) => (
             <label key={`a${i}`} className={styles.ioCell}>

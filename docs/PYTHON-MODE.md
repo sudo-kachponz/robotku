@@ -135,15 +135,8 @@ Notasi: `<sec>`/`<expr>` = slot ekspresi (boleh angka/variabel/reporter). Field 
 | sensor_get_analog | `sensors.analog("P1")` | GET_SENSOR_DATA | sensor="analog", port |
 | sensor_get_digital | `sensors.digital("P1")` | GET_SENSOR_DATA | sensor="digital", port |
 | sensor_ultrasonic | `sensors.ultrasonic(port="P1", unit="cm")` | GET_SENSOR_DATA | sensor="ultrasonic", port, unit |
-| sensor_temperature | `sensors.temperature(port="P1")` | GET_SENSOR_DATA | sensor="temperature", port |
-| sensor_humidity | `sensors.humidity(port="P1")` | GET_SENSOR_DATA | sensor="humidity", port |
-| sensor_light | `sensors.light(port="P1")` | GET_SENSOR_DATA | sensor="light", port |
-| sensor_distance | `sensors.distance(port="P1")` | GET_SENSOR_DATA | sensor="distance", port |
-| sensor_heading | `sensors.heading(port="P1")` | GET_SENSOR_DATA | sensor="heading", port |
 | sensor_set_analog | `sensors.set_analog("P1", 128)` | SET_ANALOG | port, value(0..255) |
 | sensor_set_digital | `sensors.set_digital("P1", "HIGH")` | SET_DIGITAL | port, value("HIGH"/"LOW") |
-| sensor_reset_distance | `sensors.reset_distance("P1")` | RESET_DISTANCE | port |
-| sensor_reset_heading | `sensors.reset_heading("P1")` | RESET_HEADING | port |
 > ⚠ Semua reporter sensor membawa `port` (dan `unit` utk ultrasonic) di params — dialek Python HARUS
 > menerima port agar round-trip. Default port = default field blok.
 

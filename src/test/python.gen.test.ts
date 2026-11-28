@@ -71,10 +71,10 @@ describe('generatePython — faithful dialect', () => {
   it('led colour keeps hex, sensor keeps port', () => {
     const code = pythonFor([
       { type: 'set_led_color', fields: { COLOR: '#ff0000' }, inputs: { DURATION: 1 } },
-      { type: 'sensor_reset_heading', fields: { PORT: 'G3' } },
+      { type: 'sensor_set_digital', fields: { PORT: 'G3', VALUE: 'HIGH' } },
     ]);
     expect(code).toContain('led.color("#ff0000", 1)');
-    expect(code).toContain('sensors.reset_heading("G3")');
+    expect(code).toContain('sensors.set_digital("G3", "HIGH")');
   });
 
   it('escapes tricky display text (kaomoji)', () => {

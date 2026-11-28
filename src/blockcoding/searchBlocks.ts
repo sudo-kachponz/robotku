@@ -47,8 +47,6 @@ const BLOCK_KEYWORDS: Record<string, string[]> = {
   sensor_get_ir_remote: ['remote', 'infra merah', 'ir remote', 'kontrol jarak jauh'],
   sensor_get_analog: ['baca analog', 'read analog', 'sensor analog'],
   sensor_get_digital: ['baca digital', 'read digital', 'sensor digital'],
-  sensor_reset_distance: ['reset jarak', 'nolkan jarak'],
-  sensor_reset_heading: ['reset arah', 'heading', 'kompas', 'derajat'],
   controls_repeat_ext: ['ulang', 'repeat', 'loop', 'perulangan', 'kali', 'berulang'],
   controls_whileUntil: ['while', 'until', 'selama', 'hingga', 'looping', 'terus menerus'],
   controls_for: ['for loop', 'hitung dari', 'count with', 'cacah'],

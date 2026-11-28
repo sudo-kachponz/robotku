@@ -101,19 +101,14 @@ export const lineFollow: BuiltinTemplate = {
 export const buttonRace: BuiltinTemplate = {
   id: 'button_race',
   name: 'Balapan Tombol',
-  description: 'Tekan Tombol 1 untuk mulai, Tombol 2 untuk berhenti — jaraknya tercatat.',
+  description: 'Tekan Tombol 1 untuk mulai, Tombol 2 untuk berhenti.',
   collection: 'sensor',
-  tags: ['sensor', 'tombol', 'jarak'],
+  tags: ['sensor', 'tombol'],
   difficulty: 2,
-  learn: [
-    'Blok Tunggu sampai (wait until)',
-    'Reset & baca jarak tempuh',
-    'Keluar loop dengan Break',
-  ],
+  learn: ['Blok Tunggu sampai (wait until)', 'Keluar loop dengan Break'],
   thumbnail: motionThumb('M24 50 h112', '#8B5CF6', 2.4),
   program: [
     { type: 'timing_wait_until', inputs: { CONDITION: { type: 'sensor_button1' } } },
-    { type: 'sensor_reset_distance', fields: { PORT: 'G1' } },
     {
       type: 'controls_forever',
       statements: {

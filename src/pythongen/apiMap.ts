@@ -144,15 +144,8 @@ export const API: ApiEntry[] = [
   { block: 'sensor_get_analog', category: 'Sensors & Data', kind: 'reporter', opcode: 'GET_SENSOR_DATA', docs: 'sensors/analog', py: rep((b) => `sensors.analog(${q(fld(b, 'PORT'))})`) },
   { block: 'sensor_get_digital', category: 'Sensors & Data', kind: 'reporter', opcode: 'GET_SENSOR_DATA', docs: 'sensors/digital', py: rep((b) => `sensors.digital(${q(fld(b, 'PORT'))})`) },
   { block: 'sensor_ultrasonic', category: 'Sensors & Data', kind: 'reporter', opcode: 'GET_SENSOR_DATA', docs: 'sensors/ultrasonic', py: rep((b) => `sensors.ultrasonic(port=${q(fld(b, 'PORT'))}, unit=${q(fld(b, 'UNIT'))})`) },
-  { block: 'sensor_temperature', category: 'Sensors & Data', kind: 'reporter', opcode: 'GET_SENSOR_DATA', docs: 'sensors/temperature', py: rep((b) => `sensors.temperature(port=${q(fld(b, 'PORT'))})`) },
-  { block: 'sensor_humidity', category: 'Sensors & Data', kind: 'reporter', opcode: 'GET_SENSOR_DATA', docs: 'sensors/humidity', py: rep((b) => `sensors.humidity(port=${q(fld(b, 'PORT'))})`) },
-  { block: 'sensor_light', category: 'Sensors & Data', kind: 'reporter', opcode: 'GET_SENSOR_DATA', docs: 'sensors/light', py: rep((b) => `sensors.light(port=${q(fld(b, 'PORT'))})`) },
-  { block: 'sensor_distance', category: 'Sensors & Data', kind: 'reporter', opcode: 'GET_SENSOR_DATA', docs: 'sensors/distance', py: rep((b) => `sensors.distance(port=${q(fld(b, 'PORT'))})`) },
-  { block: 'sensor_heading', category: 'Sensors & Data', kind: 'reporter', opcode: 'GET_SENSOR_DATA', docs: 'sensors/heading', py: rep((b) => `sensors.heading(port=${q(fld(b, 'PORT'))})`) },
   { block: 'sensor_set_analog', category: 'Sensors & Data', kind: 'statement', opcode: 'SET_ANALOG', docs: 'sensors/set-analog', py: stmt((b) => `sensors.set_analog(${q(fld(b, 'PORT'))}, ${int(b, 'VALUE')})`) },
   { block: 'sensor_set_digital', category: 'Sensors & Data', kind: 'statement', opcode: 'SET_DIGITAL', docs: 'sensors/set-digital', py: stmt((b) => `sensors.set_digital(${q(fld(b, 'PORT'))}, ${q(fld(b, 'VALUE'))})`) },
-  { block: 'sensor_reset_distance', category: 'Sensors & Data', kind: 'statement', opcode: 'RESET_DISTANCE', docs: 'sensors/reset-distance', py: stmt((b) => `sensors.reset_distance(${q(fld(b, 'PORT'))})`) },
-  { block: 'sensor_reset_heading', category: 'Sensors & Data', kind: 'statement', opcode: 'RESET_HEADING', docs: 'sensors/reset-heading', py: stmt((b) => `sensors.reset_heading(${q(fld(b, 'PORT'))})`) },
 
   // ---------------- Mechanisms (mechanisms.ts) ----------------
   { block: 'mechanism_set_head', category: 'Mechanisms', kind: 'statement', opcode: 'SET_HEAD_POSITION', docs: 'mechanisms/head',
