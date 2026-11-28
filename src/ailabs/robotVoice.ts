@@ -1,8 +1,8 @@
 // src/ailabs/robotVoice.ts
 //
 // Robot "speaks" the AI reply. Pipeline: reply text -> split into sentences as the
-// LLM streams -> backend /tts per sentence (Google id-ID, or MeloTTS fallback; returns
-// a base64 WAV) -> decode + resample with Web Audio -> 8-bit unsigned PCM -> stream to
+// LLM streams -> /tts per sentence (Piper id-ID server or Google id-ID; returns a
+// base64 WAV) -> decode + resample with Web Audio -> 8-bit unsigned PCM -> stream to
 // the ESP32 as TTS_BEGIN / TTS_CHUNK* / TTS_END over the active link.
 //
 // Firmware 2.6+ (cap TTS_STREAM) plays WHILE chunks arrive and lets each next sentence
@@ -15,9 +15,22 @@ import { getState } from '../app/store';
 import { onTelemetry } from '../app/connection';
 import type { RobotTransport } from '../transport/RobotTransport';
 
-const TTS_URL =
+const DEFAULT_TTS_URL =
   (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_FIRA_TTS_URL) ||
   'https://robotku-ai.hubrobotku.workers.dev/tts';
+
+/**
+ * TTS endpoint. `localStorage['robotku.ttsUrl']` overrides it without a rebuild, e.g.
+ * the Piper server running on the tester's own PC (server/robotku-tts):
+ *   localStorage.setItem('robotku.ttsUrl', 'http://localhost:5002/tts')
+ */
+function ttsUrl(): string {
+  try {
+    return window.localStorage.getItem('robotku.ttsUrl') || DEFAULT_TTS_URL;
+  } catch {
+    return DEFAULT_TTS_URL;
+  }
+}
 
 const LEGACY_MAX_BYTES = 95000; // pre-2.6 firmware buffer is 96000 (12 s @ 8 kHz)
 const CHUNK = 3000; // bytes per TTS_CHUNK — base64 (~4 KB) stays under the 9 KB line cap
@@ -128,7 +141,7 @@ export function floatToU8(samples: Float32Array): Uint8Array {
 
 /** Text -> robot-ready PCM at `sr` Hz. Throws on any TTS/decode failure. */
 async function fetchPcm(text: string, sr: number): Promise<Uint8Array> {
-  const res = await fetch(TTS_URL, {
+  const res = await fetch(ttsUrl(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text, lang: 'id', sr }),

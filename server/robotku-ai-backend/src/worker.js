@@ -38,19 +38,14 @@ function cors(env) {
   };
 }
 
-// Text -> speech for the robot. Workers AI MeloTTS returns base64 MP3; the browser
-// decodes it, downsamples to 8 kHz 8-bit and streams it to the ESP32 speaker over
-// BLE. MeloTTS has no Indonesian voice — 'es' (Spanish) approximates Indonesian
-// vowels best, so that's the default; the caller may override `lang`.
-const TTS_MODEL = '@cf/myshell-ai/melotts';
-const TTS_LANGS = new Set(['en', 'es', 'fr', 'zh', 'jp', 'kr']);
-
-// Native Indonesian voice: Workers AI has none (MeloTTS en/es/fr/zh/jp/kr, Aura-2 en/es),
-// so when the secret GOOGLE_TTS_API_KEY is set we use Google Cloud Text-to-Speech id-ID
-// (`npx wrangler secret put GOOGLE_TTS_API_KEY`, key restricted to the TTS API). It
-// returns LINEAR16 WAV at exactly the robot's rate (8/16 kHz), so the browser only
-// re-encodes it. Voice override: var GOOGLE_TTS_VOICE (id-ID-Wavenet-A/D = female,
-// B/C = male; Standard-* are cheaper). No key -> MeloTTS as before.
+// Robot voice (POST /tts {text, sr}). Workers AI has no Indonesian voice and its
+// MeloTTS model was deprecated on 2026-11-20 (every /tts call failed after that), so:
+//  1. TTS_SERVER_URL (var) -> proxy to the Piper id-ID server (server/robotku-tts),
+//     once it is hosted somewhere public;
+//  2. else GOOGLE_TTS_API_KEY (secret) -> Google Cloud TTS id-ID. Returns LINEAR16 WAV
+//     at the robot's rate. Voice override: var GOOGLE_TTS_VOICE (id-ID-Wavenet-A/D =
+//     female, B/C = male; Standard-* are cheaper);
+//  3. else 503 -> the web speaks with the laptop voice and says why.
 async function googleTts(env, text, sr) {
   const r = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize', {
     method: 'POST',
@@ -68,58 +63,38 @@ async function googleTts(env, text, sr) {
 }
 
 async function handleTts(request, env, headers) {
-  if (!env.AI) {
-    return new Response(JSON.stringify({ error: 'AI binding tidak aktif' }), {
-      status: 501,
-      headers: { ...headers, 'Content-Type': 'application/json' },
-    });
-  }
+  const reply = (status, data) =>
+    new Response(JSON.stringify(data), { status, headers: { ...headers, 'Content-Type': 'application/json' } });
   let body;
   try {
     body = await request.json();
   } catch {
-    return new Response(JSON.stringify({ error: 'json tidak valid' }), {
-      status: 400,
-      headers: { ...headers, 'Content-Type': 'application/json' },
-    });
+    return reply(400, { error: 'json tidak valid' });
   }
   const text = String(body.text || '').slice(0, 600).trim();
-  if (!text) {
-    return new Response(JSON.stringify({ error: 'text kosong' }), {
-      status: 400,
-      headers: { ...headers, 'Content-Type': 'application/json' },
-    });
-  }
+  if (!text) return reply(400, { error: 'text kosong' });
   const sr = body.sr === 8000 ? 8000 : 16000;
-  if (env.GOOGLE_TTS_API_KEY && (!body.lang || body.lang === 'id')) {
+  if (env.TTS_SERVER_URL) {
     try {
-      const audio = await googleTts(env, text, sr);
-      return new Response(JSON.stringify({ audio, format: 'wav', provider: 'google-id' }), {
-        status: 200,
-        headers: { ...headers, 'Content-Type': 'application/json' },
+      const r = await fetch(env.TTS_SERVER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, sr }),
       });
+      if (r.ok) return reply(200, await r.json());
+      console.warn('piper tts', r.status);
     } catch (e) {
-      console.warn('google tts failed, falling back to MeloTTS:', e && e.message);
+      console.warn('piper tts failed:', e && e.message);
     }
   }
-  const lang = TTS_LANGS.has(body.lang) ? body.lang : 'es';
-  try {
-    const out = await env.AI.run(TTS_MODEL, { prompt: text, lang });
-    // MeloTTS returns { audio: "<base64 mp3>" }.
-    const audio = out && typeof out.audio === 'string' ? out.audio : null;
-    if (!audio) throw new Error('no audio');
-    // MeloTTS actually returns a base64 WAV (RIFF/PCM) despite the model card;
-    // the browser decodes it with Web Audio either way, so format is just a hint.
-    return new Response(JSON.stringify({ audio, format: 'wav' }), {
-      status: 200,
-      headers: { ...headers, 'Content-Type': 'application/json' },
-    });
-  } catch (e) {
-    return new Response(JSON.stringify({ error: 'tts gagal: ' + (e && e.message) }), {
-      status: 502,
-      headers: { ...headers, 'Content-Type': 'application/json' },
-    });
+  if (env.GOOGLE_TTS_API_KEY) {
+    try {
+      return reply(200, { audio: await googleTts(env, text, sr), format: 'wav', provider: 'google-id' });
+    } catch (e) {
+      return reply(502, { error: 'tts gagal: ' + (e && e.message) });
+    }
   }
+  return reply(503, { error: 'TTS belum diatur (TTS_SERVER_URL atau GOOGLE_TTS_API_KEY)' });
 }
 
 // Speech-to-text: POST /stt { audio: base64 WAV/MP3/OGG } -> { text }. Powers voice
