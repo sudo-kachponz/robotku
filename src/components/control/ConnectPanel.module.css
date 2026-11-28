@@ -241,3 +241,34 @@
   color: var(--ink-400);
   line-height: 1.4;
 }
+
+/* ---- Setup steps (robot linked over Bluetooth/USB) ---- */
+.setupStep {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-800);
+}
+.setupNum,
+.setupNumDone {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 12px;
+  color: #fff;
+  background: var(--pink-500);
+}
+.setupNumDone {
+  background: var(--green);
+}
+.setupCode {
+  font-family: monospace;
+  font-size: 16px;
+  letter-spacing: 0.15em;
+}
