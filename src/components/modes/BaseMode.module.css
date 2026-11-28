@@ -1,150 +1,156 @@
 /* src/components/modes/BaseMode.module.css
-   Clean Base Robot layout — robot left, D-pad + actions right.
-   Inspired by control.stickem.sg. */
+   Base Robot — big top-down robot on the left, 3x3 control pad on the right
+   (Grab/▲/Release, ◀/·/▶, ·/▼/Buzzer). Pad size scales with the viewport. */
 
 .stage {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: clamp(24px, 5vw, 64px);
+  gap: clamp(24px, 5vw, 72px);
   width: 100%;
-  max-width: 820px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 24px 16px calc(80px + var(--safe-b)) 16px;
+  padding: 24px 24px calc(80px + var(--safe-b)) 24px;
   min-height: 0;
   flex: 1;
   user-select: none;
   box-sizing: border-box;
 }
 
-/* ── Robot illustration area ── */
+/* ── Robot arena (the robot drives around inside it) ── */
 .robotArea {
-  flex: 0 1 320px;
+  position: relative;
+  flex: 1 1 0;
+  align-self: stretch;
   display: flex;
   align-items: center;
   justify-content: center;
   min-width: 0;
+  min-height: clamp(260px, 52vh, 640px);
 }
 
+/* Not clipped: a turned robot's corners may poke past the arena edge, and it never
+   swallows taps meant for the pad. */
 .robotWrap {
-  width: clamp(160px, 30vw, 300px);
-  height: auto;
-  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.5));
+  width: clamp(220px, min(36vw, 60vh), 470px);
+  filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.45));
+  will-change: transform;
+  pointer-events: none;
 }
 
-.robotWrap svg {
-  width: 100%;
-  height: auto;
-}
-
-/* ── Controls area (D-pad + action buttons) ── */
+/* ── Control pad ── */
 .controls {
+  --pad: clamp(64px, min(10vw, 14vh), 132px);
+  --pad-gap: clamp(8px, 1.2vw, 14px);
+  position: relative;
+  z-index: 1;
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: var(--pad-gap);
 }
 
 .row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--pad-gap);
 }
 
 .spacer {
-  width: clamp(56px, 10vw, 76px);
-  height: clamp(56px, 10vw, 76px);
+  width: var(--pad);
+  height: var(--pad);
 }
 
-/* ── D-Pad button ── */
 .dpadBtn {
-  width: clamp(56px, 10vw, 76px);
-  height: clamp(56px, 10vw, 76px);
-  border-radius: 16px;
-  border: none;
-  background: rgba(255, 255, 255, 0.08);
+  width: var(--pad);
+  height: var(--pad);
+  border-radius: calc(var(--pad) * 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(22, 10, 50, 0.82);
   color: #ffffff;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: calc(var(--pad) * 0.06);
   cursor: pointer;
-  touch-action: manipulation;
+  touch-action: none;
   box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transition: background 0.1s ease, transform 0.08s ease;
+    0 6px 18px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition:
+    background 0.1s ease,
+    transform 0.08s ease;
 }
 
 .dpadBtn:hover {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(42, 22, 86, 0.9);
 }
 
 .dpadBtn:active {
-  background: rgba(255, 255, 255, 0.22);
-  transform: scale(0.94);
+  background: rgba(74, 42, 138, 0.95);
+  transform: scale(0.95);
   box-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.4),
-    inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    0 2px 8px rgba(0, 0, 0, 0.4),
+    inset 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.dpadBtn:focus-visible {
+  outline: 3px solid #a78bfa;
+  outline-offset: 3px;
+}
+
+.arrow {
+  width: 46%;
+  height: 46%;
+}
+
+.handIcon {
+  width: 40%;
+  height: 40%;
 }
 
 .btnLabel {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  opacity: 0.7;
+  font-size: clamp(10px, 1.05vw, 14px);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  opacity: 0.92;
 }
 
-/* ── Action buttons (Grab/Release) ── */
+/* Grab / Release share the pad look; the buzzer is tinted amber. */
 .actionBtn {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(22, 10, 50, 0.82);
 }
 
-.actionBtn:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.actionBtn:active {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* ── Buzzer ── */
 .buzzerBtn {
-  background: rgba(251, 191, 36, 0.15);
-  border: 1px solid rgba(251, 191, 36, 0.25);
   color: #fbbf24;
 }
 
-.buzzerBtn:hover {
-  background: rgba(251, 191, 36, 0.25);
-}
-
-.buzzerBtn:active {
-  background: rgba(251, 191, 36, 0.35);
-}
-
-/* ── Phone portrait: stack vertically ── */
+/* ── Phone portrait: robot above, pad below ── */
 @media (max-width: 600px) and (orientation: portrait) {
   .stage {
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
     padding: 12px 16px calc(72px + var(--safe-b)) 16px;
   }
 
   .robotArea {
-    flex: 0 0 auto;
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 38vh;
   }
 
   .robotWrap {
-    width: clamp(140px, 50vw, 220px);
+    width: clamp(180px, 62vw, 300px);
+  }
+
+  .controls {
+    --pad: clamp(60px, 22vw, 92px);
   }
 }
 
-/* ── Landscape mobile: side-by-side, fill the viewport ── */
+/* ── Landscape phone: side by side, fill the short viewport ── */
 @media (orientation: landscape) and (max-height: 500px) {
   .stage {
     padding: 8px clamp(12px, 3vw, 32px) calc(8px + var(--safe-b));
@@ -152,34 +158,19 @@
     max-width: 100%;
   }
 
+  .robotArea {
+    min-height: 0;
+  }
+
   .robotWrap {
-    width: clamp(120px, 22vh, 200px);
+    width: clamp(140px, 56vh, 260px);
   }
 
-  /* Bigger buttons for thumbs */
-  .dpadBtn {
-    width: clamp(52px, 12vh, 72px);
-    height: clamp(52px, 12vh, 72px);
-    border-radius: 14px;
-  }
-
-  .spacer {
-    width: clamp(52px, 12vh, 72px);
-    height: clamp(52px, 12vh, 72px);
+  .controls {
+    --pad: clamp(52px, 22vh, 84px);
   }
 
   .btnLabel {
     display: none;
-  }
-}
-
-/* ── Wider landscape (tablets, desktop) ── */
-@media (orientation: landscape) and (min-height: 501px) {
-  .stage {
-    gap: clamp(32px, 6vw, 80px);
-  }
-
-  .robotWrap {
-    width: clamp(200px, 25vw, 320px);
   }
 }

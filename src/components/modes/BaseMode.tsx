@@ -1,15 +1,16 @@
 // src/components/modes/BaseMode.tsx
 //
-// Base Robot — clean simple layout inspired by control.stickem.sg:
-// - Robot illustration on the left
-// - D-Pad (Up/Down/Left/Right) + Grab/Release on the right
-// - Buzzer button below actions
-// - Highly responsive, landscape mobile optimized
+// Base Robot — big top-down illustration of the real kit on the left (BaseRobotArt:
+// dowel frame, edge-on wheels on SG90 servos, Makerkit PCB, OLED, power bank) that
+// drives around as you hold the buttons; 3x3 pad on the right:
+//   [Grab] [▲] [Release] / [◀] · [▶] / · [▼] [Buzzer]
+// Highly responsive, landscape mobile optimized.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ControlLayout from '../control/ControlLayout';
-import RobotSprite from './RobotSprite';
+import BaseRobotArt from './BaseRobotArt';
 import { useDrive, useSettings } from '../../hooks/useDrive';
+import { useConnection } from '../../hooks/useConnection';
 import { soundFx } from './JoystickAudio';
 import { getState } from '../../app/store';
 import styles from './BaseMode.module.css';
@@ -18,6 +19,8 @@ export default function BaseMode() {
   const { driveGroup, stopGroup, sendCommand } = useDrive();
   const { mapping } = useSettings();
   const { left, right } = mapping.base;
+  const { transport, connState } = useConnection();
+  const link = connState === 'connected' ? (transport?.kind ?? null) : null;
 
   const [intent, setIntent] = useState({ fwd: 0, turn: 0 });
   const intentRef = useRef({ fwd: 0, turn: 0 });
@@ -101,8 +104,9 @@ export default function BaseMode() {
         const pose = poseRef.current;
         pose.x += Math.sin(rad) * fwd * 140 * dt;
         pose.y -= Math.cos(rad) * fwd * 140 * dt;
-        const halfW = Math.max(0, (arena.clientWidth - 120) / 2);
-        const halfH = Math.max(0, (arena.clientHeight - 120) / 2);
+        // Keep the whole (big) robot inside the arena, not just a 120px box.
+        const halfW = Math.max(0, (arena.clientWidth - el.offsetWidth) / 2);
+        const halfH = Math.max(0, (arena.clientHeight - el.offsetHeight) / 2);
         pose.x = clamp(pose.x, -halfW, halfW);
         pose.y = clamp(pose.y, -halfH, halfH);
         el.style.transform = `translate(${pose.x}px, ${pose.y}px) rotate(${headingRef.current}deg)`;
@@ -119,12 +123,7 @@ export default function BaseMode() {
         {/* Left: Robot illustration */}
         <div className={styles.robotArea} ref={arenaRef}>
           <div className={styles.robotWrap} ref={robotRef}>
-            <RobotSprite
-              fwd={intent.fwd}
-              turn={intent.turn}
-              gripperOpen={true}
-              reduced={reduced}
-            />
+            <BaseRobotArt fwd={intent.fwd} turn={intent.turn} reduced={reduced} link={link} />
           </div>
         </div>
 
@@ -140,6 +139,7 @@ export default function BaseMode() {
             />
             <DpadBtn
               label="Maju"
+              hideLabel
               icon={<ArrowUp />}
               onDown={() => onDpad(1, 0)}
               onUp={stop}
@@ -156,6 +156,7 @@ export default function BaseMode() {
           <div className={styles.row}>
             <DpadBtn
               label="Kiri"
+              hideLabel
               icon={<ArrowLeft />}
               onDown={() => onDpad(0, -1)}
               onUp={stop}
@@ -163,6 +164,7 @@ export default function BaseMode() {
             <div className={styles.spacer} />
             <DpadBtn
               label="Kanan"
+              hideLabel
               icon={<ArrowRight />}
               onDown={() => onDpad(0, 1)}
               onUp={stop}
@@ -174,6 +176,7 @@ export default function BaseMode() {
             <div className={styles.spacer} />
             <DpadBtn
               label="Mundur"
+              hideLabel
               icon={<ArrowDown />}
               onDown={() => onDpad(-1, 0)}
               onUp={stop}
@@ -198,12 +201,15 @@ function DpadBtn({
   onDown,
   onUp,
   className,
+  hideLabel,
 }: {
   label: string;
   icon: React.ReactNode;
   onDown: () => void;
   onUp?: () => void;
   className?: string;
+  /** Arrows show only the icon; the label stays as aria-label/title. */
+  hideLabel?: boolean;
 }) {
   return (
     <button
@@ -219,58 +225,57 @@ function DpadBtn({
       aria-label={label}
       title={label}
     >
+      {!hideLabel && <span className={styles.btnLabel}>{label}</span>}
       {icon}
-      <span className={styles.btnLabel}>{label}</span>
     </button>
   );
 }
 
 /* ---- Icons ---- */
-function ArrowUp() {
+// Big solid triangles, like the reference pad.
+function Tri({ rotate }: { rotate: number }) {
   return (
-    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 19V5M5 12l7-7 7 7" />
+    <svg
+      viewBox="0 0 24 24"
+      className={styles.arrow}
+      style={{ transform: `rotate(${rotate}deg)` }}
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M12 5.5 L21 18.5 H3 Z" />
     </svg>
   );
 }
-function ArrowDown() {
-  return (
-    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 5v14M19 12l-7 7-7-7" />
-    </svg>
-  );
-}
-function ArrowLeft() {
-  return (
-    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M19 12H5M12 19l-7-7 7-7" />
-    </svg>
-  );
-}
-function ArrowRight() {
-  return (
-    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 12h14M12 5l7 7-7 7" />
-    </svg>
-  );
-}
+const ArrowUp = () => <Tri rotate={0} />;
+const ArrowRight = () => <Tri rotate={90} />;
+const ArrowDown = () => <Tri rotate={180} />;
+const ArrowLeft = () => <Tri rotate={270} />;
 function GrabIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+    <svg viewBox="0 0 24 24" className={styles.handIcon} fill="currentColor" aria-hidden="true">
       <path d="M6.5 10c-.3 0-.5-.2-.5-.5v-5c0-1.1.9-2 2-2s2 .9 2 2v3h1V3.5c0-1.1.9-2 2-2s2 .9 2 2V7h1V4.5c0-1.1.9-2 2-2s2 .9 2 2v6c0 .3-.2.5-.5.5s-.5-.2-.5-.5v-6c0-.6-.4-1-1-1s-1 .4-1 1V7.5c0 .3-.2.5-.5.5S14 7.8 14 7.5v-4c0-.6-.4-1-1-1s-1 .4-1 1v5c0 .3-.2.5-.5.5S11 9.8 11 9.5v-5c0-.6-.4-1-1-1s-1 .4-1 1v5c0 .3-.2.5-.5.5S8 9.8 8 9.5V6.3c-.6.3-1.5.6-1.5 3.2 0 .3-.2.5-.5.5zm10 12H9c-2.2 0-4-1.8-4-4v-5.5c0-1.1.9-2 2-2s2 .9 2 2V14c0 .3.2.5.5.5s.5-.2.5-.5v-3.5c0-1.1.9-2 2-2s2 .9 2 2V14c0 .3.2.5.5.5s.5-.2.5-.5v-2.5c0-1.1.9-2 2-2s2 .9 2 2V18c0 2.2-1.8 4-4 4z" />
     </svg>
   );
 }
 function ReleaseIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+    <svg viewBox="0 0 24 24" className={styles.handIcon} fill="currentColor" aria-hidden="true">
       <path d="M18 11V4.5c0-1.1-.9-2-2-2s-2 .9-2 2V9h-1V3.5c0-1.1-.9-2-2-2s-2 .9-2 2V9H8V4.5c0-1.1-.9-2-2-2s-2 .9-2 2V14c0 4.4 3.6 8 8 8s8-3.6 8-8v-3z" />
     </svg>
   );
 }
 function BuzzerIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      viewBox="0 0 24 24"
+      className={styles.handIcon}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M11 5L6 9H2v6h4l5 4V5z" />
       <path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14" />
     </svg>

@@ -1,0 +1,49 @@
+/* src/components/modes/BaseRobotArt.module.css — top-down robot art animations. */
+
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* Seen from above, the top of a wheel moves forward (up) when the robot drives
+   forward — so the tread scrolls up for forward and down for reverse. One groove
+   period (8 units) per loop keeps it seamless. */
+.tread {
+  transform: translateY(0);
+}
+.spinFwd .tread {
+  animation: treadFwd 0.32s linear infinite;
+}
+.spinBack .tread {
+  animation: treadBack 0.32s linear infinite;
+}
+@keyframes treadFwd {
+  to {
+    transform: translateY(-8px);
+  }
+}
+@keyframes treadBack {
+  to {
+    transform: translateY(8px);
+  }
+}
+
+.ledGlow {
+  filter: drop-shadow(0 0 2px currentColor);
+  animation: ledBlink 1.6s ease-in-out infinite;
+}
+@keyframes ledBlink {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinFwd .tread,
+  .spinBack .tread,
+  .ledGlow {
+    animation: none;
+  }
+}
