@@ -1,6 +1,7 @@
 /* ============================================================================
  * pins_makerkit_s3.h — GPIO map for Makerkit ESP32-S3 v1.3 (ESP32-S3-WROOM-2-N16R8V).
- * From SCH Schematic3_1 (Update 2026-10-20). Selected by `-D BOARD_MAKERKIT_S3`.
+ * From SCH_Makerkit-V1.3 (Schematic3_1, Update 2026-11-09, exported 2026-11-24).
+ * Selected by `-D BOARD_MAKERKIT_S3`.
  * SAME firmware/features as pins_makerkit.h — only chip + pins differ.
  *
  * Serial = CH340C on the board (UART0), NOT native USB — so GPIO19/20 are free and
@@ -25,9 +26,12 @@
 
 // -------- I2S Microphone (INMP441/U5) : I2S_NUM_0 RX --------
 #define HAS_MIC        1
-#define PIN_MIC_SCK    21      // IO21  (verify vs WS)
-#define PIN_MIC_WS     47      // IO47
-#define PIN_MIC_SD     13      // IO13
+// SCH 2026-11-24: MIC_SCK = IO14, MIC_WS = IO21 (the old 21/47 map clocked the mic on
+// the wrong pins -> level 0). IO47 is now the "wifi" status LED (LED3), IO48 = BT LED.
+// INMP441 L/R is tied to GND -> LEFT slot.
+#define PIN_MIC_SCK    14      // IO14 (MIC_SCK)
+#define PIN_MIC_WS     21      // IO21 (MIC_WS)
+#define PIN_MIC_SD     13      // IO13 (MIC_SD)
 
 // -------- I2S Speaker (MAX98357A/U4) : I2S_NUM_1 TX --------
 #define HAS_SPEAKER    1

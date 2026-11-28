@@ -68,7 +68,7 @@ const char* resetReasonName(esp_reset_reason_t r);   // defined after sendHelloA
 // ------------------------------------------------------------------ Identity
 // BOARD_NAME / BOARD_ID come from the selected pin map (pins_*.h) so HELLO_ACK
 // tells the web which variant connected — no #ifdef BOARD_* here (see config.h).
-#define FW_VERSION   "2.5.0-mk"   // 2.5.0: relay/WiFi resilience, diag, PSRAM, mic 32-bit, tone target
+#define FW_VERSION   "2.6.0-mk"   // 2.6.0: S3 mic pins (SCH 11-24), streaming TTS + TTS_DONE, MIC_STT 16-bit/VAD/MIC_STOP
 #define PROTOCOL_ID  "robotku-v1"
 #define BLE_NAME     "Robotku"
 
@@ -151,9 +151,37 @@ static uint8_t* allocBig(size_t n) {
   if (!b) b = (uint8_t*)malloc(n);
   return b;
 }
-volatile size_t        pcmStreamLen  = 0;   // bytes buffered so far
+// With PSRAM the TTS buffer is 1 MB (~65 s @ 16 kHz 8-bit) so a whole multi-sentence
+// reply can be appended while it plays; without PSRAM it stays the 96 KB internal one.
+#define PCM_STREAM_CAP_PSRAM (1024 * 1024)
+size_t                 pcmStreamCap  = 0;   // real size of pcmStreamBuf once allocated
+static uint8_t* ensurePcmBuf() {
+  if (!pcmStreamBuf) {
+    size_t cap = psramFound() ? PCM_STREAM_CAP_PSRAM : PCM_STREAM_CAP;
+    pcmStreamBuf = allocBig(cap);
+    pcmStreamCap = pcmStreamBuf ? cap : 0;
+  }
+  return pcmStreamBuf;
+}
+volatile size_t        pcmStreamLen  = 0;   // bytes buffered so far (writer: command path)
+volatile size_t        pcmPlayOff    = 0;   // bytes played so far (reader: audioTask)
 volatile bool          pcmStreamRecv = false; // between TTS_BEGIN and TTS_END
-volatile bool          pcmStreamPlay = false; // audioTask: play the buffer once
+volatile bool          pcmStreamPlay = false; // audioTask: play the buffer
+volatile int           pcmStreamSr   = 8000;  // 8000 (BLE) or 16000 (WiFi/relay)
+volatile bool          pcmDoneNotify = false; // audioTask -> loop(): send TTS_DONE
+volatile bool          pcmTaskBusy   = false; // audioTask is inside the TTS play loop
+volatile int           pcmEndSeq     = 0;     // seq of the last TTS_END (echoed in TTS_DONE)
+// Streaming playback: start once `pre_ms` (default 250 ms) is buffered instead of
+// waiting for TTS_END, so the robot starts talking while the rest still arrives. BLE
+// (~8 KB/s = the 8 kHz play rate) sends a huge pre_ms -> plays on TTS_END, no stutter.
+volatile size_t        pcmPrebuf     = 2000;  // bytes (8-bit mono: sr bytes per second)
+static inline size_t pcmPrebufferBytes() { return pcmPrebuf; }
+// Stop TTS playback and wait (<= ~60 ms, one DMA write) until audioTask has left its
+// play loop, so resetting pcmStreamLen/pcmPlayOff can't race its offset write-back.
+static void pcmStopAndWait() {
+  pcmStreamPlay = false;
+  for (int i = 0; i < 30 && pcmTaskBusy; i++) delay(2);
+}
 #endif
 
 #if HAS_MIC
@@ -178,6 +206,29 @@ bool          micReady = false;  // I2S RX installed OK
 volatile unsigned long recordMs  = 0;   // 0 = idle; else record until this millis()
 volatile size_t        recordLen = 0;   // bytes captured so far
 volatile bool          micSttSend = false; // after record: stream buffer to web (MIC_DATA)
+
+// Voice input (MIC_STT) records 16-bit samples into its OWN buffer (PSRAM) so it
+// never fights the TTS buffer; 8-bit u8 capture had ~48 dB range and quiet speech
+// collapsed to a few LSBs -> Whisper heard mush. Without PSRAM it shares pcmStreamBuf.
+#define MIC_STT_CAP_PSRAM  (16000 * 2 * 10)  // 10 s @ 16 kHz s16
+int16_t*               sttBuf      = nullptr;
+size_t                 sttCap      = 0;     // capacity in SAMPLES
+bool                   sttShared   = false; // sttBuf IS pcmStreamBuf (board without PSRAM)
+volatile size_t        sttLen      = 0;     // samples captured
+volatile bool          sttActive   = false; // micTask fills sttBuf while true
+volatile int           sttSr       = 16000; // 16000 or 8000 (decimate by 2)
+volatile int           sttBits     = 16;    // 16 = s16le, 8 = u8 (BLE/serial: less data)
+volatile bool          sttVad      = true;  // auto-stop after speech + silence
+volatile bool          sttSpeech   = false; // VAD saw speech in this take
+volatile unsigned long sttEndMs    = 0;     // hard stop at this millis()
+// VAD: speech = block mean |x| (after the 150 Hz high-pass) above
+// max(VAD_MIN_LEVEL, 2.5x the noise floor measured in the first 200 ms); stop after
+// VAD_SILENCE_MS of quiet once speech was heard, or VAD_NO_SPEECH_MS with none.
+// Measured on a v1.3 board (2026-11-28): room with people ~900-1500 mean |x|
+// (block peaks 3000-6000). Tune here if takes end too early/late.
+#define VAD_MIN_LEVEL     600
+#define VAD_SILENCE_MS    900
+#define VAD_NO_SPEECH_MS  5000
 #endif
 
 // ----------------------------------------------------- Non-blocking motion
@@ -498,24 +549,40 @@ void audioTask(void*) {
       spkPcmPlay = false;
       i2s_zero_dma_buffer(I2S_NUM_1);
     } else if (pcmStreamPlay && pcmStreamBuf) {
-      // Play the buffered TTS clip: 8 kHz 8-bit unsigned -> 16 kHz 16-bit signed.
-      // u8 center is 128; (b-128)<<8 maps to full int16 range. Each 8 kHz sample
-      // is written twice (crude x2 upsample) to match the 16 kHz I2S clock.
-      size_t off = 0, wr;
-      while (off < pcmStreamLen && pcmStreamPlay && !spkStop) {
+      // Streamed TTS: 8-bit unsigned (centre 128) -> 16-bit signed. Plays WHILE chunks
+      // still arrive (pcmStreamRecv) and waits on underrun instead of ending, so a
+      // reply appended sentence by sentence (TTS_BEGIN append) plays as one take.
+      // 8 kHz input is upsampled x2 with linear interpolation (less buzz than
+      // sample-doubling); 16 kHz input goes straight to the 16 kHz I2S clock.
+      pcmTaskBusy = true;
+      const bool up = (pcmStreamSr != SPK_SR);
+      int16_t prev = 0;
+      size_t wr;
+      for (;;) {
+        if (!pcmStreamPlay || spkStop) break;
+        size_t len = pcmStreamLen, off = pcmPlayOff;
+        if (off >= len) {
+          if (!pcmStreamRecv) { pcmDoneNotify = true; break; }   // drained, nothing more coming
+          vTaskDelay(4);   // underrun: wait for the next chunk (DMA auto-clears to silence)
+          continue;
+        }
         int n = 0;
-        while (n <= 254 && off < pcmStreamLen) {
+        while (n <= 254 && off < len) {
           // u8 (centre 128) -> s16 at HALF scale (<<7, not <<8): still far louder
           // than the old tone, but leaves current headroom so a long reply doesn't
           // brown the board out on USB. Bump toward <<8 if you run on battery.
           int16_t s = (int16_t)((((int)pcmStreamBuf[off] - 128) << 7) * spkVolume / 100);  // SET_VOLUME scale
+          if (up) buf[n++] = (int16_t)(((int)prev + s) / 2);
           buf[n++] = s;
-          buf[n++] = s;
+          prev = s;
           off++;
         }
+        pcmPlayOff = off;
         i2s_write(I2S_NUM_1, buf, n * sizeof(int16_t), &wr, portMAX_DELAY);
       }
-      pcmStreamPlay = false;
+      // Re-check before clearing: TTS_END/append may have queued more audio meanwhile.
+      if (spkStop || pcmPlayOff >= pcmStreamLen) pcmStreamPlay = false;
+      pcmTaskBusy = false;
       i2s_zero_dma_buffer(I2S_NUM_1);
     } else {
       vTaskDelay(5);
@@ -567,9 +634,25 @@ void micTask(void*) {
       vTaskDelay(2); continue;
     }
     int n = nbytes / sizeof(int32_t);
+    // 150 Hz high-pass (2nd-order Butterworth biquad). Measured on the board: the raw
+    // stream carries a ~-6000 DC offset plus 50/100 Hz mains hum and rumble — 88% of
+    // the "silent room" energy sat below 300 Hz and read as a constant loud level,
+    // which broke clap detection and VAD. Speech (300-3400 Hz) passes untouched.
+    static bool  hpInit = false;
+    static float hb0, hb1, hb2, ha1, ha2, hx1 = 0, hx2 = 0, hy1 = 0, hy2 = 0;
+    if (!hpInit) {
+      hpInit = true;
+      const float w0 = 2.0f * PI * 150.0f / MIC_SR, c = cosf(w0), al = sinf(w0) / (2.0f * 0.7071f);
+      const float a0 = 1.0f + al;
+      hb0 = (1.0f + c) / 2.0f / a0; hb1 = -(1.0f + c) / a0; hb2 = hb0;
+      ha1 = -2.0f * c / a0;         ha2 = (1.0f - al) / a0;
+    }
     for (int i = 0; i < n; i++) {
-      int32_t v = raw[i] >> MIC_SHIFT;
-      samples[i] = (int16_t)constrain(v, -32768, 32767);
+      float x = (float)(raw[i] >> MIC_SHIFT);
+      float y = hb0 * x + hb1 * hx1 + hb2 * hx2 - ha1 * hy1 - ha2 * hy2;
+      hx2 = hx1; hx1 = x; hy2 = hy1; hy1 = y;
+      int32_t out = (int32_t)y;
+      samples[i] = (int16_t)constrain(out, -32768, 32767);
     }
     int peak = 0;
     for (int i = 0; i < n; i++) { int a = abs(samples[i]); if (a > peak) peak = a; }
@@ -591,6 +674,37 @@ void micTask(void*) {
         }
       }
     }
+
+    // MIC_STT: keep full 16-bit samples (x2 decimated by averaging for 8 kHz) and run a
+    // simple VAD so the take ends ~1 s after the user stops talking, not on a fixed timer.
+    static bool          sttInit = false;
+    static int           noiseSum = 0, noiseN = 0, loud = 0;
+    static unsigned long sttT0 = 0, lastLoudMs = 0;
+    if (sttActive && sttBuf) {
+      unsigned long now = millis();
+      if (!sttInit) { sttInit = true; noiseSum = 0; noiseN = 0; loud = 0; sttT0 = now; lastLoudMs = now; }
+      if (sttSr == 8000) {
+        for (int i = 0; i + 1 < n && sttLen < sttCap; i += 2)
+          sttBuf[sttLen++] = (int16_t)(((int)samples[i] + samples[i + 1]) / 2);
+      } else {
+        for (int i = 0; i < n && sttLen < sttCap; i++) sttBuf[sttLen++] = samples[i];
+      }
+      long sum = 0;
+      for (int i = 0; i < n; i++) sum += abs((int)samples[i]);
+      const int mav = n ? (int)(sum / n) : 0;                  // block mean |x|: steadier than peak
+      unsigned long el = now - sttT0;
+      if (el < 200) { noiseSum += mav; noiseN++; }            // first ~200 ms = room noise
+      else {
+        int noise = noiseN ? noiseSum / noiseN : 0;
+        int thr = max(VAD_MIN_LEVEL, noise * 5 / 2);
+        if (mav > thr) { if (++loud >= 2) sttSpeech = true; lastLoudMs = now; }
+        else loud = 0;
+      }
+      bool stop = sttLen >= sttCap || (long)(now - sttEndMs) >= 0;
+      if (sttVad && !stop) stop = sttSpeech ? (now - lastLoudMs) >= VAD_SILENCE_MS : el >= VAD_NO_SPEECH_MS;
+      if (stop) sttActive = false;                             // loop() streams it to the web
+    }
+    if (!sttActive) sttInit = false;
 #endif
   }
 }
@@ -893,10 +1007,13 @@ void sendHelloAck() {
   caps.add("TTS_BEGIN");        // robot speaks streamed AI-reply PCM
   caps.add("TTS_CHUNK");
   caps.add("TTS_END");
+  caps.add("TTS_STREAM");       // 2.6: plays while streaming, append + sr, replies TTS_DONE
+  if (psramFound()) caps.add("TTS_SR16");   // 1 MB buffer -> 16 kHz is safe over WiFi/relay
 #endif
 #if HAS_MIC
   caps.add("GET_SENSOR_DATA");   // mic level / clap reporters
   caps.add("MIC_STT");           // record mic -> stream to web for STT
+  caps.add("MIC_STOP");          // 2.6: end a take early; MIC_STT takes sr/bits/vad
 #endif
   if (oledOk) caps.add("DISPLAY_TEXT");   // OLED text — only if the panel answered
   if (oledOk) caps.add("DISPLAY_BITMAP"); // OLED pixel-art
@@ -1252,11 +1369,24 @@ void handleCommand(const String& jsonLine) {
   // --- Streamed TTS: robot speaks the AI reply (TTS_BEGIN/CHUNK/END) ---------
   if (strcmp(cmd, "TTS_BEGIN") == 0) {
 #if HAS_SPEAKER
-    spkToneFreq = 0; spkPcmPlay = false;   // interrupt any current audio
-    pcmStreamPlay = false;
-    pcmStreamLen = 0;
-    if (!pcmStreamBuf) pcmStreamBuf = allocBig(PCM_STREAM_CAP);
-    if (!pcmStreamBuf) { sendUnsupported("TTS_BEGIN"); return; }  // OOM -> skip, don't crash
+    spkToneFreq = 0; spkPcmPlay = false;   // interrupt any tone/welcome clip
+    if (!ensurePcmBuf()) { sendUnsupported("TTS_BEGIN"); return; }  // OOM -> skip, don't crash
+#if HAS_MIC
+    if (sttShared && sttActive) { sttActive = false; micSttSend = false; }  // same RAM: speech wins
+#endif
+    // append:true (next sentence of the same reply) keeps playing and queues behind
+    // it; anything else starts a fresh take. An append that arrives after the
+    // previous sentence already finished simply starts fresh too.
+    bool append = (p["append"] | false) && (pcmStreamPlay || pcmStreamRecv);
+    if (!append) {
+      pcmStopAndWait();
+      pcmStreamLen = 0;
+      pcmPlayOff = 0;
+      pcmStreamSr = ((p["sr"] | 8000) == 16000) ? 16000 : 8000;
+      // No `sr` = older web build: keep its buffer-then-play behaviour (play on TTS_END).
+      long preMs  = p["sr"].isNull() ? 120000L : constrain((long)(p["pre_ms"] | 250), 50L, 120000L);
+      pcmPrebuf   = (size_t)((long)pcmStreamSr * preMs / 1000);
+    }
     pcmStreamRecv = true;
     lastStatus = "Bicara";
 #else
@@ -1268,15 +1398,17 @@ void handleCommand(const String& jsonLine) {
 #if HAS_SPEAKER
     if (pcmStreamRecv && pcmStreamBuf) {
       const char* b64 = p["data"] | "";
-      size_t avail = PCM_STREAM_CAP - pcmStreamLen;
+      size_t avail = pcmStreamCap - pcmStreamLen;
       size_t olen = 0;
-      // Overflow is silent-by-design: once the 4 s buffer is full we drop the
+      // Overflow is silent-by-design: once the buffer is full we drop the
       // tail rather than reject the whole clip (keeps a long reply partly audible).
       if (avail > 0 &&
           mbedtls_base64_decode(pcmStreamBuf + pcmStreamLen, avail, &olen,
                                 (const unsigned char*)b64, strlen(b64)) == 0) {
         pcmStreamLen += olen;
       }
+      // Start speaking as soon as a little audio is queued (streaming playback).
+      if (!pcmStreamPlay && pcmStreamLen - pcmPlayOff >= pcmPrebufferBytes()) pcmStreamPlay = true;
     }
 #else
     sendUnsupported("TTS_CHUNK");
@@ -1285,8 +1417,10 @@ void handleCommand(const String& jsonLine) {
   }
   if (strcmp(cmd, "TTS_END") == 0) {
 #if HAS_SPEAKER
+    pcmEndSeq = p["seq"] | 0;                     // echoed in TTS_DONE so the web knows WHICH end
     pcmStreamRecv = false;
-    if (pcmStreamLen > 0) pcmStreamPlay = true;   // audioTask streams it out
+    if (pcmStreamLen > pcmPlayOff) pcmStreamPlay = true;   // audioTask streams it out
+    else if (!pcmStreamPlay) pcmDoneNotify = true;         // nothing to play: still answer
 #else
     sendUnsupported("TTS_END");
 #endif
@@ -1482,8 +1616,7 @@ void handleCommand(const String& jsonLine) {
   // --- Voice memo: record into the shared buffer (single slot) -------------
   if (strcmp(cmd, "RECORD_AUDIO") == 0) {
 #if HAS_SPEAKER && HAS_MIC
-    if (!pcmStreamBuf) pcmStreamBuf = allocBig(PCM_STREAM_CAP);
-    if (pcmStreamBuf) {
+    if (ensurePcmBuf()) {
       int secs = constrain((int)(p["secs"] | 1), 1, 4);   // cap at the 4 s buffer
       recordLen = 0;
       recordMs  = millis() + (unsigned long)secs * 1000;  // micTask fills the buffer
@@ -1494,16 +1627,41 @@ void handleCommand(const String& jsonLine) {
   }
 
   // --- Voice input: record mic then stream it to the web for STT (Whisper) ---
+  // New web: {secs, sr: 16000|8000, bits: 16|8, vad}. A bare {secs} (older web build)
+  // gets the old wire format (8 kHz u8, fixed window) so it keeps working.
   if (strcmp(cmd, "MIC_STT") == 0) {
 #if HAS_SPEAKER && HAS_MIC
-    if (!pcmStreamBuf) pcmStreamBuf = allocBig(PCM_STREAM_CAP);
-    if (pcmStreamBuf) {
-      int secs = constrain((int)(p["secs"] | 3), 1, 4);
-      recordLen = 0;
-      recordMs  = millis() + (unsigned long)secs * 1000;   // micTask fills the buffer
-      micSttSend = true;                                   // loop() streams it when done
+    if (!sttBuf && psramFound()) {
+      sttBuf = (int16_t*)ps_malloc(MIC_STT_CAP_PSRAM);
+      sttCap = sttBuf ? MIC_STT_CAP_PSRAM / 2 : 0;
+    }
+    if (!sttBuf && ensurePcmBuf()) {            // no PSRAM: borrow the TTS buffer
+      sttBuf = (int16_t*)pcmStreamBuf;
+      sttCap = pcmStreamCap / 2;
+      sttShared = true;
+    }
+    if (sttBuf) {
+      if (sttShared) { pcmStopAndWait(); pcmStreamRecv = false; }
+      const bool legacy = p["sr"].isNull();
+      sttSr   = (!legacy && (p["sr"] | 16000) == 16000) ? 16000 : 8000;
+      sttBits = (!legacy && (p["bits"] | 16) == 16) ? 16 : 8;
+      sttVad  = !legacy && (p["vad"] | true);
+      int secs = constrain((int)(p["secs"] | 3), 1, legacy ? 4 : 10);
+      sttLen    = 0;
+      sttSpeech = false;
+      sttEndMs  = millis() + (unsigned long)secs * 1000;
+      sttActive = true;                          // micTask fills sttBuf
+      micSttSend = true;                         // loop() streams it when the take ends
       lastStatus = "Dengar";
     }
+#endif
+    return;
+  }
+
+  // --- Voice input: end the current take now (push-to-talk release / cancel) ---
+  if (strcmp(cmd, "MIC_STOP") == 0) {
+#if HAS_SPEAKER && HAS_MIC
+    sttActive = false;                           // loop() sends what was captured
 #endif
     return;
   }
@@ -1512,6 +1670,10 @@ void handleCommand(const String& jsonLine) {
   if (strcmp(cmd, "PLAY_RECORDING") == 0) {
 #if HAS_SPEAKER && HAS_MIC
     if (pcmStreamBuf && recordLen > 0) {
+      pcmStopAndWait();
+      pcmStreamSr   = 8000;         // memo is captured at 8 kHz u8
+      pcmPlayOff    = 0;
+      pcmStreamRecv = false;
       pcmStreamLen  = recordLen;    // hand the capture to the TTS playback path
       pcmStreamPlay = true;
       lastStatus = "Putar";
@@ -1921,15 +2083,33 @@ void loop() {
   loopRelay();   // relay client (self-gates on relayEnabled + WiFi up)
 
 #if HAS_SPEAKER && HAS_MIC
-  // After a MIC_STT record window ends, stream the captured 8 kHz PCM to the web
-  // as base64 MIC_DATA chunks + MIC_END (web wraps WAV -> Whisper /stt -> chat).
-  if (micSttSend && recordMs == 0) {
+  // After a MIC_STT take ends (VAD / MIC_STOP / timer), stream it to the web as base64
+  // MIC_DATA chunks + MIC_END {sr, bits, speech} (web wraps WAV -> Whisper /stt -> chat).
+  if (micSttSend && !sttActive) {
     micSttSend = false;
-    size_t off = 0; int seq = 0;
-    while (off < recordLen) {
-      size_t n = recordLen - off; if (n > 2400) n = 2400;
-      static unsigned char b64[3300]; size_t olen = 0;
-      if (mbedtls_base64_encode(b64, sizeof(b64), &olen, pcmStreamBuf + off, n) == 0) {
+    const size_t n = sttLen;
+    const bool b16 = (sttBits == 16);
+    // Auto gain: lift the take so its peak sits near -3 dBFS (max x32, so a silent
+    // take isn't blown up into hiss). Quiet speech otherwise reached Whisper too low.
+    int peak = 0;
+    for (size_t i = 0; i < n; i++) { int a = abs((int)sttBuf[i]); if (a > peak) peak = a; }
+    int gainQ8 = peak > 0 ? (int)min(32L * 256, (24000L * 256) / peak) : 256;
+    if (gainQ8 < 256) gainQ8 = 256;
+    static uint8_t raw[2400];
+    static unsigned char b64[3300];
+    size_t i = 0, bytes = 0; int seq = 0;
+    while (i < n) {
+      size_t m = 0;
+      while (i < n && m + 2 <= sizeof(raw)) {
+        // NOTE: constrain() is a macro that evaluates its argument up to 3x — never
+        // put i++ inside it (that skipped 2 of every 3 samples: 3x-speed audio).
+        int v = ((int)sttBuf[i++] * gainQ8) >> 8;
+        v = constrain(v, -32768, 32767);
+        if (b16) { raw[m++] = (uint8_t)(v & 0xff); raw[m++] = (uint8_t)((v >> 8) & 0xff); }
+        else     { raw[m++] = (uint8_t)((v >> 8) + 128); }
+      }
+      size_t olen = 0;
+      if (mbedtls_base64_encode(b64, sizeof(b64), &olen, raw, m) == 0) {
         b64[olen] = 0;
         JsonDocument d;
         d["command"] = "MIC_DATA";
@@ -1937,12 +2117,29 @@ void loop() {
         d["params"]["data"] = (const char*)b64;
         sendJson(d);
       }
-      off += n;
+      bytes += m;
+      delay(2);   // let the WiFi/relay socket drain between ~3 KB frames
     }
     JsonDocument e;
     e["command"] = "MIC_END";
-    e["params"]["len"] = (int)recordLen;
+    e["params"]["len"]    = (int)bytes;
+    e["params"]["sr"]     = (int)sttSr;
+    e["params"]["bits"]   = (int)sttBits;
+    e["params"]["speech"] = (bool)sttSpeech;
     sendJson(e);
+    lastStatus = "Siap";
+  }
+#endif
+
+#if HAS_SPEAKER
+  // Tell the web the robot finished speaking (it waits for this before listening
+  // again, so the mic never records the robot's own voice in conversation mode).
+  if (pcmDoneNotify) {
+    pcmDoneNotify = false;
+    JsonDocument d;
+    d["command"] = "TTS_DONE";
+    d["params"]["seq"] = (int)pcmEndSeq;
+    sendJson(d);
   }
 #endif
 
