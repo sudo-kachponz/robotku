@@ -3,7 +3,7 @@
 // Base Robot — big top-down illustration of the real kit on the left (BaseRobotArt:
 // dowel frame, edge-on wheels on SG90 servos, Makerkit PCB, OLED, power bank) that
 // drives around as you hold the buttons; 3x3 pad on the right:
-//   [Grab] [▲] [Release] / [◀] · [▶] / · [▼] [Buzzer]
+//   · [▲] · / [◀] · [▶] / · [▼] [Buzzer]  (no claw on the kit: no Grab/Release)
 // Highly responsive, landscape mobile optimized.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -72,9 +72,6 @@ export default function BaseMode() {
     if (!getState().transport) soundFx.playHorn();
   }, [sendCommand]);
 
-  const gripOpen = useCallback(() => soundFx.playClick(700), []);
-  const gripClose = useCallback(() => soundFx.playClick(500), []);
-
   // prefers-reduced-motion
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -129,14 +126,9 @@ export default function BaseMode() {
 
         {/* Right: Controls */}
         <div className={styles.controls}>
-          {/* Top row: Grab - Up - Release */}
+          {/* Top row: Up */}
           <div className={styles.row}>
-            <DpadBtn
-              label="Grab"
-              icon={<GrabIcon />}
-              onDown={gripOpen}
-              className={styles.actionBtn}
-            />
+            <div className={styles.spacer} />
             <DpadBtn
               label="Maju"
               hideLabel
@@ -144,12 +136,7 @@ export default function BaseMode() {
               onDown={() => onDpad(1, 0)}
               onUp={stop}
             />
-            <DpadBtn
-              label="Release"
-              icon={<ReleaseIcon />}
-              onDown={gripClose}
-              className={styles.actionBtn}
-            />
+            <div className={styles.spacer} />
           </div>
 
           {/* Middle row: Left - (empty) - Right */}
@@ -250,20 +237,6 @@ const ArrowUp = () => <Tri rotate={0} />;
 const ArrowRight = () => <Tri rotate={90} />;
 const ArrowDown = () => <Tri rotate={180} />;
 const ArrowLeft = () => <Tri rotate={270} />;
-function GrabIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className={styles.handIcon} fill="currentColor" aria-hidden="true">
-      <path d="M6.5 10c-.3 0-.5-.2-.5-.5v-5c0-1.1.9-2 2-2s2 .9 2 2v3h1V3.5c0-1.1.9-2 2-2s2 .9 2 2V7h1V4.5c0-1.1.9-2 2-2s2 .9 2 2v6c0 .3-.2.5-.5.5s-.5-.2-.5-.5v-6c0-.6-.4-1-1-1s-1 .4-1 1V7.5c0 .3-.2.5-.5.5S14 7.8 14 7.5v-4c0-.6-.4-1-1-1s-1 .4-1 1v5c0 .3-.2.5-.5.5S11 9.8 11 9.5v-5c0-.6-.4-1-1-1s-1 .4-1 1v5c0 .3-.2.5-.5.5S8 9.8 8 9.5V6.3c-.6.3-1.5.6-1.5 3.2 0 .3-.2.5-.5.5zm10 12H9c-2.2 0-4-1.8-4-4v-5.5c0-1.1.9-2 2-2s2 .9 2 2V14c0 .3.2.5.5.5s.5-.2.5-.5v-3.5c0-1.1.9-2 2-2s2 .9 2 2V14c0 .3.2.5.5.5s.5-.2.5-.5v-2.5c0-1.1.9-2 2-2s2 .9 2 2V18c0 2.2-1.8 4-4 4z" />
-    </svg>
-  );
-}
-function ReleaseIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className={styles.handIcon} fill="currentColor" aria-hidden="true">
-      <path d="M18 11V4.5c0-1.1-.9-2-2-2s-2 .9-2 2V9h-1V3.5c0-1.1-.9-2-2-2s-2 .9-2 2V9H8V4.5c0-1.1-.9-2-2-2s-2 .9-2 2V14c0 4.4 3.6 8 8 8s8-3.6 8-8v-3z" />
-    </svg>
-  );
-}
 function BuzzerIcon() {
   return (
     <svg
