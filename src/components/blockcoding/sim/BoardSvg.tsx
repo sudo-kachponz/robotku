@@ -296,7 +296,6 @@ export default function BoardSvg({
     });
 
     return list;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attachedOledPorts, attachedServoPorts, positions, localPositions]);
 
   // Dynamically compute canvas dimensions based on board and module positions
