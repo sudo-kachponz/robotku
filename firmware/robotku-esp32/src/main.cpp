@@ -68,7 +68,7 @@ const char* resetReasonName(esp_reset_reason_t r);   // defined after sendHelloA
 // ------------------------------------------------------------------ Identity
 // BOARD_NAME / BOARD_ID come from the selected pin map (pins_*.h) so HELLO_ACK
 // tells the web which variant connected — no #ifdef BOARD_* here (see config.h).
-#define FW_VERSION   "2.6.2-mk"   // 2.6.2: S3 servos work (ESP32Servo 3.0.9), touch/AUX/ultrasonic sensors, LCD->OLED, 16K serial RX; 2.6.1: mu-law TTS
+#define FW_VERSION   "2.6.3-mk"   // 2.6.3: WiFi radio starts from loop() 3 s after boot at lower TX power, skipped for one boot if the last start reset the board; 2.6.2: S3 servos work (ESP32Servo 3.0.9), touch/AUX/ultrasonic sensors, LCD->OLED, 16K serial RX; 2.6.1: mu-law TTS
 #define PROTOCOL_ID  "robotku-v1"
 #define BLE_NAME     "Robotku"
 
@@ -289,6 +289,13 @@ Preferences wifiPrefs;
 bool          wifiOn       = false;   // STA started (creds present)
 bool          wifiUp       = false;   // associated + got IP (edge-reported once)
 unsigned long wifiStartMs  = 0;       // millis() when STA began connecting
+// Saved creds waiting to be joined from loop(); see setupWiFi() for why not in setup().
+String wifiBootSsid, wifiBootPass;
+#define WIFI_BOOT_DELAY_MS 3000
+// NVS "wifiTry" is set before the deferred radio start and cleared once the board has
+// survived WIFI_SURVIVE_MS. Still set at boot = that start reset the board (weak power).
+#define WIFI_SURVIVE_MS 10000
+unsigned long wifiTryMs = 0;
 const unsigned long WIFI_TIMEOUT_MS = 10000;  // give up after 10s, fall back to BLE/Serial
 uint8_t       wsClients    = 0;       // connected WebSocket clients
 String        wsBuffer;               // inbound line buffer for the WS parser
@@ -826,6 +833,9 @@ void oledSplash() {
 // ms<=0 = play until the next call; else loop() silences it at the deadline.
 void buzzerOff();   // forward decl — buzzerTone() calls buzzerOff() before its definition
 void buzzerTone(int freq, long ms) {
+#ifdef NO_BUZZER
+  freq = 0;   // diagnostic build: a faulty buzzer stage that browns the board out stays silent
+#endif
   if (!buzzerTimer || freq <= 0) { buzzerOff(); return; }
   // Timer ticks at 1 MHz (see setup); alarm = half the wave period in µs.
   uint32_t halfUs = 500000UL / (uint32_t)freq;
@@ -2084,6 +2094,8 @@ bool startWiFiSTA(const String& ssid, const String& pass) {
   if (WiFi.getMode() == WIFI_OFF) {
     Serial.println("[wifi] initialising radio...");
     WiFi.mode(WIFI_STA);
+    // Default 19.5 dBm TX peaks draw enough to drop a weak USB port / power bank.
+    WiFi.setTxPower(WIFI_POWER_11dBm);
     // Start WS server now that lwIP is up (deferred from setupWiFi on fresh boot).
     wsServer.begin();
     wsServer.onEvent(onWsEvent);
@@ -2101,9 +2113,12 @@ void setupWiFi() {
   // (namespace doesn't exist yet) — guard so getString/end don't touch a
   // bad handle and silently hang or crash.
   String ssid, pass;
-  if (wifiPrefs.begin("robotku", true)) {
+  bool lastStartReset = false;
+  if (wifiPrefs.begin("robotku", false)) {
     ssid = wifiPrefs.getString("ssid", "");
     pass = wifiPrefs.getString("pass", "");
+    lastStartReset = wifiPrefs.getBool("wifiTry", false);
+    if (lastStartReset) wifiPrefs.putBool("wifiTry", false);   // retry on the boot after this one
     wifiPrefs.end();
   } else {
     Serial.println("[wifi] no saved creds (fresh NVS) — skipping WiFi");
@@ -2113,11 +2128,15 @@ void setupWiFi() {
   // WiFi.mode(WIFI_STA) can block for seconds on fresh NVS / no RF cal data, and
   // wsServer.begin() needs lwIP which only inits after WiFi.mode(). If no creds,
   // skip entirely — BLE/Serial work fine, and SET_WIFI will start WiFi on demand.
-  if (ssid.length()) {
-    WiFi.mode(WIFI_STA);
-    wsServer.begin();
-    wsServer.onEvent(onWsEvent);
-    startWiFiSTA(ssid, pass);
+  // Starting the radio here (with BLE already up) hung or browned out the S3 before
+  // READY on 28 Nov 2026: OLED stuck on the splash, BLE dropped during discovery.
+  // loop() starts it WIFI_BOOT_DELAY_MS after boot, so BLE/USB are usable first.
+  if (ssid.length() && lastStartReset) {
+    Serial.println("[wifi] last radio start reset the board — WiFi skipped this boot (SET_WIFI to retry)");
+  } else if (ssid.length()) {
+    wifiBootSsid = ssid;
+    wifiBootPass = pass;
+    Serial.println("[wifi] saved creds — radio starts from loop() after READY");
   } else {
     Serial.println("[wifi] no creds — WiFi+WS deferred until SET_WIFI");
   }
@@ -2216,6 +2235,19 @@ void setup() {
 void loop() {
   // 1) Drain USB serial.
   while (Serial.available() > 0) feed(serialBuffer, (char)Serial.read(), true);
+
+  if (wifiBootSsid.length() && millis() > WIFI_BOOT_DELAY_MS) {
+    Serial.println("[wifi] starting radio (deferred from setup)");
+    wifiPrefs.begin("robotku", false); wifiPrefs.putBool("wifiTry", true); wifiPrefs.end();
+    wifiTryMs = millis();
+    startWiFiSTA(wifiBootSsid, wifiBootPass);
+    wifiBootSsid = ""; wifiBootPass = "";
+  }
+
+  if (wifiTryMs && millis() - wifiTryMs > WIFI_SURVIVE_MS) {
+    wifiPrefs.begin("robotku", false); wifiPrefs.putBool("wifiTry", false); wifiPrefs.end();
+    wifiTryMs = 0;
+  }
 
   loopRelay();   // relay client (self-gates on relayEnabled + WiFi up)
 

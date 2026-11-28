@@ -65,6 +65,18 @@ Board: **Robotku Makerkit S3 v1.3**, PCB putih, casing 3D-print hitam. Skematik:
 - UART RX buffer diperbesar ke 16 KB (TTS lewat USB dulu kehilangan byte).
 
 ### ⚠ Masalah terbuka #1 — robot restart terus (blocker)
+
+**Update 28 Nov malam (sesi Claude Code):** kemungkinan besar **kerusakan hardware jalur daya**, bukan firmware.
+- Flash sebelumnya terputus di ~96% → app invalid → loop `rst:0x3 RTC_SW_SYS_RST`; sudah di-flash ulang.
+- Di mode bootloader/download (beban kecil) USB laptop stabil berapa lama pun; app apa pun (termasuk build
+  `-D NO_BUZZER`, servo & HC-SR04 dilepas) mati ~0,8 s setelah nyala (log berhenti di `[boot] startupTone...`).
+- Di power bank sempat hidup: BLE `HELLO_ACK fw 2.6.3-mk`, `diag.reset=BROWNOUT`, lalu hilang lagi
+  (LED power merah tetap nyala, OLED macet di splash).
+- Board tanpa tombol BOOT/RESET: flash lewat USB yang putus-sambung bisa dengan menangkap port dan
+  menjalankan `esptool.main([... 'write_flash' ...])` dalam satu proses (auto-reset CH340 menahan chip di
+  mode download, lalu USB stabil). Jangan buka ulang port di antara reset dan write.
+- Langkah berikut: ukur 5V/3V3 dengan multimeter saat boot, atau ganti board. Robot saat ini berisi build
+  diagnosis `NO_BUZZER`; flash ulang build normal setelah board sehat.
 Sejak ~19:23, board **mati-hidup ±1×/detik**: log boot selalu berhenti di `[boot] startupTone...` lalu
 `rst:0x1 (POWERON)`; kernel: `usb 1-4: USB disconnect` + `error -71`. Karena BLE baru di-init **setelah**
 nada pembuka, robot **tidak pernah muncul di scan Bluetooth** (sudah dicek: adapter laptop sehat, flag
