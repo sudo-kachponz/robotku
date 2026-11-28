@@ -583,8 +583,10 @@ void audioTask(void*) {
           // u8 (centre 128) -> s16 at HALF scale (<<7, not <<8): still far louder
           // than the old tone, but leaves current headroom so a long reply doesn't
           // brown the board out on USB. Bump toward <<8 if you run on battery.
-          // mu-law decodes to +-32124; >>1 keeps the same half-scale headroom as <<7.
-          const int lin = pcmStreamFmt ? (ulawTable[pcmStreamBuf[off]] >> 1) : (((int)pcmStreamBuf[off] - 128) << 7);
+          // mu-law plays at FULL scale like the welcome clip (calibration: the half-scale
+          // TTS sounded 6 dB quieter / less clear than the 16-bit reference clip); the
+          // old 8-bit path keeps its half-scale headroom. SET_VOLUME still scales both.
+          const int lin = pcmStreamFmt ? ulawTable[pcmStreamBuf[off]] : (((int)pcmStreamBuf[off] - 128) << 7);
           int16_t s = (int16_t)(lin * spkVolume / 100);  // SET_VOLUME scale
           if (up) buf[n++] = (int16_t)(((int)prev + s) / 2);
           buf[n++] = s;

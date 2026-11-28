@@ -158,12 +158,28 @@ export function floatToUlaw(samples: Float32Array): Uint8Array {
   return out;
 }
 
+/**
+ * Voice pitch: 1 = Piper's natural voice; >1 = higher, more child-like. Raised by
+ * playing faster while Piper speaks `pitch` x slower, so the tempo stays the same.
+ *   localStorage.setItem('robotku.voicePitch', '1.25')
+ */
+export function voicePitch(): number {
+  try {
+    const v = Number(window.localStorage.getItem('robotku.voicePitch'));
+    return v >= 1 && v <= 1.6 ? v : 1;
+  } catch {
+    return 1;
+  }
+}
+
 /** Text -> robot-ready bytes at `sr` Hz (mu-law or 8-bit linear). Throws on failure. */
 async function fetchPcm(text: string, sr: number, ulaw: boolean): Promise<Uint8Array> {
+  const pitch = voicePitch();
   const res = await fetch(ttsUrl(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, lang: 'id', sr }),
+    // 1.05 = tempo of the board's reference clip (see server/robotku-tts).
+    body: JSON.stringify({ text, lang: 'id', sr, length_scale: 1.05 * pitch }),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = (await res.json()) as { audio?: string };
@@ -181,21 +197,33 @@ async function fetchPcm(text: string, sr: number, ulaw: boolean): Promise<Uint8A
   }
   // OfflineAudioContext resamples with a proper low-pass filter (the old
   // nearest-neighbour pick aliased "s"/"c" sounds into hiss on the robot speaker).
-  // Voicing for the tiny robot speaker: it can't move air below ~200 Hz, so bass only
-  // made it buzz — high-pass it, then compress so soft syllables stay audible.
-  const off = new OfflineAudioContext(1, Math.max(1, Math.ceil(buf.duration * sr)), sr);
+  // Voicing calibrated against the board's own clear clip (welcome_audio.h, 16-bit):
+  // Piper put 18% of its energy below 300 Hz (the tiny speaker only buzzes there) and
+  // ~0.2% in 3-5 kHz where consonants live (reference 3.8% / 2.1%). This EQ was fitted
+  // to the reference spectrum (bands now 4/59/34/1.4/1.4% vs 4/65/29/2.1/0.8%), then a
+  // compressor keeps soft syllables audible.
+  const off = new OfflineAudioContext(1, Math.max(1, Math.ceil((buf.duration / pitch) * sr)), sr);
   const src = off.createBufferSource();
   src.buffer = buf;
-  const hp = off.createBiquadFilter();
-  hp.type = 'highpass';
-  hp.frequency.value = 180;
+  src.playbackRate.value = pitch;
+  const biquad = (type: BiquadFilterType, freq: number, gain = 0, q = 0.7071) => {
+    const f = off.createBiquadFilter();
+    f.type = type;
+    f.frequency.value = freq;
+    f.gain.value = gain;
+    f.Q.value = q;
+    return f;
+  };
+  const hp = biquad('highpass', 350);
+  const body = biquad('peaking', 650, 3, 0.8);
+  const presence = biquad('highshelf', 3000, 12);
   const comp = off.createDynamicsCompressor();
   comp.threshold.value = -24;
   comp.knee.value = 12;
   comp.ratio.value = 4;
   comp.attack.value = 0.003;
   comp.release.value = 0.15;
-  src.connect(hp).connect(comp).connect(off.destination);
+  src.connect(hp).connect(body).connect(presence).connect(comp).connect(off.destination);
   src.start();
   const out = (await off.startRendering()).getChannelData(0);
   return ulaw ? floatToUlaw(out) : floatToU8(out);

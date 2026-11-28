@@ -41,10 +41,10 @@ function fakeAudio(seconds = 0.5) {
   class FakeOffline {
     constructor(_ch: number, private len: number) {}
     createBufferSource() {
-      return { buffer: null, connect: (n: unknown) => n, start() {} };
+      return { buffer: null, playbackRate: { value: 1 }, connect: (n: unknown) => n, start() {} };
     }
     createBiquadFilter() {
-      return { type: '', frequency: { value: 0 }, connect: (n: unknown) => n };
+      return { type: '', frequency: { value: 0 }, gain: { value: 0 }, Q: { value: 0 }, connect: (n: unknown) => n };
     }
     createDynamicsCompressor() {
       const p = () => ({ value: 0 });

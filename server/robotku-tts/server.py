@@ -4,11 +4,12 @@
 Same contract as the old Workers AI /tts, so the web (src/ailabs/robotVoice.ts) and the
 firmware don't change:
 
-    POST /tts   {"text": "...", "sr": 16000|8000}  ->  {"audio": "<base64 WAV>", "format": "wav"}
+    POST /tts   {"text": "...", "length_scale"?}  ->  {"audio": "<base64 WAV>", "format": "wav"}
     GET  /health                                    ->  {"ok": true, "voice": "..."}
 
-The WAV comes back already at the robot's rate (8/16 kHz, mono 16-bit) so the browser
-only re-encodes it to 8-bit. Runs on CPU (~0.1-0.3 s per sentence).
+The WAV comes back at Piper's native rate (22.05 kHz, mono 16-bit): the browser resamples
+it to the robot's 8/16 kHz with a proper filter and applies the speaker voicing, which
+sounds cleaner than resampling here. Runs on CPU (~0.1-0.3 s per sentence).
 
 Setup (once):
     python3 -m venv venv && venv/bin/pip install -r requirements.txt
@@ -18,7 +19,7 @@ Setup (once):
 Run:
     PIPER_VOICE=voices/id_ID-news_tts-medium.onnx venv/bin/python server.py
 Env: PORT (5002), PIPER_VOICE, ALLOWED_ORIGINS (comma list, default hub + localhost),
-     LENGTH_SCALE (1.0; >1 = slower speech).
+     LENGTH_SCALE (1.05 = tempo of the board's reference clip; >1 = slower speech).
 """
 
 import base64
@@ -29,7 +30,6 @@ import threading
 import wave
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-import numpy as np
 from piper import PiperVoice, SynthesisConfig
 
 PORT = int(os.environ.get("PORT", "5002"))
@@ -38,34 +38,19 @@ ALLOWED = [o.strip() for o in os.environ.get(
     "ALLOWED_ORIGINS",
     "https://hub.robotku.id,http://localhost:3000,http://localhost:3123",
 ).split(",") if o.strip()]
-LENGTH_SCALE = float(os.environ.get("LENGTH_SCALE", "1.0"))
+LENGTH_SCALE = float(os.environ.get("LENGTH_SCALE", "1.05"))
 MAX_CHARS = 600
 
 voice = PiperVoice.load(VOICE_PATH)
 synth_lock = threading.Lock()  # one synthesis at a time keeps CPU use predictable
 
 
-def synthesize(text: str, sr: int) -> bytes:
-    """Text -> mono 16-bit WAV at `sr` Hz."""
+def synthesize(text: str, length_scale: float = LENGTH_SCALE) -> bytes:
+    """Text -> mono 16-bit WAV at the voice's native rate."""
     buf = io.BytesIO()
     with synth_lock, wave.open(buf, "wb") as w:
-        voice.synthesize_wav(text, w, syn_config=SynthesisConfig(length_scale=LENGTH_SCALE))
-    buf.seek(0)
-    with wave.open(buf) as r:
-        src_sr = r.getframerate()
-        x = np.frombuffer(r.readframes(r.getnframes()), dtype=np.int16).astype(np.float32)
-    if src_sr != sr and len(x):
-        # Linear resample; Piper output is already band-limited well below 4 kHz-ish
-        # energy for speech, and the browser low-pass-resamples again for the robot.
-        n_out = int(len(x) * sr / src_sr)
-        x = np.interp(np.arange(n_out) * (src_sr / sr), np.arange(len(x)), x)
-    out = io.BytesIO()
-    with wave.open(out, "wb") as w:
-        w.setnchannels(1)
-        w.setsampwidth(2)
-        w.setframerate(sr)
-        w.writeframes(np.clip(x, -32768, 32767).astype(np.int16).tobytes())
-    return out.getvalue()
+        voice.synthesize_wav(text, w, syn_config=SynthesisConfig(length_scale=length_scale))
+    return buf.getvalue()
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -110,9 +95,15 @@ class Handler(BaseHTTPRequestHandler):
         text = str(body.get("text", "")).strip()[:MAX_CHARS]
         if not text:
             return self._json(400, {"error": "text kosong"})
-        sr = 8000 if body.get("sr") == 8000 else 16000
+        # Optional slower synthesis: the web raises the pitch (child voice) by playing
+        # faster and asks for length_scale x pitch so the tempo stays natural.
         try:
-            wav = synthesize(text, sr)
+            ls = float(body.get("length_scale", LENGTH_SCALE))
+        except (TypeError, ValueError):
+            ls = LENGTH_SCALE
+        ls = min(2.0, max(0.6, ls))
+        try:
+            wav = synthesize(text, ls)  # `sr` in the request is accepted but not needed
         except Exception as e:  # report instead of dropping the connection
             return self._json(500, {"error": f"tts gagal: {e}"})
         self._json(200, {"audio": base64.b64encode(wav).decode(), "format": "wav", "provider": "piper-id"})
