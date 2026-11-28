@@ -1,7 +1,7 @@
 // Robot voice pipeline helpers: sentence streaming, speech cleanup, WAV framing,
 // Whisper hallucination filter.
 import { describe, it, expect } from 'vitest';
-import { SentenceSplitter, cleanForSpeech, floatToU8 } from '../ailabs/robotVoice';
+import { SentenceSplitter, cleanForSpeech, floatToU8, floatToUlaw } from '../ailabs/robotVoice';
 import { pcmToWavB64, cleanTranscript } from '../ailabs/micStt';
 
 describe('SentenceSplitter', () => {
@@ -34,6 +34,28 @@ describe('floatToU8', () => {
     expect(pcm[0]).toBe(128);
     expect(pcm[1]).toBeGreaterThan(240);
     expect(pcm[2]).toBeLessThan(16);
+  });
+});
+
+describe('floatToUlaw', () => {
+  // Same decode as the firmware's ulawTable (main.cpp ulawInit).
+  const dec = (b: number) => {
+    const u = ~b & 0xff;
+    const t = (((u & 0x0f) << 3) + 0x84) << ((u & 0x70) >> 4);
+    return u & 0x80 ? 0x84 - t : t - 0x84;
+  };
+  it('round-trips through the firmware decoder (silence = 0xFF, peak = 0.95 FS)', () => {
+    const x = new Float32Array([0, 1, -1, 0.5, -0.25]);
+    const u = floatToUlaw(x);
+    expect(u[0]).toBe(0xff);
+    [0, 0.95, -0.95, 0.475, -0.2375].forEach((want, i) => {
+      expect(Math.abs(dec(u[i]) / 32767 - want)).toBeLessThan(0.02); // within one mu-law step
+    });
+  });
+  it('keeps quiet samples distinct where 8-bit linear flattens them', () => {
+    const quiet = new Float32Array([1, 0.004, 0.008, 0.012]); // loud first sample fixes the gain
+    expect(new Set(floatToUlaw(quiet).slice(1)).size).toBe(3);
+    expect(new Set(floatToU8(quiet).slice(1)).size).toBeLessThan(3);
   });
 });
 

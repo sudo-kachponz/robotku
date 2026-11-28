@@ -139,8 +139,27 @@ export function floatToU8(samples: Float32Array): Uint8Array {
   return pcm;
 }
 
-/** Text -> robot-ready PCM at `sr` Hz. Throws on any TTS/decode failure. */
-async function fetchPcm(text: string, sr: number): Promise<Uint8Array> {
+/** Float sample -> G.711 mu-law byte (what firmware 2.6.1+ decodes, cap TTS_ULAW). */
+function muLaw(x: number): number {
+  const s = Math.max(-32768, Math.min(32767, Math.round(x * 32767)));
+  const sign = s < 0 ? 0x80 : 0;
+  const v = Math.min(Math.abs(s), 32635) + 0x84;
+  const e = Math.max(0, 31 - Math.clz32(v) - 7); // bit length - 8
+  return ~(sign | (e << 4) | ((v >> (e + 3)) & 0x0f)) & 0xff;
+}
+
+/** Peak-normalised mu-law: 1 byte/sample like 8-bit, but ~13-bit quality on quiet syllables. */
+export function floatToUlaw(samples: Float32Array): Uint8Array {
+  let peak = 0;
+  for (let i = 0; i < samples.length; i++) peak = Math.max(peak, Math.abs(samples[i]));
+  const g = peak > 0.01 ? Math.min(4, 0.95 / peak) : 1;
+  const out = new Uint8Array(samples.length);
+  for (let i = 0; i < samples.length; i++) out[i] = muLaw(samples[i] * g);
+  return out;
+}
+
+/** Text -> robot-ready bytes at `sr` Hz (mu-law or 8-bit linear). Throws on failure. */
+async function fetchPcm(text: string, sr: number, ulaw: boolean): Promise<Uint8Array> {
   const res = await fetch(ttsUrl(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -162,12 +181,24 @@ async function fetchPcm(text: string, sr: number): Promise<Uint8Array> {
   }
   // OfflineAudioContext resamples with a proper low-pass filter (the old
   // nearest-neighbour pick aliased "s"/"c" sounds into hiss on the robot speaker).
+  // Voicing for the tiny robot speaker: it can't move air below ~200 Hz, so bass only
+  // made it buzz — high-pass it, then compress so soft syllables stay audible.
   const off = new OfflineAudioContext(1, Math.max(1, Math.ceil(buf.duration * sr)), sr);
   const src = off.createBufferSource();
   src.buffer = buf;
-  src.connect(off.destination);
+  const hp = off.createBiquadFilter();
+  hp.type = 'highpass';
+  hp.frequency.value = 180;
+  const comp = off.createDynamicsCompressor();
+  comp.threshold.value = -24;
+  comp.knee.value = 12;
+  comp.ratio.value = 4;
+  comp.attack.value = 0.003;
+  comp.release.value = 0.15;
+  src.connect(hp).connect(comp).connect(off.destination);
   src.start();
-  return floatToU8((await off.startRendering()).getChannelData(0));
+  const out = (await off.startRendering()).getChannelData(0);
+  return ulaw ? floatToUlaw(out) : floatToU8(out);
 }
 
 const send = (t: RobotTransport, command: string, params: Record<string, unknown>) =>
@@ -214,6 +245,8 @@ export function startRobotSpeech(): RobotSpeech {
   const streaming = caps().includes('TTS_STREAM');
   const slow = isSlowLink(st.transport);
   const sr = streaming && !slow && caps().includes('TTS_SR16') ? 16000 : 8000;
+  const ulaw = caps().includes('TTS_ULAW');
+  const fmt = ulaw ? { fmt: 'ulaw' } : {};
 
   let cancelled = false;
   let chain: Promise<void> = Promise.resolve();
@@ -228,7 +261,7 @@ export function startRobotSpeech(): RobotSpeech {
   });
 
   const queue = (text: string, begin: Record<string, unknown>, maxBytes = Infinity) => {
-    const pcmP = fetchPcm(text, sr);
+    const pcmP = fetchPcm(text, sr, ulaw);
     pcmP.catch(() => {}); // surfaced in the chain below; avoid an unhandled rejection
     chain = chain.then(async () => {
       if (failed || cancelled) return;
@@ -266,7 +299,7 @@ export function startRobotSpeech(): RobotSpeech {
       // First sentence starts a fresh take; on BLE/serial the robot buffers the whole
       // sentence first (link ~= play rate, so streaming would stutter).
       const first = queued++ === 0; // counted synchronously: lastSeq is set only after sending
-      queue(t, first ? { sr, append: false, pre_ms: slow ? 120000 : 300 } : { sr, append: true });
+      queue(t, first ? { sr, ...fmt, append: false, pre_ms: slow ? 120000 : 300 } : { sr, append: true });
     },
     async end() {
       if (!streaming && legacyText && !failed) queue(legacyText, {}, LEGACY_MAX_BYTES);

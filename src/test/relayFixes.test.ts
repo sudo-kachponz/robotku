@@ -41,7 +41,17 @@ function fakeAudio(seconds = 0.5) {
   class FakeOffline {
     constructor(_ch: number, private len: number) {}
     createBufferSource() {
-      return { buffer: null, connect() {}, start() {} };
+      return { buffer: null, connect: (n: unknown) => n, start() {} };
+    }
+    createBiquadFilter() {
+      return { type: '', frequency: { value: 0 }, connect: (n: unknown) => n };
+    }
+    createDynamicsCompressor() {
+      const p = () => ({ value: 0 });
+      return { threshold: p(), knee: p(), ratio: p(), attack: p(), release: p(), connect: (n: unknown) => n };
+    }
+    get destination() {
+      return {};
     }
     async startRendering() {
       const n = this.len;
@@ -93,6 +103,7 @@ describe('AI voice goes to the robot, never raw to firmware', () => {
     await vi.waitFor(() => expect(ends()).toHaveLength(2));
     const begins = sent.filter((l) => l.includes('TTS_BEGIN')).map((l) => JSON.parse(l.slice(0, -1)).params);
     expect(begins[0]).toMatchObject({ sr: 16000, append: false, pre_ms: 300 });
+    expect(begins[0].fmt).toBeUndefined(); // no TTS_ULAW cap -> 8-bit linear
     expect(begins[1]).toMatchObject({ sr: 16000, append: true });
     const lastSeq = JSON.parse(ends()[1].slice(0, -1)).params.seq;
     dispatchTelemetry({ command: 'TTS_DONE', params: { seq: lastSeq - 1 } }); // stale: ignored
