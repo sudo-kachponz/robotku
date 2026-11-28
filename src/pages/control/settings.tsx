@@ -152,8 +152,8 @@ function SettingsTab({
           ]}
         />
         <KeybindTable
-          title="Port Control (SHIFT membalik)"
-          rows={[['Port 1–8', ['1', '…', '8']]]}
+          title="Lab I/O (SHIFT membalik)"
+          rows={[['Servo P1, P2, P5', ['1', '2', '5']]]}
         />
       </div>
 

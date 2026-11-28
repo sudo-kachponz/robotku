@@ -1,7 +1,7 @@
 // src/pages/control/modes/index.tsx
 //
 // Control Modes carousel — 5 cards with left/right arrows + 5 dots. Order:
-// Base Robot, Port Control, Tank Mode, Joystick, Block Coding.
+// Base Robot, Lab I/O, Tank Mode, Joystick, Block Coding.
 
 import { useState } from 'react';
 import { useRouter } from 'next/router';
@@ -86,8 +86,8 @@ const MODES: ModeCard[] = [
   {
     key: 'port',
     href: '/control/modes/port',
-    title: 'Port Control',
-    desc: 'Uji fungsi port satu per satu lewat slider −100..100.',
+    title: 'Lab I/O',
+    desc: 'Coba setiap bagian robot satu per satu — tanpa coding.',
     accent: 'var(--purple)',
     image: portSvg,
   },

@@ -141,16 +141,138 @@
   }
 }
 
-/* ---- Port Control: board (left) + 8 direction sliders (right) ---- */
-.portLayout {
+/* ---- Lab I/O: header, board, then Servo / Sensor / Output cards ---- */
+.labLayout {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(16px, 3vw, 48px);
   flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: clamp(16px, 2.5vw, 32px);
   width: 100%;
-  padding-bottom: calc(16px + var(--safe-b));
+  padding: 8px 12px calc(96px + var(--safe-b));
+  overflow-y: auto;
+}
+.labHead {
+  flex-basis: 100%;
+  text-align: center;
+  color: var(--rk-on);
+}
+.labTitle {
+  margin: 0;
+  font-size: clamp(22px, 4vw, 30px);
+  font-weight: 800;
+}
+.labSub {
+  margin: 4px 0 0;
+  color: var(--rk-on-muted);
+}
+.labNotice {
+  display: inline-block;
+  margin: 10px 0 0;
+  padding: 6px 14px;
+  border-radius: var(--rk-r-pill);
+  background: var(--rk-surface-3);
+  font-weight: 600;
+}
+.labCard {
+  width: min(460px, 94vw);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: var(--rk-r-lg);
+  background: var(--rk-surface-3);
+  box-shadow: var(--rk-shadow);
+  color: var(--rk-on);
+}
+.labCardTitle {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 800;
+}
+.labServoRow {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  align-items: end;
+  gap: 10px;
+}
+.labLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rk-on-muted);
+  margin-bottom: 4px;
+}
+.labInfo {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--rk-on-muted);
+}
+.labSensors {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 10px 12px;
+  margin: 0;
+}
+.labSensors dt {
+  font-weight: 800;
+}
+.labSensors dd {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.labSensors small {
+  color: var(--rk-on-muted);
+}
+.labPins {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 2px 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.labOutRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.labControls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.labControls input[type='number'],
+.labControls input[type='text'],
+.labControls select {
+  min-height: 40px;
+  padding: 0 10px;
+  border-radius: var(--rk-r-md);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--rk-surface-2);
+  color: var(--rk-on);
+  font: inherit;
+}
+.labControls input[type='number'] {
+  width: 96px;
+}
+.labControls input[type='color'] {
+  width: 44px;
+  height: 40px;
+  border: none;
+  background: none;
+  padding: 0;
+}
+.labBtn {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: var(--rk-r-pill);
+  border: none;
+  background: var(--indigo-600);
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .portBoardCol {
@@ -164,15 +286,7 @@
   filter: drop-shadow(0 18px 40px rgba(20, 16, 60, 0.45));
 }
 
-.portRows {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: min(540px, 94vw);
-}
-
-.portHeader,
-.portRow {
+.portHeader {
   display: grid;
   grid-template-columns: 32px 1fr;
   align-items: center;
@@ -250,9 +364,6 @@
 }
 
 @media (max-width: 767px) {
-  .portLayout {
-    flex-direction: column;
-  }
   .portBoardCol {
     display: none;
   }

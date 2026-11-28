@@ -24,7 +24,15 @@ export function fillBg(v: number): string {
 // Silkscreen number -> header x (board-local), from the shared art.
 const HEADER_X: Record<string, number> = Object.fromEntries(Object.values(PWM_HEADER).map((h) => [h.silk, h.x]));
 
-export default function PortBoard({ active, ledColor }: { active: boolean[]; ledColor?: string | null }) {
+export default function PortBoard({
+  active,
+  ledColor,
+  pixelColors,
+}: {
+  active: boolean[];
+  ledColor?: string | null;
+  pixelColors?: (string | null)[];
+}) {
   const headerH = 2 * PITCH + CELL;
   return (
     <svg
@@ -33,7 +41,7 @@ export default function PortBoard({ active, ledColor }: { active: boolean[]; led
       role="img"
       aria-label="Papan Robotku Makerkit V1.3 — port servo P1, P2, P5"
     >
-      <MakerkitBoardArt pixelColors={[0, 1, 2, 3].map(() => ledColor ?? null)}>
+      <MakerkitBoardArt pixelColors={pixelColors ?? [0, 1, 2, 3].map(() => ledColor ?? null)}>
         {active.map((on, i) => {
           const x = HEADER_X[String(i + 1)];
           // shortcut: ports without a header (only P4 on v1.3) park their chip at x=150; give each its own spot if a board lacks more
