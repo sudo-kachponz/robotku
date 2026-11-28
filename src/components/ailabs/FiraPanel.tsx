@@ -14,12 +14,15 @@ import { Lcd, PETW } from './lcd/engine';
 import { PET_COLORS, type Mood } from './lcd/sprites';
 import { firaChat, type ChatMsg } from '../../ailabs/brain';
 import { speak, stopSpeaking, ttsSupported, voiceLabel, listenOnce, sttSupported } from '../../ailabs/speech';
-import { listenViaRobot, robotCanListen } from '../../ailabs/micStt';
-import { speakViaRobot, SPEAK_REASON_TEXT } from '../../ailabs/robotVoice';
+import { listenViaRobot, robotCanListen, stopRobotListening } from '../../ailabs/micStt';
+import { startRobotSpeech, SentenceSplitter, SPEAK_REASON_TEXT, type RobotSpeech } from '../../ailabs/robotVoice';
 import { showToast } from '../../ui/toast';
 import styles from './FiraPanel.module.css';
 
 type Face = 'idle' | 'thinking' | 'speaking';
+
+// Said during conversation mode -> stop the hands-free loop.
+const STOP_WORDS = /^\s*(stop|berhenti|selesai|udahan|sudahan|dadah|bye)\b/i;
 
 // Random-walk sim so the RAM/CPU bars feel alive (identik dgn mametchi-monitor).
 function drift(v: number, amt: number, lo: number, hi: number): number {
@@ -45,6 +48,21 @@ export default function FiraPanel({ open, onClose }: { open: boolean; onClose: (
   const [demo, setDemo] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [listening, setListening] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+  const [convo, setConvo] = useState(false); // hands-free "Jarvis" loop
+  // Refs for the async loops: a conversation outlives many renders, so it must not
+  // read stale `messages`/`busy` from the render it started in.
+  const messagesRef = useRef(messages);
+  const busyRef = useRef(false);
+  const convoRef = useRef(false);
+  const speechRef = useRef<RobotSpeech | null>(null);
+  const usingRobotMic = listening && robotCanListen();
+
+  function setMsgs(fn: (m: ChatMsg[]) => ChatMsg[]) {
+    messagesRef.current = fn(messagesRef.current);
+    setMessages(messagesRef.current);
+  }
+  const note = (content: string) => setMsgs((m) => [...m, { role: 'assistant', content }]);
 
   // drift the sim once a second
   useEffect(() => {
@@ -114,78 +132,146 @@ export default function FiraPanel({ open, onClose }: { open: boolean; onClose: (
     pokeRef.current = Date.now() + 2200; // pet senang sebentar
   }
 
-  async function handleMic() {
-    const useRobotMic = robotCanListen();
-    if (listening || busy || (!useRobotMic && !sttSupported())) return;
+  /** One take from the robot mic (preferred) or the browser mic. */
+  async function hear(): Promise<string | null> {
     setListening(true);
     listeningRef.current = true;
-    faceRef.current = 'thinking';
     try {
-      if (useRobotMic) {
-        // Voice input from the ROBOT's mic (INMP441 -> /stt Whisper).
-        const text = await listenViaRobot(3);
-        if (text) await send(text);
-        else setMessages((m) => [...m, { role: 'assistant', content: '(robot tidak mendengar / STT gagal, coba lagi)' }]);
-        return;
-      }
+      if (robotCanListen()) return await listenViaRobot(); // robot ends the take on silence
+      if (!sttSupported()) return null;
       const r = await listenOnce();
-      if (r.ok && r.text) await send(r.text);
-      else
-        setMessages((m) => [
-          ...m,
-          { role: 'assistant', content: r.reason === 'unsupported' ? '(STT hanya di Chrome/Edge — ketik saja ya)' : '(tidak mendengar apa-apa, coba lagi)' },
-        ]);
+      return r.ok && r.text ? r.text : null;
     } finally {
       setListening(false);
       listeningRef.current = false;
-      if (!busy) faceRef.current = 'idle';
     }
+  }
+
+  async function handleMic() {
+    if (listeningRef.current) {
+      stopRobotListening(); // second tap = "done talking"
+      return;
+    }
+    if (busyRef.current || (!robotCanListen() && !sttSupported())) return;
+    const robotMic = robotCanListen();
+    const text = await hear();
+    if (text) await send(text);
+    else
+      note(
+        robotMic
+          ? '(robot tidak mendengar apa-apa, coba lagi lebih dekat ke robot)'
+          : sttSupported()
+            ? '(tidak mendengar apa-apa, coba lagi)'
+            : '(STT hanya di Chrome/Edge — ketik saja ya)',
+      );
+  }
+
+  /** Hands-free: listen -> answer out loud -> listen again, until stopped. */
+  async function toggleConvo() {
+    if (convoRef.current) {
+      convoRef.current = false;
+      setConvo(false);
+      stopRobotListening();
+      speechRef.current?.cancel();
+      stopSpeaking();
+      return;
+    }
+    if (!robotCanListen() && !sttSupported()) {
+      showToast('Mode ngobrol butuh mic robot (firmware 2.6) atau browser Chrome/Edge', 'warn', 4500);
+      return;
+    }
+    convoRef.current = true;
+    setConvo(true);
+    let misses = 0;
+    try {
+      while (convoRef.current) {
+        const heard = await hear();
+        if (!convoRef.current) break;
+        if (!heard) {
+          if (++misses >= 3) {
+            note('(sepi… mode ngobrol berhenti. Tekan 🗣 untuk mulai lagi)');
+            break;
+          }
+          continue;
+        }
+        misses = 0;
+        if (STOP_WORDS.test(heard)) {
+          setMsgs((m) => [...m, { role: 'user', content: heard }, { role: 'assistant', content: 'Oke, sampai nanti! 👋' }]);
+          break;
+        }
+        await send(heard); // resolves only after the robot finished speaking
+      }
+    } finally {
+      convoRef.current = false;
+      setConvo(false);
+    }
+  }
+
+  function stopAll() {
+    stopSpeaking();
+    speechRef.current?.cancel();
   }
 
   async function send(override?: string) {
     const text = (override ?? input).trim();
-    if (!text || busy) return;
-    const history = [...messages, { role: 'user', content: text } as ChatMsg];
-    setMessages([...history, { role: 'assistant', content: '' }]);
+    if (!text || busyRef.current) return;
+    const history = [...messagesRef.current, { role: 'user', content: text } as ChatMsg];
+    setMsgs(() => [...history, { role: 'assistant', content: '' }]);
     setInput('');
+    busyRef.current = true;
     setBusy(true);
     faceRef.current = 'thinking';
+    // The robot starts talking after the FIRST sentence while the rest is still being
+    // written (fails fast with a reason when no robot/speaker -> laptop voice below).
+    const speech = startRobotSpeech();
+    speechRef.current = speech;
+    const splitter = new SentenceSplitter();
     let acc = '';
     try {
-      const res = await firaChat(history, {
-        onContent: (d) => {
-          acc += d;
-          faceRef.current = 'speaking';
-          setMessages((m) => {
-            const c = [...m];
-            c[c.length - 1] = { role: 'assistant', content: acc };
-            return c;
-          });
+      const res = await firaChat(
+        history,
+        {
+          onContent: (d) => {
+            acc += d;
+            faceRef.current = 'speaking';
+            setMsgs((m) => {
+              const c = [...m];
+              c[c.length - 1] = { role: 'assistant', content: acc };
+              return c;
+            });
+            for (const s of splitter.feed(d)) speech.say(s);
+          },
         },
-      });
+        undefined,
+        { voice: true },
+      );
       setDemo(res.demo);
-      // Prefer the ROBOT's speaker (so it physically talks); fall back to the
-      // laptop/phone speaker only when no robot with TTS is connected.
       const reply = res.content || acc;
-      const spoken = await speakViaRobot(reply);
-      if (!spoken.ok) {
+      const rest = splitter.flush();
+      if (rest) speech.say(rest);
+      setSpeaking(true);
+      const spoken = await speech.end();
+      if (!spoken.ok && spoken.reason !== 'cancelled') {
         // Say WHY the voice comes from the laptop instead of silently falling back.
         showToast(
           `Suara dari laptop: ${SPEAK_REASON_TEXT[spoken.reason]}${spoken.detail ? ` (${spoken.detail})` : ''}`,
           spoken.reason === 'not_connected' ? 'warn' : 'error',
           4500,
         );
-        if (ttsSupported()) speak(reply);
+        if (ttsSupported()) await speak(reply);
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'error tak dikenal';
-      setMessages((m) => {
+      setMsgs((m) => {
         const c = [...m];
         c[c.length - 1] = { role: 'assistant', content: '⚠ Maaf, ada kendala: ' + msg };
         return c;
       });
     } finally {
+      speechRef.current = null;
+      busyRef.current = false;
       setBusy(false);
+      setSpeaking(false);
       faceRef.current = 'idle';
     }
   }
@@ -250,13 +336,45 @@ export default function FiraPanel({ open, onClose }: { open: boolean; onClose: (
         ))}
       </div>
 
+      {(listening || speaking || convo) && (
+        <div className={styles.hint} role="status">
+          {listening
+            ? usingRobotMic
+              ? '🎙️ Robot mendengarkan… bicara sekarang (berhenti sendiri saat kamu diam)'
+              : '🎙️ Mendengarkan… bicara sekarang'
+            : speaking
+              ? '🔊 Robot sedang menjawab…'
+              : busy
+                ? '🤔 Berpikir…'
+                : '🗣 Mode ngobrol aktif'}
+        </div>
+      )}
+
       <div className={styles.inputRow}>
         <button
-          className={`${styles.mic} ${listening ? styles.micOn : ''}`}
+          className={`${styles.mic} ${convo ? styles.micOn : ''}`}
+          onClick={toggleConvo}
+          disabled={!convo && (busy || listening || (!sttSupported() && !robotCanListen()))}
+          title="Mode ngobrol: bicara bergantian dengan robot tanpa menekan tombol. Bilang “berhenti” untuk selesai."
+          aria-label="Mode ngobrol"
+          aria-pressed={convo}
+        >
+          🗣
+        </button>
+        <button
+          className={`${styles.mic} ${listening && !convo ? styles.micOn : ''}`}
           onClick={handleMic}
-          disabled={busy || listening || (!sttSupported() && !robotCanListen())}
-          title={sttSupported() ? 'Bicara ke Robotku AI (Bahasa Indonesia)' : 'STT hanya Chrome/Edge — ketik saja'}
-          aria-label="Bicara"
+          disabled={convo || busy || (!listening && !sttSupported() && !robotCanListen())}
+          title={
+            listening
+              ? 'Selesai bicara'
+              : robotCanListen()
+                ? 'Bicara lewat mic robot (Bahasa Indonesia)'
+                : sttSupported()
+                  ? 'Bicara ke Robotku AI (Bahasa Indonesia)'
+                  : 'STT hanya Chrome/Edge — ketik saja'
+          }
+          aria-label={listening ? 'Selesai bicara' : 'Bicara'}
         >
           {listening ? '●' : '🎤'}
         </button>
@@ -268,13 +386,13 @@ export default function FiraPanel({ open, onClose }: { open: boolean; onClose: (
             if (e.key === 'Enter') send();
           }}
           placeholder={listening ? 'Mendengarkan…' : 'Tulis atau tekan 🎤 lalu bicara…'}
-          disabled={busy || listening}
+          disabled={busy || listening || convo}
         />
         <button className={styles.send} onClick={() => send()} disabled={busy || !input.trim()}>
           {busy ? '…' : 'Kirim'}
         </button>
         {busy && (
-          <button className={styles.stop} onClick={stopSpeaking} title="Hentikan suara">
+          <button className={styles.stop} onClick={stopAll} title="Hentikan suara">
             ◼
           </button>
         )}

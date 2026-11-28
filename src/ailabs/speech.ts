@@ -27,8 +27,9 @@ export function voiceLabel(): string {
   return cachedVoice ? `${cachedVoice.name} (${cachedVoice.lang})` : 'tidak ada voice';
 }
 
-export function speak(text: string): void {
-  if (!ttsSupported() || !text.trim()) return;
+/** Speak via the browser; resolves when finished (conversation mode waits on it). */
+export function speak(text: string): Promise<void> {
+  if (!ttsSupported() || !text.trim()) return Promise.resolve();
   cachedVoice = cachedVoice || pickVoice();
   const u = new SpeechSynthesisUtterance(text);
   if (cachedVoice) u.voice = cachedVoice;
@@ -36,7 +37,15 @@ export function speak(text: string): void {
   u.rate = 1;
   u.pitch = 1.15; // sedikit lebih ceria untuk anak
   window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(u);
+  return new Promise((resolve) => {
+    // onend can be skipped by some engines; cap at ~0.1 s/char so callers never hang.
+    const t = setTimeout(resolve, 3000 + text.length * 100);
+    u.onend = u.onerror = () => {
+      clearTimeout(t);
+      resolve();
+    };
+    window.speechSynthesis.speak(u);
+  });
 }
 
 export function stopSpeaking(): void {

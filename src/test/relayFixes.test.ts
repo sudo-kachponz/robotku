@@ -13,7 +13,7 @@ import type { RobotTransport } from '../transport';
 import { TransportSink } from '../runtime/TransportSink';
 import { speakViaRobot } from '../ailabs/robotVoice';
 import { robotInfoFromHelloAck, RELAY_CLOSE } from '../domain/protocol';
-import { getSavedLink } from '../app/connection';
+import { getSavedLink, dispatchTelemetry } from '../app/connection';
 
 function mockTransport(kind: 'relay' | 'ble' = 'relay') {
   const sent: string[] = [];
@@ -25,6 +25,31 @@ function mockTransport(kind: 'relay' | 'ble' = 'relay') {
     },
   } as unknown as RobotTransport;
   return { t, sent };
+}
+
+// Fake TTS backend + WebAudio decode/resample (jsdom has none of them).
+function fakeAudio(seconds = 0.5) {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
+    new Response(JSON.stringify({ audio: btoa('RIFF') }), { status: 200 }),
+  );
+  class FakeCtx {
+    async decodeAudioData() {
+      return { sampleRate: 8000, duration: seconds, getChannelData: () => new Float32Array(8000 * seconds) };
+    }
+    close() {}
+  }
+  class FakeOffline {
+    constructor(_ch: number, private len: number) {}
+    createBufferSource() {
+      return { buffer: null, connect() {}, start() {} };
+    }
+    async startRendering() {
+      const n = this.len;
+      return { getChannelData: () => new Float32Array(n) };
+    }
+  }
+  (window as unknown as { AudioContext: unknown }).AudioContext = FakeCtx;
+  (globalThis as unknown as { OfflineAudioContext: unknown }).OfflineAudioContext = FakeOffline;
 }
 
 afterEach(() => {
@@ -49,22 +74,47 @@ describe('AI voice goes to the robot, never raw to firmware', () => {
     const { t, sent } = mockTransport();
     setActiveTransport(t);
     setRobotInfo({ fwVersion: 'x', board: 'b', protocol: 'p', capabilities: ['TTS_BEGIN'], ports: [] });
-    // Fake TTS backend + WebAudio decode (jsdom has neither).
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ audio: btoa('RIFF') }), { status: 200 }),
-    );
-    class FakeCtx {
-      async decodeAudioData() {
-        return { sampleRate: 8000, getChannelData: () => new Float32Array(4000) };
-      }
-      close() {}
-    }
-    (window as unknown as { AudioContext: unknown }).AudioContext = FakeCtx;
+    fakeAudio(0.1);
     const res = await speakViaRobot('halo robot');
     expect(res.ok).toBe(true);
     expect(sent[0]).toContain('TTS_BEGIN');
     expect(sent.some((l) => l.includes('TTS_CHUNK'))).toBe(true);
     expect(sent[sent.length - 1]).toContain('TTS_END');
+  });
+
+  it('2.6 firmware: sentences are appended to one take and end on TTS_DONE', async () => {
+    const { t, sent } = mockTransport('relay');
+    setActiveTransport(t);
+    setRobotInfo({ fwVersion: '2.6.0-mk', board: 'b', protocol: 'p', capabilities: ['TTS_BEGIN', 'TTS_STREAM', 'TTS_SR16'], ports: [] });
+    fakeAudio(0.5);
+    const done = speakViaRobot('Halo, aku robot kamu. Ayo kita belajar coding bareng!');
+    // Answer TTS_DONE for the LAST end as soon as it has been sent.
+    const ends = () => sent.filter((l) => l.includes('TTS_END'));
+    await vi.waitFor(() => expect(ends()).toHaveLength(2));
+    const begins = sent.filter((l) => l.includes('TTS_BEGIN')).map((l) => JSON.parse(l.slice(0, -1)).params);
+    expect(begins[0]).toMatchObject({ sr: 16000, append: false, pre_ms: 300 });
+    expect(begins[1]).toMatchObject({ sr: 16000, append: true });
+    const lastSeq = JSON.parse(ends()[1].slice(0, -1)).params.seq;
+    dispatchTelemetry({ command: 'TTS_DONE', params: { seq: lastSeq - 1 } }); // stale: ignored
+    let settled = false;
+    void done.then(() => (settled = true));
+    await new Promise((r) => setTimeout(r, 250));
+    expect(settled).toBe(false);
+    dispatchTelemetry({ command: 'TTS_DONE', params: { seq: lastSeq } });
+    expect(await done).toEqual({ ok: true });
+  });
+
+  it('BLE link: 8 kHz and the robot buffers the whole first sentence', async () => {
+    const { t, sent } = mockTransport('ble');
+    setActiveTransport(t);
+    setRobotInfo({ fwVersion: '2.6.0-mk', board: 'b', protocol: 'p', capabilities: ['TTS_BEGIN', 'TTS_STREAM', 'TTS_SR16'], ports: [] });
+    fakeAudio(0.1);
+    const done = speakViaRobot('Halo semuanya, apa kabar?');
+    await vi.waitFor(() => expect(sent.some((l) => l.includes('TTS_END'))).toBe(true));
+    expect(JSON.parse(sent[0].slice(0, -1)).params).toMatchObject({ sr: 8000, pre_ms: 120000 });
+    const seq = JSON.parse(sent[sent.length - 1].slice(0, -1)).params.seq;
+    dispatchTelemetry({ command: 'TTS_DONE', params: { seq } });
+    expect(await done).toEqual({ ok: true });
   });
 
   it('reports a reason instead of silently using the laptop', async () => {

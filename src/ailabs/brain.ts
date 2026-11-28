@@ -60,6 +60,7 @@ export async function firaChat(
   history: ChatMsg[],
   cb: StreamCallbacks = {},
   signal?: AbortSignal,
+  opts: { voice?: boolean } = {},
 ): Promise<ChatResult> {
   // Browser hanya kirim giliran user/assistant — persona & kunci ada di server.
   const messages = history.filter((m) => m.role === 'user' || m.role === 'assistant');
@@ -68,7 +69,8 @@ export async function firaChat(
       method: 'POST',
       signal,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages }),
+      // voice:true -> server adds "spoken reply" rules (no emoji/markdown, short).
+      body: JSON.stringify({ messages, voice: !!opts.voice }),
     });
     if (!res.ok || !res.body) throw new Error('backend ' + res.status);
 

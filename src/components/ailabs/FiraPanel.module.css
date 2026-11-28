@@ -399,6 +399,7 @@
 }
 .input {
   flex: 1;
+  min-width: 0; /* let it shrink so 🗣 + 🎤 + Kirim all fit the 360px drawer */
   height: 38px;
   border: 1.5px solid var(--line, #e2e8f0);
   border-radius: 10px;
@@ -463,4 +464,14 @@
   50% {
     box-shadow: 0 0 0 6px rgba(236, 45, 143, 0);
   }
+}
+
+/* Voice status line (robot listening / speaking / conversation mode). */
+.hint {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pink-600, #c81e76);
+  background: var(--pink-50, #fdf2f8);
+  border-top: 1px solid var(--line-soft, #eef2f7);
 }

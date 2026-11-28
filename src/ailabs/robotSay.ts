@@ -47,7 +47,7 @@ export async function runAiBlockOnRobot(command: string, params: Record<string, 
   }
   if (command === 'AI_CONVERSE') {
     let heard: string | null = null;
-    if (robotCanListen()) heard = await listenViaRobot(3);     // robot mic first
+    if (robotCanListen()) heard = await listenViaRobot();      // robot mic first (VAD ends the take)
     else if (sttSupported()) {
       const r = await listenOnce();
       heard = r.ok ? r.text ?? null : null;
