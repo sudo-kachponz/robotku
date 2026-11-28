@@ -1,8 +1,11 @@
 name = "robotku-relay"
 main = "src/worker.js"
 compatibility_date = "2024-09-23"
+# postgres.js (hardware-password login) needs Node APIs + TCP sockets.
+compatibility_flags = ["nodejs_compat"]
 
 [vars]
+# REQUIRE_WEB_LOGIN = "1"  # turn on once every web build sends the /login token
 ALLOWED_ORIGINS = "https://hub.robotku.id,http://localhost:3000,http://localhost:8080"
 
 [durable_objects]

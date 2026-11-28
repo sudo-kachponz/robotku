@@ -11,5 +11,8 @@
   "devDependencies": {
     "wrangler": "^3.0.0",
     "ws": "^8.0.0"
+  },
+  "dependencies": {
+    "postgres": "^3.4.9"
   }
 }

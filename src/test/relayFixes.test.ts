@@ -154,3 +154,55 @@ describe('relay link + HELLO_ACK', () => {
     expect(RELAY_CLOSE[4412]?.retry).toBe('no');
   });
 });
+
+describe('hardware-password login (relay)', () => {
+  it('accepts the box password typed sloppily, rejects anything else', async () => {
+    const { normalizeRobotPassword } = await import('../domain/protocol');
+    expect(normalizeRobotPassword(' rk xq2u 79um-6z7t hlw2 ')).toBe('XQ2U79UM6Z7THLW2');
+    expect(normalizeRobotPassword('XQ2U-79UM-6Z7T')).toBeNull();
+    expect(normalizeRobotPassword('XQ2U-79UM-6Z7T-HLW0')).toBeNull(); // 0 not in alphabet
+  });
+
+  it('loginRelay posts the password and returns id/secret/token; server message on 403', async () => {
+    const { loginRelay } = await import('../app/connection');
+    const spy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            id: 'ABC234',
+            secret: 's'.repeat(32),
+            token: '1999999999.' + 'a'.repeat(32),
+          }),
+          { status: 200 },
+        ),
+      );
+    expect(await loginRelay('XQ2U-79UM-6Z7T-HLW2')).toMatchObject({ id: 'ABC234' });
+    const [url, init] = spy.mock.calls[0] as [string, RequestInit];
+    expect(url).toMatch(/\/login$/);
+    expect(JSON.parse(String(init.body))).toEqual({ password: 'XQ2U-79UM-6Z7T-HLW2' });
+    spy.mockResolvedValueOnce(
+      new Response(JSON.stringify({ message: 'Password salah atau sudah dinonaktifkan.' }), {
+        status: 403,
+      }),
+    );
+    await expect(loginRelay('XQ2U-79UM-6Z7T-HLW2')).rejects.toThrow('Password salah');
+    await expect(loginRelay('A3B7K2')).rejects.toThrow('XXXX-XXXX');
+  });
+
+  it('the relay socket carries the controller token', async () => {
+    const { RelayTransport } = await import('../transport/RelayTransport');
+    const urls: string[] = [];
+    class FakeWs {
+      constructor(u: string) {
+        urls.push(u);
+        throw new Error('stop here'); // only the URL matters
+      }
+    }
+    vi.stubGlobal('WebSocket', FakeWs);
+    const t = new RelayTransport('wss://relay.test', 'ABC234', '1999999999.abc');
+    await (t as unknown as { openTransport(): Promise<void> }).openTransport().catch(() => {});
+    expect(urls[0]).toBe('wss://relay.test/ws?role=web&id=ABC234&token=1999999999.abc');
+    vi.unstubAllGlobals();
+  });
+});

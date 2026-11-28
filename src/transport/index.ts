@@ -32,13 +32,15 @@ const DEFAULT_RELAY_URL =
 
 let relayUrl = DEFAULT_RELAY_URL;
 let relayRobotId = '';
+let relayToken = ''; // controller token from /login (hardware password); '' = code only
 
-export function setRelayTarget(target: { url?: string; id: string }): void {
+export function setRelayTarget(target: { url?: string; id: string; token?: string }): void {
   if (target.url) relayUrl = target.url;
   relayRobotId = target.id.toUpperCase().trim();
+  relayToken = target.token ?? '';
 }
-export function getRelayTarget(): { url: string; id: string } {
-  return { url: relayUrl, id: relayRobotId };
+export function getRelayTarget(): { url: string; id: string; token: string } {
+  return { url: relayUrl, id: relayRobotId, token: relayToken };
 }
 
 /** WebSocket exists in every modern browser; mixed-content (https -> ws://) is the real gate. */
@@ -71,7 +73,7 @@ export function createTransport(kind: TransportKind): RobotTransport {
     case 'ws':
       return new WsTransport(wsUrl);
     case 'relay':
-      return new RelayTransport(relayUrl, relayRobotId);
+      return new RelayTransport(relayUrl, relayRobotId, relayToken);
     default:
       throw new Error(`Unknown transport kind: ${kind}`);
   }

@@ -237,6 +237,19 @@ export function generateRelaySecret(): string {
 /** Robot ID: 6 chars, digits 2-9 + uppercase A-Z minus I and O. */
 export const RELAY_ID_RE = /^[2-9A-HJ-NP-Z]{6}$/;
 
+/**
+ * Hardware password from the card in the robot box: XXXX-XXXX-XXXX-XXXX (same
+ * alphabet). Returns the 16 bare symbols, or null when it isn't one. Mirrors
+ * normalizePassword() in server/robotku-relay/src/boxcode.js.
+ */
+export function normalizeRobotPassword(raw: string): string | null {
+  const s = raw
+    .toUpperCase()
+    .replace(/^\s*RK[-\s]*/, '')
+    .replace(/[\s-]/g, '');
+  return /^[2-9A-HJ-NP-Z]{16}$/.test(s) ? s : null;
+}
+
 /** True if the frame is a relay control message (not robot data). */
 export function isRelayFrame(msg: RobotCommand): boolean {
   return msg.command === 'RELAY';

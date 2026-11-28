@@ -35,6 +35,7 @@ export class RelayTransport extends BaseTransport {
   constructor(
     private readonly url: string,
     private readonly robotId: string,
+    private readonly token = '',
   ) {
     super();
   }
@@ -49,7 +50,8 @@ export class RelayTransport extends BaseTransport {
 
   protected openTransport(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const wsUrl = `${this.url}/ws?role=web&id=${this.robotId}`;
+      const wsUrl =
+        `${this.url}/ws?role=web&id=${this.robotId}` + (this.token ? `&token=${encodeURIComponent(this.token)}` : '');
       let ws: WebSocket;
       try {
         ws = new WebSocket(wsUrl);

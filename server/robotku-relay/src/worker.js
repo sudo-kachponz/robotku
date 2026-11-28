@@ -7,20 +7,25 @@
 // Deploy:
 //   npx wrangler deploy
 //   # Set robot secrets via gen-robot-id.mjs, stored in robot NVS
-//   # Box cards (password -> relay code): tools/gen-box-codes.mjs, see src/boxcode.js
+//   # Hardware passwords: migrations/001_devices.sql + tools/seed-devices.mjs (Postgres)
+//   npx wrangler secret put DATABASE_URL   (Supabase transaction pooler URL, port 6543)
 
-import { robotSecret, claimPassword } from './boxcode.js';
+import postgres from 'postgres';
+import { robotSecret, passwordHash, webToken, verifyWebToken } from './boxcode.js';
 
 const ID_RE = /^[2-9A-HJ-NP-Z]{6}$/;
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (url.pathname === '/ws') return handleWs(request, env);
     if (url.pathname === '/health') return json({ ok: true });
-    if (url.pathname === '/provision' && request.method === 'OPTIONS') return preflight(request, env);
-    if (url.pathname === '/provision' && request.method === 'POST') return handleProvision(request, env);
+    // /provision = the same login, kept for the setup wizard's older name.
+    if (url.pathname === '/login' || url.pathname === '/provision') {
+      if (request.method === 'OPTIONS') return preflight(request, env);
+      if (request.method === 'POST') return handleLogin(request, env, ctx);
+    }
     return new Response('not found', { status: 404 });
   },
 };
@@ -45,6 +50,14 @@ async function handleWs(request, env) {
     const allowed = (env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim());
     if (!allowed.some(a => a === origin)) {
       return closeUpgrade(4403, 'Situs ini belum diizinkan mengendalikan robot');
+    }
+    // Controller login: the token from /login (hardware password). A token that is
+    // sent must be valid; with REQUIRE_WEB_LOGIN=1 a bare relay code is refused too.
+    const token = url.searchParams.get('token');
+    if (token || env.REQUIRE_WEB_LOGIN === '1') {
+      if (!(await verifyWebToken(env.RELAY_SIGNING_KEY, rawId, token))) {
+        return closeUpgrade(4401, 'Login dulu dengan password robot (kartu di dalam box)');
+      }
     }
   }
 
@@ -113,29 +126,53 @@ function preflight(request, env) {
   return new Response(null, { status: origin ? 204 : 403, headers: origin ? corsHeaders(origin) : {} });
 }
 
-// Exchange the password printed on the card inside the robot box for that robot's
-// relay code (ID + token). Only genuine passwords work (see boxcode.js), and the
-// same password always returns the same code, so a lost code can be recovered.
-// Called by the web setup wizard, which then sends SET_RELAY to the robot.
-async function handleProvision(request, env) {
+// Log in with the hardware password from the robot box (Postgres table robot_devices,
+// see migrations/001_devices.sql). Returns the robot's relay code + robot token (the
+// setup wizard sends them to the board as SET_RELAY) and a controller token for the
+// relay socket. Same password -> same relay code, so a lost code is recoverable.
+async function handleLogin(request, env, ctx) {
   const origin = allowedOrigin(request, env);
   if (!origin) return json({ error: 'origin not allowed' }, 403);
   const headers = corsHeaders(origin);
-  if (!env.RELAY_SIGNING_KEY) return json({ error: 'signing key not configured' }, 500, headers);
+  if (!env.RELAY_SIGNING_KEY || !env.DATABASE_URL) {
+    return json({ error: 'not_configured', message: 'Server relay belum diatur (RELAY_SIGNING_KEY / DATABASE_URL).' }, 500, headers);
+  }
   let body = {};
   try {
     body = await request.json();
   } catch {
-    // no/invalid body -> handled as "password missing" below
+    // no/invalid body -> reported as a bad format below
   }
-  if (!body || !body.password) {
-    return json({ error: 'password_required', message: 'Masukkan password dari kartu di dalam box robot.' }, 400, headers);
+  const hash = await passwordHash(body && body.password);
+  if (!hash) {
+    return json({ error: 'password_format', message: 'Password robot berbentuk XXXX-XXXX-XXXX-XXXX (ada di kartu dalam box).' }, 400, headers);
   }
-  const claim = await claimPassword(env.RELAY_SIGNING_KEY, body.password);
-  if (!claim) {
-    return json({ error: 'bad_password', message: 'Password salah atau bukan password produk Robotku.' }, 403, headers);
+  // prepare:false = works through Supabase's transaction pooler (pgbouncer).
+  const sql = postgres(env.DATABASE_URL, { prepare: false, max: 1, fetch_types: false, connect_timeout: 10 });
+  let rows;
+  try {
+    rows = await sql`
+      update robot_devices
+         set claimed_at = coalesce(claimed_at, now()), last_login_at = now(), login_count = login_count + 1
+       where password_hash = ${hash} and not revoked
+   returning relay_id`;
+  } catch (e) {
+    console.error('login db error:', e && e.message);
+    return json({ error: 'db_error', message: 'Database sedang bermasalah, coba lagi sebentar.' }, 503, headers);
+  } finally {
+    const closing = sql.end({ timeout: 2 });
+    if (ctx && ctx.waitUntil) ctx.waitUntil(closing);
+    else await closing;
   }
-  return json({ id: claim.id, secret: claim.secret }, 200, headers);
+  if (!rows.length) {
+    return json({ error: 'bad_password', message: 'Password salah atau sudah dinonaktifkan.' }, 403, headers);
+  }
+  const id = rows[0].relay_id;
+  return json(
+    { id, secret: await robotSecret(env.RELAY_SIGNING_KEY, id), token: await webToken(env.RELAY_SIGNING_KEY, id) },
+    200,
+    headers,
+  );
 }
 
 function json(data, status = 200, extra = {}) {

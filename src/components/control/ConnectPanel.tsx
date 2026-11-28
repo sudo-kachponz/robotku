@@ -7,7 +7,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { isBleSupported, isSerialSupported, type TransportKind } from '../../transport';
 import { connect, disconnect, provisionWifi, provisionRelay, connectWifi, connectRelay, onTelemetry } from '../../app/connection';
-import { RELAY_ID_RE } from '../../domain/protocol';
+import { RELAY_ID_RE, normalizeRobotPassword } from '../../domain/protocol';
 import { useConnection } from '../../hooks/useConnection';
 import UnsupportedBrowserModal from './UnsupportedBrowserModal';
 import styles from './ConnectPanel.module.css';
@@ -138,16 +138,15 @@ function RelaySection({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  // Auto-uppercase, strip spaces, max 6 chars
+  // Password XXXX-XXXX-XXXX-XXXX (preferred) or the old 6-char robot code.
   const handleInput = useCallback((val: string) => {
-    const clean = val.toUpperCase().replace(/\s/g, '').slice(0, 6);
-    setRobotCode(clean);
+    setRobotCode(val.toUpperCase().replace(/[^0-9A-Z-]/g, '').slice(0, 19));
     setErr(null);
   }, []);
 
   // Warn about confusing characters
   const hasConfusing = /[01IO]/.test(robotCode);
-  const isValid = RELAY_ID_RE.test(robotCode);
+  const isValid = RELAY_ID_RE.test(robotCode) || normalizeRobotPassword(robotCode) !== null;
 
   const doConnect = async () => {
     setBusy(true);
@@ -168,17 +167,17 @@ function RelaySection({ onClose }: { onClose: () => void }) {
         Online (lewat internet)
       </div>
       <div style={{ fontSize: 12, color: 'var(--ink-500)', lineHeight: 1.4, marginBottom: 8 }}>
-        Masukkan kode 6 karakter dari robot untuk mengendalikan lewat relay.
+        Masukkan password robot dari kartu di dalam box (atau kode robot 6 karakter).
       </div>
       <input
         className={styles.wifiInput}
         value={robotCode}
         onChange={(e) => handleInput(e.target.value)}
-        placeholder="Contoh: A3B7K2"
-        maxLength={6}
+        placeholder="XXXX-XXXX-XXXX-XXXX"
+        maxLength={19}
         style={{
           textAlign: 'center',
-          fontSize: 18,
+          fontSize: 16,
           fontWeight: 800,
           letterSpacing: '0.15em',
           fontFamily: 'monospace',
@@ -188,7 +187,7 @@ function RelaySection({ onClose }: { onClose: () => void }) {
       />
       {hasConfusing && robotCode.length > 0 && (
         <div style={{ fontSize: 11, color: 'var(--amber)', marginTop: 2 }}>
-          Kode robot tidak mengandung 0, 1, I, atau O. Mungkin maksudnya huruf/angka lain?
+          Password/kode robot tidak mengandung 0, 1, I, atau O. Mungkin maksudnya huruf/angka lain?
         </div>
       )}
       <button

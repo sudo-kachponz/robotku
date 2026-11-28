@@ -21,6 +21,7 @@ import {
   helloLine,
   robotInfoFromHelloAck,
   RELAY_ID_RE,
+  normalizeRobotPassword,
   RELAY_CLOSE,
 } from '../domain/protocol';
 import {
@@ -58,7 +59,7 @@ export function dispatchTelemetry(msg: any): void {
 // silently dropped and Fira spoke from the laptop. We remember the last relay link
 // and resume it on app start (relay needs no user gesture, unlike BLE/Serial).
 const LINK_KEY = 'robotku.lastLink';
-type SavedLink = { kind: 'relay'; id: string };
+type SavedLink = { kind: 'relay'; id: string; token?: string };
 
 function saveLink(link: SavedLink | null): void {
   try {
@@ -94,7 +95,7 @@ export async function resumeSavedLink(): Promise<void> {
   resumeTried = true;
   const saved = getSavedLink();
   if (!saved || getState().transport) return;
-  setRelayTarget({ id: saved.id });
+  setRelayTarget({ id: saved.id, token: saved.token });
   await connect('relay', true).catch(() => {
     /* scheduleReconnect() already handles retry/backoff */
   });
@@ -234,7 +235,10 @@ export async function connect(kind: TransportKind, isReconnect = false): Promise
     const info = await transport.connect();
     runnerSetTransport(transport);
     setRobotInfo(info);
-    if (kind === 'relay') saveLink({ kind: 'relay', id: getRelayTarget().id });
+    if (kind === 'relay') {
+      const { id, token } = getRelayTarget();
+      saveLink({ kind: 'relay', id, ...(token ? { token } : {}) });
+    }
     setConnState('connected');
     reconnectAttempts = 0;
     lastRelayCloseCode = undefined;
@@ -281,21 +285,22 @@ export async function provisionWifi(ssid: string, pass: string): Promise<void> {
   await transport.sendLine(setWifiLine(ssid, pass));
 }
 
+const RELAY_HTTP =
+  (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_RELAY_HTTP_URL) ||
+  'https://robotku-relay.hubrobotku.workers.dev';
+
 /**
- * Provision relay on the robot over the CURRENT link. Exchanges the password printed
- * on the card inside the robot box for that robot's relay code (ID + token) at the
- * relay server, sends SET_RELAY to the board, returns the code. Same password ->
- * same code, so a lost code can be recovered by running this again.
+ * Log in with the hardware password from the card inside the robot box. The relay
+ * server looks it up (Postgres) and returns the robot's relay code, its robot token
+ * (for SET_RELAY) and a controller token for the relay socket.
  */
-export async function provisionRelay(password: string): Promise<string> {
-  const { transport } = getState();
-  if (!transport) throw new Error('Sambungkan dulu lewat Bluetooth/USB.');
-  if (!password.trim()) throw new Error('Masukkan password dari kartu di dalam box robot.');
-  const relayBase = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_RELAY_URL)
-    || 'https://robotku-relay.hubrobotku.workers.dev';
+export async function loginRelay(password: string): Promise<{ id: string; secret: string; token: string }> {
+  if (!normalizeRobotPassword(password)) {
+    throw new Error('Password robot berbentuk XXXX-XXXX-XXXX-XXXX (ada di kartu dalam box).');
+  }
   let res: Response;
   try {
-    res = await fetch(`${relayBase}/provision`, {
+    res = await fetch(`${RELAY_HTTP}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: password.trim() }),
@@ -303,12 +308,23 @@ export async function provisionRelay(password: string): Promise<string> {
   } catch {
     throw new Error('Server relay tidak bisa dihubungi. Cek internet lalu coba lagi.');
   }
-  const data = (await res.json().catch(() => ({}))) as { id?: string; secret?: string; message?: string };
-  if (!res.ok || !data.id || !data.secret) {
-    throw new Error(data.message || 'Gagal mengambil kode robot dari relay server.');
+  const data = (await res.json().catch(() => ({}))) as { id?: string; secret?: string; token?: string; message?: string };
+  if (!res.ok || !data.id || !data.secret || !data.token) {
+    throw new Error(data.message || 'Login robot gagal.');
   }
-  await transport.sendLine(setRelayLine(data.id, data.secret));
-  return data.id;
+  return { id: data.id, secret: data.secret, token: data.token };
+}
+
+/**
+ * Setup wizard: log in with the box password, then send SET_RELAY to the board over
+ * the CURRENT link (BLE/USB). Returns the relay code. Same password -> same code.
+ */
+export async function provisionRelay(password: string): Promise<string> {
+  const { transport } = getState();
+  if (!transport) throw new Error('Sambungkan dulu lewat Bluetooth/USB.');
+  const { id, secret } = await loginRelay(password);
+  await transport.sendLine(setRelayLine(id, secret));
+  return id;
 }
 
 /** Connect to the robot over WiFi (WebSocket). `host` is an IP or mDNS name (robotku.local). */
@@ -318,13 +334,21 @@ export async function connectWifi(host: string): Promise<RobotInfo> {
   return connect('ws');
 }
 
-/** Connect to the robot through the relay server using a 6-char robot ID. */
-export async function connectRelay(rawId: string, relayUrl?: string): Promise<RobotInfo> {
-  const id = rawId.toUpperCase().replace(/\s/g, '');
-  if (!RELAY_ID_RE.test(id)) {
-    throw new Error('Kode robot tidak valid. Harus 6 karakter (angka 2-9, huruf tanpa I dan O).');
+/**
+ * Connect through the relay. `input` is the hardware password (preferred: logs in and
+ * gets a controller token) or, for older setups, the bare 6-char robot code.
+ */
+export async function connectRelay(input: string, relayUrl?: string): Promise<RobotInfo> {
+  if (normalizeRobotPassword(input)) {
+    const { id, token } = await loginRelay(input);
+    setRelayTarget({ id, token, ...(relayUrl ? { url: relayUrl } : {}) });
+  } else {
+    const id = input.toUpperCase().replace(/\s/g, '');
+    if (!RELAY_ID_RE.test(id)) {
+      throw new Error('Masukkan password robot (XXXX-XXXX-XXXX-XXXX) atau kode robot 6 karakter.');
+    }
+    setRelayTarget({ id, ...(relayUrl ? { url: relayUrl } : {}) });
   }
-  setRelayTarget({ id, ...(relayUrl ? { url: relayUrl } : {}) });
   lastRelayCloseCode = undefined;
   return connect('relay');
 }
